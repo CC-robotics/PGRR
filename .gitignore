@@ -22,6 +22,7 @@ data/interim/*.h5
 data/processed/*.h5
 checkpoints/**/*.pt
 checkpoints/**/*.zip
+outputs/pilot/*_failure_mining_part.csv
 paper/*.aux
 paper/*.bbl
 paper/*.blg

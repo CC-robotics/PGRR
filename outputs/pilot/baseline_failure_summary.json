@@ -1,0 +1,84 @@
+{
+  "algorithm_episode_count": 30,
+  "excluded_invalid_reset_count": 6,
+  "families": {
+    "crossing_flow": {
+      "episode_count": 10,
+      "failure_count": 8,
+      "failure_rate": 0.8,
+      "outcomes": {
+        "COLLISION": 8,
+        "GOAL_REACHED": 2
+      }
+    },
+    "doorway_bottleneck": {
+      "episode_count": 10,
+      "failure_count": 10,
+      "failure_rate": 1.0,
+      "outcomes": {
+        "COLLISION": 10
+      }
+    },
+    "head_on_corridor": {
+      "episode_count": 10,
+      "failure_count": 10,
+      "failure_rate": 1.0,
+      "outcomes": {
+        "COLLISION": 7,
+        "TIMEOUT": 3
+      }
+    }
+  },
+  "invalid_resets": [
+    {
+      "attempt": 0,
+      "diagnostic": "outputs/logs/baseline/invalid_reset/doorway_bottleneck_high_mining_seed03_base_dwb_attempt00.json",
+      "episode_id": "doorway_bottleneck_high_mining_seed03_base_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 1,
+      "timestamp": "2026-07-29T22:30:07.358156+00:00"
+    },
+    {
+      "attempt": 0,
+      "diagnostic": "outputs/logs/baseline/invalid_reset/doorway_bottleneck_high_mining_seed06_base_dwb_attempt00.json",
+      "episode_id": "doorway_bottleneck_high_mining_seed06_base_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 1,
+      "timestamp": "2026-07-29T22:35:19.523060+00:00"
+    },
+    {
+      "attempt": 0,
+      "diagnostic": "outputs/logs/baseline/invalid_reset/head_on_corridor_high_mining_seed07_base_dwb_attempt00.json",
+      "episode_id": "head_on_corridor_high_mining_seed07_base_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 1,
+      "timestamp": "2026-07-29T22:20:42.592879+00:00"
+    },
+    {
+      "diagnostic": "outputs/logs/baseline/interrupted/parallel_doorway_bottleneck_high_mining_seed00_doorway_bottleneck_high_mining_seed00_base_dwb_runtime.log",
+      "episode_id": "doorway_bottleneck_high_mining_seed00_base_dwb",
+      "exclusion_reason": "Arena/Nav2 action did not become ready",
+      "outcome": "INVALID_RESET"
+    },
+    {
+      "diagnostic": "outputs/logs/baseline/interrupted/parallel_head_on_corridor_high_mining_seed01_head_on_corridor_high_mining_seed01_base_dwb_runtime.log",
+      "episode_id": "head_on_corridor_high_mining_seed01_base_dwb",
+      "exclusion_reason": "Arena/Nav2 action did not become ready",
+      "outcome": "INVALID_RESET"
+    },
+    {
+      "diagnostic": "outputs/logs/baseline/interrupted/invalid_reset_head_seed04_head_on_corridor_high_mining_seed04_base_dwb_runtime.log",
+      "episode_id": "head_on_corridor_high_mining_seed04_base_dwb",
+      "exclusion_reason": "Arena/Nav2 action did not become ready",
+      "outcome": "INVALID_RESET"
+    }
+  ],
+  "purpose": "Gate 1 train-split deterministic failure reproduction",
+  "schema_version": 1,
+  "source_results": "outputs/pilot/baseline_failure_mining.csv",
+  "total_sample_count": 16140,
+  "unique_raw_hash_count": 30
+}

@@ -75,3 +75,7 @@ The pinned Jackal uses a 640 x 16 GPU LiDAR. With Xvfb/Mesa this rendered 10,240
 ## KI-019: Wall-clock guard originally waited on a live logger
 
 When simulation time stopped, the baseline loop detected its wall deadline but then waited for the logger before signaling it, so cleanup could hang. The guard now stops the logger first, emits `SIMULATOR_FAILURE`, and proceeds through bounded cleanup. Diagnostic outcomes from the interrupted probes are retained under `data/raw/interrupted/` and are excluded from algorithm metrics.
+
+## KI-020: Nav2 lifecycle activation has intermittent invalid resets
+
+Six Gate 1 attempts exposed missing `NavigateToPose` readiness or lifecycle service timeouts even though some ROS topics existed. These are classified as `INVALID_RESET`, archived with logs, and excluded from algorithm outcomes. Failure mining now assigns a fresh ROS domain and Gazebo partition per seed and retry, permits two bounded retries, and never overwrites valid episode data. All 30 fixed seeds eventually produced valid outcomes.

@@ -1,6 +1,6 @@
 # Current status
 
-## Gate 1 — classical baseline (in progress)
+## Gate 2 — rule-triggered recovery MVP (in progress)
 
 ### Completed
 
@@ -22,6 +22,8 @@
 - Materialized and Arena-validated 30 fixed Gate 1 mining episodes (three core families x 10 seeds), each with a preview and hash.
 - Stabilized headless corridor physics with locked planar-LiDAR and truly-static shelf asset overrides.
 - Completed the metadata-locked canonical head-on seed 0 run: `COLLISION`, 1,138 samples, 112.9203 simulated seconds, 0.6835 m minimum human-center distance.
+- Completed all 30 fixed Gate 1 algorithm episodes: 25 collisions, 3 timeouts, and 2 goal reaches; 16,140 samples and 30 unique raw hashes.
+- Generated a three-panel trajectory PDF and three 15-second MP4 evidence videos directly from raw recorded episodes.
 
 ### Commands
 
@@ -58,9 +60,11 @@ scripts/bootstrap/arena_container.sh bash -lc \
 - Single-agent dynamic navigation: PASS, `GOAL_REACHED`, 15.6843 simulated seconds.
 - Multi-agent failure reproduction: PASS, `COLLISION` at 0.6852 m center distance; not a simulator failure.
 - Scenario catalog: PASS, 72 generated stress files plus acceptance fixtures; train/validation/test IDs are disjoint.
-- Gate 1 full acceptance: pending 10-seed failure-rate mining for the three core families.
+- Gate 1 full acceptance: PASS. Failure rates are 100% for head-on corridor (7 collision, 3 timeout), 100% for doorway bottleneck (10 collision), and 80% for crossing flow (8 collision, 2 goal reached).
 - Failure-mining infrastructure: PASS; 30 scenarios parse in the installed Arena version, checkpoint CSV writes atomically, and completed outcomes resume without overwrite.
 - Head-on mining seed 0: PASS as a reproducible algorithm failure (`COLLISION`), not a simulator failure.
+- Simulator/reset exclusions: 6 `INVALID_RESET` attempts are reported separately and excluded; all corresponding fixed seeds later produced valid episodes.
+- Failure evidence: `outputs/figures/baseline_failure_trajectories.pdf` and `outputs/videos/baseline_failure_*_seed00.mp4` pass PDF/FFmpeg validation.
 
 ### Failures
 
@@ -69,7 +73,8 @@ scripts/bootstrap/arena_container.sh bash -lc \
 - The official Humble profile provides Gazebo rather than Flatland. The main simulator for this profile is therefore Gazebo; this is a recorded platform fallback, not a claimed Flatland result.
 - The smoke goal was accepted but later aborted; static point-goal success is deliberately left for Gate 1 rather than misreported here.
 - The pinned Arena source references a Gazebo HuNav plugin absent from its installer and depending on an unpublished `arena_people_msgs` package. Dynamic runs use the documented Gazebo kinematic proxy fallback and are not labeled as HuNav social-force runs.
+- Legacy Nav2 lifecycle activation is intermittently unreliable; every invalid reset is archived, assigned a fresh ROS domain for bounded retry, and excluded rather than counted as an algorithm failure.
 
 ### Next
 
-Resume the remaining 29 Gate 1 episodes for `head_on_corridor`, `doorway_bottleneck`, and `crossing_flow`, compute per-family failure rates, then implement rule-based failure labels and the heuristic recovery MVP.
+Implement and unit-test rule-based collision-risk, freeze, oscillation, and deadlock labels, then integrate the heuristic recovery state machine before any network training.

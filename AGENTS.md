@@ -29,6 +29,6 @@ The working paper title is **Planning-Guided Failure-Triggered Recovery via Imit
 
 ## Current milestone and acceptance
 
-Gate 0 is accepted with the pinned `arena_humble_docker` Gazebo profile. Gate 1 architecture, static navigation, dynamic logging, and scenario compilation pass; current work is **Gate 1 failure mining**. Acceptance still requires 10 fixed seeds for each of the three core families and reproducible non-simulator failure rates before rule detection or learning advances.
+Gate 0 and Gate 1 are accepted with the pinned `arena_humble_docker` Gazebo profile. Thirty fixed train-split baseline episodes produced failure rates of 100% for head-on corridor, 100% for doorway bottleneck, and 80% for crossing flow; invalid resets are reported separately. Current work is **Gate 2 rule-based failure detection and heuristic recovery**. Do not begin network training before the heuristic recovery closes the loop and improves at least one core scenario.
 
 If PPO, the learned detector, a second planner, or Gazebo cannot be completed honestly, follow the documented imitation-learning minimum path; do not block the core system or claim those modules succeeded.

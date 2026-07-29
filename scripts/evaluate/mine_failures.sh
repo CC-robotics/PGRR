@@ -14,4 +14,5 @@ env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u CONDA_PROMPT_MODIFIER \
     conda run -n "${CONDA_ENV_NAME}" \
     python "${PROJECT_ROOT}/scripts/data/materialize_failure_mining.py" \
     --seed-count 10 --seed-start "${SEED_START}"
-exec python3 "${PROJECT_ROOT}/scripts/evaluate/mine_failures.py" "$@"
+python3 "${PROJECT_ROOT}/scripts/evaluate/mine_failures.py" "$@"
+python3 "${PROJECT_ROOT}/scripts/evaluate/summarize_failure_mining.py"

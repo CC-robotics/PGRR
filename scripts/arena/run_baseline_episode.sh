@@ -28,5 +28,8 @@ exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     RAMP_ACTOR_UPDATE_HZ="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
     RAMP_HOST_UID="$(id -u)" \
     RAMP_HOST_GID="$(id -g)" \
+    ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-1}" \
+    GZ_PARTITION="${GZ_PARTITION:-ramp_default}" \
+    IGN_PARTITION="${IGN_PARTITION:-${GZ_PARTITION:-ramp_default}}" \
     RAMP_PROJECT_COMMIT="$(git -C "${PROJECT_ROOT}" rev-parse HEAD)" \
     bash /workspace/scripts/arena/run_baseline_episode_inner.sh

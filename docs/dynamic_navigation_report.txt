@@ -53,3 +53,17 @@ Limitations
   plugin nor its arena_people_msgs dependency is installed by the upstream profile.
   These runs therefore use the documented deterministic kinematic proxy and are not
   HuNav social-force results. This fallback must remain explicit in all experiments.
+
+Gate 1 fixed-seed failure mining
+  manifest: scenarios/manifests/failure_mining.yaml
+  valid algorithm episodes: 30
+  total samples: 16140
+  unique raw hashes: 30
+  head_on_corridor: COLLISION=7, TIMEOUT=3, failure rate=100%
+  doorway_bottleneck: COLLISION=10, failure rate=100%
+  crossing_flow: COLLISION=8, GOAL_REACHED=2, failure rate=80%
+  excluded INVALID_RESET attempts: 6
+  canonical CSV SHA256: 724a5885c1b05f8dec3b0aa62514ce7dab9767d6728dc281bf81a88031b9e95f
+  summary: outputs/pilot/baseline_failure_summary.json
+  trajectories: outputs/figures/baseline_failure_trajectories.pdf
+  videos: outputs/videos/baseline_failure_*_seed00.mp4
