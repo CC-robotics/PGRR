@@ -59,3 +59,15 @@ conda run -n ramp-offline python scripts/data/convert_raw_episode.py \
 make mine-failures SEED=0
 conda run -n ramp-offline python scripts/evaluate/render_failure_examples.py
 ```
+
+Validated rule detection, dense labels, and the ROS wrapper:
+
+```bash
+conda run -n ramp-offline python scripts/data/label_failures.py \
+  --manifest outputs/pilot/baseline_failure_mining.csv \
+  --output data/interim/gate1_failure_labels.h5 \
+  --summary data/manifests/failure_label_summary.json
+make test
+make build
+scripts/arena/smoke_failure_detector.sh
+```

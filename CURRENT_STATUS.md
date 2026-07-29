@@ -8,7 +8,7 @@
 - Created a new Git repository on `teacher/reference`; no pre-existing target files were overwritten.
 - Created `ramp-offline` with Python 3.10 and dual dependency locks.
 - Validated Torch 2.13.0 + CUDA 13.0 on the RTX 5090.
-- Passed Ruff, formatting, mypy, and 2 offline unit tests.
+- Passed Ruff, formatting, strict mypy, and 34 committed offline tests at the rule-detection stage.
 - Installed the pinned Arena Humble fallback in the isolated `ramp-arena:humble` image without modifying host ROS.
 - Built 48 Arena overlay source packages on the binary Humble base and selected Gazebo 8.14.0, Jackal, and DWB.
 - Passed the automated Xvfb/software-rendered Arena smoke test.
@@ -24,6 +24,9 @@
 - Completed the metadata-locked canonical head-on seed 0 run: `COLLISION`, 1,138 samples, 112.9203 simulated seconds, 0.6835 m minimum human-center distance.
 - Completed all 30 fixed Gate 1 algorithm episodes: 25 collisions, 3 timeouts, and 2 goal reaches; 16,140 samples and 30 unique raw hashes.
 - Generated a three-panel trajectory PDF and three 15-second MP4 evidence videos directly from raw recorded episodes.
+- Implemented configurable observable-only collision-risk, freeze, oscillation, and deadlock rules with exact time-window boundary tests.
+- Generated dense offline labels for all 30 Gate 1 episodes: 16,140 samples in one HDF5 artifact with pre/post windows, onset/end, time-to-failure, and hard-negative metadata.
+- Added the ROS2 failure detector node and passed an actual ROS message smoke test with a speed-dependent imminent-collision trigger.
 
 ### Commands
 
@@ -46,6 +49,11 @@ env -u CONDA_PREFIX -u VIRTUAL_ENV \
   scenarios/generated/arena/map_empty/crossing_flow_low_train_s01200.json
 scripts/bootstrap/arena_container.sh bash -lc \
   'cd /workspace/ros_ws && colcon test && colcon test-result --verbose'
+conda run -n ramp-offline python scripts/data/label_failures.py \
+  --manifest outputs/pilot/baseline_failure_mining.csv \
+  --output data/interim/gate1_failure_labels.h5 \
+  --summary data/manifests/failure_label_summary.json
+scripts/arena/smoke_failure_detector.sh
 ```
 
 ### Acceptance results
@@ -65,6 +73,9 @@ scripts/bootstrap/arena_container.sh bash -lc \
 - Head-on mining seed 0: PASS as a reproducible algorithm failure (`COLLISION`), not a simulator failure.
 - Simulator/reset exclusions: 6 `INVALID_RESET` attempts are reported separately and excluded; all corresponding fixed seeds later produced valid episodes.
 - Failure evidence: `outputs/figures/baseline_failure_trajectories.pdf` and `outputs/videos/baseline_failure_*_seed00.mp4` pass PDF/FFmpeg validation.
+- Rule/label tests: PASS; normal motion, goal-reached stationary state, turn noise, short stops, exact freeze/oscillation/deadlock windows, and imminent collision are covered.
+- Gate 1 label artifact: PASS; 30 episodes, 16,140 samples, no NaN/Inf, with 2,830 collision-risk, 2,143 freeze, 0 oscillation, and 1,221 deadlock positives. The zero oscillillation count is retained rather than synthesized.
+- ROS detector smoke: PASS; a 1.0 m/s observation with 0.20 m clearance publishes collision risk 1.0 and a triggered status.
 
 ### Failures
 
@@ -77,4 +88,4 @@ scripts/bootstrap/arena_container.sh bash -lc \
 
 ### Next
 
-Implement and unit-test rule-based collision-risk, freeze, oscillation, and deadlock labels, then integrate the heuristic recovery state machine before any network training.
+Implement the masked heuristic selector and integrate it with the Nav2 temporary-goal/rejoin state machine, then run the three-method fixed-seed Gate 2 pilot before any network training.

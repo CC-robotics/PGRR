@@ -1,0 +1,21 @@
+{
+  "config": "configs/failure/rules.yaml",
+  "config_sha256": "43c25466d6d7e7e980d6c289834a38838663c2662b7dfe4099beaeb8c3613601",
+  "episode_count": 30,
+  "failure_onsets_by_family": {
+    "crossing_flow": 22,
+    "doorway_bottleneck": 20,
+    "head_on_corridor": 30
+  },
+  "hard_negative_count": 3779,
+  "labels_hdf5": "data/interim/gate1_failure_labels.h5",
+  "labels_sha256": "1d8ba46d749942f789d1ce73f2c03304c53439eb37c53fd6bd3e6c78146b2a37",
+  "positive_counts": {
+    "COLLISION_RISK": 2830,
+    "DEADLOCK": 1221,
+    "FREEZE": 2143,
+    "OSCILLATION": 0
+  },
+  "sample_count": 16140,
+  "schema_version": 1
+}
