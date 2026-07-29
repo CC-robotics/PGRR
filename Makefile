@@ -1,4 +1,5 @@
 SHELL := /bin/bash
+.SHELLFLAGS := -eu -o pipefail -c
 PROJECT_ROOT ?= $(CURDIR)
 ARENA_WS ?= $(HOME)/arena5_ws
 CONDA_ENV_NAME ?= ramp-offline
@@ -6,6 +7,7 @@ SEED ?= 0
 HEADLESS ?= 1
 CONFIG ?=
 LOG_DIR ?= $(PROJECT_ROOT)/outputs/logs
+OFFLINE_RUN := env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION conda run -n "$(CONDA_ENV_NAME)"
 
 .DEFAULT_GOAL := help
 
@@ -30,8 +32,8 @@ build: | $(LOG_DIR) ## Build Python and ROS2 packages.
 	@scripts/bootstrap/build_overlay.sh 2>&1 | tee "$(LOG_DIR)/build.log"
 
 test: | $(LOG_DIR) ## Run offline lint, type, and unit tests.
-	@conda run -n "$(CONDA_ENV_NAME)" ruff check . 2>&1 | tee "$(LOG_DIR)/ruff.log"
-	@conda run -n "$(CONDA_ENV_NAME)" pytest -q 2>&1 | tee "$(LOG_DIR)/pytest.log"
+	@$(OFFLINE_RUN) ruff check . 2>&1 | tee "$(LOG_DIR)/ruff.log"
+	@$(OFFLINE_RUN) pytest -q 2>&1 | tee "$(LOG_DIR)/pytest.log"
 
 smoke: | $(LOG_DIR) ## Run the Arena headless smoke test.
 	@SEED="$(SEED)" HEADLESS="$(HEADLESS)" scripts/arena/smoke_arena.sh 2>&1 | tee "$(LOG_DIR)/arena_smoke.log"
@@ -39,21 +41,21 @@ smoke: | $(LOG_DIR) ## Run the Arena headless smoke test.
 baseline: ## Run baseline episodes (implemented after Gate 0).
 	@scripts/evaluate/run_baseline.sh --seed "$(SEED)" $(if $(CONFIG),--config "$(CONFIG)")
 scenarios: ## Compile deterministic scenarios.
-	@conda run -n "$(CONDA_ENV_NAME)" python scripts/data/compile_scenarios.py --seed "$(SEED)"
+	@$(OFFLINE_RUN) python scripts/data/compile_scenarios.py --seed "$(SEED)"
 mine-failures: ## Mine reproducible planner failures.
 	@scripts/evaluate/mine_failures.sh --seed "$(SEED)"
 label-expert: ## Label recovery states using the privileged expert.
-	@conda run -n "$(CONDA_ENV_NAME)" python scripts/data/label_expert.py --seed "$(SEED)"
+	@$(OFFLINE_RUN) python scripts/data/label_expert.py --seed "$(SEED)"
 train-bc: ## Train behavior cloning policies.
-	@conda run -n "$(CONDA_ENV_NAME)" python scripts/train/train_bc.py --seed "$(SEED)"
+	@$(OFFLINE_RUN) python scripts/train/train_bc.py --seed "$(SEED)"
 train-dagger: ## Run two DAgger aggregation rounds.
-	@conda run -n "$(CONDA_ENV_NAME)" python scripts/train/train_dagger.py --seed "$(SEED)"
+	@$(OFFLINE_RUN) python scripts/train/train_dagger.py --seed "$(SEED)"
 train-ppo-smoke: ## Run a small action-masked PPO smoke job.
-	@conda run -n "$(CONDA_ENV_NAME)" python scripts/train/train_ppo.py --profile smoke --seed "$(SEED)"
+	@$(OFFLINE_RUN) python scripts/train/train_ppo.py --profile smoke --seed "$(SEED)"
 train-ppo: ## Run configured PPO training.
-	@conda run -n "$(CONDA_ENV_NAME)" python scripts/train/train_ppo.py --profile main --seed "$(SEED)"
+	@$(OFFLINE_RUN) python scripts/train/train_ppo.py --profile main --seed "$(SEED)"
 train-detector: ## Train the optional learned failure detector.
-	@conda run -n "$(CONDA_ENV_NAME)" python scripts/train/train_detector.py --seed "$(SEED)"
+	@$(OFFLINE_RUN) python scripts/train/train_detector.py --seed "$(SEED)"
 pilot: ## Run validation-only pilot evaluation.
 	@scripts/evaluate/run_experiment.sh --tier pilot --seed "$(SEED)"
 evaluate-flatland: ## Run the locked Flatland final manifest.
@@ -61,11 +63,11 @@ evaluate-flatland: ## Run the locked Flatland final manifest.
 evaluate-gazebo: ## Run the optional Gazebo transfer validation.
 	@scripts/evaluate/run_experiment.sh --tier gazebo --simulator gazebo
 statistics: ## Compute paired statistics from final artifacts.
-	@conda run -n "$(CONDA_ENV_NAME)" python scripts/evaluate/statistics.py
+	@$(OFFLINE_RUN) python scripts/evaluate/statistics.py
 figures: ## Generate figures from recorded results.
-	@conda run -n "$(CONDA_ENV_NAME)" python scripts/paper/make_figures.py
+	@$(OFFLINE_RUN) python scripts/paper/make_figures.py
 tables: ## Generate LaTeX tables from recorded results.
-	@conda run -n "$(CONDA_ENV_NAME)" python scripts/paper/make_tables.py
+	@$(OFFLINE_RUN) python scripts/paper/make_tables.py
 paper: ## Compile the manuscript after validating generated artifacts.
 	@scripts/paper/build_paper.sh
 reproduce-small: ## Exercise the full small-data pipeline.

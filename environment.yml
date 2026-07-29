@@ -1,41 +1,40 @@
 name: ramp-offline
 channels:
-  - pytorch
   - conda-forge
 dependencies:
   - python=3.10
   - pip
-  - numpy
-  - scipy
-  - pandas
-  - pyarrow
-  - h5py
-  - scikit-learn
-  - matplotlib
-  - pillow
-  - networkx
-  - shapely
-  - pyyaml
-  - pydantic
-  - tqdm
-  - rich
-  - typer
-  - pytest
-  - pytest-cov
-  - hypothesis
-  - ruff
-  - mypy
-  - pre-commit
-  - jupyterlab
-  - ipykernel
-  - pytorch
-  - tensorboard
-  - gymnasium
-  - stable-baselines3
-  - sb3-contrib
-  - imageio
-  - imageio-ffmpeg
-  - statsmodels
   - pip:
-      - pingouin
-      - rosbags
+      - numpy>=1.26,<3
+      - scipy>=1.11
+      - pandas>=2.1
+      - pyarrow>=14
+      - h5py>=3.10
+      - scikit-learn>=1.3
+      - matplotlib>=3.8
+      - pillow>=10
+      - networkx>=3.2
+      - shapely>=2
+      - pyyaml>=6
+      - pydantic>=2
+      - tqdm>=4.66
+      - rich>=13
+      - typer>=0.9
+      - pytest>=7.4
+      - pytest-cov>=4.1
+      - hypothesis>=6
+      - ruff>=0.6
+      - mypy>=1.8
+      - pre-commit>=3.6
+      - jupyterlab>=4
+      - ipykernel>=6
+      - torch>=2.6
+      - tensorboard>=2.15
+      - gymnasium>=0.29
+      - stable-baselines3>=2.3
+      - sb3-contrib>=2.3
+      - rosbags>=0.10
+      - imageio>=2.33
+      - imageio-ffmpeg>=0.4.9
+      - statsmodels>=0.14
+      - pingouin>=0.5
