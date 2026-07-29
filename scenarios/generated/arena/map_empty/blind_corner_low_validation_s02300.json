@@ -339,12 +339,13 @@
   "ramp_metadata": {
     "density": "low",
     "family": "blind_corner",
-    "human_behavior_model": "HuNav regular social-force",
+    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
     "human_speed_range_mps": [
       0.35,
       0.6
     ],
     "map_id": "map_empty",
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
     "scenario_id": "blind_corner_low_validation_s02300",
     "schema_version": 1,
     "seed": 2300,

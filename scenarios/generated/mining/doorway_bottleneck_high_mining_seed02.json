@@ -1,0 +1,454 @@
+{
+  "obstacles": {
+    "dynamic": [
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 1,
+        "max_vel": 0.3911,
+        "model": "gazebo_actor",
+        "name": "ped_00",
+        "pos": [
+          18.4428,
+          11.5766,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            18.4428,
+            11.5766,
+            3.141592653589793
+          ],
+          [
+            12.4428,
+            12.1766,
+            3.141592653589793
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 2,
+        "max_vel": 0.466,
+        "model": "gazebo_actor",
+        "name": "ped_01",
+        "pos": [
+          18.8521,
+          12.199,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            18.8521,
+            12.199,
+            3.141592653589793
+          ],
+          [
+            12.4021,
+            11.919,
+            3.141592653589793
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 3,
+        "max_vel": 0.426,
+        "model": "gazebo_actor",
+        "name": "ped_02",
+        "pos": [
+          18.4251,
+          11.6682,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            18.4251,
+            11.6682,
+            3.141592653589793
+          ],
+          [
+            12.4251,
+            12.0282,
+            3.141592653589793
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 4,
+        "max_vel": 0.4493,
+        "model": "gazebo_actor",
+        "name": "ped_03",
+        "pos": [
+          18.9878,
+          12.0399,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            18.9878,
+            12.0399,
+            3.141592653589793
+          ],
+          [
+            12.5378,
+            11.9999,
+            3.141592653589793
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 5,
+        "max_vel": 0.3084,
+        "model": "gazebo_actor",
+        "name": "ped_04",
+        "pos": [
+          18.4838,
+          11.5406,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            18.4838,
+            11.5406,
+            3.141592653589793
+          ],
+          [
+            12.4838,
+            12.3406,
+            3.141592653589793
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 6,
+        "max_vel": 0.4302,
+        "model": "gazebo_actor",
+        "name": "ped_05",
+        "pos": [
+          18.982,
+          12.4122,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            18.982,
+            12.4122,
+            3.141592653589793
+          ],
+          [
+            12.532,
+            11.9322,
+            3.141592653589793
+          ]
+        ]
+      }
+    ],
+    "interactive": [],
+    "static": [
+      {
+        "model": "shelf",
+        "name": "doorwall_00",
+        "pos": [
+          15.5,
+          3.0,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_01",
+        "pos": [
+          15.5,
+          3.857142857142857,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_02",
+        "pos": [
+          15.5,
+          4.714285714285714,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_03",
+        "pos": [
+          15.5,
+          5.571428571428571,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_04",
+        "pos": [
+          15.5,
+          6.428571428571429,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_05",
+        "pos": [
+          15.5,
+          7.285714285714286,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_06",
+        "pos": [
+          15.5,
+          8.142857142857142,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_07",
+        "pos": [
+          15.5,
+          9.0,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_08",
+        "pos": [
+          15.5,
+          9.857142857142858,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_09",
+        "pos": [
+          15.5,
+          10.714285714285714,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_12",
+        "pos": [
+          15.5,
+          13.285714285714285,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_13",
+        "pos": [
+          15.5,
+          14.142857142857142,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_14",
+        "pos": [
+          15.5,
+          15.0,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_15",
+        "pos": [
+          15.5,
+          15.857142857142858,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_16",
+        "pos": [
+          15.5,
+          16.714285714285715,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_17",
+        "pos": [
+          15.5,
+          17.57142857142857,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_18",
+        "pos": [
+          15.5,
+          18.428571428571427,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_19",
+        "pos": [
+          15.5,
+          19.285714285714285,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_20",
+        "pos": [
+          15.5,
+          20.142857142857142,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_21",
+        "pos": [
+          15.5,
+          21.0,
+          1.5707963267948966
+        ]
+      }
+    ]
+  },
+  "ramp_metadata": {
+    "density": "high",
+    "family": "doorway_bottleneck",
+    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
+    "human_speed_range_mps": [
+      0.3,
+      0.55
+    ],
+    "map_id": "map_empty",
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
+    "scenario_id": "doorway_bottleneck_high_mining_seed02",
+    "schema_version": 1,
+    "seed": 2,
+    "source_scenario_id": "doorway_bottleneck_high_train_s01120",
+    "split": "train",
+    "variant_rule": "pedestrian route translation <=0.12 m and speed scale <=8%"
+  },
+  "robots": [
+    {
+      "goal": [
+        24.0,
+        12.0,
+        0.0
+      ],
+      "start": [
+        7.0,
+        12.0,
+        0.0
+      ]
+    }
+  ]
+}

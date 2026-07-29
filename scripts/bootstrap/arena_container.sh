@@ -16,6 +16,8 @@ docker run --rm --runtime runc --network host --ipc host \
     -e WANDB_MODE=offline \
     -e RAMP_ROOT=/workspace \
     -v "${PROJECT_ROOT}:/workspace" \
+    -v "${PROJECT_ROOT}/configs/platform/jackal_planar_lidar.gazebo:/opt/arena_ws/src/arena/simulation-setup/entities/robots/jackal/urdf/jackal.gazebo:ro" \
+    -v "${PROJECT_ROOT}/configs/platform/shelf_static.sdf:/opt/arena_ws/src/arena/simulation-setup/entities/obstacles/static/shelf/sdf/shelf.sdf:ro" \
     "${ARENA_IMAGE}" \
     bash --noprofile --norc -c \
     'export PATH=/root/.local/bin:$PATH

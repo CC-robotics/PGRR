@@ -1,0 +1,2 @@
+episode_id,scenario_id,family,density,seed,planner_id,outcome,sample_count,sim_duration_s,start_distance_m,end_distance_m,progress_m,min_human_distance_m,min_lidar_m,raw_sha256
+head_on_corridor_high_mining_seed00_base_dwb,head_on_corridor_high_mining_seed00,head_on_corridor,high,0,dwb,COLLISION,346,33.7329,21.0,20.494298934936523,0.5057010650634766,0.7094172788889487,0.32958030700683594,dd3dd515d9e5bc51b0e49ffdb8538c95c772be407ff7b8035782709b96fc4cff

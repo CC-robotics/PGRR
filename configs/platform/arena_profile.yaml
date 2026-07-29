@@ -8,6 +8,8 @@ display_backend: xvfb_software_gl
 robot: jackal
 local_planner: dwb
 asset_profile: pinned_minimal_headless
+lidar_profile: planar_360x1_10hz_downsampled_to_180
+static_shelf_override: true
 image: ramp-arena:humble
 image_id: sha256:023efa496a6bb17aecb1f5f70025cb2f6bc6fadb17c19ab24584b03fec661e6d
 arena_commit: c2ff4a87e8686013b53f1e9cd8b01b3ab04fbce4

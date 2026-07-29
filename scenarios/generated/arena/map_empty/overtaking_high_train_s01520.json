@@ -242,12 +242,13 @@
   "ramp_metadata": {
     "density": "high",
     "family": "overtaking",
-    "human_behavior_model": "HuNav regular social-force",
+    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
     "human_speed_range_mps": [
       0.1,
       0.22
     ],
     "map_id": "map_empty",
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
     "scenario_id": "overtaking_high_train_s01520",
     "schema_version": 1,
     "seed": 1520,

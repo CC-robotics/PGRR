@@ -25,5 +25,8 @@ exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     RAMP_SCENARIO="/workspace/${relative}" \
     RAMP_EPISODE_ID="${RAMP_EPISODE_ID:-}" \
     RAMP_EPISODE_TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}" \
+    RAMP_ACTOR_UPDATE_HZ="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
+    RAMP_HOST_UID="$(id -u)" \
+    RAMP_HOST_GID="$(id -g)" \
     RAMP_PROJECT_COMMIT="$(git -C "${PROJECT_ROOT}" rev-parse HEAD)" \
     bash /workspace/scripts/arena/run_baseline_episode_inner.sh

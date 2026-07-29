@@ -86,12 +86,13 @@
   "ramp_metadata": {
     "density": "low",
     "family": "crossing_flow",
-    "human_behavior_model": "HuNav regular social-force",
+    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
     "human_speed_range_mps": [
       0.45,
       0.75
     ],
     "map_id": "map_empty",
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
     "scenario_id": "crossing_flow_low_test_s03200",
     "schema_version": 1,
     "seed": 3200,

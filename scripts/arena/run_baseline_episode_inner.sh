@@ -4,8 +4,6 @@ set -euo pipefail
 SCENARIO="${RAMP_SCENARIO:?RAMP_SCENARIO is required}"
 TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}"
 SCENARIO_TARGET="/opt/arena_ws/install/arena_simulation_setup/share/arena_simulation_setup/worlds/map_empty/scenarios/default.json"
-RUNTIME_LOG="/workspace/outputs/logs/baseline_episode_runtime.log"
-STATUS_LOG="/workspace/outputs/logs/baseline_episode_status.log"
 
 readarray -t scenario_values < <(python3 - "${SCENARIO}" <<'PY'
 import json
@@ -42,6 +40,8 @@ if [[ -z "${scenario_id}" || -z "${seed}" || -z "${split}" || -z "${map_id}" ]];
 fi
 episode_id="${RAMP_EPISODE_ID:-${scenario_id}_base_dwb}"
 output_directory="/workspace/data/raw"
+RUNTIME_LOG="${RAMP_BASELINE_RUNTIME_LOG:-/workspace/outputs/logs/baseline/${episode_id}_runtime.log}"
+STATUS_LOG="${RAMP_BASELINE_STATUS_LOG:-/workspace/outputs/logs/baseline/${episode_id}_status.log}"
 outcome_file="${output_directory}/${episode_id}.outcome.json"
 stream_file="${output_directory}/${episode_id}.jsonl"
 if [[ -e "${outcome_file}" || -e "${stream_file}" ]]; then
@@ -114,6 +114,16 @@ cleanup() {
         wait "${launch_pid}" 2>/dev/null || true
     fi
     printf '[RAMP_BASELINE] cleanup_complete\n' >>"${RUNTIME_LOG}"
+    host_uid="${RAMP_HOST_UID:-}"
+    host_gid="${RAMP_HOST_GID:-}"
+    if [[ "${host_uid}" =~ ^[0-9]+$ && "${host_gid}" =~ ^[0-9]+$ ]]; then
+        for artifact in \
+            "${stream_file}" "${outcome_file}" "${output_directory}/${episode_id}.metadata.json" \
+            "${RUNTIME_LOG}" "${STATUS_LOG}"; do
+            [[ ! -e "${artifact}" ]] || chown "${host_uid}:${host_gid}" "${artifact}"
+        done
+        chown "${host_uid}:${host_gid}" "$(dirname "${RUNTIME_LOG}")" 2>/dev/null || true
+    fi
 }
 trap cleanup EXIT INT TERM
 
@@ -155,6 +165,7 @@ ramp_ros_prefix="$(ros2 pkg prefix ramp_ros)"
     -p set_pose_service:=/world/default/set_pose \
     -p spawn_service:=/world/default/create \
     -p privileged_humans_topic:=/ramp/privileged/humans \
+    -p update_frequency_hz:="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
     >>"${RUNTIME_LOG}" 2>&1 &
 actor_pid=$!
 timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S}")"
@@ -188,6 +199,7 @@ python3 /workspace/scripts/arena/wait_for_nav_status.py \
     >"${STATUS_LOG}" 2>&1 &
 monitor_pid=$!
 wall_deadline=$((SECONDS + wall_timeout))
+wall_guard_expired=0
 while kill -0 "${logger_pid}" 2>/dev/null; do
     if ! kill -0 "${launch_pid}" 2>/dev/null; then
         echo "ERROR: Arena exited before the episode reached a terminal outcome" >&2
@@ -195,10 +207,14 @@ while kill -0 "${logger_pid}" 2>/dev/null; do
     fi
     if (( SECONDS >= wall_deadline )); then
         echo "ERROR: wall-clock guard expired before simulated episode timeout" >&2
+        wall_guard_expired=1
         break
     fi
     sleep 1
 done
+if (( wall_guard_expired )); then
+    stop_logger
+fi
 set +e
 wait "${logger_pid}" 2>/dev/null
 logger_status=$?

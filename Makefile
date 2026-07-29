@@ -46,7 +46,7 @@ scenarios: | $(LOG_DIR) ## Compile deterministic scenarios and validate them wit
 	@$(OFFLINE_RUN) python scripts/data/compile_scenarios.py --seed "$(SEED)" 2>&1 | tee "$(LOG_DIR)/scenarios.log"
 	@env -u CONDA_PREFIX -u VIRTUAL_ENV PROJECT_ROOT="$(PROJECT_ROOT)" scripts/arena/validate_scenarios.sh 2>&1 | tee "$(LOG_DIR)/scenario_validation.log"
 mine-failures: ## Mine reproducible planner failures.
-	@scripts/evaluate/mine_failures.sh --seed "$(SEED)"
+	@SEED_START="$(SEED)" CONDA_ENV_NAME="$(CONDA_ENV_NAME)" scripts/evaluate/mine_failures.sh
 label-expert: ## Label recovery states using the privileged expert.
 	@$(OFFLINE_RUN) python scripts/data/label_expert.py --seed "$(SEED)"
 train-bc: ## Train behavior cloning policies.

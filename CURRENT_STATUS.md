@@ -19,6 +19,9 @@
 - Compiled 72 deterministic stress scenarios (8 families x 3 densities x 3 splits), with split-safe manifests and previews; all parse and load through the installed Arena schema.
 - Added an online JSONL episode logger plus validated multi-episode HDF5 conversion with public/privileged field separation.
 - Passed a single-agent dynamic episode (`GOAL_REACHED`, 158 samples) and reproduced a non-simulator multi-agent collision (`COLLISION`, 532 samples).
+- Materialized and Arena-validated 30 fixed Gate 1 mining episodes (three core families x 10 seeds), each with a preview and hash.
+- Stabilized headless corridor physics with locked planar-LiDAR and truly-static shelf asset overrides.
+- Completed the metadata-locked canonical head-on seed 0 run: `COLLISION`, 1,138 samples, 112.9203 simulated seconds, 0.6835 m minimum human-center distance.
 
 ### Commands
 
@@ -30,6 +33,7 @@ make smoke
 make test
 make build
 make scenarios
+make mine-failures SEED=0
 env -u CONDA_PREFIX -u VIRTUAL_ENV scripts/arena/static_navigation.sh
 env -u CONDA_PREFIX -u VIRTUAL_ENV RAMP_EPISODE_ID=ramp_dynamic_single_base_dwb_gate1 \
   RAMP_EPISODE_TIMEOUT_S=60 scripts/arena/run_baseline_episode.sh \
@@ -55,6 +59,8 @@ scripts/bootstrap/arena_container.sh bash -lc \
 - Multi-agent failure reproduction: PASS, `COLLISION` at 0.6852 m center distance; not a simulator failure.
 - Scenario catalog: PASS, 72 generated stress files plus acceptance fixtures; train/validation/test IDs are disjoint.
 - Gate 1 full acceptance: pending 10-seed failure-rate mining for the three core families.
+- Failure-mining infrastructure: PASS; 30 scenarios parse in the installed Arena version, checkpoint CSV writes atomically, and completed outcomes resume without overwrite.
+- Head-on mining seed 0: PASS as a reproducible algorithm failure (`COLLISION`), not a simulator failure.
 
 ### Failures
 
@@ -66,4 +72,4 @@ scripts/bootstrap/arena_container.sh bash -lc \
 
 ### Next
 
-Finish Gate 1 by mining 10 fixed seeds for `head_on_corridor`, `doorway_bottleneck`, and `crossing_flow`, then implement rule-based failure labels and the heuristic recovery MVP.
+Resume the remaining 29 Gate 1 episodes for `head_on_corridor`, `doorway_bottleneck`, and `crossing_flow`, compute per-family failure rates, then implement rule-based failure labels and the heuristic recovery MVP.

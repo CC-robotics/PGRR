@@ -173,7 +173,10 @@ def _build_scenario(
             "seed": seed,
             "map_id": map_id,
             "human_speed_range_mps": [speed_min, speed_max],
-            "human_behavior_model": "HuNav regular social-force",
+            "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
+            "requested_hunav_behavior": (
+                "regular social-force fields retained for schema compatibility"
+            ),
         },
         "robots": [{"start": family["robot_start"], "goal": family["robot_goal"]}],
         "obstacles": {

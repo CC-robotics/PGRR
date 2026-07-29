@@ -59,3 +59,19 @@ The first logger implementation named its subscription handle list `_subscriptio
 ## KI-015: Legacy Arena emits traceback text during controlled teardown
 
 The upstream world generator calls `rclpy.shutdown()` after an external shutdown and some bridge processes report signal exit codes during cleanup. Runtime acceptance checks inspect crashes only before the explicit `[RAMP_*] cleanup_started` marker, require terminal episode artifacts first, and still preserve the full teardown log. Unexpected tracebacks before that marker remain fatal.
+
+## KI-016: Cleared `CONDA_PREFIX` can coexist with stale Conda shell state
+
+The first failure-mining invocation inherited `CONDA_SHLVL=1` and `CONDA_DEFAULT_ENV=base` after `CONDA_PREFIX` had already been unset. `conda run` then failed while trying to deactivate a null prefix. The launcher now clears all activation metadata and sets `CONDA_SHLVL=0` only for the offline materialization subprocess; Arena still launches afterward outside Conda. No simulator episode was started by the failed invocation.
+
+## KI-017: Arena's static shelf asset is physically dynamic
+
+The installed `static/shelf` SDF contains `<static>false>`. A corridor with 58 adjacent shelves caused the DART world clock to stop near 5.2 simulated seconds even with pedestrian control disabled. A locked runtime-only asset override changes the tag to true. The corrected 15-second probe completed with 158 samples and robot motion from x=5.00 m to x=6.16 m; the final metadata-locked canonical seed produced a real `COLLISION` at 112.9203 simulated seconds.
+
+## KI-018: Headless Jackal LiDAR is unnecessarily three-dimensional
+
+The pinned Jackal uses a 640 x 16 GPU LiDAR. With Xvfb/Mesa this rendered 10,240 rays per frame despite the experiment requiring a planar scan. The versioned runtime override uses 360 x 1 rays at the same 10 Hz and disables visualization. The public observation pipeline continues to downsample to the declared 180 beams. This is a platform-performance adaptation, not an algorithm result.
+
+## KI-019: Wall-clock guard originally waited on a live logger
+
+When simulation time stopped, the baseline loop detected its wall deadline but then waited for the logger before signaling it, so cleanup could hang. The guard now stops the logger first, emits `SIMULATOR_FAILURE`, and proceeds through bounded cleanup. Diagnostic outcomes from the interrupted probes are retained under `data/raw/interrupted/` and are excluded from algorithm metrics.

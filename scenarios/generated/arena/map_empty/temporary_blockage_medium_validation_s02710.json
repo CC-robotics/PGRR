@@ -345,12 +345,13 @@
   "ramp_metadata": {
     "density": "medium",
     "family": "temporary_blockage",
-    "human_behavior_model": "HuNav regular social-force",
+    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
     "human_speed_range_mps": [
       0.08,
       0.3
     ],
     "map_id": "map_empty",
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
     "scenario_id": "temporary_blockage_medium_validation_s02710",
     "schema_version": 1,
     "seed": 2710,

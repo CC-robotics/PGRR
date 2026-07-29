@@ -64,7 +64,7 @@ class ScenarioActorController(Node):
         self.declare_parameter("set_pose_service", "/world/default/set_pose")
         self.declare_parameter("spawn_service", "/world/default/create")
         self.declare_parameter("privileged_humans_topic", "/ramp/privileged/humans")
-        self.declare_parameter("update_frequency_hz", 10.0)
+        self.declare_parameter("update_frequency_hz", 2.0)
         scenario_path = Path(str(self.get_parameter("scenario_file").value))
         if not scenario_path.is_file():
             raise ValueError(f"scenario_file is not readable: {scenario_path}")

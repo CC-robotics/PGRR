@@ -765,12 +765,13 @@
   "ramp_metadata": {
     "density": "high",
     "family": "head_on_corridor",
-    "human_behavior_model": "HuNav regular social-force",
+    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
     "human_speed_range_mps": [
       0.45,
       0.7
     ],
     "map_id": "map_empty",
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
     "scenario_id": "head_on_corridor_high_validation_s02020",
     "schema_version": 1,
     "seed": 2020,

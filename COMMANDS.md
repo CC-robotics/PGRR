@@ -56,4 +56,5 @@ conda run -n ramp-offline python scripts/data/convert_raw_episode.py \
   --input-prefix data/raw/ramp_dynamic_single_base_dwb_gate1 \
     data/raw/crossing_flow_low_train_s01200_base_dwb_gate1 \
   --output data/interim/gate1_baseline.h5
+make mine-failures SEED=0
 ```

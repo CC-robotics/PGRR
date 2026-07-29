@@ -6,3 +6,4 @@
 - 2026-07-29: Implemented the first modular core and ROS architecture. Eighteen offline tests, strict mypy, three-package colcon build, and colcon test-result pass.
 - 2026-07-29: DWB reached a static PointGoal. Generated and Arena-validated 72 stress scenarios with disjoint splits and previews.
 - 2026-07-29: Added versioned JSONL/HDF5 episode logging. A single-agent run reached its goal; a two-agent crossing-flow run produced a real collision at 0.6852 m center distance. Gate 1 now proceeds to 10-seed failure mining.
+- 2026-07-30: Added a 30-episode fixed-seed mining manifest with previews, resume-safe execution, and per-episode logs. Diagnosed and corrected Arena's dynamic `static/shelf` asset plus its oversized 3-D software-rendered LiDAR. After correcting the human-model metadata and rerunning rather than reusing data, the first canonical head-on run ended in a real collision at 112.9203 simulated seconds.

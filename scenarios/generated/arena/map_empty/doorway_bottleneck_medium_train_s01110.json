@@ -345,12 +345,13 @@
   "ramp_metadata": {
     "density": "medium",
     "family": "doorway_bottleneck",
-    "human_behavior_model": "HuNav regular social-force",
+    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
     "human_speed_range_mps": [
       0.3,
       0.55
     ],
     "map_id": "map_empty",
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
     "scenario_id": "doorway_bottleneck_medium_train_s01110",
     "schema_version": 1,
     "seed": 1110,

@@ -267,12 +267,13 @@
   "ramp_metadata": {
     "density": "low",
     "family": "doorway_bottleneck",
-    "human_behavior_model": "HuNav regular social-force",
+    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
     "human_speed_range_mps": [
       0.3,
       0.55
     ],
     "map_id": "map_empty",
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
     "scenario_id": "doorway_bottleneck_low_test_s03100",
     "schema_version": 1,
     "seed": 3100,
