@@ -29,6 +29,6 @@ The working paper title is **Planning-Guided Failure-Triggered Recovery via Imit
 
 ## Current milestone and acceptance
 
-Gate 0 is accepted with the pinned `arena_humble_docker` Gazebo profile. Current milestone: **Gate 1 — modular architecture and classical baseline**. Acceptance requires implemented core/ML/ROS interfaces, a built project overlay, successful static navigation, logged dynamic episodes, deterministic scenario splits and previews, and three reproducible non-simulator failure families.
+Gate 0 is accepted with the pinned `arena_humble_docker` Gazebo profile. Gate 1 architecture, static navigation, dynamic logging, and scenario compilation pass; current work is **Gate 1 failure mining**. Acceptance still requires 10 fixed seeds for each of the three core families and reproducible non-simulator failure rates before rule detection or learning advances.
 
 If PPO, the learned detector, a second planner, or Gazebo cannot be completed honestly, follow the documented imitation-learning minimum path; do not block the core system or claim those modules succeeded.

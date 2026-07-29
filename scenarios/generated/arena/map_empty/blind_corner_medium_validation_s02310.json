@@ -1,0 +1,445 @@
+{
+  "obstacles": {
+    "dynamic": [
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 1,
+        "max_vel": 0.5482,
+        "model": "gazebo_actor",
+        "name": "ped_00",
+        "pos": [
+          23.5,
+          14.6,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            23.5,
+            14.6,
+            3.141592653589793
+          ],
+          [
+            13.8,
+            12.2,
+            -1.5707963267948966
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 2,
+        "max_vel": 0.3604,
+        "model": "gazebo_actor",
+        "name": "ped_01",
+        "pos": [
+          23.1,
+          15.049999999999999,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            23.1,
+            15.049999999999999,
+            3.141592653589793
+          ],
+          [
+            13.8,
+            11.85,
+            -1.5707963267948966
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 3,
+        "max_vel": 0.5084,
+        "model": "gazebo_actor",
+        "name": "ped_02",
+        "pos": [
+          22.7,
+          15.5,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            22.7,
+            15.5,
+            3.141592653589793
+          ],
+          [
+            13.8,
+            11.5,
+            -1.5707963267948966
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 4,
+        "max_vel": 0.5339,
+        "model": "gazebo_actor",
+        "name": "ped_03",
+        "pos": [
+          22.3,
+          14.6,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            22.3,
+            14.6,
+            3.141592653589793
+          ],
+          [
+            13.8,
+            11.149999999999999,
+            -1.5707963267948966
+          ]
+        ]
+      }
+    ],
+    "interactive": [],
+    "static": [
+      {
+        "model": "shelf",
+        "name": "corner_v_00",
+        "pos": [
+          13.0,
+          3.5,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_01",
+        "pos": [
+          13.0,
+          4.390909090909091,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_02",
+        "pos": [
+          13.0,
+          5.281818181818182,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_03",
+        "pos": [
+          13.0,
+          6.172727272727273,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_04",
+        "pos": [
+          13.0,
+          7.063636363636364,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_05",
+        "pos": [
+          13.0,
+          7.954545454545455,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_06",
+        "pos": [
+          13.0,
+          8.845454545454546,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_07",
+        "pos": [
+          13.0,
+          9.736363636363636,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_08",
+        "pos": [
+          13.0,
+          10.627272727272729,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_09",
+        "pos": [
+          13.0,
+          11.51818181818182,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_10",
+        "pos": [
+          13.0,
+          12.40909090909091,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_v_11",
+        "pos": [
+          13.0,
+          13.3,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_00",
+        "pos": [
+          13.0,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_01",
+        "pos": [
+          13.833333333333334,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_02",
+        "pos": [
+          14.666666666666666,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_03",
+        "pos": [
+          15.5,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_04",
+        "pos": [
+          16.333333333333332,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_05",
+        "pos": [
+          17.166666666666664,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_06",
+        "pos": [
+          18.0,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_07",
+        "pos": [
+          18.833333333333332,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_08",
+        "pos": [
+          19.666666666666668,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_09",
+        "pos": [
+          20.5,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_10",
+        "pos": [
+          21.333333333333332,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_11",
+        "pos": [
+          22.166666666666664,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_12",
+        "pos": [
+          23.0,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_13",
+        "pos": [
+          23.833333333333336,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_14",
+        "pos": [
+          24.666666666666664,
+          13.3,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "corner_h_15",
+        "pos": [
+          25.5,
+          13.3,
+          0.0
+        ]
+      }
+    ]
+  },
+  "ramp_metadata": {
+    "density": "medium",
+    "family": "blind_corner",
+    "human_behavior_model": "HuNav regular social-force",
+    "human_speed_range_mps": [
+      0.35,
+      0.6
+    ],
+    "map_id": "map_empty",
+    "scenario_id": "blind_corner_medium_validation_s02310",
+    "schema_version": 1,
+    "seed": 2310,
+    "split": "validation"
+  },
+  "robots": [
+    {
+      "goal": [
+        24.0,
+        18.0,
+        1.57
+      ],
+      "start": [
+        6.0,
+        6.0,
+        0.0
+      ]
+    }
+  ]
+}

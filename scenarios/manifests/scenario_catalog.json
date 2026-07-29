@@ -1,0 +1,12 @@
+{
+  "base_seed": 0,
+  "counts_by_split": {
+    "test": 24,
+    "train": 24,
+    "validation": 24
+  },
+  "scenario_count": 72,
+  "scenario_ids_sha256": "b83fc4e38eea0e9e12719c7d6aab8265d966911fdb247ae0bc57b9dc9235de1c",
+  "schema_version": 1,
+  "source_config": "configs/experiments/scenario_catalog.yaml"
+}

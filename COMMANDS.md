@@ -38,3 +38,22 @@ make build
 scripts/bootstrap/arena_container.sh bash -lc \
   'cd /workspace/ros_ws && colcon test && colcon test-result --verbose'
 ```
+
+Validated deterministic scenarios and Gate 1 navigation:
+
+```bash
+make scenarios
+env -u CONDA_PREFIX -u VIRTUAL_ENV scripts/arena/static_navigation.sh
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+  RAMP_EPISODE_ID=ramp_dynamic_single_base_dwb_gate1 \
+  RAMP_EPISODE_TIMEOUT_S=60 scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/ramp_dynamic_single.json
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+  RAMP_EPISODE_ID=crossing_flow_low_train_s01200_base_dwb_gate1 \
+  RAMP_EPISODE_TIMEOUT_S=200 scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_low_train_s01200.json
+conda run -n ramp-offline python scripts/data/convert_raw_episode.py \
+  --input-prefix data/raw/ramp_dynamic_single_base_dwb_gate1 \
+    data/raw/crossing_flow_low_train_s01200_base_dwb_gate1 \
+  --output data/interim/gate1_baseline.h5
+```

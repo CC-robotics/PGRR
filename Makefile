@@ -42,8 +42,9 @@ smoke: | $(LOG_DIR) ## Run the Arena headless smoke test.
 
 baseline: ## Run baseline episodes (implemented after Gate 0).
 	@scripts/evaluate/run_baseline.sh --seed "$(SEED)" $(if $(CONFIG),--config "$(CONFIG)")
-scenarios: ## Compile deterministic scenarios.
-	@$(OFFLINE_RUN) python scripts/data/compile_scenarios.py --seed "$(SEED)"
+scenarios: | $(LOG_DIR) ## Compile deterministic scenarios and validate them with Arena's parser.
+	@$(OFFLINE_RUN) python scripts/data/compile_scenarios.py --seed "$(SEED)" 2>&1 | tee "$(LOG_DIR)/scenarios.log"
+	@env -u CONDA_PREFIX -u VIRTUAL_ENV PROJECT_ROOT="$(PROJECT_ROOT)" scripts/arena/validate_scenarios.sh 2>&1 | tee "$(LOG_DIR)/scenario_validation.log"
 mine-failures: ## Mine reproducible planner failures.
 	@scripts/evaluate/mine_failures.sh --seed "$(SEED)"
 label-expert: ## Label recovery states using the privileged expert.

@@ -43,3 +43,19 @@ The legacy source tree reports unresolved keys for `${PROJECT_NAME}_msgs` and `h
 ## KI-011: Smoke goal acceptance is not navigation success
 
 The Gate 0 smoke target only proves action discovery and acceptance. Its readiness goal can abort and is not counted as `GOAL_REACHED`. Gate 1 must validate an appropriate static start/goal pair and record the terminal outcome through the episode logger.
+
+## KI-012: Arena Humble omits the Gazebo HuNav plugin dependency chain
+
+The task generator references `libHuNavSystemPluginIGN.so`, but the accepted image contains no such library. The upstream Arena-Rosnav plugin repository was located and pinned during diagnosis, but it depends on `arena_people_msgs`, which is not present in Arena, ROS Humble apt, or the plugin repository. Running `human:=hunav` therefore starts the manager while Gazebo rejects the motion plugin; this is not a valid dynamic simulation. Gate 1 uses the D-010 kinematic proxy and fails on any pre-cleanup entity-update error. Do not describe proxy runs as HuNav or social-force runs.
+
+## KI-013: Logger node clock stayed at zero after legacy task reset
+
+Although `/clock` and odometry stamps advanced, the logger node clock remained zero in the combined launch, so a simulated timeout could never fire. Sampling now uses a steady timer and elapsed simulation time from odometry headers. Regression runs verified timestamps from 0.0 to 2.997 seconds and a correctly classified timeout.
+
+## KI-014: ROS node attribute shadowing broke clean destruction
+
+The first logger implementation named its subscription handle list `_subscriptions`, shadowing an internal `rclpy.node.Node` collection and causing `destroy_node()` to remove entries twice. The handle list is now `_subscription_handles`; the terminal loop exits without calling shutdown from inside a callback.
+
+## KI-015: Legacy Arena emits traceback text during controlled teardown
+
+The upstream world generator calls `rclpy.shutdown()` after an external shutdown and some bridge processes report signal exit codes during cleanup. Runtime acceptance checks inspect crashes only before the explicit `[RAMP_*] cleanup_started` marker, require terminal episode artifacts first, and still preserve the full teardown log. Unexpected tracebacks before that marker remain fatal.

@@ -1,0 +1,55 @@
+RAMP Gate 1 dynamic-navigation acceptance report
+Generated: 2026-07-29 Asia/Shanghai
+
+Runtime profile: arena_humble_docker
+Simulator: Gazebo Sim 8.14.0, Xvfb software rendering
+Robot/planner: Jackal / Nav2 DWB
+Arena commit: c2ff4a87e8686013b53f1e9cd8b01b3ab04fbce4
+Dynamic-agent backend: deterministic Gazebo kinematic proxy fallback
+
+Single-agent acceptance
+  scenario: ramp_dynamic_single
+  episode: ramp_dynamic_single_base_dwb_gate1
+  outcome: GOAL_REACHED
+  samples: 158
+  simulated duration: 15.6843 s
+  robot start: (20.0000, 12.0000)
+  robot end: (21.8669, 11.9146)
+  goal distance: 2.0000 -> 0.1581 m
+  minimum LiDAR range: 3.9980 m
+  raw JSONL SHA256: 5042b756997e1d574961e90286aafa9689171fe5550302d5ca894fa7d4fdb26b
+
+Multi-agent stress acceptance
+  scenario: crossing_flow_low_train_s01200
+  episode: crossing_flow_low_train_s01200_base_dwb_gate1
+  outcome: COLLISION
+  samples: 532
+  simulated duration: 53.0802 s
+  robot start: (5.0000, 12.0000)
+  robot end: (13.5720, 7.9314)
+  goal distance: 21.0000 -> 13.0771 m
+  minimum privileged human distance: 0.6852 m
+  collision threshold (robot radius + human radius): 0.7100 m
+  minimum LiDAR range: 0.5697 m
+  raw JSONL SHA256: f75629a5d8511fb3ed995ba63f80923ce3c05671ad5a224ca9158e77499b8e65
+
+Processed shard
+  path: data/interim/gate1_baseline.h5
+  episodes: 2
+  samples: 690
+  outcomes: GOAL_REACHED=1, COLLISION=1
+  SHA256: 984108cec976b5ea4f223de0436ac823cd19830456be7bdd7349121573d55c25
+
+Acceptance checks
+  Arena parser and model loading: PASS, 73 files (72 catalog + static/single acceptance)
+  JSONL observable/privileged separation: PASS
+  HDF5 schema validation: PASS
+  pre-cleanup runtime crashes: 0
+  pre-cleanup entity pose-update failures: 0
+  controlled cleanup markers: present
+
+Limitations
+  The pinned Humble source references libHuNavSystemPluginIGN.so, but neither that
+  plugin nor its arena_people_msgs dependency is installed by the upstream profile.
+  These runs therefore use the documented deterministic kinematic proxy and are not
+  HuNav social-force results. This fallback must remain explicit in all experiments.

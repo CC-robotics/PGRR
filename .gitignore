@@ -10,8 +10,11 @@ build/
 install/
 log/
 *.egg-info/
-outputs/logs/*.log
+outputs/logs/*
 data/raw/*.h5
+data/raw/*.jsonl
+data/raw/*.metadata.json
+data/raw/*.outcome.json
 data/interim/*.h5
 data/processed/*.h5
 checkpoints/**/*.pt

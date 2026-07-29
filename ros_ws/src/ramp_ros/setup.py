@@ -16,5 +16,10 @@ setup(
     maintainer_email="ramp-local@example.com",
     description="ROS2 adapters and nodes for failure-triggered recovery",
     license="MIT",
-    entry_points={"console_scripts": []},
+    entry_points={
+        "console_scripts": [
+            "episode_logger = ramp_ros.nodes.episode_logger_node:main",
+            "scenario_actor_controller = ramp_ros.nodes.scenario_actor_controller_node:main",
+        ]
+    },
 )

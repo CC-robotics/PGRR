@@ -4,3 +4,5 @@
 - 2026-07-29: Created and locked `ramp-offline`; verified CUDA access and repaired inherited ROS pytest contamination. Offline quality checks pass.
 - 2026-07-29: Accepted Gate 0 using the pinned Arena Humble Docker fallback. Gazebo spawned Jackal; clock, TF, LiDAR, odometry, and NavigateToPose were live; goal submission and controlled teardown passed.
 - 2026-07-29: Implemented the first modular core and ROS architecture. Eighteen offline tests, strict mypy, three-package colcon build, and colcon test-result pass.
+- 2026-07-29: DWB reached a static PointGoal. Generated and Arena-validated 72 stress scenarios with disjoint splits and previews.
+- 2026-07-29: Added versioned JSONL/HDF5 episode logging. A single-agent run reached its goal; a two-agent crossing-flow run produced a real collision at 0.6852 m center distance. Gate 1 now proceeds to 10-seed failure mining.
