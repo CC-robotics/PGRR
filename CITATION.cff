@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+title: Planning-Guided Failure-Triggered Recovery for Dynamic Social Navigation
+message: Please cite the associated paper when available.
+type: software
+version: 0.0.1
+date-released: 2026-07-29
+authors:
+  - name: Anonymous
+license: BSD-3-Clause

@@ -1,0 +1,17 @@
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+exclude = ["ros_ws/build", "ros_ws/install", "ros_ws/log", "third_party"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+packages = ["ramp_core", "ramp_ml"]
+mypy_path = ["packages/ramp_core", "packages/ramp_ml"]

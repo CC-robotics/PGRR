@@ -1,0 +1,4 @@
+profile: pending_discovery
+ros_distro: humble
+workspace: ${ARENA_WS}
+preferred_simulator: flatland
