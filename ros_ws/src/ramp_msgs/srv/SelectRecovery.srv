@@ -1,0 +1,5 @@
+int16[] valid_action_ids
+---
+bool accepted
+ramp_msgs/RecoveryDecision decision
+string error

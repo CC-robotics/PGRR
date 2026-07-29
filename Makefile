@@ -33,6 +33,8 @@ build: | $(LOG_DIR) ## Build Python and ROS2 packages.
 
 test: | $(LOG_DIR) ## Run offline lint, type, and unit tests.
 	@$(OFFLINE_RUN) ruff check . 2>&1 | tee "$(LOG_DIR)/ruff.log"
+	@$(OFFLINE_RUN) ruff format --check . 2>&1 | tee "$(LOG_DIR)/ruff-format.log"
+	@$(OFFLINE_RUN) mypy packages/ramp_core packages/ramp_ml 2>&1 | tee "$(LOG_DIR)/mypy.log"
 	@$(OFFLINE_RUN) pytest -q 2>&1 | tee "$(LOG_DIR)/pytest.log"
 
 smoke: | $(LOG_DIR) ## Run the Arena headless smoke test.

@@ -38,7 +38,7 @@ The first complete launch crashed `map_server` while creating its lifecycle bond
 
 ## KI-010: Upstream rosdep metadata has unresolved optional keys
 
-The legacy source tree reports unresolved keys for `${PROJECT_NAME}_msgs`, `ament_python`, and `hunav_rviz2_panel`. The required packages for the selected Gazebo/Jackal/DWB profile build and run, and `rosdep -r` continues past these optional metadata errors. Future project overlay packages must not copy these malformed declarations.
+The legacy source tree reports unresolved keys for `${PROJECT_NAME}_msgs` and `hunav_rviz2_panel`; the Humble rosdep database also lacks a rule for the standard `ament_python` build type. The required packages for the selected Gazebo/Jackal/DWB profile build and run. The project overlay explicitly skips only the installed `ament_python` build tool; future packages must not copy the malformed upstream placeholder key.
 
 ## KI-011: Smoke goal acceptance is not navigation success
 

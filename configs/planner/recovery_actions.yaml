@@ -1,0 +1,10 @@
+action_count: 25
+subgoals:
+  radii_m: [0.6, 1.0, 1.4]
+  angles_deg: [-90, -60, -30, 0, 30, 60, 90]
+  id_order: radius_major_angle_minor
+special_actions:
+  WAIT: 21
+  BACKUP: 22
+  REPLAN: 23
+  CONTINUE: 24

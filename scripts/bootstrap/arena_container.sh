@@ -32,5 +32,6 @@ docker run --rm --runtime runc --network host --ipc host \
          runtime_value="$(printf "%s" "${runtime_value}" | awk -v RS=: -v ORS=: '\''!/^\/opt\/arena_ws\/install\/(bond|bondcpp|bondpy|test_bond)(\/|$)/'\'' | sed '\''s/:$//'\'')"
          export "${runtime_var}=${runtime_value}"
      done
+     export PYTHONPATH="/workspace/packages/ramp_core:/workspace/packages/ramp_ml${PYTHONPATH:+:${PYTHONPATH}}"
      exec "$@"' \
     bash "$@"

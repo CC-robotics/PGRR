@@ -1,0 +1,5 @@
+geometry_msgs/PoseStamped original_goal
+bool clear_episode_counters
+---
+bool success
+string message

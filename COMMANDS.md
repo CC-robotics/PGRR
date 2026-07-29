@@ -29,3 +29,12 @@ scripts/bootstrap/arena_container.sh bash -lc \
 ```
 
 The complete simulator and goal logs are written to `outputs/logs/arena_runtime.log` and `outputs/logs/arena_runtime_goal.log`; generated logs are intentionally not versioned.
+
+Validated project architecture and ROS interfaces:
+
+```bash
+make test
+make build
+scripts/bootstrap/arena_container.sh bash -lc \
+  'cd /workspace/ros_ws && colcon test && colcon test-result --verbose'
+```

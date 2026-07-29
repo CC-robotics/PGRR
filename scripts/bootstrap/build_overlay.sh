@@ -9,9 +9,9 @@ fi
 profile="$(awk '/^profile:/ {print $2}' "${PROJECT_ROOT}/configs/platform/arena_profile.yaml" 2>/dev/null || true)"
 if [[ "${profile}" == "arena_humble_docker" ]]; then
     exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
-        bash -lc 'cd /workspace/ros_ws && rosdep install --from-paths src --ignore-src -r -y --rosdistro humble && colcon build --symlink-install'
+        bash -lc 'cd /workspace/ros_ws && rosdep install --from-paths src --ignore-src -r -y --rosdistro humble --skip-keys ament_python && colcon build --symlink-install'
 fi
 source "${PROJECT_ROOT}/scripts/bootstrap/source_runtime.sh"
 cd "${PROJECT_ROOT}/ros_ws"
-rosdep install --from-paths src --ignore-src -r -y --rosdistro humble
+rosdep install --from-paths src --ignore-src -r -y --rosdistro humble --skip-keys ament_python
 colcon build --symlink-install

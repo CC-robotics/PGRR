@@ -27,3 +27,11 @@ Arena's Gazebo LiDAR sensor still initializes an OGRE rendering context when `he
 ## D-007: Defer modern training-framework integration
 
 The pinned Humble fallback predates the Arena 5 `arena feature training install` workflow and exposes its legacy optional training feature instead. Recovery learning will first use the repository's pure Python offline pipeline. If online PPO is retained at Gate 6, it will use the user-approved standalone Gymnasium/ROS2 service path unless a compatible Arena-Training integration is verified; no modern Arena-Training installation is claimed at Gate 0.
+
+## D-008: Nav2/DWB is the primary planner adapter
+
+Runtime introspection found Nav2 `NavigateToPose` and DWB in the accepted Arena profile. Recovery logic depends only on the backend-neutral planner protocol; `Nav2Adapter` owns the action-specific mapping and original-goal restoration. MBF is retained only as a capability probe because its messages are not installed in this profile.
+
+## D-009: Repository source paths bridge pure Python into ROS
+
+`ramp_core` and `ramp_ml` remain normal Python packages rather than ROS packages. The runtime wrappers add their configurable repository source directories to `PYTHONPATH` after sourcing the project overlay, while Conda remains inactive. This lets ROS nodes reuse the tested core without installing apt ROS libraries into Conda or duplicating algorithms.

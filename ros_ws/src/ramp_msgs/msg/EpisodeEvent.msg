@@ -1,0 +1,12 @@
+uint8 GOAL_REACHED=0
+uint8 COLLISION=1
+uint8 TIMEOUT=2
+uint8 PLANNER_FAILURE=3
+uint8 SIMULATOR_FAILURE=4
+uint8 INVALID_RESET=5
+builtin_interfaces/Time stamp
+string episode_id
+string scenario_id
+int64 seed
+uint8 outcome
+string detail

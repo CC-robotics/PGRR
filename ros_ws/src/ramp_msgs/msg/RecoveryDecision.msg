@@ -1,0 +1,7 @@
+builtin_interfaces/Time stamp
+int16 action_id
+string action_name
+geometry_msgs/PoseStamped temporary_goal
+float32 confidence
+bool has_temporary_goal
+string reason

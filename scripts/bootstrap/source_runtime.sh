@@ -38,5 +38,6 @@ fi
 if [[ -r "${RAMP_ROOT}/ros_ws/install/setup.bash" ]]; then
     source "${RAMP_ROOT}/ros_ws/install/setup.bash"
 fi
+export PYTHONPATH="${RAMP_ROOT}/packages/ramp_core:${RAMP_ROOT}/packages/ramp_ml${PYTHONPATH:+:${PYTHONPATH}}"
 export WANDB_MODE=offline
 printf 'RAMP runtime sourced: ROS_DISTRO=%s ARENA_WS=%s\n' "${ROS_DISTRO}" "${ARENA_WS}"
