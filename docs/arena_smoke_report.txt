@@ -1,0 +1,41 @@
+RAMP Arena Gate 0 smoke report
+Generated: 2026-07-29 (Asia/Shanghai project date)
+
+Profile: arena_humble_docker
+Image: ramp-arena:humble
+Image ID: sha256:023efa496a6bb17aecb1f5f70025cb2f6bc6fadb17c19ab24584b03fec661e6d
+Simulator: Gazebo 8.14.0 via Xvfb and software OpenGL
+Robot: Jackal
+Local planner: DWB
+
+Command:
+  env -u CONDA_PREFIX -u VIRTUAL_ENV make smoke
+
+Observed endpoints:
+  clock=/clock
+  tf=/tf
+  lidar=/task_generator_node/jackal/lidar
+  odom=/task_generator_node/jackal/odom
+  action=/task_generator_node/jackal/navigate_to_pose
+
+Assertions:
+  Clock sample received: PASS
+  TF sample received: PASS
+  LaserScan sample received: PASS
+  Odometry sample received: PASS
+  NavigateToPose goal accepted: PASS
+  Runtime process crashes before cleanup: 0
+  Controlled cleanup start markers: 1
+  Controlled cleanup completion markers: 1
+  HuNav missing-mesh errors: 0
+  HuNav missing-plugin warnings: 0
+
+The smoke goal later returned ABORTED. Gate 0 tests goal transport and acceptance;
+it does not count this episode as GOAL_REACHED. Static navigation success remains a
+Gate 1 acceptance requirement.
+
+Ignored raw evidence at the time of this report:
+  outputs/logs/arena_runtime.log
+  SHA256 d847d8edd0aab4fe9c05f1f10a414d3dd29f0aacab8132285570136674e2ca38
+  outputs/logs/arena_runtime_goal.log
+  SHA256 d01a2e4d7ac42520a5a08a442e494ba9a5cf5a93257628378486455bd95ab94f

@@ -1,0 +1,2 @@
+third_party/arena_humble_installer.sh whitespace=-trailing-space
+third_party/*.patch whitespace=-trailing-space

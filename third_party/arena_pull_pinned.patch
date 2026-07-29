@@ -1,0 +1,28 @@
+--- pull
++++ pull
+@@ -1,7 +1,9 @@
+ #! /usr/bin/bash
+ 
+ # update vcstool
+-python -m pip install git+https://github.com/voshch/vcstool.git || echo 'failed vcstool upgrade, ignoring'
++if [ ! -f src/arena/.ramp_import_complete ]; then
++    python -m pip install git+https://github.com/voshch/vcstool.git || echo 'failed vcstool upgrade, ignoring'
++fi
+ 
+ export ROSDEP_EXCLUDES='libignition-gazebo6-dev gazebo_dev gazebo_ros gazebo_plugins gazebo_ros2_control'
+ 
+@@ -12,6 +12,14 @@
+ RESET='\033[0m'
+ 
+ FATAL=0
++if [ -f src/arena/.ramp_import_complete ]; then
++    echo 'Pinned RAMP dependency profile: skipping network repository updates'
++    rosdep install --from-paths src --ignore-src -r -y \
++        --rosdistro "${ARENA_ROS_DISTRO:-humble}" \
++        --skip-keys "${ROSDEP_EXCLUDES}" || echo 'rosdep failed to install all dependencies'
++    . src/arena/arena-rosnav/tools/poetry_install
++    exit 0
++fi
+ 
+ run(){
+     tst='$(('${2:-'$?'}'))'

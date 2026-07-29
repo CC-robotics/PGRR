@@ -2,10 +2,10 @@
 set -euo pipefail
 
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-source "${PROJECT_ROOT}/scripts/bootstrap/source_runtime.sh"
-if ! ros2 pkg prefix arena_bringup >/dev/null 2>&1; then
-    printf 'ERROR: arena_bringup is not available; Arena Gate 0 is incomplete\n' >&2
+profile="$(awk '/^profile:/ {print $2}' "${PROJECT_ROOT}/configs/platform/arena_profile.yaml" 2>/dev/null || true)"
+if [[ "${profile}" != "arena_humble_docker" ]]; then
+    printf 'ERROR: unsupported or incomplete Arena profile: %s\n' "${profile:-unset}" >&2
     exit 1
 fi
-printf 'Arena package discovered. Full topic/action smoke assertions are added after profile introspection.\n'
-exit 1
+exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
+    bash /workspace/scripts/arena/smoke_runtime_inner.sh

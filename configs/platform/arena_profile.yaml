@@ -1,4 +1,14 @@
-profile: pending_discovery
+profile: arena_humble_docker
 ros_distro: humble
-workspace: ${ARENA_WS}
-preferred_simulator: flatland
+workspace_tooling: legacy_arena_bash
+preferred_simulator: gazebo
+flatland_available: false
+container_runtime: runc
+display_backend: xvfb_software_gl
+robot: jackal
+local_planner: dwb
+asset_profile: pinned_minimal_headless
+image: ramp-arena:humble
+image_id: sha256:023efa496a6bb17aecb1f5f70025cb2f6bc6fadb17c19ab24584b03fec661e6d
+arena_commit: c2ff4a87e8686013b53f1e9cd8b01b3ab04fbce4
+installer_sha256: 98452d031e7b12f9fecb552aee6465a1a0095b6c5ae6c4f0f6040ac380cf1a72

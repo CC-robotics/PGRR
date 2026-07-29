@@ -29,6 +29,6 @@ The working paper title is **Planning-Guided Failure-Triggered Recovery via Imit
 
 ## Current milestone and acceptance
 
-Current milestone: **Gate 0 — environment**. Acceptance requires an auditable preflight report, separate offline environment, locked dependencies, a discovered or pinned Arena profile, a built ROS overlay, and a headless smoke test proving `/clock`, TF, LiDAR, odometry, goal submission, and clean shutdown.
+Gate 0 is accepted with the pinned `arena_humble_docker` Gazebo profile. Current milestone: **Gate 1 — modular architecture and classical baseline**. Acceptance requires implemented core/ML/ROS interfaces, a built project overlay, successful static navigation, logged dynamic episodes, deterministic scenario splits and previews, and three reproducible non-simulator failure families.
 
 If PPO, the learned detector, a second planner, or Gazebo cannot be completed honestly, follow the documented imitation-learning minimum path; do not block the core system or claim those modules succeeded.
