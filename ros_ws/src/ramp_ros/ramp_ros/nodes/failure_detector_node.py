@@ -13,7 +13,7 @@ from nav_msgs.msg import Odometry
 from ramp_core.failure.labels import FailureType
 from ramp_core.failure.rules import RuleFailureConfig, RuleFailureDetector, TimedNavigationSample
 from ramp_core.types import PlannerStatus, select_planner_status
-from ramp_msgs.msg import FailureStatus
+from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
@@ -39,6 +39,7 @@ class FailureDetectorNode(Node):
         self.declare_parameter("base_cmd_vel_topic", "cmd_vel")
         self.declare_parameter("nav_status_topic", "navigate_to_pose/_action/status")
         self.declare_parameter("failure_status_topic", "failure_status")
+        self.declare_parameter("recovery_decision_topic", "recovery_decision")
         self.declare_parameter("goal_x", 0.0)
         self.declare_parameter("goal_y", 0.0)
         self.declare_parameter("goal_tolerance_m", 0.25)
@@ -74,6 +75,7 @@ class FailureDetectorNode(Node):
         self._base_command = (0.0, 0.0)
         self._planner_status = PlannerStatus.UNKNOWN
         self._last_timestamp: float | None = None
+        self._motion_rules_enabled = True
         self._publisher = self.create_publisher(
             FailureStatus, str(self.get_parameter("failure_status_topic").value), 10
         )
@@ -101,6 +103,12 @@ class FailureDetectorNode(Node):
                 str(self.get_parameter("odom_topic").value),
                 self._on_odom,
                 qos_profile_sensor_data,
+            ),
+            self.create_subscription(
+                RecoveryDecision,
+                str(self.get_parameter("recovery_decision_topic").value),
+                self._on_recovery_decision,
+                10,
             ),
         ]
 
@@ -132,6 +140,12 @@ class FailureDetectorNode(Node):
             self._planner_status = select_planner_status(
                 [_planner_status(int(item.status)) for item in message.status_list]
             )
+
+    def _on_recovery_decision(self, message: RecoveryDecision) -> None:
+        self._motion_rules_enabled = int(message.recovery_state) in {
+            RecoveryDecision.NORMAL,
+            RecoveryDecision.PENDING_RECOVERY,
+        }
 
     def _on_odom(self, message: Odometry) -> None:
         if (
@@ -168,7 +182,8 @@ class FailureDetectorNode(Node):
                 collision_lidar_distance=self._collision_scan_minimum,
                 planner_status=self._planner_status,
                 goal_reached=goal_distance <= self._goal_tolerance,
-            )
+            ),
+            motion_rules_enabled=self._motion_rules_enabled,
         )
         probabilities = prediction.as_array()
         output = FailureStatus()

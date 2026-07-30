@@ -137,30 +137,55 @@ class RuleFailureDetector:
             self.config.deadlock_window_s,
         )
         self._history: deque[TimedNavigationSample] = deque()
+        self._collision_history: deque[TimedNavigationSample] = deque()
         self._horizon_s = horizon
         self._last_collision_risk_timestamp: float | None = None
 
     def reset(self) -> None:
         self._history.clear()
+        self._collision_history.clear()
         self._last_collision_risk_timestamp = None
 
-    def _window(self, duration: float) -> list[TimedNavigationSample]:
-        if not self._history:
+    @staticmethod
+    def _window_from(
+        history: deque[TimedNavigationSample], duration: float
+    ) -> list[TimedNavigationSample]:
+        if not history:
             return []
-        threshold = self._history[-1].timestamp - duration
-        return [sample for sample in self._history if sample.timestamp >= threshold]
+        threshold = history[-1].timestamp - duration
+        return [sample for sample in history if sample.timestamp >= threshold]
+
+    def _window(self, duration: float) -> list[TimedNavigationSample]:
+        return self._window_from(self._history, duration)
 
     @staticmethod
     def _covers(window: list[TimedNavigationSample], duration: float) -> bool:
         return len(window) >= 2 and window[-1].timestamp - window[0].timestamp >= duration * 0.95
 
-    def update(self, sample: TimedNavigationSample) -> FailurePrediction:
-        if self._history and sample.timestamp < self._history[-1].timestamp:
+    def update(
+        self,
+        sample: TimedNavigationSample,
+        *,
+        motion_rules_enabled: bool = True,
+    ) -> FailurePrediction:
+        if self._collision_history and sample.timestamp < self._collision_history[-1].timestamp:
             raise ValueError("sample timestamps must be monotonic")
-        self._history.append(sample)
+        self._collision_history.append(sample)
+        if motion_rules_enabled:
+            self._history.append(sample)
+        else:
+            # Intentional recovery motion must not become evidence for a new
+            # freeze/deadlock episode when the original goal is rejoined.
+            self._history.clear()
         cutoff = sample.timestamp - self._horizon_s - 0.5
         while len(self._history) > 1 and self._history[1].timestamp < cutoff:
             self._history.popleft()
+        collision_cutoff = sample.timestamp - self.config.collision_trend_window_s - 0.5
+        while (
+            len(self._collision_history) > 1
+            and self._collision_history[1].timestamp < collision_cutoff
+        ):
+            self._collision_history.popleft()
 
         forward_clearance = (
             sample.forward_lidar_distance
@@ -195,7 +220,9 @@ class RuleFailureDetector:
             ttc = max(0.0, forward_clearance - self.config.safety_margin_m) / forward_speed
             if ttc <= self.config.ttc_threshold_s:
                 collision = max(collision, 1.0 - 0.5 * ttc / self.config.ttc_threshold_s)
-        collision_window = self._window(self.config.collision_trend_window_s)
+        collision_window = self._window_from(
+            self._collision_history, self.config.collision_trend_window_s
+        )
         if self._covers(collision_window, self.config.collision_trend_window_s):
             duration = collision_window[-1].timestamp - collision_window[0].timestamp
             first_collision_clearance = (

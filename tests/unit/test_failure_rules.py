@@ -226,6 +226,35 @@ def test_collision_latch_reset_clears_previous_warning() -> None:
     assert prediction.collision_risk == 0.0
 
 
+def test_recovery_motion_is_excluded_from_freeze_history() -> None:
+    detector = RuleFailureDetector()
+    for index in range(7):
+        prediction = detector.update(_sample(index * 0.5))
+    assert prediction.freeze == 1.0
+
+    for index in range(7, 11):
+        prediction = detector.update(
+            _sample(index * 0.5),
+            motion_rules_enabled=False,
+        )
+        assert prediction.freeze == 0.0
+
+    for index in range(11, 17):
+        prediction = detector.update(_sample(index * 0.5))
+        assert prediction.freeze == 0.0
+    prediction = detector.update(_sample(8.5))
+    assert prediction.freeze == 1.0
+
+
+def test_recovery_motion_suppression_preserves_collision_detection() -> None:
+    prediction = RuleFailureDetector().update(
+        _sample(0.0, lidar=0.4, forward_lidar=0.4, collision_lidar=0.4),
+        motion_rules_enabled=False,
+    )
+    assert prediction.collision_risk == 1.0
+    assert prediction.freeze == 0.0
+
+
 def test_collision_release_distance_must_exceed_wide_trigger_distance() -> None:
     with pytest.raises(ValueError, match="release_distance"):
         RuleFailureConfig(

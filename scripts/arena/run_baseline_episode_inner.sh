@@ -230,6 +230,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" ]]; then
         -p ttc_threshold_s:=3.0 \
         -p nav_status_topic:="${nav_action}/_action/status" \
         -p failure_status_topic:=/ramp/failure_status \
+        -p recovery_decision_topic:=/ramp/recovery_decision \
         >>"${RUNTIME_LOG}" 2>&1 &
     detector_pid=$!
     "${ramp_ros_prefix}/lib/ramp_ros/recovery_manager" --ros-args \
@@ -272,6 +273,7 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p global_path_topic:="${path_topic}" \
     -p nav_status_topic:="${nav_action}/_action/status" \
     -p collision_topic:=/__ramp_unused/collision \
+    -p lidar_collision_distance_m:=0.12 \
     -p failure_status_topic:=/ramp/failure_status \
     -p recovery_decision_topic:=/ramp/recovery_decision \
     >>"${RUNTIME_LOG}" 2>&1 &

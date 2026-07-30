@@ -79,6 +79,7 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("privileged_humans_topic", "/ramp/privileged/humans")
         self.declare_parameter("robot_radius_m", 0.36)
         self.declare_parameter("human_radius_m", 0.35)
+        self.declare_parameter("lidar_collision_distance_m", 0.12)
 
         episode_id = self._string_parameter("episode_id")
         scenario_id = self._string_parameter("scenario_id")
@@ -411,6 +412,13 @@ class EpisodeLoggerNode(Node):
                 "Nav2 aborted before the robot produced startup movement",
             )
         distance = float(np.linalg.norm(self._goal[:2] - robot_pose[:2]))
+        nearest_obstacle = float(np.min(self._lidar))
+        if nearest_obstacle <= float(self.get_parameter("lidar_collision_distance_m").value):
+            self._collision = True
+            self._set_outcome(
+                EpisodeOutcome.COLLISION,
+                "LiDAR obstacle return lies inside the Jackal footprint",
+            )
         nearest_human = math.inf
         if self._human_positions:
             nearest_human = min(
@@ -433,7 +441,7 @@ class EpisodeLoggerNode(Node):
             distance_to_goal=distance,
             global_path=self._path,
             lidar=self._lidar,
-            nearest_obstacle_distance=float(np.min(self._lidar)),
+            nearest_obstacle_distance=nearest_obstacle,
             planner_status=self._planner_status,
             failure_prediction=self._failure_prediction.copy(),
             failure_score=self._failure_score,

@@ -216,6 +216,7 @@ class RecoveryManagerNode(Node):
             "backup_speed_mps": 0.15,
             "backup_duration_s": 0.8,
             "wait_duration_s": 0.5,
+            "subgoal_settle_s": 1.0,
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
@@ -608,6 +609,7 @@ class RecoveryManagerNode(Node):
     def _control_step(self) -> None:
         command: Twist | None = None
         immediate_safety_stop = False
+        now_s = self.get_clock().now().nanoseconds * 1.0e-9
         if self._odom is not None and self._lidar_stack:
             velocity = max(0.0, float(self._odom.twist.twist.linear.x))
             stop = stopping_distance(
@@ -637,6 +639,14 @@ class RecoveryManagerNode(Node):
                 and self._active_action == WAIT_ACTION_ID
             )
         ):
+            command = Twist()
+        elif (
+            self._machine.state is RecoveryState.RECOVERY
+            and ACTIONS[self._active_action].kind is RecoveryActionKind.SUBGOAL
+            and now_s - self._action_started_s < self._float("subgoal_settle_s")
+        ):
+            # Goal submission and replanning are asynchronous. Prevent a stale
+            # original-goal command from leaking through during preemption.
             command = Twist()
         elif (
             self._machine.state is RecoveryState.RECOVERY

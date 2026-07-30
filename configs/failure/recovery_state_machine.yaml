@@ -13,6 +13,7 @@ maximum_rejoin_duration_s: 5.0
 maximum_rejoin_retries_per_sequence: 2
 maximum_consecutive_recoveries: 4
 wait_duration_s: 0.5
+subgoal_settle_s: 1.0
 backup_duration_s: 0.8
 backup_speed_mps: 0.15
 robot_clearance_m: 0.25
