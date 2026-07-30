@@ -76,6 +76,18 @@ def test_yielding_human_stops_before_waiting_robot() -> None:
     assert rollout.minimum_human_distance_m == pytest.approx(1.31)
 
 
+def test_repeated_wait_cost_forces_deadlock_escalation() -> None:
+    human = HumanState(position=(1.1, 0.0), velocity=(-0.6, 0.0), radius=0.35)
+    expert = PlanningRecoveryExpert(_grid())
+    initial = expert.label(_state(human), _mask(), repeated_waits=0)
+    escalated = expert.label(_state(human), _mask(), repeated_waits=2)
+    assert initial.action_id == WAIT_ACTION_ID
+    assert escalated.action_id != WAIT_ACTION_ID
+    assert escalated.action_costs[WAIT_ACTION_ID] == pytest.approx(
+        initial.action_costs[WAIT_ACTION_ID] + 2.0
+    )
+
+
 def test_human_approaching_from_left_does_not_choose_left_subgoal() -> None:
     human = HumanState(position=(0.6, 0.6), velocity=(0.0, -0.35), radius=0.35)
     label = PlanningRecoveryExpert(_grid()).label(_state(human), _mask())

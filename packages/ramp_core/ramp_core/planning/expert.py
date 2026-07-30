@@ -55,6 +55,7 @@ class PlanningRecoveryExpert:
         action_id: int,
         rollout: RolloutResult,
         previous_side: int,
+        repeated_waits: int,
     ) -> float:
         action = ACTIONS[action_id]
         side = 0
@@ -71,6 +72,7 @@ class PlanningRecoveryExpert:
             smooth=rollout.angular_smoothness,
             time=self.rollout_config.horizon_s,
             switch=switch,
+            repeat_wait=float(repeated_waits if action.kind is RecoveryActionKind.WAIT else 0),
         )
         return terms.weighted(self.cost_weights)
 
@@ -80,7 +82,10 @@ class PlanningRecoveryExpert:
         valid_mask: npt.NDArray[np.bool_],
         *,
         previous_side: int = 0,
+        repeated_waits: int = 0,
     ) -> ExpertLabel:
+        if repeated_waits < 0:
+            raise ValueError("repeated_waits must be non-negative")
         mask = np.asarray(valid_mask, dtype=np.bool_)
         if mask.shape != (ACTION_COUNT,) or not bool(mask.any()):
             raise ValueError("valid_mask must contain at least one of the 25 actions")
@@ -101,6 +106,7 @@ class PlanningRecoveryExpert:
                 action.action_id,
                 rollout,
                 previous_side,
+                repeated_waits,
             )
         finite = np.flatnonzero(np.isfinite(costs))
         if finite.size == 0:

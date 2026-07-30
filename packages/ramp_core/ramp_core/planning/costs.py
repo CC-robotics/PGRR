@@ -15,6 +15,7 @@ class ExpertCostWeights:
     smooth: float = 0.2
     time: float = 0.3
     switch: float = 0.5
+    repeat_wait: float = 1.0
     minimum_progress_m: float = 0.20
     personal_space_m: float = 1.0
 
@@ -29,6 +30,7 @@ class ExpertCostWeights:
                 self.smooth,
                 self.time,
                 self.switch,
+                self.repeat_wait,
                 self.minimum_progress_m,
                 self.personal_space_m,
             )
@@ -47,6 +49,7 @@ class RolloutCostTerms:
     smooth: float
     time: float
     switch: float
+    repeat_wait: float
 
     def weighted(self, weights: ExpertCostWeights) -> float:
         return (
@@ -58,4 +61,5 @@ class RolloutCostTerms:
             + weights.smooth * self.smooth
             + weights.time * self.time
             + weights.switch * self.switch
+            + weights.repeat_wait * self.repeat_wait
         )

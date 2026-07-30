@@ -147,6 +147,7 @@ class RecoveryManagerNode(Node):
         self._previous_human_timestamp_s: float | None = None
         self._received_privileged_humans = False
         self._expert_previous_side = 0
+        self._expert_repeated_waits = 0
         self._failure = FailurePrediction(0.0, 0.0, 0.0, 0.0)
         self._planner_status = PlannerStatus.UNKNOWN
         self._armed = False
@@ -562,11 +563,16 @@ class RecoveryManagerNode(Node):
             privileged,
             mask,
             previous_side=self._expert_previous_side,
+            repeated_waits=self._expert_repeated_waits,
         )
         action = ACTIONS[label.action_id]
         if action.kind is RecoveryActionKind.SUBGOAL:
             assert action.angle_degrees is not None
             self._expert_previous_side = (action.angle_degrees > 0) - (action.angle_degrees < 0)
+        if label.action_id == WAIT_ACTION_ID:
+            self._expert_repeated_waits = min(3, self._expert_repeated_waits + 1)
+        else:
+            self._expert_repeated_waits = 0
         confidence = min(1.0, label.margin / (1.0 + abs(label.best_cost)))
         return CoreRecoveryDecision(
             label.action_id,
@@ -741,6 +747,7 @@ class RecoveryManagerNode(Node):
         ):
             self._policy.reset()
             self._expert_previous_side = 0
+            self._expert_repeated_waits = 0
             self._publish_decision(CONTINUE_ACTION_ID, self._failure.score, transition.reason)
         elif transition.changed:
             self._publish_decision(CONTINUE_ACTION_ID, self._failure.score, transition.reason)
