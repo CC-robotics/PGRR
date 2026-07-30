@@ -63,3 +63,7 @@ The corrected Gate 1 `base` profile uses Arena's `navigate_w_replanning_time` tr
 ## D-016: Known-pose Gazebo uses one ground-truth localization source
 
 The selected experiment is a known-map, known-pose simulator profile. Arena Humble's simultaneous AMCL and static map-to-odom publishers are therefore reduced to the static simulator transform using a versioned, runtime-validated patch. This is not privileged policy input: the learned observation remains LiDAR, goal/path, velocity, planner state, and temporal history. Ground-truth actor state remains confined to the expert and evaluation fields.
+
+## D-017: Recovery must be a bounded sequence-level option
+
+The online Oracle demonstrates that independently safe 0.5 s decisions do not necessarily compose into a successful passage: restoring the original goal after every WAIT, BACKUP, or short lateral action repeatedly drives the robot back into the same reciprocal deadlock. Further threshold tuning on one train seed is frozen. The next implementation will retain the fixed 25-action interface for learning but execute a selected recovery as a bounded multi-phase option with explicit escape, clearance, and rejoin conditions. Safety monitoring remains receding-horizon and may interrupt any phase.

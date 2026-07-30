@@ -131,6 +131,21 @@ conda run -n ramp-offline python scripts/data/label_expert.py \
   --summary data/manifests/expert_strict11_smoke_summary.json
 ```
 
+Online Oracle diagnostics on corrected known-pose train scenarios:
+
+```bash
+conda run -n ramp-offline python scripts/evaluate/mine_failures.py \
+  --manifest scenarios/manifests/failure_mining.yaml \
+  --output outputs/pilot/corrected_head_on_oracle9_seed2.csv \
+  --family head_on_corridor --seed-min 2 --seed-max 2 \
+  --source-policy oracle --episode-suffix oracle9
+RAMP_EPISODE_ID=head_on_corridor_low_train_s01000_oracle5_smoke_dwb \
+  RAMP_SOURCE_POLICY=oracle RAMP_EPISODE_TIMEOUT_S=120 \
+  ROS_DOMAIN_ID=110 GZ_PARTITION=ramp_oracle_low5 IGN_PARTITION=ramp_oracle_low5 \
+  scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/head_on_corridor_low_train_s01000.json
+```
+
 Results produced before `task_generator_known_pose.patch` are superseded for dynamic method claims.
 
 Standard-recovery crossing run and strict-timestamp smoke:

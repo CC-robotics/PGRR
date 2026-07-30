@@ -100,8 +100,10 @@ scripts/arena/smoke_goal_mux.sh
 - Corrected crossing startup exclusions: 8 `INVALID_RESET` attempts are reported separately; all three methods ultimately have 20 valid algorithm outcomes.
 - Planner-abort regression: PASS. Replacement active goals suppress stale abort records; an unopposed abort must persist for 5 s before B0/B1 terminate. B2 remains recoverable and reports `PLANNER_FAILURE` only when its recovery manager reaches `FAILED`.
 - Known-pose TF regression: PASS. The 20 s seed-2 smoke made 3.384 m progress; 143 path samples had 0.047 m median path-start error and no AMCL/costmap-bound conflict.
-- Expert synthetic validation: PASS for implementation smoke only. Twenty scenes, zero illegal selected actions, zero selected-rollout collisions, and 16 predicted-success labels. This is not an Arena Oracle comparison and does not yet pass Gate 3.
+- Expert synthetic validation: PASS for implementation smoke only. Twenty scenes, zero illegal selected actions, zero selected-rollout collisions, and 20 predicted-success labels under the selected yielding-human model. This is not an Arena Oracle comparison and does not pass Gate 3.
 - Arena-to-expert labeling smoke: PASS as a data-pipeline check. Fifty recovery-relevant states from the corrected known-pose head-on seed-2 episode produced 50 finite legal labels and zero illegal selections. The expert selected lateral subgoals in 38/50 states, WAIT in 2/50, BACKUP in 2/50, and other special actions in 8/50. None met the current three-second rejoin-based `predicted_success` criterion, so this artifact verifies labeling and shows that prolonged WAIT is not the expert's preferred response; it does not establish Oracle recovery success.
+- Online privileged Oracle deployment: PASS as an execution-path validation, FAIL for Gate 3 outcome. The final high-density train seed-2 run completed 120 s without collision, made 4.174 m net progress, maintained 0.736 m minimum human-center distance, and ended `TIMEOUT`. The final low-density train scenario remained collision-free with 0.789 m minimum human distance and 0.367 m minimum LiDAR clearance, but exhausted the recovery budget after 79.054 s and 5.140 m progress (`PLANNER_FAILURE`).
+- Safety regression suite: PASS. The online iterations exposed and fixed task-path corruption, stale CONTINUE goals, non-receding expert actions, repeated-WAIT cost omission, unsafe pending-state command leakage, turning-sweep detector coverage, footprint braking distance, unsafe emergency backup, and emergency-release command pulses. The full offline suite now passes 131 tests and the three-package ROS overlay builds.
 
 ### Failures
 
@@ -116,7 +118,8 @@ scripts/arena/smoke_goal_mux.sh
 - The first strict head-on batch exposed that terminal NavigateToPose aborts were being recorded as timeouts after arbitrary post-abort motion. Those two partial episodes and logs are quarantined and excluded; no affected row is used in the corrected pilot.
 - All B0/B1/B2 dynamic results generated before the known-pose localization patch are superseded for method claims and require paired replay.
 - The final bounded heuristic seed-2 replay is safe but unsuccessful: `TIMEOUT`, 4.836 m progress, 0.739 m minimum human distance, with WAIT used for 777/1202 samples. Gate 2 remains failed.
+- The final online Oracle runs are also unsuccessful. High-density seed 2 is safe but times out; the low-density train scenario is safe but exhausts the configured recovery attempts. Diagnostic Oracle iterations 1--8 are retained as development evidence but are excluded from method comparisons because each directly motivated a code fix.
 
 ### Next
 
-Run the planning expert online as an explicitly privileged Oracle on the corrected known-pose profile. Keep Gate 2 marked failed and do not begin neural-policy training until paired baselines and expert rollouts are validated.
+Replace the single-step recovery/rejoin loop with a bounded sequence-level recovery option that can commit to retreat, lateral displacement, and rejoin phases while replanning safely within each phase. Keep Gates 2 and 3 failed and do not begin neural-policy training until the Oracle succeeds on recoverable train scenarios.

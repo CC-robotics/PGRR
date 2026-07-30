@@ -1,0 +1,2 @@
+episode_id,scenario_id,family,density,seed,planner_id,source_policy,outcome,sample_count,sim_duration_s,start_distance_m,end_distance_m,progress_m,min_human_distance_m,min_lidar_m,raw_sha256
+head_on_corridor_high_mining_seed02_oracle9_dwb,head_on_corridor_high_mining_seed02,head_on_corridor,high,2,dwb,oracle,TIMEOUT,1202,119.91329999999999,21.0,16.82617950439453,4.173820495605469,0.7358304205743388,0.2782871127128601,5692aa1bba0fea88b6779d9232f14d428bd0b0afbc83eafd05ce4a279e5a6453
