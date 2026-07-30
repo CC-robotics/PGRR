@@ -38,6 +38,8 @@ def _step(timestamp: float) -> NavigationStep:
         lidar=np.full(180, 5.0),
         nearest_obstacle_distance=5.0,
         planner_status=1,
+        failure_prediction=np.asarray([0.1, 0.0, 0.0, 0.0]),
+        failure_score=0.1,
         recovery_state=0,
         recovery_action=24,
         collision=False,
@@ -57,6 +59,7 @@ def test_hdf5_round_trip_and_privileged_separation(tmp_path: Path) -> None:
     with h5py.File(destination, "r") as handle:
         episode = handle["episodes"]["episode-001"]
         assert "nearest_human_distance" not in episode["observations"]
+        assert episode["observations"]["failure_prediction"].shape == (2, 4)
         assert b"nearest_human_distance" in episode["privileged"]["json"][0]
 
 

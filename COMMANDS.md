@@ -64,10 +64,12 @@ Validated rule detection, dense labels, and the ROS wrapper:
 
 ```bash
 conda run -n ramp-offline python scripts/data/label_failures.py \
-  --manifest outputs/pilot/baseline_failure_mining.csv \
+  --results outputs/pilot/baseline_failure_mining.csv \
   --output data/interim/gate1_failure_labels.h5 \
   --summary data/manifests/failure_label_summary.json
 make test
 make build
 scripts/arena/smoke_failure_detector.sh
+scripts/arena/smoke_recovery_manager.sh
+scripts/arena/smoke_goal_mux.sh
 ```

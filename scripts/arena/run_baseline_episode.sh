@@ -20,12 +20,15 @@ if [[ "${relative}" == "${SCENARIO}" ]]; then
     exit 2
 fi
 
+export RAMP_ENABLE_CMD_MUX=1
+export RAMP_DISABLE_AUTO_RESET=1
 exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     env \
     RAMP_SCENARIO="/workspace/${relative}" \
     RAMP_EPISODE_ID="${RAMP_EPISODE_ID:-}" \
     RAMP_EPISODE_TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}" \
     RAMP_ACTOR_UPDATE_HZ="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
+    RAMP_SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}" \
     RAMP_HOST_UID="$(id -u)" \
     RAMP_HOST_GID="$(id -g)" \
     ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-1}" \

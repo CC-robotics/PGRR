@@ -1,0 +1,11 @@
+--- node.py
++++ node.py
+@@ -184,7 +184,7 @@
+     def _check_task_status(self, *args, **kwargs):
+         if not self._initialized:
+             return self._initialize()
+-        if self._task.is_done:
++        if self._task.is_done and self._auto_reset:
+             self.reset_task()
+ 
+     def _send_end_message_on_end(self):

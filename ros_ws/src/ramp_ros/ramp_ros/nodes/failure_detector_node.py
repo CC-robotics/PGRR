@@ -12,7 +12,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from ramp_core.failure.labels import FailureType
 from ramp_core.failure.rules import RuleFailureConfig, RuleFailureDetector, TimedNavigationSample
-from ramp_core.types import PlannerStatus
+from ramp_core.types import PlannerStatus, select_planner_status
 from ramp_msgs.msg import FailureStatus
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
@@ -46,6 +46,8 @@ class FailureDetectorNode(Node):
         self.declare_parameter("robot_start_y", 0.0)
         self.declare_parameter("robot_start_yaw", 0.0)
         self.declare_parameter("trigger_threshold", 0.65)
+        self.declare_parameter("collision_front_sector_degrees", 30.0)
+        self.declare_parameter("collision_trend_sector_degrees", 60.0)
         defaults = RuleFailureConfig()
         for name in defaults.__dataclass_fields__:
             self.declare_parameter(name, getattr(defaults, name))
@@ -67,6 +69,8 @@ class FailureDetectorNode(Node):
         if not 0.0 <= self._trigger_threshold <= 1.0:
             raise ValueError("trigger_threshold must lie in [0, 1]")
         self._scan_minimum: float | None = None
+        self._front_scan_minimum: float | None = None
+        self._collision_scan_minimum: float | None = None
         self._base_command = (0.0, 0.0)
         self._planner_status = PlannerStatus.UNKNOWN
         self._last_timestamp: float | None = None
@@ -102,19 +106,39 @@ class FailureDetectorNode(Node):
 
     def _on_scan(self, message: LaserScan) -> None:
         ranges = np.asarray(message.ranges, dtype=np.float64)
-        finite = ranges[np.isfinite(ranges) & (ranges >= 0.0)]
-        if finite.size:
+        angles = float(message.angle_min) + np.arange(ranges.size) * float(message.angle_increment)
+        half_width = math.radians(
+            float(self.get_parameter("collision_front_sector_degrees").value) / 2.0
+        )
+        trend_half_width = math.radians(
+            float(self.get_parameter("collision_trend_sector_degrees").value) / 2.0
+        )
+        front = np.abs(np.arctan2(np.sin(angles), np.cos(angles))) <= half_width
+        collision_sector = np.abs(np.arctan2(np.sin(angles), np.cos(angles))) <= trend_half_width
+        valid = np.isfinite(ranges) & (ranges >= 0.0)
+        finite = ranges[valid]
+        front_finite = ranges[front & valid]
+        collision_finite = ranges[collision_sector & valid]
+        if finite.size and front_finite.size and collision_finite.size:
             self._scan_minimum = float(np.min(finite))
+            self._front_scan_minimum = float(np.min(front_finite))
+            self._collision_scan_minimum = float(np.min(collision_finite))
 
     def _on_base_command(self, message: Twist) -> None:
         self._base_command = float(message.linear.x), float(message.angular.z)
 
     def _on_status(self, message: GoalStatusArray) -> None:
         if message.status_list:
-            self._planner_status = _planner_status(int(message.status_list[-1].status))
+            self._planner_status = select_planner_status(
+                [_planner_status(int(item.status)) for item in message.status_list]
+            )
 
     def _on_odom(self, message: Odometry) -> None:
-        if self._scan_minimum is None:
+        if (
+            self._scan_minimum is None
+            or self._front_scan_minimum is None
+            or self._collision_scan_minimum is None
+        ):
             return
         stamp = message.header.stamp
         timestamp = float(stamp.sec) + float(stamp.nanosec) * 1.0e-9
@@ -140,6 +164,8 @@ class FailureDetectorNode(Node):
                 base_linear_command=self._base_command[0],
                 base_angular_command=self._base_command[1],
                 nearest_lidar_distance=self._scan_minimum,
+                forward_lidar_distance=self._front_scan_minimum,
+                collision_lidar_distance=self._collision_scan_minimum,
                 planner_status=self._planner_status,
                 goal_reached=goal_distance <= self._goal_tolerance,
             )
@@ -165,6 +191,9 @@ def main(args: list[str] | None = None) -> None:
         rclpy.spin(node)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except Exception:
+        if rclpy.ok():
+            raise
     finally:
         if node is not None:
             node.destroy_node()

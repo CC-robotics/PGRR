@@ -157,6 +157,8 @@ if grep -Eq 'rm -rf[[:space:]]+(["'\''$]{0,2})(HOME|~|/)(["'\''/[:space:]]|$)' "
             "${BUILDER_NAME}:/tmp/arena_pull_pinned.patch"
         docker cp "${PROJECT_ROOT}/third_party/arena_map_server_default.patch" \
             "${BUILDER_NAME}:/tmp/arena_map_server_default.patch"
+        docker cp "${PROJECT_ROOT}/third_party/task_generator_auto_reset.patch" \
+            "${BUILDER_NAME}:/tmp/task_generator_auto_reset.patch"
         docker cp "${PROJECT_ROOT}/scripts/bootstrap/import_arena_dependencies.sh" \
             "${BUILDER_NAME}:/tmp/import_arena_dependencies.sh"
         docker exec "${BUILDER_NAME}" bash -c \
@@ -189,11 +191,15 @@ if grep -Eq 'rm -rf[[:space:]]+(["'\''$]{0,2})(HOME|~|/)(["'\''/[:space:]]|$)' "
              patch --forward --silent --reject-file=- "$map_launch" \
                 /tmp/arena_map_server_default.patch 2>/dev/null || \
                 grep -q default_map_path "$map_launch"
+             task_node=/opt/arena_ws/src/arena/arena-rosnav/task_generator/task_generator/node.py
+             patch --forward --silent --reject-file=- "$task_node" \
+                /tmp/task_generator_auto_reset.patch 2>/dev/null || \
+                grep -q "self._task.is_done and self._auto_reset" "$task_node"
              export PATH=/root/.local/bin:$PATH
              source /opt/ros/humble/setup.bash
              cd /opt/arena_ws
              colcon build --symlink-install --event-handlers console_direct+ \
-                --packages-select arena_bringup'
+                --packages-select arena_bringup task_generator'
         docker exec "${BUILDER_NAME}" bash -lc \
             'test -f /opt/arena_ws/src/ros2/compiled &&
              test -f /opt/arena_ws/src/arena/arena-rosnav/.installed &&
@@ -203,6 +209,7 @@ if grep -Eq 'rm -rf[[:space:]]+(["'\''$]{0,2})(HOME|~|/)(["'\''/[:space:]]|$)' "
              test -f "/opt/arena_ws/src/arena/simulation-setup/gazebo_models/Construction Cone/model.sdf" &&
              test -d /opt/arena_ws/install/arena_simulation_setup/share/arena_simulation_setup/gazebo_models &&
              grep -q default_map_path /opt/arena_ws/src/arena/arena-rosnav/arena_bringup/launch/utils/map_server.launch.py &&
+             grep -q "self._task.is_done and self._auto_reset" /opt/arena_ws/src/arena/arena-rosnav/task_generator/task_generator/node.py &&
              test -f /opt/arena_ws/src/deps/nav2/bond_core/COLCON_IGNORE &&
              command -v Xvfb >/dev/null &&
              export PATH=/root/.local/bin:$PATH &&

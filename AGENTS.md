@@ -29,6 +29,6 @@ The working paper title is **Planning-Guided Failure-Triggered Recovery via Imit
 
 ## Current milestone and acceptance
 
-Gate 0 and Gate 1 are accepted with the pinned `arena_humble_docker` Gazebo profile. Thirty fixed train-split baseline episodes produced failure rates of 100% for head-on corridor, 100% for doorway bottleneck, and 80% for crossing flow; invalid resets are reported separately. Current work is **Gate 2 rule-based failure detection and heuristic recovery**. Do not begin network training before the heuristic recovery closes the loop and improves at least one core scenario.
+Gate 0 is accepted with the pinned `arena_humble_docker` Gazebo profile. The original 30-episode Gate 1 table is superseded because visual actors were invisible to LiDAR; corrected runs use uniquely named LiDAR/collision proxies with deterministic robot-occupancy yielding. Current work is **Gate 1 paired revalidation and Gate 2 rule-based heuristic recovery**. Do not begin network training before corrected baseline evidence and multi-seed heuristic acceptance are complete.
 
 If PPO, the learned detector, a second planner, or Gazebo cannot be completed honestly, follow the documented imitation-learning minimum path; do not block the core system or claim those modules succeeded.

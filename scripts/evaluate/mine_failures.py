@@ -9,7 +9,7 @@ import hashlib
 import json
 import os
 import subprocess
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -24,9 +24,17 @@ ALLOWED_OUTCOMES = {
     "SIMULATOR_FAILURE",
     "INVALID_RESET",
 }
+MAX_SAFE_ROS_DOMAIN_ID = 220
 
 
-def _summarize(prefix: Path, record: dict[str, Any]) -> dict[str, Any]:
+def _ros_domain_id(base: int, seed: int, attempt: int, attempts_per_seed: int) -> int:
+    """Map an episode attempt deterministically into a Fast DDS-safe domain."""
+    if seed < 0 or attempt < 0 or attempts_per_seed <= 0:
+        raise ValueError("seed/attempt must be non-negative and attempts_per_seed positive")
+    return 1 + ((base - 1 + seed * attempts_per_seed + attempt) % MAX_SAFE_ROS_DOMAIN_ID)
+
+
+def _summarize(prefix: Path, record: dict[str, Any], source_policy: str = "base") -> dict[str, Any]:
     outcome_path = prefix.with_suffix(".outcome.json")
     stream_path = prefix.with_suffix(".jsonl")
     outcome = json.loads(outcome_path.read_text(encoding="utf-8"))
@@ -45,6 +53,7 @@ def _summarize(prefix: Path, record: dict[str, Any]) -> dict[str, Any]:
         "density": record["density"],
         "seed": record["seed"],
         "planner_id": "dwb",
+        "source_policy": source_policy,
         "outcome": outcome["outcome"],
         "sample_count": len(rows),
         "sim_duration_s": float(rows[-1]["timestamp"]),
@@ -85,7 +94,7 @@ def _archive_invalid_reset(episode_id: str, attempt: int, returncode: int) -> Pa
         "attempt": attempt,
         "outcome": "INVALID_RESET",
         "returncode": returncode,
-        "timestamp": datetime.now(UTC).isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
     }
     destination = archive_root / f"{episode_id}_attempt{attempt:02d}.json"
@@ -101,6 +110,8 @@ def run(
     limit: int | None,
     family: str | None = None,
     max_reset_retries: int = 2,
+    source_policy: str = "base",
+    episode_suffix: str | None = None,
 ) -> None:
     if max_reset_retries < 0:
         raise ValueError("max_reset_retries must be non-negative")
@@ -117,7 +128,8 @@ def run(
     partition_base = os.environ.get("RAMP_GZ_PARTITION_BASE", "ramp_mining")
     for index, record in enumerate(records, start=1):
         scenario_path = ROOT / record["path"]
-        episode_id = f"{record['scenario_id']}_base_dwb"
+        suffix = episode_suffix if episode_suffix is not None else source_policy
+        episode_id = f"{record['scenario_id']}_{suffix}_dwb"
         prefix = ROOT / "data" / "raw" / episode_id
         if not prefix.with_suffix(".outcome.json").exists():
             print(f"[{index}/{len(records)}] RUN {episode_id}", flush=True)
@@ -125,10 +137,16 @@ def run(
             environment.pop("CONDA_PREFIX", None)
             environment.pop("VIRTUAL_ENV", None)
             environment["RAMP_EPISODE_ID"] = episode_id
+            environment["RAMP_SOURCE_POLICY"] = source_policy
             environment["RAMP_EPISODE_TIMEOUT_S"] = str(record["timeout_s"])
             for attempt in range(max_reset_retries + 1):
                 environment["ROS_DOMAIN_ID"] = str(
-                    domain_base + int(record["seed"]) * (max_reset_retries + 1) + attempt
+                    _ros_domain_id(
+                        domain_base,
+                        int(record["seed"]),
+                        attempt,
+                        max_reset_retries + 1,
+                    )
                 )
                 environment["GZ_PARTITION"] = (
                     f"{partition_base}_{record['family']}_{record['seed']}_a{attempt}"
@@ -157,7 +175,7 @@ def run(
                 )
         else:
             print(f"[{index}/{len(records)}] RESUME {episode_id}", flush=True)
-        summaries.append(_summarize(prefix, record))
+        summaries.append(_summarize(prefix, record, source_policy))
         _write_csv(output, summaries)
     print(f"Failure-mining summary: {output} ({len(summaries)} episodes)")
 
@@ -180,6 +198,8 @@ def main() -> None:
         choices=("head_on_corridor", "doorway_bottleneck", "crossing_flow"),
     )
     parser.add_argument("--max-reset-retries", type=int, default=2)
+    parser.add_argument("--source-policy", choices=("base", "heuristic"), default="base")
+    parser.add_argument("--episode-suffix")
     args = parser.parse_args()
     run(
         args.manifest.resolve(),
@@ -187,6 +207,8 @@ def main() -> None:
         args.limit,
         args.family,
         args.max_reset_retries,
+        args.source_policy,
+        args.episode_suffix,
     )
 
 

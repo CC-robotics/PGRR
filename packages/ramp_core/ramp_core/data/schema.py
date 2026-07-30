@@ -74,6 +74,8 @@ class NavigationStep:
     lidar: npt.NDArray[np.float32]
     nearest_obstacle_distance: float
     planner_status: int
+    failure_prediction: npt.NDArray[np.float32]
+    failure_score: float
     recovery_state: int
     recovery_action: int
     collision: bool
@@ -91,10 +93,19 @@ class NavigationStep:
         object.__setattr__(self, "base_cmd_vel", _vector(self.base_cmd_vel, 2, "base_cmd_vel"))
         object.__setattr__(self, "goal", _vector(self.goal, 3, "goal"))
         object.__setattr__(self, "lidar", _vector(self.lidar, 180, "lidar"))
+        object.__setattr__(
+            self,
+            "failure_prediction",
+            _vector(self.failure_prediction, 4, "failure_prediction"),
+        )
         if not np.isfinite(self.distance_to_goal) or self.distance_to_goal < 0.0:
             raise ValueError("distance_to_goal must be finite and non-negative")
         if not np.isfinite(self.nearest_obstacle_distance) or self.nearest_obstacle_distance < 0.0:
             raise ValueError("nearest_obstacle_distance must be finite and non-negative")
+        if not np.isfinite(self.failure_score) or not 0.0 <= self.failure_score <= 1.0:
+            raise ValueError("failure_score must be finite and lie in [0, 1]")
+        if np.any(self.failure_prediction < 0.0) or np.any(self.failure_prediction > 1.0):
+            raise ValueError("failure_prediction values must lie in [0, 1]")
         if np.any(self.lidar < 0.0):
             raise ValueError("lidar ranges must be non-negative")
         path = np.asarray(self.global_path, dtype=np.float32)
@@ -105,7 +116,15 @@ class NavigationStep:
 
     def as_jsonable(self) -> dict[str, Any]:
         record = asdict(self)
-        for name in ("robot_pose", "robot_velocity", "cmd_vel", "base_cmd_vel", "goal", "lidar"):
+        for name in (
+            "robot_pose",
+            "robot_velocity",
+            "cmd_vel",
+            "base_cmd_vel",
+            "goal",
+            "lidar",
+            "failure_prediction",
+        ):
             record[name] = getattr(self, name).tolist()
         record["global_path"] = [list(point) for point in self.global_path]
         return record

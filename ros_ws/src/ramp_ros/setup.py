@@ -20,6 +20,8 @@ setup(
         "console_scripts": [
             "episode_logger = ramp_ros.nodes.episode_logger_node:main",
             "failure_detector = ramp_ros.nodes.failure_detector_node:main",
+            "goal_mux = ramp_ros.nodes.goal_mux_node:main",
+            "recovery_manager = ramp_ros.nodes.recovery_manager_node:main",
             "scenario_actor_controller = ramp_ros.nodes.scenario_actor_controller_node:main",
         ]
     },

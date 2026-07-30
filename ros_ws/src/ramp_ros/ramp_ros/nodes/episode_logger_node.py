@@ -17,6 +17,7 @@ from nav_msgs.msg import Path as PathMessage
 from ramp_core.data.schema import EpisodeMetadata, EpisodeOutcome, NavigationStep
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.clock import Clock, ClockType
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan
@@ -55,9 +56,11 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("output_directory", "data/raw")
         self.declare_parameter("sample_frequency_hz", 10.0)
         self.declare_parameter("episode_timeout_s", 180.0)
+        self.declare_parameter("planner_startup_failure_s", 12.0)
         self.declare_parameter("goal_x", 0.0)
         self.declare_parameter("goal_y", 0.0)
         self.declare_parameter("goal_yaw", 0.0)
+        self.declare_parameter("goal_tolerance_m", 0.25)
         self.declare_parameter("robot_start_x", 0.0)
         self.declare_parameter("robot_start_y", 0.0)
         self.declare_parameter("robot_start_yaw", 0.0)
@@ -125,7 +128,10 @@ class EpisodeLoggerNode(Node):
             dtype=np.float32,
         )
         self._timeout = float(self.get_parameter("episode_timeout_s").value)
+        self._goal_tolerance = float(self.get_parameter("goal_tolerance_m").value)
         self._start_time: float | None = None
+        self._initial_robot_position: tuple[float, float] | None = None
+        self._maximum_start_displacement = 0.0
         self._outcome: EpisodeOutcome | None = None
         self._outcome_detail = ""
         self._odom: Odometry | None = None
@@ -134,6 +140,8 @@ class EpisodeLoggerNode(Node):
         self._base_cmd = np.zeros(2, dtype=np.float32)
         self._path: tuple[tuple[float, float], ...] = ()
         self._planner_status = int(GoalStatus.STATUS_UNKNOWN)
+        self._failure_prediction = np.zeros(4, dtype=np.float32)
+        self._failure_score = 0.0
         self._recovery_state = 0
         self._recovery_action = 24
         self._collision = False
@@ -229,15 +237,38 @@ class EpisodeLoggerNode(Node):
         self._base_cmd[:] = message.linear.x, message.angular.z
 
     def _on_path(self, message: PathMessage) -> None:
-        self._path = tuple((pose.pose.position.x, pose.pose.position.y) for pose in message.poses)
+        frame = message.header.frame_id.rstrip("/")
+        if frame.endswith("odom"):
+            start_yaw = float(self._robot_start[2])
+            cosine = math.cos(start_yaw)
+            sine = math.sin(start_yaw)
+            self._path = tuple(
+                (
+                    float(self._robot_start[0])
+                    + cosine * pose.pose.position.x
+                    - sine * pose.pose.position.y,
+                    float(self._robot_start[1])
+                    + sine * pose.pose.position.x
+                    + cosine * pose.pose.position.y,
+                )
+                for pose in message.poses
+            )
+        else:
+            self._path = tuple(
+                (pose.pose.position.x, pose.pose.position.y) for pose in message.poses
+            )
 
     def _on_status(self, message: GoalStatusArray) -> None:
         if not message.status_list:
             return
-        status = int(message.status_list[-1].status)
+        raw_statuses = [int(item.status) for item in message.status_list]
+        active = {GoalStatus.STATUS_ACCEPTED, GoalStatus.STATUS_EXECUTING}
+        status = next((item for item in raw_statuses if item in active), raw_statuses[-1])
         self._planner_status = status
-        if status == GoalStatus.STATUS_SUCCEEDED:
-            self._set_outcome(EpisodeOutcome.GOAL_REACHED, "NavigateToPose succeeded")
+        if status == GoalStatus.STATUS_SUCCEEDED and self._odom is not None:
+            pose = self._world_robot_pose(self._odom)
+            if float(np.linalg.norm(self._goal[:2] - pose[:2])) <= self._goal_tolerance:
+                self._set_outcome(EpisodeOutcome.GOAL_REACHED, "original NavigateToPose succeeded")
 
     def _on_collision(self, message: Bool) -> None:
         self._collision = bool(message.data)
@@ -245,10 +276,24 @@ class EpisodeLoggerNode(Node):
             self._set_outcome(EpisodeOutcome.COLLISION, "collision topic asserted")
 
     def _on_failure(self, message: FailureStatus) -> None:
-        self._recovery_state = 2 if message.triggered else 0
+        self._failure_prediction[:] = (
+            message.collision_risk,
+            message.freeze,
+            message.oscillation,
+            message.deadlock,
+        )
+        self._failure_score = float(message.failure_score)
 
     def _on_recovery(self, message: RecoveryDecision) -> None:
         self._recovery_action = int(message.action_id)
+        self._recovery_state = int(message.recovery_state)
+        if self._recovery_state == RecoveryDecision.SUCCEEDED and self._odom is not None:
+            pose = self._world_robot_pose(self._odom)
+            if float(np.linalg.norm(self._goal[:2] - pose[:2])) <= self._goal_tolerance:
+                self._set_outcome(
+                    EpisodeOutcome.GOAL_REACHED,
+                    "recovery manager succeeded with goal-distance verification",
+                )
 
     def _on_humans(self, message: PoseArray) -> None:
         self._human_positions = tuple((pose.position.x, pose.position.y) for pose in message.poses)
@@ -261,6 +306,28 @@ class EpisodeLoggerNode(Node):
     @property
     def terminal(self) -> bool:
         return self._outcome is not None
+
+    def _world_robot_pose(self, odometry: Odometry) -> np.ndarray[Any, np.dtype[np.float32]]:
+        pose = odometry.pose.pose
+        yaw = _yaw_from_quaternion(
+            pose.orientation.x,
+            pose.orientation.y,
+            pose.orientation.z,
+            pose.orientation.w,
+        )
+        start_yaw = float(self._robot_start[2])
+        return np.asarray(
+            [
+                self._robot_start[0]
+                + math.cos(start_yaw) * pose.position.x
+                - math.sin(start_yaw) * pose.position.y,
+                self._robot_start[1]
+                + math.sin(start_yaw) * pose.position.x
+                + math.cos(start_yaw) * pose.position.y,
+                math.atan2(math.sin(start_yaw + yaw), math.cos(start_yaw + yaw)),
+            ],
+            dtype=np.float32,
+        )
 
     def _sample(self) -> None:
         if self._outcome is not None:
@@ -281,27 +348,25 @@ class EpisodeLoggerNode(Node):
         if elapsed >= self._timeout:
             self._set_outcome(EpisodeOutcome.TIMEOUT, "configured episode timeout")
             return
-        pose = self._odom.pose.pose
         twist = self._odom.twist.twist
-        yaw = _yaw_from_quaternion(
-            pose.orientation.x,
-            pose.orientation.y,
-            pose.orientation.z,
-            pose.orientation.w,
-        )
-        start_yaw = float(self._robot_start[2])
-        robot_pose = np.asarray(
-            [
-                self._robot_start[0]
-                + math.cos(start_yaw) * pose.position.x
-                - math.sin(start_yaw) * pose.position.y,
-                self._robot_start[1]
-                + math.sin(start_yaw) * pose.position.x
-                + math.cos(start_yaw) * pose.position.y,
-                math.atan2(math.sin(start_yaw + yaw), math.cos(start_yaw + yaw)),
-            ],
-            dtype=np.float32,
-        )
+        robot_pose = self._world_robot_pose(self._odom)
+        position = float(robot_pose[0]), float(robot_pose[1])
+        if self._initial_robot_position is None:
+            self._initial_robot_position = position
+        else:
+            self._maximum_start_displacement = max(
+                self._maximum_start_displacement,
+                math.dist(self._initial_robot_position, position),
+            )
+        if (
+            elapsed >= float(self.get_parameter("planner_startup_failure_s").value)
+            and self._maximum_start_displacement < 0.05
+            and self._planner_status == GoalStatus.STATUS_ABORTED
+        ):
+            self._set_outcome(
+                EpisodeOutcome.PLANNER_FAILURE,
+                "Nav2 aborted before the robot produced startup movement",
+            )
         distance = float(np.linalg.norm(self._goal[:2] - robot_pose[:2]))
         nearest_human = math.inf
         if self._human_positions:
@@ -327,6 +392,8 @@ class EpisodeLoggerNode(Node):
             lidar=self._lidar,
             nearest_obstacle_distance=float(np.min(self._lidar)),
             planner_status=self._planner_status,
+            failure_prediction=self._failure_prediction.copy(),
+            failure_score=self._failure_score,
             recovery_state=self._recovery_state,
             recovery_action=self._recovery_action,
             collision=self._collision,
@@ -371,8 +438,11 @@ def main(args: list[str] | None = None) -> None:
         node = EpisodeLoggerNode()
         while rclpy.ok() and not node.terminal:
             rclpy.spin_once(node, timeout_sec=0.2)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except Exception:
+        if rclpy.ok():
+            raise
     finally:
         if node is not None:
             node.finalize()

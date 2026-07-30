@@ -23,6 +23,10 @@ data/processed/*.h5
 checkpoints/**/*.pt
 checkpoints/**/*.zip
 outputs/pilot/*_failure_mining_part.csv
+outputs/pilot/*_dev.csv
+ros_ws/build*/
+ros_ws/install*/
+ros_ws/log*/
 paper/*.aux
 paper/*.bbl
 paper/*.blg

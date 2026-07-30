@@ -97,7 +97,9 @@ class RecoveryStateMachine:
         previous = self.state
         reason = "no_transition"
 
-        if state_input.goal_reached:
+        if self.state in {RecoveryState.FAILED, RecoveryState.SUCCEEDED}:
+            reason = "terminal_state"
+        elif state_input.goal_reached:
             self.state = RecoveryState.SUCCEEDED
             reason = "goal_reached"
         elif state_input.unrecoverable_failure:
@@ -113,8 +115,22 @@ class RecoveryStateMachine:
         elif self.state is RecoveryState.NORMAL:
             if state_input.failure_score > self.config.tau_on:
                 self._high_frames += 1
-                self.state = RecoveryState.PENDING_RECOVERY
-                reason = "failure_pending"
+                cooldown_elapsed = state_input.now_s - self._last_recovery_end_s
+                if (
+                    self._high_frames >= self.config.frames_on
+                    and cooldown_elapsed >= self.config.cooldown_s
+                ):
+                    if self._consecutive_recoveries >= self.config.maximum_consecutive_recoveries:
+                        self.state = RecoveryState.FAILED
+                        reason = "recovery_limit"
+                    else:
+                        self.state = RecoveryState.RECOVERY
+                        self._consecutive_recoveries += 1
+                        self._low_frames = 0
+                        reason = "failure_confirmed"
+                else:
+                    self.state = RecoveryState.PENDING_RECOVERY
+                    reason = "failure_pending"
             else:
                 self._high_frames = 0
         elif self.state is RecoveryState.PENDING_RECOVERY:
@@ -162,6 +178,10 @@ class RecoveryStateMachine:
             if state_input.valid_progress and state_input.failure_score < self.config.tau_off:
                 self.state = RecoveryState.NORMAL
                 self._last_recovery_end_s = state_input.now_s
+                # This recovery has successfully rejoined the original goal
+                # and produced progress, so a later trigger starts a new
+                # sequence rather than consuming a lifetime episode budget.
+                self._consecutive_recoveries = 0
                 self._high_frames = 0
                 self._low_frames = 0
                 reason = "original_goal_restored"

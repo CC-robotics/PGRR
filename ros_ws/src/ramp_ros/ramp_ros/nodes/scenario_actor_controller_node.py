@@ -10,8 +10,10 @@ from typing import Any
 
 import rclpy
 from geometry_msgs.msg import Pose, PoseArray, Quaternion
+from nav_msgs.msg import Odometry
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from ros_gz_interfaces.msg import Entity
 from ros_gz_interfaces.srv import SetEntityPose, SpawnEntity
 
@@ -64,6 +66,11 @@ class ScenarioActorController(Node):
         self.declare_parameter("set_pose_service", "/world/default/set_pose")
         self.declare_parameter("spawn_service", "/world/default/create")
         self.declare_parameter("privileged_humans_topic", "/ramp/privileged/humans")
+        self.declare_parameter("odom_topic", "odom")
+        self.declare_parameter("robot_start_x", 0.0)
+        self.declare_parameter("robot_start_y", 0.0)
+        self.declare_parameter("robot_start_yaw", 0.0)
+        self.declare_parameter("robot_avoidance_distance_m", 1.3)
         self.declare_parameter("update_frequency_hz", 2.0)
         scenario_path = Path(str(self.get_parameter("scenario_file").value))
         if not scenario_path.is_file():
@@ -81,10 +88,21 @@ class ScenarioActorController(Node):
         frequency = float(self.get_parameter("update_frequency_hz").value)
         if frequency <= 0.0:
             raise ValueError("update_frequency_hz must be positive")
-        self._start_time: float | None = None
+        if float(self.get_parameter("robot_avoidance_distance_m").value) <= 0.71:
+            raise ValueError("robot_avoidance_distance_m must exceed combined collision radii")
+        self._robot_position: tuple[float, float] | None = None
+        self._last_update_s: float | None = None
+        self._route_elapsed = {route.name: 0.0 for route in self._routes}
         self._pending: dict[str, Any] = {}
         self._spawn_pending: dict[str, Any] = {}
         self._spawn_attempted: set[str] = set()
+        self._spawn_validated: set[str] = set()
+        self._odom_subscription = self.create_subscription(
+            Odometry,
+            str(self.get_parameter("odom_topic").value),
+            self._on_odom,
+            qos_profile_sensor_data,
+        )
         self._update_timer = self.create_timer(1.0 / frequency, self._update)
         self.get_logger().info(
             f"loaded {len(self._routes)} deterministic actor routes; service={service_name}"
@@ -110,6 +128,21 @@ class ScenarioActorController(Node):
 </sdf>"""
 
     @staticmethod
+    def _proxy_name(actor_name: str) -> str:
+        return f"ramp_lidar_proxy_{actor_name}"
+
+    def _on_odom(self, message: Odometry) -> None:
+        local_x = float(message.pose.pose.position.x)
+        local_y = float(message.pose.pose.position.y)
+        start_x = float(self.get_parameter("robot_start_x").value)
+        start_y = float(self.get_parameter("robot_start_y").value)
+        start_yaw = float(self.get_parameter("robot_start_yaw").value)
+        self._robot_position = (
+            start_x + math.cos(start_yaw) * local_x - math.sin(start_yaw) * local_y,
+            start_y + math.sin(start_yaw) * local_x + math.cos(start_yaw) * local_y,
+        )
+
+    @staticmethod
     def _load_routes(path: Path) -> tuple[ActorRoute, ...]:
         scenario = json.loads(path.read_text(encoding="utf-8"))
         routes: list[ActorRoute] = []
@@ -133,40 +166,60 @@ class ScenarioActorController(Node):
             )
             return
         now = self.get_clock().now().nanoseconds * 1.0e-9
-        if self._start_time is None:
-            self._start_time = now
-        elapsed = now - self._start_time
+        if self._last_update_s is None:
+            self._last_update_s = now
+        step_s = max(0.0, now - self._last_update_s)
+        self._last_update_s = now
+        avoidance_distance = float(self.get_parameter("robot_avoidance_distance_m").value)
         pose_array = PoseArray()
         pose_array.header.stamp = self.get_clock().now().to_msg()
         pose_array.header.frame_id = "map"
         for route in self._routes:
-            x, y, yaw = route.pose_at(elapsed)
+            candidate_elapsed = self._route_elapsed[route.name] + step_s
+            candidate = route.pose_at(candidate_elapsed)
+            blocked_by_robot = (
+                self._robot_position is not None
+                and math.dist(candidate[:2], self._robot_position) < avoidance_distance
+            )
+            if not blocked_by_robot:
+                self._route_elapsed[route.name] = candidate_elapsed
+            x, y, yaw = route.pose_at(self._route_elapsed[route.name])
             pose = Pose()
             pose.position.x = x
             pose.position.y = y
             pose.orientation = _quaternion(yaw)
             pose_array.poses.append(pose)
-            if route.name not in self._spawn_attempted:
+            proxy_name = self._proxy_name(route.name)
+            if proxy_name not in self._spawn_attempted:
                 request = SpawnEntity.Request()
-                request.entity_factory.name = route.name
+                request.entity_factory.name = proxy_name
                 request.entity_factory.allow_renaming = False
-                request.entity_factory.sdf = self._proxy_sdf(route.name)
+                request.entity_factory.sdf = self._proxy_sdf(proxy_name)
                 request.entity_factory.pose = pose
                 request.entity_factory.relative_to = "world"
-                self._spawn_pending[route.name] = self._spawn_client.call_async(request)
-                self._spawn_attempted.add(route.name)
+                self._spawn_pending[proxy_name] = self._spawn_client.call_async(request)
+                self._spawn_attempted.add(proxy_name)
                 continue
-            spawn_pending = self._spawn_pending.get(route.name)
+            spawn_pending = self._spawn_pending.get(proxy_name)
             if spawn_pending is not None and not spawn_pending.done():
                 continue
-            pending = self._pending.get(route.name)
-            if pending is not None and not pending.done():
-                continue
-            request = SetEntityPose.Request()
-            request.entity.name = route.name
-            request.entity.type = Entity.MODEL
-            request.pose = pose
-            self._pending[route.name] = self._client.call_async(request)
+            if proxy_name not in self._spawn_validated:
+                response = spawn_pending.result() if spawn_pending is not None else None
+                if response is None or not bool(getattr(response, "success", False)):
+                    detail = getattr(response, "status_message", "no spawn response")
+                    self.get_logger().error(f"failed to spawn LiDAR proxy {proxy_name}: {detail}")
+                    continue
+                self._spawn_validated.add(proxy_name)
+                self.get_logger().info(f"spawned LiDAR-visible proxy {proxy_name}")
+            for entity_name in (route.name, proxy_name):
+                pending = self._pending.get(entity_name)
+                if pending is not None and not pending.done():
+                    continue
+                request = SetEntityPose.Request()
+                request.entity.name = entity_name
+                request.entity.type = Entity.MODEL
+                request.pose = pose
+                self._pending[entity_name] = self._client.call_async(request)
         self._publisher.publish(pose_array)
 
 

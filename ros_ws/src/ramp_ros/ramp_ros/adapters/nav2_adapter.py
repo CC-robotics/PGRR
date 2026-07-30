@@ -28,6 +28,15 @@ class Nav2Adapter(PlannerAdapter):
         ) = None
         self._last_command = Velocity2D(0.0, 0.0)
         self._original_goal: Pose2D | None = None
+        self._submission_serial = 0
+
+    @property
+    def ready(self) -> bool:
+        return self._client.server_is_ready()
+
+    def remember_navigation_goal(self, goal: Pose2D) -> None:
+        """Retain a task-generator goal without submitting a duplicate action."""
+        self._original_goal = goal
 
     def _message(self, goal: Pose2D) -> NavigateToPose.Goal:
         pose = PoseStamped()
@@ -45,10 +54,14 @@ class Nav2Adapter(PlannerAdapter):
         if not self._client.server_is_ready():
             self._status = PlannerStatus.NO_VALID_CONTROL
             return
+        self._submission_serial += 1
+        submission_serial = self._submission_serial
         self._status = PlannerStatus.ACTIVE
         future = self._client.send_goal_async(self._message(goal))
 
         def accepted(done: object) -> None:
+            if submission_serial != self._submission_serial:
+                return
             goal_handle = done.result()  # type: ignore[attr-defined]
             if not goal_handle.accepted:
                 self._status = PlannerStatus.ABORTED
@@ -57,6 +70,8 @@ class Nav2Adapter(PlannerAdapter):
             result_future = goal_handle.get_result_async()
 
             def finished(result_done: object) -> None:
+                if submission_serial != self._submission_serial:
+                    return
                 status = int(result_done.result().status)  # type: ignore[attr-defined]
                 self._status = PlannerStatus.SUCCEEDED if status == 4 else PlannerStatus.ABORTED
 
@@ -78,6 +93,7 @@ class Nav2Adapter(PlannerAdapter):
         return True
 
     def cancel(self) -> None:
+        self._submission_serial += 1
         if self._goal_handle is not None:
             self._goal_handle.cancel_goal_async()
         self._status = PlannerStatus.CANCELED

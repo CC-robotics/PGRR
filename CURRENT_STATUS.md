@@ -1,6 +1,6 @@
 # Current status
 
-## Gate 2 — rule-triggered recovery MVP (in progress)
+## Gate 1 revalidation / Gate 2 — observable recovery MVP (in progress)
 
 ### Completed
 
@@ -27,6 +27,11 @@
 - Implemented configurable observable-only collision-risk, freeze, oscillation, and deadlock rules with exact time-window boundary tests.
 - Generated dense offline labels for all 30 Gate 1 episodes: 16,140 samples in one HDF5 artifact with pre/post windows, onset/end, time-to-failure, and hard-negative metadata.
 - Added the ROS2 failure detector node and passed an actual ROS message smoke test with a speed-dependent imminent-collision trigger.
+- Added the command mux, Nav2 temporary-goal manager, safe 25-action heuristic policy, original-goal restoration, and recovery-aware logging.
+- Patched the task generator so `auto_reset: false` is honored.
+- Replaced LiDAR-invisible visual actors with uniquely named cylindrical LiDAR/collision proxies and deterministic robot-occupancy yielding. Simulator truth remains excluded from policy observations.
+- Passed 64 offline tests and ROS smokes for failure detection, temporary-goal/rejoin recovery, and command arbitration.
+- Observed a development-only crossing seed-0 signal: base DWB collided after 6.891 m progress; heuristic recovery avoided collision and made 19.004 m progress, ending 1.996 m from the goal at timeout.
 
 ### Commands
 
@@ -50,10 +55,12 @@ env -u CONDA_PREFIX -u VIRTUAL_ENV \
 scripts/bootstrap/arena_container.sh bash -lc \
   'cd /workspace/ros_ws && colcon test && colcon test-result --verbose'
 conda run -n ramp-offline python scripts/data/label_failures.py \
-  --manifest outputs/pilot/baseline_failure_mining.csv \
+  --results outputs/pilot/baseline_failure_mining.csv \
   --output data/interim/gate1_failure_labels.h5 \
   --summary data/manifests/failure_label_summary.json
 scripts/arena/smoke_failure_detector.sh
+scripts/arena/smoke_recovery_manager.sh
+scripts/arena/smoke_goal_mux.sh
 ```
 
 ### Acceptance results
@@ -68,7 +75,7 @@ scripts/arena/smoke_failure_detector.sh
 - Single-agent dynamic navigation: PASS, `GOAL_REACHED`, 15.6843 simulated seconds.
 - Multi-agent failure reproduction: PASS, `COLLISION` at 0.6852 m center distance; not a simulator failure.
 - Scenario catalog: PASS, 72 generated stress files plus acceptance fixtures; train/validation/test IDs are disjoint.
-- Gate 1 full acceptance: PASS. Failure rates are 100% for head-on corridor (7 collision, 3 timeout), 100% for doorway bottleneck (10 collision), and 80% for crossing flow (8 collision, 2 goal reached).
+- The previously accepted 30-episode Gate 1 table is **superseded and ineligible for method claims** because the visual actors were absent from LiDAR. Its raw files remain provenance evidence; corrected paired baselines must be rerun before Gate 1 is accepted again.
 - Failure-mining infrastructure: PASS; 30 scenarios parse in the installed Arena version, checkpoint CSV writes atomically, and completed outcomes resume without overwrite.
 - Head-on mining seed 0: PASS as a reproducible algorithm failure (`COLLISION`), not a simulator failure.
 - Simulator/reset exclusions: 6 `INVALID_RESET` attempts are reported separately and excluded; all corresponding fixed seeds later produced valid episodes.
@@ -76,6 +83,9 @@ scripts/arena/smoke_failure_detector.sh
 - Rule/label tests: PASS; normal motion, goal-reached stationary state, turn noise, short stops, exact freeze/oscillation/deadlock windows, and imminent collision are covered.
 - Gate 1 label artifact: PASS; 30 episodes, 16,140 samples, no NaN/Inf, with 2,830 collision-risk, 2,143 freeze, 0 oscillation, and 1,221 deadlock positives. The zero oscillillation count is retained rather than synthesized.
 - ROS detector smoke: PASS; a 1.0 m/s observation with 0.20 m clearance publishes collision risk 1.0 and a triggered status.
+- Recovery manager smoke: PASS; a temporary goal is accepted and the original `(5, 0)` goal is restored.
+- Goal mux smoke: PASS; normal/subgoal pass through, WAIT/terminal output zero, and BACKUP outputs `-0.15 m/s`.
+- Corrected-proxy crossing seed 0: DEVELOPMENT SIGNAL ONLY, not a gate claim. Base=`COLLISION`; heuristic=`TIMEOUT`, with higher progress and human clearance. Multi-seed pairing is pending.
 
 ### Failures
 
@@ -85,7 +95,8 @@ scripts/arena/smoke_failure_detector.sh
 - The smoke goal was accepted but later aborted; static point-goal success is deliberately left for Gate 1 rather than misreported here.
 - The pinned Arena source references a Gazebo HuNav plugin absent from its installer and depending on an unpublished `arena_people_msgs` package. Dynamic runs use the documented Gazebo kinematic proxy fallback and are not labeled as HuNav social-force runs.
 - Legacy Nav2 lifecycle activation is intermittently unreliable; every invalid reset is archived, assigned a fresh ROS domain for bounded retry, and excluded rather than counted as an algorithm failure.
+- The earlier dense label artifact was generated before LiDAR-visible pedestrian geometry was fixed and is superseded; it must be regenerated from the corrected baseline.
 
 ### Next
 
-Implement the masked heuristic selector and integrate it with the Nav2 temporary-goal/rejoin state machine, then run the three-method fixed-seed Gate 2 pilot before any network training.
+Rerun fixed-seed Gate 1 with the corrected proxy, then complete paired base/standard/heuristic evaluation. Do not begin expert or neural-policy work until corrected Gate 1 and Gate 2 checks pass.

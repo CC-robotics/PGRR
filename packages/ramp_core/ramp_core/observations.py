@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -20,6 +21,44 @@ def _finite_array(
         raise ValueError(f"{name} contains NaN or Inf")
     array.setflags(write=False)
     return array
+
+
+def select_local_path_waypoints(
+    path: tuple[tuple[float, float], ...],
+    robot_pose: Pose2D,
+    *,
+    count: int = 8,
+) -> npt.NDArray[np.float32]:
+    """Select consecutive path points ahead of the robot and express them locally.
+
+    Nav2 plans include the full route from its start. Sampling that full route can
+    put already-traversed points into a recovery observation and make a recovery
+    policy steer backwards. The closest path point anchors the untraversed suffix;
+    its next ``count`` points preserve the local path direction. Short suffixes are
+    padded with their final point so the observation shape remains fixed.
+    """
+
+    if count <= 0:
+        raise ValueError("count must be positive")
+    if not path:
+        raise ValueError("path must contain at least one point")
+    world = np.asarray(path, dtype=np.float64)
+    if world.ndim != 2 or world.shape[1] != 2 or not np.all(np.isfinite(world)):
+        raise ValueError("path must contain finite (x, y) points")
+    robot_xy = np.asarray([robot_pose.x, robot_pose.y], dtype=np.float64)
+    closest = int(np.argmin(np.sum((world - robot_xy) ** 2, axis=1)))
+    selected = world[closest : closest + count]
+    if len(selected) < count:
+        selected = np.concatenate(
+            [selected, np.repeat(selected[-1][None, :], count - len(selected), axis=0)]
+        )
+    offsets = selected - robot_xy
+    cosine = math.cos(robot_pose.yaw)
+    sine = math.sin(robot_pose.yaw)
+    local = np.empty((count, 2), dtype=np.float32)
+    local[:, 0] = cosine * offsets[:, 0] + sine * offsets[:, 1]
+    local[:, 1] = -sine * offsets[:, 0] + cosine * offsets[:, 1]
+    return local
 
 
 @dataclass(frozen=True, slots=True)

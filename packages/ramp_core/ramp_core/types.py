@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Protocol
@@ -30,6 +31,16 @@ class PlannerStatus(IntEnum):
     NO_VALID_CONTROL = 3
     ABORTED = 4
     CANCELED = 5
+
+
+def select_planner_status(statuses: Sequence[PlannerStatus]) -> PlannerStatus:
+    """Prefer an active goal over stale terminal entries in a status array."""
+
+    if not statuses:
+        return PlannerStatus.UNKNOWN
+    if PlannerStatus.ACTIVE in statuses:
+        return PlannerStatus.ACTIVE
+    return statuses[-1]
 
 
 @dataclass(frozen=True, slots=True)

@@ -47,3 +47,11 @@ In the mixed legacy Humble launch, the logger's ROS clock remained at zero even 
 ## D-012: Audited Gazebo asset overrides for stable headless experiments
 
 The pinned Jackal asset renders a 640 x 16 GPU LiDAR through Mesa because the host Docker GPU runtime is incomplete, although the method uses a planar scan downsampled to 180 beams. The runtime bind-mounts a versioned 360 x 1, 10 Hz sensor definition and the Dataset still deterministically downsamples it to 180. Arena's asset named `obstacles/static/shelf` also declares `<static>false>`; 58 adjacent corridor shelves became interacting rigid bodies and stopped DART simulation time near 5 seconds. A second versioned override changes only that tag to `<static>true>`. Both source-derived files and their SHA256 values are locked; the container image and host ROS installation remain unchanged.
+
+## D-013: LiDAR-visible, robot-yielding pedestrian fallback
+
+Gazebo's task-generated `actor` entities are visible in rendering but produced no planar-LiDAR return. The fallback controller now spawns a uniquely named static cylindrical proxy for every visual actor, moves both on the same seeded route, and verifies each spawn response. Route advancement pauses before the next step enters a 1.3 m robot-centered region and resumes after the robot yields, avoiding the artifact of a kinematic pedestrian walking through a stopped robot. Robot pose is used only by simulator behavior and is not included in recovery observations. Earlier actor-only results are retained but superseded.
+
+## D-014: Direction-consistent braking clearance
+
+The braking equation is longitudinal, so its clearance input is measured along current translation: forward motion checks a forward laser sector and reverse motion checks the rear. This prevents a safe parallel side wall from being treated as longitudinal stopping distance. Emergency stop remains above policy output and is not claimed as a formal guarantee.

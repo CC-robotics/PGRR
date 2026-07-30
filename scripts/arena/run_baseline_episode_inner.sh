@@ -3,6 +3,11 @@ set -euo pipefail
 
 SCENARIO="${RAMP_SCENARIO:?RAMP_SCENARIO is required}"
 TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}"
+SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}"
+if [[ "${SOURCE_POLICY}" != "base" && "${SOURCE_POLICY}" != "heuristic" ]]; then
+    echo "ERROR: RAMP_SOURCE_POLICY must be base or heuristic" >&2
+    exit 2
+fi
 SCENARIO_TARGET="/opt/arena_ws/install/arena_simulation_setup/share/arena_simulation_setup/worlds/map_empty/scenarios/default.json"
 
 readarray -t scenario_values < <(python3 - "${SCENARIO}" <<'PY'
@@ -62,6 +67,9 @@ setsid xvfb-run -a -s '-screen 0 1280x720x24' \
 launch_pid=$!
 logger_pid=""
 actor_pid=""
+mux_pid=""
+detector_pid=""
+recovery_pid=""
 monitor_pid=""
 cleanup_started=0
 
@@ -86,6 +94,15 @@ stop_actor_controller() {
     fi
 }
 
+stop_recovery_nodes() {
+    for recovery_node_pid in "${recovery_pid}" "${detector_pid}" "${mux_pid}"; do
+        if [[ -n "${recovery_node_pid}" ]] && kill -0 "${recovery_node_pid}" 2>/dev/null; then
+            kill -INT "${recovery_node_pid}" 2>/dev/null || true
+            wait "${recovery_node_pid}" 2>/dev/null || true
+        fi
+    done
+}
+
 stop_monitor() {
     if [[ -n "${monitor_pid}" ]] && kill -0 "${monitor_pid}" 2>/dev/null; then
         kill -TERM "${monitor_pid}" 2>/dev/null || true
@@ -100,6 +117,7 @@ cleanup() {
     cleanup_started=1
     printf '[RAMP_BASELINE] cleanup_started\n' >>"${RUNTIME_LOG}"
     stop_logger
+    stop_recovery_nodes
     stop_actor_controller
     stop_monitor
     if kill -0 "${launch_pid}" 2>/dev/null; then
@@ -133,6 +151,7 @@ odom_topic=""
 scan_topic=""
 cmd_topic=""
 path_topic=""
+map_topic=""
 while (( SECONDS < deadline )); do
     if ! kill -0 "${launch_pid}" 2>/dev/null; then
         echo "ERROR: Arena exited before baseline topics became ready" >&2
@@ -142,8 +161,9 @@ while (( SECONDS < deadline )); do
     nav_action="$(ros2 action list -t 2>/dev/null | awk '$2 == "[nav2_msgs/action/NavigateToPose]" {print $1; exit}')"
     odom_topic="$(ros2 topic list -t 2>/dev/null | awk '$2 == "[nav_msgs/msg/Odometry]" {print $1; exit}')"
     scan_topic="$(ros2 topic list -t 2>/dev/null | awk '$2 == "[sensor_msgs/msg/LaserScan]" {print $1; exit}')"
-    cmd_topic="$(ros2 topic list -t 2>/dev/null | awk '$2 == "[geometry_msgs/msg/Twist]" && $1 ~ /cmd_vel/ {print $1; exit}')"
-    path_topic="$(ros2 topic list -t 2>/dev/null | awk '$2 == "[nav_msgs/msg/Path]" {print $1; exit}')"
+    cmd_topic="$(ros2 topic list -t 2>/dev/null | awk '$2 == "[geometry_msgs/msg/Twist]" && $1 ~ /\/cmd_vel$/ {print $1; exit}')"
+    path_topic="$(ros2 topic list -t 2>/dev/null | awk '$2 == "[nav_msgs/msg/Path]" && $1 ~ /\/plan$/ {print $1; exit}')"
+    map_topic="$(ros2 topic list -t 2>/dev/null | awk '$2 == "[nav_msgs/msg/OccupancyGrid]" && $1 ~ /\/map$/ {print $1; exit}')"
     if [[ -n "${nav_action}" && -n "${odom_topic}" && -n "${scan_topic}" && -n "${cmd_topic}" ]]; then
         break
     fi
@@ -154,20 +174,65 @@ if [[ -z "${nav_action}" || -z "${odom_topic}" || -z "${scan_topic}" || -z "${cm
     ros2 topic list -t >&2 || true
     exit 1
 fi
+base_cmd_topic="${cmd_topic}"
+mux_cmd_topic="${cmd_topic%cmd_vel}mux_cmd_vel"
 if [[ -z "${path_topic}" ]]; then
     path_topic="/__ramp_unused/path"
 fi
+if [[ -z "${map_topic}" ]]; then
+    map_topic="/__ramp_unused/map"
+fi
 project_commit="${RAMP_PROJECT_COMMIT:?RAMP_PROJECT_COMMIT is required}"
 ramp_ros_prefix="$(ros2 pkg prefix ramp_ros)"
+"${ramp_ros_prefix}/lib/ramp_ros/goal_mux" --ros-args \
+    -p use_sim_time:=true \
+    -p base_cmd_vel_topic:="${base_cmd_topic}" \
+    -p recovery_cmd_vel_topic:=/ramp/recovery_cmd_vel \
+    -p cmd_vel_topic:="${mux_cmd_topic}" \
+    -p recovery_decision_topic:=/ramp/recovery_decision \
+    >>"${RUNTIME_LOG}" 2>&1 &
+mux_pid=$!
 "${ramp_ros_prefix}/lib/ramp_ros/scenario_actor_controller" --ros-args \
     -p use_sim_time:=true \
     -p scenario_file:="${SCENARIO}" \
     -p set_pose_service:=/world/default/set_pose \
     -p spawn_service:=/world/default/create \
     -p privileged_humans_topic:=/ramp/privileged/humans \
+    -p odom_topic:="${odom_topic}" \
+    -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
+    -p robot_start_yaw:="${start_yaw}" \
     -p update_frequency_hz:="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
     >>"${RUNTIME_LOG}" 2>&1 &
 actor_pid=$!
+if [[ "${SOURCE_POLICY}" == "heuristic" ]]; then
+    "${ramp_ros_prefix}/lib/ramp_ros/failure_detector" --ros-args \
+        -p use_sim_time:=true \
+        -p goal_x:="${goal_x}" -p goal_y:="${goal_y}" \
+        -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
+        -p robot_start_yaw:="${start_yaw}" \
+        -p odom_topic:="${odom_topic}" -p scan_topic:="${scan_topic}" \
+        -p base_cmd_vel_topic:="${base_cmd_topic}" \
+        -p ttc_threshold_s:=3.0 \
+        -p nav_status_topic:="${nav_action}/_action/status" \
+        -p failure_status_topic:=/ramp/failure_status \
+        >>"${RUNTIME_LOG}" 2>&1 &
+    detector_pid=$!
+    "${ramp_ros_prefix}/lib/ramp_ros/recovery_manager" --ros-args \
+        -p use_sim_time:=true \
+        -p goal_x:="${goal_x}" -p goal_y:="${goal_y}" -p goal_yaw:="${goal_yaw}" \
+        -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
+        -p robot_start_yaw:="${start_yaw}" \
+        -p odom_topic:="${odom_topic}" -p scan_topic:="${scan_topic}" \
+        -p base_cmd_vel_topic:="${base_cmd_topic}" \
+        -p cmd_vel_topic:=/ramp/recovery_cmd_vel \
+        -p global_path_topic:="${path_topic}" -p map_topic:="${map_topic}" \
+        -p nav_status_topic:="${nav_action}/_action/status" \
+        -p navigate_to_pose_action:="${nav_action}" \
+        -p failure_status_topic:=/ramp/failure_status \
+        -p recovery_decision_topic:=/ramp/recovery_decision \
+        >>"${RUNTIME_LOG}" 2>&1 &
+    recovery_pid=$!
+fi
 timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S}")"
 "${ramp_ros_prefix}/lib/ramp_ros/episode_logger" --ros-args \
     -p use_sim_time:=true \
@@ -177,7 +242,7 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p seed:="${seed}" \
     -p split:="${split}" \
     -p planner_id:=dwb \
-    -p source_policy:=base \
+    -p source_policy:="${SOURCE_POLICY}" \
     -p arena_commit:=c2ff4a87e8686013b53f1e9cd8b01b3ab04fbce4 \
     -p project_commit:="${project_commit}" \
     -p output_directory:="${output_directory}" \
@@ -186,10 +251,12 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
     -p robot_start_yaw:="${start_yaw}" \
     -p odom_topic:="${odom_topic}" -p scan_topic:="${scan_topic}" \
-    -p cmd_vel_topic:="${cmd_topic}" -p base_cmd_vel_topic:="${cmd_topic}" \
+    -p cmd_vel_topic:="${mux_cmd_topic}" -p base_cmd_vel_topic:="${base_cmd_topic}" \
     -p global_path_topic:="${path_topic}" \
     -p nav_status_topic:="${nav_action}/_action/status" \
     -p collision_topic:=/__ramp_unused/collision \
+    -p failure_status_topic:=/ramp/failure_status \
+    -p recovery_decision_topic:=/ramp/recovery_decision \
     >>"${RUNTIME_LOG}" 2>&1 &
 logger_pid=$!
 
@@ -249,5 +316,5 @@ if (( crash_count > 0 )); then
     grep -Ei 'process has died|segmentation fault|core dumped|Traceback \(most recent call last\)' "${RUNTIME_LOG}" >&2
     exit 1
 fi
-printf 'Baseline episode PASS: episode=%s outcome=%s samples=%s monitor_status=%s\n' \
-    "${episode_id}" "${outcome}" "${sample_count}" "${monitor_status}"
+printf 'Episode PASS: episode=%s policy=%s outcome=%s samples=%s monitor_status=%s\n' \
+    "${episode_id}" "${SOURCE_POLICY}" "${outcome}" "${sample_count}" "${monitor_status}"

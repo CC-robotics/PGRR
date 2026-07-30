@@ -19,10 +19,18 @@ class RuleFailureConfig:
     control_latency_s: float = 0.20
     safety_margin_m: float = 0.25
     ttc_threshold_s: float = 1.5
+    collision_absolute_distance_m: float = 0.9
+    collision_proximity_m: float = 1.50
+    collision_closing_speed_mps: float = 0.10
+    collision_radial_excess_closing_speed_mps: float = 0.25
+    collision_proximity_score: float = 0.75
+    collision_trend_window_s: float = 0.5
+    collision_max_angular_speed_radps: float = 0.30
     freeze_window_s: float = 3.0
     freeze_goal_distance_m: float = 1.0
     freeze_displacement_m: float = 0.15
     requested_motion_speed_mps: float = 0.05
+    requested_motion_fraction: float = 0.50
     oscillation_window_s: float = 4.0
     oscillation_sign_changes: int = 6
     oscillation_progress_m: float = 0.20
@@ -36,6 +44,9 @@ class RuleFailureConfig:
         positive = (
             self.braking_acceleration,
             self.ttc_threshold_s,
+            self.collision_absolute_distance_m,
+            self.collision_proximity_m,
+            self.collision_trend_window_s,
             self.freeze_window_s,
             self.freeze_goal_distance_m,
             self.oscillation_window_s,
@@ -47,6 +58,9 @@ class RuleFailureConfig:
         nonnegative = (
             self.control_latency_s,
             self.safety_margin_m,
+            self.collision_closing_speed_mps,
+            self.collision_radial_excess_closing_speed_mps,
+            self.collision_max_angular_speed_radps,
             self.freeze_displacement_m,
             self.requested_motion_speed_mps,
             self.oscillation_progress_m,
@@ -58,6 +72,10 @@ class RuleFailureConfig:
             raise ValueError("failure-rule distances, speeds, and margins must be non-negative")
         if self.oscillation_sign_changes <= 0:
             raise ValueError("oscillation_sign_changes must be positive")
+        if not 0.0 <= self.collision_proximity_score <= 1.0:
+            raise ValueError("collision_proximity_score must lie in [0, 1]")
+        if not 0.0 <= self.requested_motion_fraction <= 1.0:
+            raise ValueError("requested_motion_fraction must lie in [0, 1]")
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +90,8 @@ class TimedNavigationSample:
     nearest_lidar_distance: float
     planner_status: PlannerStatus = PlannerStatus.UNKNOWN
     goal_reached: bool = False
+    forward_lidar_distance: float | None = None
+    collision_lidar_distance: float | None = None
 
     def __post_init__(self) -> None:
         values = (
@@ -88,6 +108,14 @@ class TimedNavigationSample:
             raise ValueError("navigation sample values must be finite")
         if self.timestamp < 0.0 or self.goal_distance < 0.0 or self.nearest_lidar_distance < 0.0:
             raise ValueError("timestamp and distances must be non-negative")
+        if self.forward_lidar_distance is not None and (
+            not math.isfinite(self.forward_lidar_distance) or self.forward_lidar_distance < 0.0
+        ):
+            raise ValueError("forward_lidar_distance must be finite and non-negative")
+        if self.collision_lidar_distance is not None and (
+            not math.isfinite(self.collision_lidar_distance) or self.collision_lidar_distance < 0.0
+        ):
+            raise ValueError("collision_lidar_distance must be finite and non-negative")
 
 
 class RuleFailureDetector:
@@ -122,32 +150,95 @@ class RuleFailureDetector:
         while len(self._history) > 1 and self._history[1].timestamp < cutoff:
             self._history.popleft()
 
+        forward_clearance = (
+            sample.forward_lidar_distance
+            if sample.forward_lidar_distance is not None
+            else sample.nearest_lidar_distance
+        )
+        collision_clearance = (
+            sample.collision_lidar_distance
+            if sample.collision_lidar_distance is not None
+            else forward_clearance
+        )
         stop_distance = stopping_distance(
             sample.linear_velocity,
             self.config.braking_acceleration,
             self.config.control_latency_s,
             self.config.safety_margin_m,
         )
-        collision = 1.0 if sample.nearest_lidar_distance <= stop_distance else 0.0
+        collision = 1.0 if forward_clearance <= stop_distance else 0.0
+        # A fixed corridor wall can remain close to the robot's side for an
+        # entire episode. Apply the absolute threshold to the forward sector;
+        # omnidirectional hazards are handled by their closing trend below.
+        if forward_clearance <= self.config.collision_absolute_distance_m:
+            collision = 1.0
         forward_speed = max(0.0, sample.linear_velocity)
         if forward_speed > 1.0e-3:
-            ttc = (
-                max(0.0, sample.nearest_lidar_distance - self.config.safety_margin_m)
-                / forward_speed
-            )
+            ttc = max(0.0, forward_clearance - self.config.safety_margin_m) / forward_speed
             if ttc <= self.config.ttc_threshold_s:
                 collision = max(collision, 1.0 - 0.5 * ttc / self.config.ttc_threshold_s)
-        if sample.planner_status in {PlannerStatus.NO_VALID_CONTROL, PlannerStatus.ABORTED}:
-            collision = max(collision, 0.7)
+        collision_window = self._window(self.config.collision_trend_window_s)
+        if self._covers(collision_window, self.config.collision_trend_window_s):
+            duration = collision_window[-1].timestamp - collision_window[0].timestamp
+            first_collision_clearance = (
+                collision_window[0].collision_lidar_distance
+                if collision_window[0].collision_lidar_distance is not None
+                else (
+                    collision_window[0].forward_lidar_distance
+                    if collision_window[0].forward_lidar_distance is not None
+                    else collision_window[0].nearest_lidar_distance
+                )
+            )
+            last_collision_clearance = (
+                collision_window[-1].collision_lidar_distance
+                if collision_window[-1].collision_lidar_distance is not None
+                else (
+                    collision_window[-1].forward_lidar_distance
+                    if collision_window[-1].forward_lidar_distance is not None
+                    else collision_window[-1].nearest_lidar_distance
+                )
+            )
+            closing_speed = (first_collision_clearance - last_collision_clearance) / max(
+                duration, 1.0e-6
+            )
+            radial_closing_speed = (
+                collision_window[0].nearest_lidar_distance
+                - collision_window[-1].nearest_lidar_distance
+            ) / max(duration, 1.0e-6)
+            if (
+                collision_clearance <= self.config.collision_proximity_m
+                and closing_speed
+                >= abs(sample.linear_velocity)
+                + self.config.collision_radial_excess_closing_speed_mps
+                and abs(sample.angular_velocity) <= self.config.collision_max_angular_speed_radps
+            ):
+                collision = max(collision, self.config.collision_proximity_score)
+            if (
+                sample.nearest_lidar_distance <= self.config.collision_proximity_m
+                and radial_closing_speed
+                >= abs(sample.linear_velocity)
+                + self.config.collision_radial_excess_closing_speed_mps
+            ):
+                collision = max(collision, self.config.collision_proximity_score)
 
         freeze_window = self._window(self.config.freeze_window_s)
         freeze = 0.0
         if self._covers(freeze_window, self.config.freeze_window_s) and not sample.goal_reached:
             displacement = path_displacement([item.position for item in freeze_window])
-            requested_motion = any(
-                abs(item.base_linear_command) >= self.config.requested_motion_speed_mps
-                or item.planner_status in {PlannerStatus.NO_VALID_CONTROL, PlannerStatus.ABORTED}
-                for item in freeze_window
+            motion_request_fraction = float(
+                np.mean(
+                    [
+                        abs(item.base_linear_command) >= self.config.requested_motion_speed_mps
+                        for item in freeze_window
+                    ]
+                )
+            )
+            requested_motion = (
+                motion_request_fraction >= self.config.requested_motion_fraction
+                or any(
+                    item.planner_status in {PlannerStatus.NO_VALID_CONTROL, PlannerStatus.ABORTED}
+                    for item in freeze_window
+                )
             )
             if (
                 sample.goal_distance > self.config.freeze_goal_distance_m

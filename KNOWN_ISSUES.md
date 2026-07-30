@@ -79,3 +79,15 @@ When simulation time stopped, the baseline loop detected its wall deadline but t
 ## KI-020: Nav2 lifecycle activation has intermittent invalid resets
 
 Six Gate 1 attempts exposed missing `NavigateToPose` readiness or lifecycle service timeouts even though some ROS topics existed. These are classified as `INVALID_RESET`, archived with logs, and excluded from algorithm outcomes. Failure mining now assigns a fresh ROS domain and Gazebo partition per seed and retry, permits two bounded retries, and never overwrites valid episode data. All 30 fixed seeds eventually produced valid outcomes.
+
+## KI-021: Arena visual actors were invisible to LiDAR
+
+The first 30-episode Gate 1 run moved task-generated actors and detected collision from privileged center distance, but scans did not change as actors approached. The controller had reused each actor name, so its cylinder spawn addressed the existing visual entity instead of creating geometry. Proxies now use `ramp_lidar_proxy_*` names and validate spawn success. Earlier results and labels are superseded and cannot support observable-policy claims.
+
+## KI-022: Upstream task generator ignored `auto_reset`
+
+The Humble task generator reads `auto_reset` but reset every completed task unconditionally. `third_party/task_generator_auto_reset.patch` gates reset on the parameter; runtime mounts an explicit `auto_reset: false` profile and applies the patch ephemerally. Initial task setup still emits one expected reset.
+
+## KI-023: Host and container symlink builds need distinct paths
+
+Colcon symlink artifacts embed absolute paths. A host build under `/home/diy/RAMP` is not reusable at `/workspace` in the Arena container. Container artifacts remain in `ros_ws/{build,install,log}` and optional host artifacts use `*-host`; all generated variants are ignored.

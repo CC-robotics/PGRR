@@ -15,6 +15,8 @@ def _sample(
     angular: float = 0.0,
     base_linear: float = 0.2,
     lidar: float = 3.0,
+    forward_lidar: float | None = None,
+    collision_lidar: float | None = None,
     status: PlannerStatus = PlannerStatus.ACTIVE,
     goal_reached: bool = False,
 ) -> TimedNavigationSample:
@@ -27,6 +29,8 @@ def _sample(
         base_linear_command=base_linear,
         base_angular_command=angular,
         nearest_lidar_distance=lidar,
+        forward_lidar_distance=forward_lidar,
+        collision_lidar_distance=collision_lidar,
         planner_status=status,
         goal_reached=goal_reached,
     )
@@ -66,6 +70,15 @@ def test_freeze_requires_full_time_window_boundary() -> None:
         assert prediction.freeze == 0.0
     prediction = detector.update(_sample(3.0))
     assert prediction.freeze == 1.0
+
+
+def test_brief_startup_motion_request_is_not_freeze() -> None:
+    detector = RuleFailureDetector()
+    prediction = None
+    for index in range(7):
+        prediction = detector.update(_sample(index * 0.5, base_linear=0.2 if index >= 5 else 0.0))
+    assert prediction is not None
+    assert prediction.freeze == 0.0
 
 
 def test_single_turn_is_not_oscillation_and_deadband_removes_noise() -> None:
@@ -109,6 +122,82 @@ def test_blocked_low_speed_full_window_triggers_deadlock() -> None:
 def test_imminent_collision_uses_speed_dependent_stopping_distance() -> None:
     prediction = RuleFailureDetector().update(_sample(0.0, linear=1.0, lidar=0.4))
     assert prediction.collision_risk == 1.0
+
+
+def test_closing_obstacle_inside_proximity_window_triggers_early_warning() -> None:
+    detector = RuleFailureDetector()
+    detector.update(_sample(0.0, linear=0.2, lidar=1.30))
+    prediction = detector.update(_sample(0.5, linear=0.2, lidar=1.05))
+    assert prediction.collision_risk == pytest.approx(0.75)
+
+
+def test_planner_abort_is_not_mislabeled_as_collision_risk() -> None:
+    prediction = RuleFailureDetector().update(_sample(0.0, lidar=3.0, status=PlannerStatus.ABORTED))
+    assert prediction.collision_risk == 0.0
+
+
+def test_wall_range_change_while_spinning_is_not_collision_trend() -> None:
+    detector = RuleFailureDetector()
+    detector.update(_sample(0.0, linear=0.2, angular=0.9, lidar=1.40))
+    prediction = detector.update(_sample(0.5, linear=0.2, angular=0.9, lidar=1.20))
+    assert prediction.collision_risk == 0.0
+
+
+def test_fixed_side_wall_is_not_immediate_collision_risk() -> None:
+    prediction = RuleFailureDetector().update(
+        _sample(0.0, lidar=0.8, forward_lidar=3.0, linear=0.0, angular=0.0)
+    )
+    assert prediction.collision_risk == 0.0
+
+
+def test_forward_near_field_risk_triggers_immediately() -> None:
+    prediction = RuleFailureDetector().update(
+        _sample(0.0, lidar=0.8, forward_lidar=0.8, linear=0.0, angular=0.0)
+    )
+    assert prediction.collision_risk == 1.0
+
+
+def test_side_obstacle_closing_on_stationary_robot_triggers_trend() -> None:
+    detector = RuleFailureDetector()
+    detector.update(_sample(0.0, lidar=1.05, forward_lidar=3.0, collision_lidar=1.05, linear=0.0))
+    prediction = detector.update(
+        _sample(0.5, lidar=0.85, forward_lidar=3.0, collision_lidar=0.85, linear=0.0)
+    )
+    assert prediction.collision_risk == pytest.approx(0.75)
+
+
+def test_side_wall_range_change_explained_by_robot_motion_is_not_dynamic_risk() -> None:
+    detector = RuleFailureDetector()
+    detector.update(_sample(0.0, lidar=1.10, forward_lidar=3.0, collision_lidar=1.10, linear=0.2))
+    prediction = detector.update(
+        _sample(0.5, lidar=1.00, forward_lidar=3.0, collision_lidar=1.00, linear=0.2)
+    )
+    assert prediction.collision_risk == 0.0
+
+
+def test_close_side_obstacle_closing_while_turning_is_not_suppressed() -> None:
+    detector = RuleFailureDetector()
+    detector.update(
+        _sample(
+            0.0,
+            lidar=1.05,
+            forward_lidar=3.0,
+            collision_lidar=1.05,
+            linear=0.0,
+            angular=0.9,
+        )
+    )
+    prediction = detector.update(
+        _sample(
+            0.5,
+            lidar=0.85,
+            forward_lidar=3.0,
+            collision_lidar=0.85,
+            linear=0.0,
+            angular=0.9,
+        )
+    )
+    assert prediction.collision_risk == pytest.approx(0.75)
 
 
 def test_history_rejects_nonmonotonic_timestamps() -> None:

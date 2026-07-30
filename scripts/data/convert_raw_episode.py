@@ -32,6 +32,8 @@ def _load_step(record: dict[str, Any]) -> NavigationStep:
         lidar=np.asarray(record["lidar"]),
         nearest_obstacle_distance=float(record["nearest_obstacle_distance"]),
         planner_status=int(record["planner_status"]),
+        failure_prediction=np.asarray(record.get("failure_prediction", [0.0] * 4)),
+        failure_score=float(record.get("failure_score", 0.0)),
         recovery_state=int(record["recovery_state"]),
         recovery_action=int(record["recovery_action"]),
         collision=bool(record["collision"]),

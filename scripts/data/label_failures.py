@@ -29,6 +29,16 @@ def _planner_status(value: Any) -> PlannerStatus:
 
 
 def _sample(row: dict[str, Any]) -> TimedNavigationSample:
+    lidar = np.asarray(row["lidar"], dtype=np.float64)
+    trend_half_width = max(1, lidar.size // 12)
+    forward_half_width = max(1, lidar.size // 24)
+    midpoint = lidar.size // 2
+    front_clearance = float(
+        np.min(lidar[midpoint - forward_half_width : midpoint + forward_half_width + 1])
+    )
+    collision_clearance = float(
+        np.min(lidar[midpoint - trend_half_width : midpoint + trend_half_width + 1])
+    )
     return TimedNavigationSample(
         timestamp=float(row["timestamp"]),
         position=(float(row["robot_pose"][0]), float(row["robot_pose"][1])),
@@ -38,6 +48,8 @@ def _sample(row: dict[str, Any]) -> TimedNavigationSample:
         base_linear_command=float(row["base_cmd_vel"][0]),
         base_angular_command=float(row["base_cmd_vel"][1]),
         nearest_lidar_distance=float(row["nearest_obstacle_distance"]),
+        forward_lidar_distance=front_clearance,
+        collision_lidar_distance=collision_clearance,
         planner_status=_planner_status(row["planner_status"]),
         goal_reached=float(row["distance_to_goal"]) <= 0.25,
     )

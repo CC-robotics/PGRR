@@ -35,13 +35,21 @@ def write_episode(
         group.attrs["outcome"] = int(outcome)
         observations = group.create_group("observations")
         observations.create_dataset("timestamp", data=timestamps, compression="gzip")
-        for name in ("robot_pose", "robot_velocity", "cmd_vel", "base_cmd_vel", "goal", "lidar"):
+        for name in (
+            "robot_pose",
+            "robot_velocity",
+            "cmd_vel",
+            "base_cmd_vel",
+            "goal",
+            "lidar",
+            "failure_prediction",
+        ):
             observations.create_dataset(
                 name,
                 data=np.stack([getattr(step, name) for step in steps]),
                 compression="gzip",
             )
-        for name in ("distance_to_goal", "nearest_obstacle_distance"):
+        for name in ("distance_to_goal", "nearest_obstacle_distance", "failure_score"):
             observations.create_dataset(
                 name,
                 data=np.asarray([getattr(step, name) for step in steps], dtype=np.float32),
