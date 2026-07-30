@@ -247,6 +247,7 @@ class RecoveryManagerNode(Node):
             "backup_duration_s": 0.8,
             "wait_duration_s": 0.5,
             "subgoal_settle_s": 1.0,
+            "expert_replan_interval_s": 0.5,
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
@@ -602,6 +603,8 @@ class RecoveryManagerNode(Node):
             return elapsed >= self._float("backup_duration_s")
         if self._active_action in {REPLAN_ACTION_ID, CONTINUE_ACTION_ID}:
             return elapsed >= self._float("minimum_action_hold_s")
+        if self._policy_type == "expert":
+            return elapsed >= self._float("expert_replan_interval_s")
         return self._adapter.get_status() is PlannerStatus.SUCCEEDED
 
     def _execute(self, action_id: int, now_s: float) -> Pose2D | None:

@@ -8,6 +8,7 @@ frames_on: 1
 frames_off: 4
 cooldown_s: 2.0
 minimum_action_hold_s: 0.5
+expert_replan_interval_s: 0.5
 maximum_recovery_duration_s: 8.0
 maximum_rejoin_duration_s: 5.0
 maximum_rejoin_retries_per_sequence: 2

@@ -26,6 +26,7 @@ class RolloutConfig:
     max_angular_speed_radps: float = 1.0
     robot_radius_m: float = 0.36
     prediction_inflation_mps: float = 0.03
+    human_yield_distance_m: float = 1.3
 
     def __post_init__(self) -> None:
         positive = (
@@ -40,8 +41,8 @@ class RolloutConfig:
         )
         if any(value <= 0.0 for value in positive):
             raise ValueError("rollout durations, speeds, and radii must be positive")
-        if self.prediction_inflation_mps < 0.0:
-            raise ValueError("prediction_inflation_mps must be non-negative")
+        if self.prediction_inflation_mps < 0.0 or self.human_yield_distance_m < 0.0:
+            raise ValueError("prediction inflation and human yield distance must be non-negative")
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,6 +117,7 @@ def rollout_action(
     path_length = 0.0
     angular_smoothness = 0.0
     previous_angular = state.robot_velocity.angular
+    human_positions = [human.position for human in state.humans]
     steps = max(1, math.ceil(cfg.horizon_s / cfg.dt_s))
     for step in range(steps):
         elapsed = step * cfg.dt_s
@@ -147,19 +149,28 @@ def rollout_action(
         poses.append(pose)
         commands.append(command)
         prediction_time = (step + 1) * cfg.dt_s
-        for human in state.humans:
-            predicted = (
-                human.position[0] + human.velocity[0] * prediction_time,
-                human.position[1] + human.velocity[1] * prediction_time,
+        for human_index, human in enumerate(state.humans):
+            current_human = human_positions[human_index]
+            candidate_human = (
+                current_human[0] + human.velocity[0] * cfg.dt_s,
+                current_human[1] + human.velocity[1] * cfg.dt_s,
             )
+            predicted = (
+                current_human
+                if cfg.human_yield_distance_m > 0.0
+                and math.dist((pose.x, pose.y), candidate_human) < cfg.human_yield_distance_m
+                else candidate_human
+            )
+            human_positions[human_index] = predicted
             # Constant velocity alone is optimistic when a person brakes or
             # yields. Treat every point from the current position to the CV
-            # prediction as reachable over the horizon, then inflate that
-            # swept tube with time. This retains the documented CV fallback
-            # while covering the important stop-short mode.
+            # prediction as reachable during this step, then inflate that
+            # swept tube with time. The yielding branch mirrors the selected
+            # Arena fallback's declared actor dynamics; set its distance to
+            # zero for a pure constant-velocity environment.
             distance = point_to_polyline_distance(
                 (pose.x, pose.y),
-                (human.position, predicted),
+                (current_human, predicted),
             )
             minimum_human_distance = min(minimum_human_distance, distance)
             inflated_collision_radius = (

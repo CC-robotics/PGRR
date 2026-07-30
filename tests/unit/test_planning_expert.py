@@ -54,7 +54,7 @@ def test_empty_scene_selects_progressive_action_instead_of_wait() -> None:
 
 
 def test_head_on_human_makes_continue_rollout_collide() -> None:
-    human = HumanState(position=(1.3, 0.0), velocity=(-0.2, 0.0), radius=0.35)
+    human = HumanState(position=(0.9, 0.0), velocity=(-0.2, 0.0), radius=0.35)
     state = _state(human)
     rollout = rollout_action(state, ACTIONS[CONTINUE_ACTION_ID], _grid())
     label = PlanningRecoveryExpert(_grid()).label(state, _mask())
@@ -67,6 +67,13 @@ def test_swept_human_prediction_covers_possible_stop_short() -> None:
     human = HumanState(position=(0.8, 0.6), velocity=(1.0, 0.0), radius=0.35)
     rollout = rollout_action(_state(human), ACTIONS[CONTINUE_ACTION_ID], _grid())
     assert rollout.collision
+
+
+def test_yielding_human_stops_before_waiting_robot() -> None:
+    human = HumanState(position=(1.31, 0.0), velocity=(-0.6, 0.0), radius=0.35)
+    rollout = rollout_action(_state(human), ACTIONS[WAIT_ACTION_ID], _grid())
+    assert not rollout.collision
+    assert rollout.minimum_human_distance_m == pytest.approx(1.31)
 
 
 def test_human_approaching_from_left_does_not_choose_left_subgoal() -> None:

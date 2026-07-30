@@ -26,3 +26,4 @@ def test_recovery_manager_preserves_task_path_and_continue_restores_goal() -> No
     manager = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py").read_text()
     assert "if not self._goal_preempted:" in manager
     assert "if action_id in {REPLAN_ACTION_ID, CONTINUE_ACTION_ID}:" in manager
+    assert 'elapsed >= self._float("expert_replan_interval_s")' in manager
