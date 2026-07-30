@@ -6,6 +6,7 @@ import math
 from dataclasses import dataclass
 
 from ramp_core.action_space import RecoveryAction, RecoveryActionKind
+from ramp_core.geometry import point_to_polyline_distance
 from ramp_core.kinematics import integrate_differential_drive
 from ramp_core.observations import PrivilegedState
 from ramp_core.occupancy import OccupancyGrid
@@ -151,7 +152,15 @@ def rollout_action(
                 human.position[0] + human.velocity[0] * prediction_time,
                 human.position[1] + human.velocity[1] * prediction_time,
             )
-            distance = math.dist((pose.x, pose.y), predicted)
+            # Constant velocity alone is optimistic when a person brakes or
+            # yields. Treat every point from the current position to the CV
+            # prediction as reachable over the horizon, then inflate that
+            # swept tube with time. This retains the documented CV fallback
+            # while covering the important stop-short mode.
+            distance = point_to_polyline_distance(
+                (pose.x, pose.y),
+                (human.position, predicted),
+            )
             minimum_human_distance = min(minimum_human_distance, distance)
             inflated_collision_radius = (
                 cfg.robot_radius_m + human.radius + cfg.prediction_inflation_mps * prediction_time

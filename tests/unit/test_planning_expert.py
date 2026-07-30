@@ -63,6 +63,12 @@ def test_head_on_human_makes_continue_rollout_collide() -> None:
     assert label.action_costs[CONTINUE_ACTION_ID] >= 1_000_000.0
 
 
+def test_swept_human_prediction_covers_possible_stop_short() -> None:
+    human = HumanState(position=(0.8, 0.6), velocity=(1.0, 0.0), radius=0.35)
+    rollout = rollout_action(_state(human), ACTIONS[CONTINUE_ACTION_ID], _grid())
+    assert rollout.collision
+
+
 def test_human_approaching_from_left_does_not_choose_left_subgoal() -> None:
     human = HumanState(position=(0.6, 0.6), velocity=(0.0, -0.35), radius=0.35)
     label = PlanningRecoveryExpert(_grid()).label(_state(human), _mask())
