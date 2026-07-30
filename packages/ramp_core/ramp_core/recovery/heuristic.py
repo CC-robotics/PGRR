@@ -114,6 +114,11 @@ class HeuristicRecoveryPolicy:
     def _minimum_clearance(observation: RecoveryObservation) -> float:
         return float(np.min(observation.lidar[-1]))
 
+    @staticmethod
+    def _has_recent_progress(observation: RecoveryObservation) -> bool:
+        history = observation.progress_history
+        return bool(history.size >= 2 and float(history[0] - history[-1]) > 0.03)
+
     def _best_subgoal(
         self,
         observation: RecoveryObservation,
@@ -193,6 +198,20 @@ class HeuristicRecoveryPolicy:
             elif bool(mask[REPLAN_ACTION_ID]):
                 action_id = REPLAN_ACTION_ID
                 reason = "planner_failure_replan"
+        if action_id is None and confidence < 0.5 and not self._has_recent_progress(observation):
+            # A REJOIN can stall without re-triggering a high detector score.
+            # Kick the local planner with a legal short subgoal instead of
+            # waiting indefinitely or repeatedly resending the same goal.
+            action_id = self._best_subgoal(
+                observation,
+                mask,
+                side=self._stable_side(desired_side),
+            )
+            if action_id is not None:
+                reason = "stalled_rejoin_side_subgoal"
+            elif bool(mask[REPLAN_ACTION_ID]):
+                action_id = REPLAN_ACTION_ID
+                reason = "stalled_rejoin_replan"
         if action_id is None and dominant is FailureType.COLLISION_RISK:
             self._deadlock_decisions = 0
             self._collision_decisions += 1
@@ -240,14 +259,23 @@ class HeuristicRecoveryPolicy:
             self._deadlock_decisions = 0
             self._collision_decisions = 0
             self._freeze_decisions += 1
-            if self._freeze_decisions < self.config.freeze_subgoal_after_decisions and bool(
+            if self._freeze_decisions <= self.config.freeze_subgoal_after_decisions and bool(
                 mask[BACKUP_ACTION_ID]
             ):
                 action_id = BACKUP_ACTION_ID
                 reason = "freeze_backup"
             else:
-                action_id = self._best_subgoal(observation, mask)
-                reason = "freeze_path_aligned_subgoal"
+                front_clearance = self._front_clearance(observation)
+                if front_clearance <= self.config.collision_wait_clearance_m:
+                    action_id = self._best_subgoal(
+                        observation,
+                        mask,
+                        side=self._stable_side(desired_side),
+                    )
+                    reason = "freeze_blocked_choose_side"
+                else:
+                    action_id = self._best_subgoal(observation, mask)
+                    reason = "freeze_path_aligned_subgoal"
                 if action_id is None and bool(mask[REPLAN_ACTION_ID]):
                     action_id = REPLAN_ACTION_ID
                     reason = "freeze_replan"

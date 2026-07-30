@@ -22,6 +22,7 @@ def _observation(
     right_clearance: float = 3.0,
     front_clearance: float | None = None,
     planner_status: PlannerStatus = PlannerStatus.ACTIVE,
+    progress: float = 0.0,
 ) -> RecoveryObservation:
     lidar = np.empty((5, 180), dtype=np.float32)
     lidar[:, :90] = right_clearance
@@ -36,7 +37,7 @@ def _observation(
         path_waypoints=waypoints,
         robot_velocity=np.zeros(2, dtype=np.float32),
         base_action=np.zeros(2, dtype=np.float32),
-        progress_history=np.zeros(10, dtype=np.float32),
+        progress_history=np.linspace(progress, 0.0, 10, dtype=np.float32),
         angular_velocity_history=np.zeros(10, dtype=np.float32),
         planner_status=planner_status,
         failure_prediction=failure,
@@ -139,7 +140,14 @@ def test_freeze_prefers_backup_then_path_aligned_subgoal() -> None:
     policy = HeuristicRecoveryPolicy()
     assert policy.select_action(observation, _full_mask()).action_id == BACKUP_ACTION_ID
 
-    followup = policy.select_action(observation, _full_mask())
+    assert policy.select_action(observation, _full_mask()).action_id == BACKUP_ACTION_ID
+    followup = policy.select_action(
+        _observation(
+            FailurePrediction(0.0, 1.0, 0.0, 0.0),
+            front_clearance=3.0,
+        ),
+        _full_mask(),
+    )
     assert ACTIONS[followup.action_id].kind is RecoveryActionKind.SUBGOAL
     assert ACTIONS[followup.action_id].angle_degrees == 0
 
@@ -150,6 +158,37 @@ def test_freeze_prefers_backup_then_path_aligned_subgoal() -> None:
     assert action.kind is RecoveryActionKind.SUBGOAL
     assert action.angle_degrees == 0
     assert action.radius == pytest.approx(1.0)
+
+
+def test_freeze_chooses_stable_side_after_backing_from_blocked_front() -> None:
+    policy = HeuristicRecoveryPolicy()
+    observation = _observation(
+        FailurePrediction(0.0, 1.0, 0.0, 0.0),
+        left_clearance=4.0,
+        right_clearance=1.0,
+        front_clearance=0.8,
+    )
+    assert policy.select_action(observation, _full_mask()).action_id == BACKUP_ACTION_ID
+    assert policy.select_action(observation, _full_mask()).action_id == BACKUP_ACTION_ID
+    decision = policy.select_action(observation, _full_mask())
+    assert decision.reason == "freeze_blocked_choose_side"
+    assert ACTIONS[decision.action_id].angle_degrees is not None
+    assert ACTIONS[decision.action_id].angle_degrees > 0
+
+
+def test_low_score_stalled_rejoin_uses_side_subgoal() -> None:
+    decision = HeuristicRecoveryPolicy().select_action(
+        _observation(
+            FailurePrediction(0.0, 0.0, 0.0, 0.0),
+            left_clearance=4.0,
+            right_clearance=1.0,
+            progress=0.0,
+        ),
+        _full_mask(),
+    )
+    assert decision.reason == "stalled_rejoin_side_subgoal"
+    assert ACTIONS[decision.action_id].angle_degrees is not None
+    assert ACTIONS[decision.action_id].angle_degrees > 0
 
 
 def test_oscillation_side_cooldown_prevents_immediate_flip() -> None:

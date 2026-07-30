@@ -27,6 +27,7 @@ class RecoveryStateMachineConfig:
     cooldown_s: float = 2.0
     minimum_action_hold_s: float = 0.5
     maximum_recovery_duration_s: float = 8.0
+    maximum_rejoin_duration_s: float = 5.0
     maximum_consecutive_recoveries: int = 4
 
     def __post_init__(self) -> None:
@@ -34,7 +35,15 @@ class RecoveryStateMachineConfig:
             raise ValueError("thresholds must satisfy 0 <= tau_off < tau_on <= 1")
         if self.frames_on <= 0 or self.frames_off <= 0:
             raise ValueError("hysteresis frame counts must be positive")
-        if min(self.cooldown_s, self.minimum_action_hold_s, self.maximum_recovery_duration_s) < 0.0:
+        if (
+            min(
+                self.cooldown_s,
+                self.minimum_action_hold_s,
+                self.maximum_recovery_duration_s,
+                self.maximum_rejoin_duration_s,
+            )
+            < 0.0
+        ):
             raise ValueError("durations must be non-negative")
         if self.maximum_consecutive_recoveries <= 0:
             raise ValueError("maximum_consecutive_recoveries must be positive")
@@ -189,6 +198,15 @@ class RecoveryStateMachine:
                 self.state = RecoveryState.PENDING_RECOVERY
                 self._high_frames = 1
                 reason = "failure_repeated"
+            elif state_input.now_s - self._state_since_s >= self.config.maximum_rejoin_duration_s:
+                if self._consecutive_recoveries >= self.config.maximum_consecutive_recoveries:
+                    self.state = RecoveryState.FAILED
+                    reason = "rejoin_retry_limit"
+                else:
+                    self.state = RecoveryState.RECOVERY
+                    self._consecutive_recoveries += 1
+                    self._low_frames = 0
+                    reason = "rejoin_timeout_retry"
 
         changed = self.state is not previous
         if changed:

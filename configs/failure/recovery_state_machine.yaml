@@ -9,6 +9,7 @@ frames_off: 4
 cooldown_s: 2.0
 minimum_action_hold_s: 0.5
 maximum_recovery_duration_s: 8.0
+maximum_rejoin_duration_s: 5.0
 maximum_consecutive_recoveries: 4
 wait_duration_s: 0.5
 backup_duration_s: 0.8
@@ -17,3 +18,7 @@ robot_clearance_m: 0.25
 braking_acceleration_mps2: 0.8
 control_latency_s: 0.15
 stopping_margin_m: 0.45
+emergency_hold_s: 0.5
+emergency_backup_duration_s: 0.8
+emergency_backup_clearance_m: 0.70
+emergency_release_speed_mps: 0.03

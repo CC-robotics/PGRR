@@ -27,6 +27,7 @@ from ramp_core.kinematics import stopping_distance
 from ramp_core.observations import RecoveryObservation, select_local_path_waypoints
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
+from ramp_core.recovery.safety import EmergencyEscapeController
 from ramp_core.state_machine import (
     RecoveryState,
     RecoveryStateMachine,
@@ -79,6 +80,7 @@ class RecoveryManagerNode(Node):
             cooldown_s=self._float("cooldown_s"),
             minimum_action_hold_s=self._float("minimum_action_hold_s"),
             maximum_recovery_duration_s=self._float("maximum_recovery_duration_s"),
+            maximum_rejoin_duration_s=self._float("maximum_rejoin_duration_s"),
             maximum_consecutive_recoveries=self._integer("maximum_consecutive_recoveries"),
         )
         self._machine = RecoveryStateMachine(state_config)
@@ -123,6 +125,14 @@ class RecoveryManagerNode(Node):
         self._goal_preempted = False
         self._action_started_s = float("-inf")
         self._emergency = False
+        self._emergency_escape_active = False
+        self._published_emergency_escape = False
+        self._emergency_escape = EmergencyEscapeController(
+            hold_s=self._float("emergency_hold_s"),
+            backup_duration_s=self._float("emergency_backup_duration_s"),
+            backup_clearance_m=self._float("emergency_backup_clearance_m"),
+            release_speed_mps=self._float("emergency_release_speed_mps"),
+        )
         self._decision_publisher = self.create_publisher(
             RecoveryDecision, str(self.get_parameter("recovery_decision_topic").value), 10
         )
@@ -173,6 +183,7 @@ class RecoveryManagerNode(Node):
             "cooldown_s": 2.0,
             "minimum_action_hold_s": 0.5,
             "maximum_recovery_duration_s": 8.0,
+            "maximum_rejoin_duration_s": 5.0,
             "maximum_consecutive_recoveries": 4,
             "side_clearance_ratio": 1.25,
             "collision_wait_clearance_m": 1.3,
@@ -190,6 +201,10 @@ class RecoveryManagerNode(Node):
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
+            "emergency_hold_s": 0.5,
+            "emergency_backup_duration_s": 0.8,
+            "emergency_backup_clearance_m": 0.70,
+            "emergency_release_speed_mps": 0.03,
         }
         for name, value in numeric_defaults.items():
             self.declare_parameter(name, value)
@@ -491,7 +506,13 @@ class RecoveryManagerNode(Node):
             self._float("stopping_margin_m"),
         )
         motion_clearance = self._motion_clearance(float(self._odom.twist.twist.linear.x))
-        self._emergency = motion_clearance < stop
+        raw_emergency = motion_clearance < stop
+        self._emergency, self._emergency_escape_active = self._emergency_escape.update(
+            now_s=now_s,
+            hazard=raw_emergency,
+            linear_speed_mps=float(self._odom.twist.twist.linear.x),
+            rear_clearance_m=self._laser_clearance(math.pi),
+        )
         action_complete = self._machine.state is RecoveryState.RECOVERY and self._action_complete(
             now_s
         )
@@ -528,10 +549,32 @@ class RecoveryManagerNode(Node):
                 self._goal_preempted = False
             self._publish_decision(CONTINUE_ACTION_ID, self._failure.score, transition.reason)
         elif transition.current is RecoveryState.EMERGENCY_STOP and transition.changed:
-            self._active_action = WAIT_ACTION_ID
+            self._active_action = (
+                BACKUP_ACTION_ID if self._emergency_escape_active else WAIT_ACTION_ID
+            )
             self._action_started_s = now_s
-            self._publish_decision(WAIT_ACTION_ID, 1.0, "emergency_stop")
+            self._published_emergency_escape = self._emergency_escape_active
+            self._publish_decision(
+                self._active_action,
+                1.0,
+                ("emergency_safe_backup" if self._emergency_escape_active else "emergency_stop"),
+            )
+        elif (
+            transition.current is RecoveryState.EMERGENCY_STOP
+            and self._emergency_escape_active != self._published_emergency_escape
+        ):
+            self._active_action = (
+                BACKUP_ACTION_ID if self._emergency_escape_active else WAIT_ACTION_ID
+            )
+            self._action_started_s = now_s
+            self._published_emergency_escape = self._emergency_escape_active
+            self._publish_decision(
+                self._active_action,
+                1.0,
+                ("emergency_safe_backup" if self._emergency_escape_active else "emergency_stop"),
+            )
         elif transition.previous is RecoveryState.EMERGENCY_STOP and transition.changed:
+            self._published_emergency_escape = False
             self._publish_decision(
                 CONTINUE_ACTION_ID, self._failure.score, "emergency_clear_continue_goal"
             )
@@ -560,7 +603,17 @@ class RecoveryManagerNode(Node):
             immediate_safety_stop = (
                 self._motion_clearance(float(self._odom.twist.twist.linear.x)) < stop
             )
-        if (
+        if self._machine.state is RecoveryState.EMERGENCY_STOP and self._emergency_escape_active:
+            rear_stop = stopping_distance(
+                self._float("backup_speed_mps"),
+                self._float("braking_acceleration_mps2"),
+                self._float("control_latency_s"),
+                self._float("stopping_margin_m"),
+            )
+            command = Twist()
+            if self._laser_clearance(math.pi) >= rear_stop:
+                command.linear.x = -self._float("backup_speed_mps")
+        elif (
             immediate_safety_stop
             or self._machine.state is RecoveryState.EMERGENCY_STOP
             or (
