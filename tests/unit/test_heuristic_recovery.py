@@ -28,7 +28,7 @@ def _observation(
     lidar[:, :90] = right_clearance
     lidar[:, 90:] = left_clearance
     if front_clearance is not None:
-        lidar[:, 75:106] = front_clearance
+        lidar[:, 70:111] = front_clearance
     waypoints = np.zeros((8, 2), dtype=np.float32)
     waypoints[:, 0] = np.linspace(0.25, 2.0, 8)
     return RecoveryObservation(
@@ -46,6 +46,13 @@ def _observation(
 
 def _full_mask() -> np.ndarray:
     return np.ones(ACTION_COUNT, dtype=np.bool_)
+
+
+def test_scan_angle_index_uses_configured_jackal_field_of_view() -> None:
+    policy = HeuristicRecoveryPolicy(HeuristicRecoveryConfig(lidar_field_of_view_degrees=270.0))
+    assert policy._scan_index_for_angle(-np.pi / 2.0, 180, 270.0) == 30
+    assert policy._scan_index_for_angle(0.0, 180, 270.0) in {89, 90}
+    assert policy._scan_index_for_angle(np.pi / 2.0, 180, 270.0) == 149
 
 
 def test_collision_risk_waits_when_side_clearance_is_similar() -> None:

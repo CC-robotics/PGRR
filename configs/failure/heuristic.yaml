@@ -9,6 +9,7 @@ goal_alignment_weight: 0.5
 progress_reward_weight: 0.4
 clearance_reward_weight: 0.2
 radius_preference_weight: 0.35
+lidar_field_of_view_degrees: 270.0
 side_cooldown_decisions: 4
 collision_max_backup_decisions: 1
 freeze_subgoal_after_decisions: 2

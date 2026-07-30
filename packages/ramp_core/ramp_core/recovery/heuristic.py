@@ -36,6 +36,7 @@ class HeuristicRecoveryConfig:
     progress_reward_weight: float = 0.4
     clearance_reward_weight: float = 0.2
     radius_preference_weight: float = 0.35
+    lidar_field_of_view_degrees: float = 270.0
     side_cooldown_decisions: int = 4
     collision_max_backup_decisions: int = 1
     freeze_subgoal_after_decisions: int = 2
@@ -48,6 +49,8 @@ class HeuristicRecoveryConfig:
             raise ValueError("side_clearance_ratio must be greater than one")
         if self.preferred_subgoal_radius_m <= 0.0:
             raise ValueError("preferred_subgoal_radius_m must be positive")
+        if not 180.0 <= self.lidar_field_of_view_degrees <= 360.0:
+            raise ValueError("lidar_field_of_view_degrees must lie in [180, 360]")
         weights = (
             self.minimum_subgoal_progress_m,
             self.path_alignment_weight,
@@ -122,7 +125,18 @@ class HeuristicRecoveryPolicy:
         return float(observation.goal_polar[1])
 
     @staticmethod
-    def _front_clearance(observation: RecoveryObservation) -> float:
+    def _scan_index_for_angle(
+        angle_radians: float,
+        beam_count: int,
+        field_of_view_degrees: float,
+    ) -> int:
+        if beam_count <= 0:
+            raise ValueError("beam_count must be positive")
+        half_fov = math.radians(field_of_view_degrees) / 2.0
+        clipped = max(-half_fov, min(half_fov, angle_radians))
+        return round((clipped + half_fov) / (2.0 * half_fov) * (beam_count - 1))
+
+    def _front_clearance(self, observation: RecoveryObservation) -> float:
         """Return the nearest range in the forward 60-degree sector.
 
         The all-around minimum is deliberately not used here: in a narrow
@@ -131,7 +145,10 @@ class HeuristicRecoveryPolicy:
         """
         scan = observation.lidar[-1]
         midpoint = len(scan) // 2
-        half_width = max(1, round(len(scan) * 30.0 / 360.0))
+        half_width = max(
+            1,
+            round(len(scan) * 30.0 / self.config.lidar_field_of_view_degrees),
+        )
         return float(np.min(scan[midpoint - half_width : midpoint + half_width + 1]))
 
     @staticmethod
@@ -169,8 +186,15 @@ class HeuristicRecoveryPolicy:
                 continue
             path_error = abs(math.atan2(math.sin(angle - path_angle), math.cos(angle - path_angle)))
             goal_error = abs(math.atan2(math.sin(angle - goal_angle), math.cos(angle - goal_angle)))
-            index = round((angle + math.pi) / (2.0 * math.pi) * (len(scan) - 1))
-            half_width = max(1, round(len(scan) * 6.0 / 360.0))
+            index = self._scan_index_for_angle(
+                angle,
+                len(scan),
+                self.config.lidar_field_of_view_degrees,
+            )
+            half_width = max(
+                1,
+                round(len(scan) * 6.0 / self.config.lidar_field_of_view_degrees),
+            )
             start = max(0, index - half_width)
             stop = min(len(scan), index + half_width + 1)
             directional_clearance = float(np.min(scan[start:stop]))
