@@ -68,10 +68,17 @@ def test_hdf5_rejects_duplicate_and_non_monotonic_episode(tmp_path: Path) -> Non
     write_episode(destination, _metadata(), [_step(0.0)], EpisodeOutcome.TIMEOUT)
     with pytest.raises(ValueError, match="duplicate episode"):
         write_episode(destination, _metadata(), [_step(0.0)], EpisodeOutcome.TIMEOUT)
-    with pytest.raises(ValueError, match="monotonic"):
+    with pytest.raises(ValueError, match="strictly increasing"):
         write_episode(
             destination,
             _metadata("episode-002"),
             [_step(1.0), _step(0.0)],
             EpisodeOutcome.INVALID_RESET,
+        )
+    with pytest.raises(ValueError, match="strictly increasing"):
+        write_episode(
+            destination,
+            _metadata("episode-003"),
+            [_step(0.0), _step(0.0)],
+            EpisodeOutcome.TIMEOUT,
         )

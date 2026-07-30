@@ -23,8 +23,8 @@ def write_episode(
     if not steps:
         raise ValueError("cannot write an empty episode")
     timestamps = np.asarray([step.timestamp for step in steps], dtype=np.float64)
-    if np.any(np.diff(timestamps) < 0.0):
-        raise ValueError("episode timestamps must be monotonic")
+    if np.any(np.diff(timestamps) <= 0.0):
+        raise ValueError("episode timestamps must be strictly increasing")
     path.parent.mkdir(parents=True, exist_ok=True)
     with h5py.File(path, "a") as handle:
         episodes = handle.require_group("episodes")
@@ -102,8 +102,8 @@ def validate_file(path: Path) -> dict[str, Any]:
             length = int(observations["timestamp"].shape[0])
             if observations["lidar"].shape != (length, 180):
                 raise ValueError(f"invalid lidar shape in {identifier}")
-            if np.any(np.diff(observations["timestamp"][:]) < 0.0):
-                raise ValueError(f"non-monotonic timestamps in {identifier}")
+            if np.any(np.diff(observations["timestamp"][:]) <= 0.0):
+                raise ValueError(f"timestamps are not strictly increasing in {identifier}")
             if group["privileged"]["json"].shape != (length,):
                 raise ValueError(f"privileged/public time dimension mismatch in {identifier}")
             total_steps += length

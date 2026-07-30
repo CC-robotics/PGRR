@@ -1,0 +1,16 @@
+schema_version: 1
+planner: dwb
+global_planner: navfn
+profiles:
+  base:
+    arena_inter_planner: navigate_w_replanning_time
+    behavior_tree_sha256: ec7f48583881583871f2c937f2eeda43b6715556ec4a8ac9a4b66f1247cf0f29
+    description: DWB with periodic global replanning and no Nav2 recovery subtree.
+  standard:
+    arena_inter_planner: navigate_to_pose_w_replanning_and_recovery
+    behavior_tree_sha256: b7a7d847f5b6a9f1f29a58b109a6f8838281672dd22ae10e822b17b3f9cc6127
+    description: DWB with the Arena-provided Nav2 replanning and recovery behavior tree.
+  heuristic:
+    arena_inter_planner: navigate_w_replanning_time
+    behavior_tree_sha256: ec7f48583881583871f2c937f2eeda43b6715556ec4a8ac9a4b66f1247cf0f29
+    description: Base profile plus the RAMP observable failure detector and heuristic recovery.

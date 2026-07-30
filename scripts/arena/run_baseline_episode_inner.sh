@@ -4,10 +4,21 @@ set -euo pipefail
 SCENARIO="${RAMP_SCENARIO:?RAMP_SCENARIO is required}"
 TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}"
 SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}"
-if [[ "${SOURCE_POLICY}" != "base" && "${SOURCE_POLICY}" != "heuristic" ]]; then
-    echo "ERROR: RAMP_SOURCE_POLICY must be base or heuristic" >&2
-    exit 2
-fi
+case "${SOURCE_POLICY}" in
+    base)
+        INTER_PLANNER="navigate_w_replanning_time"
+        ;;
+    standard)
+        INTER_PLANNER="navigate_to_pose_w_replanning_and_recovery"
+        ;;
+    heuristic)
+        INTER_PLANNER="navigate_w_replanning_time"
+        ;;
+    *)
+        echo "ERROR: RAMP_SOURCE_POLICY must be base, standard, or heuristic" >&2
+        exit 2
+        ;;
+esac
 SCENARIO_TARGET="/opt/arena_ws/install/arena_simulation_setup/share/arena_simulation_setup/worlds/map_empty/scenarios/default.json"
 
 readarray -t scenario_values < <(python3 - "${SCENARIO}" <<'PY'
@@ -62,6 +73,7 @@ export LIBGL_ALWAYS_SOFTWARE=1
 setsid xvfb-run -a -s '-screen 0 1280x720x24' \
     ros2 launch arena_bringup arena.launch.py \
     sim:=gazebo human:=dummy headless:=2 robot:=jackal local_planner:=dwb world:=map_empty \
+    inter_planner:="${INTER_PLANNER}" \
     tm_robots:=scenario tm_obstacles:=scenario use_sim_time:=true \
     >>"${RUNTIME_LOG}" 2>&1 &
 launch_pid=$!

@@ -42,9 +42,24 @@ def _load_step(record: dict[str, Any]) -> NavigationStep:
     )
 
 
+def _deduplicate_steps(steps: list[NavigationStep]) -> tuple[list[NavigationStep], int]:
+    """Remove only repeated simulation stamps and reject backwards time."""
+    result: list[NavigationStep] = []
+    duplicate_count = 0
+    for step in steps:
+        if result and step.timestamp < result[-1].timestamp:
+            raise ValueError("raw episode timestamps moved backwards")
+        if result and step.timestamp == result[-1].timestamp:
+            duplicate_count += 1
+            continue
+        result.append(step)
+    return result, duplicate_count
+
+
 def convert(prefixes: list[Path], destination: Path) -> dict[str, Any]:
     if destination.exists():
         raise FileExistsError(f"refusing to overwrite existing shard: {destination}")
+    duplicate_count = 0
     for raw_prefix in prefixes:
         prefix = _prefix(raw_prefix)
         stream_path = prefix.with_suffix(".jsonl")
@@ -56,13 +71,17 @@ def convert(prefixes: list[Path], destination: Path) -> dict[str, Any]:
         metadata = EpisodeMetadata(**json.loads(metadata_path.read_text(encoding="utf-8")))
         outcome_payload = json.loads(outcome_path.read_text(encoding="utf-8"))
         outcome = EpisodeOutcome[outcome_payload["outcome"]]
-        steps = [
+        raw_steps = [
             _load_step(json.loads(line))
             for line in stream_path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
+        steps, removed = _deduplicate_steps(raw_steps)
+        duplicate_count += removed
         write_episode(destination, metadata, steps, outcome)
-    return validate_file(destination)
+    summary = validate_file(destination)
+    summary["duplicate_timestamps_removed"] = duplicate_count
+    return summary
 
 
 def main() -> None:

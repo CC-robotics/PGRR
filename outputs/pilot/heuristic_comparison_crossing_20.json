@@ -1,0 +1,189 @@
+{
+  "base": {
+    "collision_rate": 0.65,
+    "episode_count": 20,
+    "mean_min_human_distance_m": 0.7937238450243098,
+    "mean_progress_m": 11.500763803720474,
+    "median_min_human_distance_m": 0.7084504271407754,
+    "median_progress_m": 7.717350006103516,
+    "outcomes": {
+      "COLLISION": 13,
+      "TIMEOUT": 7
+    },
+    "success_rate": 0.0,
+    "timeout_rate": 0.35
+  },
+  "bootstrap": {
+    "confidence": 0.95,
+    "samples": 10000,
+    "seed": 0
+  },
+  "excluded_invalid_reset_count": 8,
+  "families": [
+    "crossing_flow"
+  ],
+  "heuristic": {
+    "collision_rate": 0.45,
+    "episode_count": 20,
+    "mean_min_human_distance_m": 1.1731126066286373,
+    "mean_progress_m": 11.643447786569595,
+    "median_min_human_distance_m": 0.748786701578209,
+    "median_progress_m": 7.084989547729492,
+    "outcomes": {
+      "COLLISION": 9,
+      "TIMEOUT": 11
+    },
+    "success_rate": 0.0,
+    "timeout_rate": 0.55
+  },
+  "invalid_resets": [
+    {
+      "attempt": 0,
+      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed03_reactive13_standard_dwb_attempt00.json",
+      "episode_id": "crossing_flow_high_mining_seed03_reactive13_standard_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 1,
+      "timestamp": "2026-07-30T07:51:47.395545+00:00"
+    },
+    {
+      "attempt": 0,
+      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed06_reactive13_heuristic_dwb_attempt00.json",
+      "episode_id": "crossing_flow_high_mining_seed06_reactive13_heuristic_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 1,
+      "timestamp": "2026-07-30T06:47:07.374064+00:00"
+    },
+    {
+      "attempt": 0,
+      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed09_reactive13_heuristic_dwb_attempt00.json",
+      "episode_id": "crossing_flow_high_mining_seed09_reactive13_heuristic_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 1,
+      "timestamp": "2026-07-30T06:53:55.199219+00:00"
+    },
+    {
+      "attempt": 0,
+      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed11_reactive13_heuristic_dwb_attempt00.json",
+      "episode_id": "crossing_flow_high_mining_seed11_reactive13_heuristic_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 1,
+      "timestamp": "2026-07-30T07:16:40.027944+00:00"
+    },
+    {
+      "attempt": 1,
+      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed11_reactive13_heuristic_dwb_attempt01.json",
+      "episode_id": "crossing_flow_high_mining_seed11_reactive13_heuristic_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 2,
+      "timestamp": "2026-07-30T07:19:06.736534+00:00"
+    },
+    {
+      "attempt": 0,
+      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed17_reactive13_heuristic_dwb_attempt00.json",
+      "episode_id": "crossing_flow_high_mining_seed17_reactive13_heuristic_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 1,
+      "timestamp": "2026-07-30T07:32:12.029112+00:00"
+    },
+    {
+      "attempt": 1,
+      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed17_reactive13_heuristic_dwb_attempt01.json",
+      "episode_id": "crossing_flow_high_mining_seed17_reactive13_heuristic_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 1,
+      "timestamp": "2026-07-30T07:34:17.111029+00:00"
+    },
+    {
+      "attempt": 2,
+      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed17_reactive13_heuristic_dwb_attempt02.json",
+      "episode_id": "crossing_flow_high_mining_seed17_reactive13_heuristic_dwb",
+      "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
+      "outcome": "INVALID_RESET",
+      "returncode": 1,
+      "timestamp": "2026-07-30T07:36:22.240677+00:00"
+    }
+  ],
+  "pair_count": 20,
+  "paired_statistics": {
+    "collision_mcnemar_exact": {
+      "discordant_pairs": 8,
+      "pvalue_two_sided": 0.2890625,
+      "reference_only": 6,
+      "treatment_only": 2
+    },
+    "collision_mcnemar_exact_standard_vs_base": {
+      "discordant_pairs": 9,
+      "pvalue_two_sided": 1.0,
+      "reference_only": 5,
+      "treatment_only": 4
+    },
+    "collision_rate_difference_heuristic_minus_base": {
+      "estimate": -0.2,
+      "lower": -0.45,
+      "upper": 0.05
+    },
+    "collision_rate_difference_standard_minus_base": {
+      "estimate": -0.05,
+      "lower": -0.35,
+      "upper": 0.25
+    },
+    "progress_difference_m_heuristic_minus_base": {
+      "estimate": 0.1426839828491211,
+      "lower": -3.248981147706508,
+      "upper": 3.4851525758206834
+    },
+    "progress_difference_m_standard_minus_base": {
+      "estimate": -0.6158414363861084,
+      "lower": -4.117479853779075,
+      "upper": 2.9431050410866733
+    },
+    "progress_wilcoxon": {
+      "nonzero_pairs": 20,
+      "pvalue_two_sided": 0.8983173370361328,
+      "statistic": 101.0
+    },
+    "progress_wilcoxon_standard_vs_base": {
+      "nonzero_pairs": 20,
+      "pvalue_two_sided": 0.8123550415039062,
+      "statistic": 98.0
+    }
+  },
+  "purpose": "Gate 2 paired train-split pilot; not final test evidence",
+  "schema_version": 1,
+  "source_files": {
+    "base": [
+      "/home/diy/RAMP/outputs/pilot/corrected_crossing_base_10.csv",
+      "/home/diy/RAMP/outputs/pilot/corrected_crossing_base_10_19.csv"
+    ],
+    "heuristic": [
+      "/home/diy/RAMP/outputs/pilot/corrected_crossing_heuristic_10.csv",
+      "/home/diy/RAMP/outputs/pilot/corrected_crossing_heuristic_10_19.csv",
+      "/home/diy/RAMP/outputs/pilot/corrected_crossing_heuristic_17_19.csv"
+    ],
+    "standard": [
+      "/home/diy/RAMP/outputs/pilot/corrected_crossing_standard_20.csv",
+      "/home/diy/RAMP/outputs/pilot/corrected_crossing_standard_09_19.csv"
+    ]
+  },
+  "standard": {
+    "collision_rate": 0.6,
+    "episode_count": 20,
+    "mean_min_human_distance_m": 0.8142129483127454,
+    "mean_progress_m": 10.884922367334365,
+    "median_min_human_distance_m": 0.707754028270537,
+    "median_progress_m": 7.093733310699463,
+    "outcomes": {
+      "COLLISION": 12,
+      "TIMEOUT": 8
+    },
+    "success_rate": 0.0,
+    "timeout_rate": 0.4
+  }
+}

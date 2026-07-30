@@ -112,6 +112,8 @@ def run(
     max_reset_retries: int = 2,
     source_policy: str = "base",
     episode_suffix: str | None = None,
+    seed_min: int | None = None,
+    seed_max: int | None = None,
 ) -> None:
     if max_reset_retries < 0:
         raise ValueError("max_reset_retries must be non-negative")
@@ -121,6 +123,12 @@ def run(
         records = [record for record in records if record["family"] == family]
         if not records:
             raise ValueError(f"manifest has no episodes for family: {family}")
+    if seed_min is not None:
+        records = [record for record in records if int(record["seed"]) >= seed_min]
+    if seed_max is not None:
+        records = [record for record in records if int(record["seed"]) <= seed_max]
+    if not records:
+        raise ValueError("manifest filters selected no episodes")
     if limit is not None:
         records = records[:limit]
     summaries: list[dict[str, Any]] = []
@@ -198,8 +206,12 @@ def main() -> None:
         choices=("head_on_corridor", "doorway_bottleneck", "crossing_flow"),
     )
     parser.add_argument("--max-reset-retries", type=int, default=2)
-    parser.add_argument("--source-policy", choices=("base", "heuristic"), default="base")
+    parser.add_argument(
+        "--source-policy", choices=("base", "standard", "heuristic"), default="base"
+    )
     parser.add_argument("--episode-suffix")
+    parser.add_argument("--seed-min", type=int)
+    parser.add_argument("--seed-max", type=int)
     args = parser.parse_args()
     run(
         args.manifest.resolve(),
@@ -209,6 +221,8 @@ def main() -> None:
         args.max_reset_retries,
         args.source_policy,
         args.episode_suffix,
+        args.seed_min,
+        args.seed_max,
     )
 
 

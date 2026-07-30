@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Materialize ten deterministic training variants for each core failure family."""
+"""Materialize deterministic training variants for each core failure family."""
 
 from __future__ import annotations
 

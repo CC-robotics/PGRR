@@ -130,6 +130,7 @@ class EpisodeLoggerNode(Node):
         self._timeout = float(self.get_parameter("episode_timeout_s").value)
         self._goal_tolerance = float(self.get_parameter("goal_tolerance_m").value)
         self._start_time: float | None = None
+        self._last_sample_timestamp: float | None = None
         self._initial_robot_position: tuple[float, float] | None = None
         self._maximum_start_displacement = 0.0
         self._outcome: EpisodeOutcome | None = None
@@ -342,6 +343,16 @@ class EpisodeLoggerNode(Node):
             return
         stamp = self._odom.header.stamp
         now = float(stamp.sec) + float(stamp.nanosec) * 1.0e-9
+        if self._last_sample_timestamp is not None:
+            if now < self._last_sample_timestamp:
+                self._set_outcome(
+                    EpisodeOutcome.INVALID_RESET,
+                    "odometry simulation time moved backwards during episode",
+                )
+                return
+            if now == self._last_sample_timestamp:
+                return
+        self._last_sample_timestamp = now
         if self._start_time is None:
             self._start_time = now
         elapsed = now - self._start_time

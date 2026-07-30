@@ -1,6 +1,9 @@
 /**:
   ros__parameters:
     auto_reset: false
+    # Keep Arena's task boundary beyond the 120 s algorithm timeout so the
+    # logger receives the terminal sensor sample before the simulator pauses.
+    timeout: 125
     task:
       parametrized:
         file: default.xml

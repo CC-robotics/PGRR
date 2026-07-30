@@ -73,3 +73,54 @@ scripts/arena/smoke_failure_detector.sh
 scripts/arena/smoke_recovery_manager.sh
 scripts/arena/smoke_goal_mux.sh
 ```
+
+Corrected-proxy 20-seed crossing pilot and paired statistics:
+
+```bash
+conda run -n ramp-offline python scripts/data/materialize_failure_mining.py --seed-count 20
+conda run -n ramp-offline python scripts/evaluate/mine_failures.py \
+  --manifest scenarios/manifests/failure_mining.yaml --family crossing_flow \
+  --seed-min 10 --seed-max 19 --source-policy base --episode-suffix reactive13_base \
+  --output outputs/pilot/corrected_crossing_base_10_19.csv
+conda run -n ramp-offline python scripts/evaluate/mine_failures.py \
+  --manifest scenarios/manifests/failure_mining.yaml --family crossing_flow \
+  --seed-min 10 --seed-max 19 --source-policy heuristic \
+  --episode-suffix reactive13_heuristic \
+  --output outputs/pilot/corrected_crossing_heuristic_10_19.csv
+conda run -n ramp-offline python scripts/evaluate/mine_failures.py \
+  --manifest scenarios/manifests/failure_mining.yaml --family crossing_flow \
+  --seed-min 17 --seed-max 19 --source-policy heuristic \
+  --episode-suffix reactive13_heuristic \
+  --output outputs/pilot/corrected_crossing_heuristic_17_19.csv
+conda run -n ramp-offline python scripts/evaluate/summarize_gate2_pilot.py \
+  --base outputs/pilot/corrected_crossing_base_10.csv \
+  --base outputs/pilot/corrected_crossing_base_10_19.csv \
+  --heuristic outputs/pilot/corrected_crossing_heuristic_10.csv \
+  --heuristic outputs/pilot/corrected_crossing_heuristic_10_19.csv \
+  --heuristic outputs/pilot/corrected_crossing_heuristic_17_19.csv \
+  --json-output outputs/pilot/heuristic_comparison_crossing_20.json \
+  --csv-output outputs/pilot/heuristic_comparison_crossing_20.csv
+```
+
+The initial 0-9 artifacts are `corrected_crossing_{base,heuristic}_10.csv`. Resume-safe execution produced later CSV shards after invalid resets; no algorithm row was synthesized while combining them.
+
+Standard-recovery crossing run and strict-timestamp smoke:
+
+```bash
+conda run -n ramp-offline python scripts/evaluate/mine_failures.py \
+  --manifest scenarios/manifests/failure_mining.yaml --family crossing_flow \
+  --seed-min 0 --seed-max 19 --source-policy standard \
+  --episode-suffix reactive13_standard \
+  --output outputs/pilot/corrected_crossing_standard_20.csv
+conda run -n ramp-offline python scripts/evaluate/mine_failures.py \
+  --manifest scenarios/manifests/failure_mining.yaml --family crossing_flow \
+  --seed-min 9 --seed-max 19 --source-policy standard \
+  --episode-suffix reactive13_standard \
+  --output outputs/pilot/corrected_crossing_standard_09_19.csv
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+  RAMP_EPISODE_ID=logger_strict_timestamp_smoke RAMP_EPISODE_TIMEOUT_S=5 \
+  RAMP_SOURCE_POLICY=base ROS_DOMAIN_ID=130 \
+  GZ_PARTITION=ramp_logger_strict_smoke IGN_PARTITION=ramp_logger_strict_smoke \
+  scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/mining/crossing_flow_high_mining_seed00.json
+```

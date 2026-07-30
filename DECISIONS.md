@@ -55,3 +55,7 @@ Gazebo's task-generated `actor` entities are visible in rendering but produced n
 ## D-014: Direction-consistent braking clearance
 
 The braking equation is longitudinal, so its clearance input is measured along current translation: forward motion checks a forward laser sector and reverse motion checks the rear. This prevents a safe parallel side wall from being treated as longitudinal stopping distance. Emergency stop remains above policy output and is not claimed as a formal guarantee.
+
+## D-015: Separate classical and standard-recovery behavior trees
+
+The corrected Gate 1 `base` profile uses Arena's `navigate_w_replanning_time` tree (DWB plus periodic replanning, without a recovery subtree). The `standard` profile uses the installed `navigate_to_pose_w_replanning_and_recovery` tree. The `heuristic` profile uses the same base tree plus RAMP's observable detector and recovery manager. This keeps B0, B1, and B2 distinct without adding a custom C++ Nav2 plugin; the exact mapping is locked in `configs/planner/baselines.yaml`.

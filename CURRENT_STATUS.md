@@ -30,8 +30,14 @@
 - Added the command mux, Nav2 temporary-goal manager, safe 25-action heuristic policy, original-goal restoration, and recovery-aware logging.
 - Patched the task generator so `auto_reset: false` is honored.
 - Replaced LiDAR-invisible visual actors with uniquely named cylindrical LiDAR/collision proxies and deterministic robot-occupancy yielding. Simulator truth remains excluded from policy observations.
-- Passed 64 offline tests and ROS smokes for failure detection, temporary-goal/rejoin recovery, and command arbitration.
+- Passed 71 offline tests and ROS smokes for failure detection, temporary-goal/rejoin recovery, command arbitration, paired statistics, strict simulator timestamps, and locked baseline profiles.
 - Observed a development-only crossing seed-0 signal: base DWB collided after 6.891 m progress; heuristic recovery avoided collision and made 19.004 m progress, ending 1.996 m from the goal at timeout.
+- Extended the corrected train-split mining manifest to 20 fixed seeds per core family and generated deterministic previews for all additions.
+- Completed 20 paired corrected-proxy crossing episodes for B0 and B2. B0 produced 13 collisions/7 timeouts; B2 produced 9 collisions/11 timeouts; neither reached the goal.
+- Added deterministic paired bootstrap intervals, exact McNemar, and Wilcoxon reporting. The crossing collision-rate difference is -0.20 (95% bootstrap CI [-0.45, 0.05], exact McNemar p=0.289); mean progress difference is +0.143 m (Wilcoxon p=0.898).
+- Separated B0, B1, and B2 with pinned Arena behavior trees and recorded their installed-file SHA256 values.
+- Completed all 20 B1 crossing episodes: 12 collisions, 8 timeouts, and no goal reaches. Versus B0, the collision-rate difference is -0.05 (95% bootstrap CI [-0.35, 0.25], exact McNemar p=1.0) and mean progress difference is -0.616 m (Wilcoxon p=0.812).
+- Fixed slow-simulator duplicate logging. A real 5 s Arena smoke produced 51 samples, 51 unique stamps, and a strictly increasing sequence from 0.0 to 4.995 s; legacy conversion reports equal-stamp removal and rejects backwards time.
 
 ### Commands
 
@@ -85,7 +91,9 @@ scripts/arena/smoke_goal_mux.sh
 - ROS detector smoke: PASS; a 1.0 m/s observation with 0.20 m clearance publishes collision risk 1.0 and a triggered status.
 - Recovery manager smoke: PASS; a temporary goal is accepted and the original `(5, 0)` goal is restored.
 - Goal mux smoke: PASS; normal/subgoal pass through, WAIT/terminal output zero, and BACKUP outputs `-0.15 m/s`.
-- Corrected-proxy crossing seed 0: DEVELOPMENT SIGNAL ONLY, not a gate claim. Base=`COLLISION`; heuristic=`TIMEOUT`, with higher progress and human clearance. Multi-seed pairing is pending.
+- Corrected-proxy crossing 20-seed pairing: COMPLETE but Gate 2 FAIL. Collision frequency fell from 13/20 to 9/20, but the paired result is not significant; timeout frequency rose from 7/20 to 11/20; both success rates are zero. These train-split pilot results are retained as a safety/efficiency tradeoff, not a method-improvement claim.
+- Standard-recovery crossing pairing: COMPLETE but no improvement claim. B1 has 12/20 collisions and 8/20 timeouts versus B0's 13/20 and 7/20; both paired collision and progress tests are non-significant and all success rates are zero.
+- Corrected crossing startup exclusions: 8 `INVALID_RESET` attempts are reported separately; all three methods ultimately have 20 valid algorithm outcomes.
 
 ### Failures
 
@@ -96,7 +104,8 @@ scripts/arena/smoke_goal_mux.sh
 - The pinned Arena source references a Gazebo HuNav plugin absent from its installer and depending on an unpublished `arena_people_msgs` package. Dynamic runs use the documented Gazebo kinematic proxy fallback and are not labeled as HuNav social-force runs.
 - Legacy Nav2 lifecycle activation is intermittently unreliable; every invalid reset is archived, assigned a fresh ROS domain for bounded retry, and excluded rather than counted as an algorithm failure.
 - The earlier dense label artifact was generated before LiDAR-visible pedestrian geometry was fixed and is superseded; it must be regenerated from the corrected baseline.
+- Crossing-flow alone does not meet the heuristic MVP acceptance gate: it reduces observed collisions without significance and converts several failures into timeouts instead of successful navigation.
 
 ### Next
 
-Rerun fixed-seed Gate 1 with the corrected proxy, then complete paired base/standard/heuristic evaluation. Do not begin expert or neural-policy work until corrected Gate 1 and Gate 2 checks pass.
+Run corrected paired base/standard/heuristic evaluation on head-on and doorway scenarios. Do not begin expert or neural-policy work until corrected Gate 1 and Gate 2 checks pass.

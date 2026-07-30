@@ -18,7 +18,7 @@ def _module():  # type: ignore[no-untyped-def]
     return module
 
 
-def test_failure_mining_manifest_has_ten_unique_seeds_per_family(tmp_path: Path) -> None:
+def test_failure_mining_manifest_has_configured_unique_seeds_per_family(tmp_path: Path) -> None:
     module = _module()
     summary = module.materialize(
         tmp_path / "variants",

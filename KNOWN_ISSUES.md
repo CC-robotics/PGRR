@@ -91,3 +91,11 @@ The Humble task generator reads `auto_reset` but reset every completed task unco
 ## KI-023: Host and container symlink builds need distinct paths
 
 Colcon symlink artifacts embed absolute paths. A host build under `/home/diy/RAMP` is not reusable at `/workspace` in the Arena container. Container artifacts remain in `ros_ws/{build,install,log}` and optional host artifacts use `*-host`; all generated variants are ignored.
+
+## KI-024: Arena can pause at its task timeout before the logger's terminal sample
+
+One corrected heuristic episode reached a final odometry stamp just below 120 s and then stopped producing sensor data at Arena's task boundary, so the independent 120 s logger could not observe `elapsed >= timeout`. The runtime-only task-generator profile now sets its integer timeout to 125 s while the algorithm episode timeout remains 120 s. Arena's legacy parameter declaration rejects a YAML float override even though its Python wrapper is annotated as `float`; a regression test locks the integer representation. This preserves the declared evaluation horizon and gives the logger a five-second simulator-time guard band; a stopped simulator still reaches the existing wall-clock guard and is classified separately.
+
+## KI-025: Wall-clock sampling duplicated slow-simulator odometry stamps
+
+The logger samples from a steady wall timer so a paused simulator can still reach its wall guard, but Gazebo can run slower than real time. The original logger therefore wrote the latest odometry more than once; observed unique-stamp ratios ranged from 0.80 to 0.95. Terminal outcomes and endpoint metrics are unaffected, but duplicated frames would bias learning. The logger now writes only strictly newer simulator stamps and treats backwards time as `INVALID_RESET`. HDF5 rejects non-strict timestamps, while legacy raw conversion removes only equal adjacent stamps and reports the removal count.
