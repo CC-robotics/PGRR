@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import math
+
 import pytest
-from ramp_core.recovery.safety import EmergencyEscapeController
+from ramp_core.recovery.safety import (
+    EmergencyEscapeController,
+    backup_increases_obstacle_clearance,
+)
 
 
 def _controller() -> EmergencyEscapeController:
@@ -61,6 +66,11 @@ def test_footprint_hazard_cancels_active_backup() -> None:
         rear_clearance_m=2.0,
         backup_permitted=False,
     ) == (True, False)
+
+
+def test_backup_direction_guard_distinguishes_front_and_rear_obstacles() -> None:
+    assert backup_increases_obstacle_clearance(math.radians(72.0))
+    assert not backup_increases_obstacle_clearance(math.radians(123.0))
 
 
 def test_emergency_escape_configuration_rejects_negative_values() -> None:

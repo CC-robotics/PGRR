@@ -34,7 +34,10 @@ from ramp_core.occupancy import OccupancyGrid
 from ramp_core.planning.expert import PlanningRecoveryExpert
 from ramp_core.planning.online import augment_grid_with_scan, estimate_human_states
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
-from ramp_core.recovery.safety import EmergencyEscapeController
+from ramp_core.recovery.safety import (
+    EmergencyEscapeController,
+    backup_increases_obstacle_clearance,
+)
 from ramp_core.state_machine import (
     RecoveryState,
     RecoveryStateMachine,
@@ -253,6 +256,7 @@ class RecoveryManagerNode(Node):
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
             "footprint_stop_clearance_m": 0.35,
+            "footprint_backup_forward_angle_degrees": 80.0,
             "emergency_hold_s": 0.5,
             "emergency_backup_duration_s": 0.8,
             "emergency_backup_clearance_m": 0.70,
@@ -511,6 +515,24 @@ class RecoveryManagerNode(Node):
         finite = values[np.isfinite(values) & (values >= 0.0)]
         return float(np.min(finite)) if finite.size else 0.0
 
+    def _nearest_obstacle_angle(self) -> float:
+        assert self._scan is not None
+        values = np.asarray(self._scan.ranges, dtype=np.float64)
+        valid = np.isfinite(values) & (values >= 0.0)
+        if not bool(valid.any()):
+            return math.pi
+        valid_indices = np.flatnonzero(valid)
+        closest_index = int(valid_indices[np.argmin(values[valid])])
+        return float(self._scan.angle_min) + closest_index * float(self._scan.angle_increment)
+
+    def _footprint_backup_permitted(self, footprint_hazard: bool) -> bool:
+        return not footprint_hazard or backup_increases_obstacle_clearance(
+            self._nearest_obstacle_angle(),
+            maximum_forward_angle_rad=math.radians(
+                self._float("footprint_backup_forward_angle_degrees")
+            ),
+        )
+
     def _action_mask(
         self,
         pose: Pose2D,
@@ -683,7 +705,7 @@ class RecoveryManagerNode(Node):
             hazard=raw_emergency,
             linear_speed_mps=float(self._odom.twist.twist.linear.x),
             rear_clearance_m=self._laser_clearance(math.pi),
-            backup_permitted=not footprint_hazard,
+            backup_permitted=self._footprint_backup_permitted(footprint_hazard),
         )
         action_complete = self._machine.state is RecoveryState.RECOVERY and self._action_complete(
             now_s
@@ -782,7 +804,7 @@ class RecoveryManagerNode(Node):
         if (
             self._machine.state is RecoveryState.EMERGENCY_STOP
             and self._emergency_escape_active
-            and not footprint_hazard
+            and self._footprint_backup_permitted(footprint_hazard)
         ):
             rear_stop = stopping_distance(
                 self._float("backup_speed_mps"),

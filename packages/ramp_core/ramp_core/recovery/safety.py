@@ -2,7 +2,20 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
+
+
+def backup_increases_obstacle_clearance(
+    obstacle_angle_rad: float,
+    *,
+    maximum_forward_angle_rad: float = math.radians(80.0),
+) -> bool:
+    """Return whether reverse translation initially moves away from an obstacle."""
+    if not math.isfinite(obstacle_angle_rad) or not 0.0 < maximum_forward_angle_rad <= math.pi:
+        raise ValueError("obstacle angle must be finite and forward angle must lie in (0, pi]")
+    wrapped = math.atan2(math.sin(obstacle_angle_rad), math.cos(obstacle_angle_rad))
+    return abs(wrapped) <= maximum_forward_angle_rad
 
 
 @dataclass
