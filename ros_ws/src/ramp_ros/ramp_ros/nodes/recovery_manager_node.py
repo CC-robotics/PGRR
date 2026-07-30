@@ -375,7 +375,7 @@ class RecoveryManagerNode(Node):
         if frame.endswith("odom"):
             cosine = math.cos(self._start.yaw)
             sine = math.sin(self._start.yaw)
-            self._path = tuple(
+            path = tuple(
                 (
                     self._start.x + cosine * pose.pose.position.x - sine * pose.pose.position.y,
                     self._start.y + sine * pose.pose.position.x + cosine * pose.pose.position.y,
@@ -383,9 +383,13 @@ class RecoveryManagerNode(Node):
                 for pose in message.poses
             )
         else:
-            self._path = tuple(
-                (pose.pose.position.x, pose.pose.position.y) for pose in message.poses
-            )
+            path = tuple((pose.pose.position.x, pose.pose.position.y) for pose in message.poses)
+        # The policy observation and expert rejoin cost are defined against
+        # the task-level path, not the temporary recovery-goal path. Nav2 uses
+        # the same Path topic for both, so preserve the last task-level path
+        # until the original goal has been restored.
+        if not self._goal_preempted:
+            self._path = path
 
     def _on_map(self, message: OccupancyGridMessage) -> None:
         width = int(message.info.width)
@@ -610,7 +614,7 @@ class RecoveryManagerNode(Node):
             self._adapter.set_recovery_goal(temporary)
             self._goal_preempted = True
             return temporary
-        if action_id == REPLAN_ACTION_ID:
+        if action_id in {REPLAN_ACTION_ID, CONTINUE_ACTION_ID}:
             self._adapter.restore_original_goal()
             self._goal_preempted = False
         return None

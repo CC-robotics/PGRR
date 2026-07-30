@@ -19,3 +19,10 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     assert 'inter_planner:="${INTER_PLANNER}"' in runtime
     assert 'policy_type:="${recovery_policy_type}"' in runtime
     assert '"${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "oracle"' in runtime
+
+
+def test_recovery_manager_preserves_task_path_and_continue_restores_goal() -> None:
+    root = Path(__file__).resolve().parents[2]
+    manager = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py").read_text()
+    assert "if not self._goal_preempted:" in manager
+    assert "if action_id in {REPLAN_ACTION_ID, CONTINUE_ACTION_ID}:" in manager
