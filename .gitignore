@@ -20,6 +20,7 @@ data/raw/**/*.metadata.json
 data/raw/**/*.outcome.json
 data/interim/*.h5
 data/processed/*.h5
+data/quarantine/
 checkpoints/**/*.pt
 checkpoints/**/*.zip
 outputs/pilot/*_failure_mining_part.csv

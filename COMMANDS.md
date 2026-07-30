@@ -74,6 +74,17 @@ scripts/arena/smoke_recovery_manager.sh
 scripts/arena/smoke_goal_mux.sh
 ```
 
+Corrected head-on planner-abort smoke:
+
+```bash
+RAMP_ROS_DOMAIN_BASE=240 RAMP_GZ_PARTITION_BASE=340 \
+conda run -n ramp-offline python scripts/evaluate/mine_failures.py \
+  --manifest scenarios/manifests/failure_mining.yaml \
+  --output outputs/pilot/corrected_head_on_base_smoke.csv \
+  --family head_on_corridor --seed-min 0 --seed-max 0 \
+  --source-policy base --episode-suffix strict2_base
+```
+
 Corrected-proxy 20-seed crossing pilot and paired statistics:
 
 ```bash

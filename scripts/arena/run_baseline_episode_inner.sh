@@ -7,12 +7,15 @@ SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}"
 case "${SOURCE_POLICY}" in
     base)
         INTER_PLANNER="navigate_w_replanning_time"
+        TERMINATE_ON_PLANNER_ABORT="true"
         ;;
     standard)
         INTER_PLANNER="navigate_to_pose_w_replanning_and_recovery"
+        TERMINATE_ON_PLANNER_ABORT="true"
         ;;
     heuristic)
         INTER_PLANNER="navigate_w_replanning_time"
+        TERMINATE_ON_PLANNER_ABORT="false"
         ;;
     *)
         echo "ERROR: RAMP_SOURCE_POLICY must be base, standard, or heuristic" >&2
@@ -259,6 +262,8 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p project_commit:="${project_commit}" \
     -p output_directory:="${output_directory}" \
     -p episode_timeout_s:="${timeout_value}" \
+    -p terminate_on_planner_abort:="${TERMINATE_ON_PLANNER_ABORT}" \
+    -p planner_abort_grace_s:=5.0 \
     -p goal_x:="${goal_x}" -p goal_y:="${goal_y}" -p goal_yaw:="${goal_yaw}" \
     -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
     -p robot_start_yaw:="${start_yaw}" \

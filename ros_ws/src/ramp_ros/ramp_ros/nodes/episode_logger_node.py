@@ -15,6 +15,7 @@ from geometry_msgs.msg import PoseArray, Twist
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMessage
 from ramp_core.data.schema import EpisodeMetadata, EpisodeOutcome, NavigationStep
+from ramp_core.evaluation.navigation import PlannerAbortTracker
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.clock import Clock, ClockType
 from rclpy.executors import ExternalShutdownException
@@ -57,6 +58,8 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("sample_frequency_hz", 10.0)
         self.declare_parameter("episode_timeout_s", 180.0)
         self.declare_parameter("planner_startup_failure_s", 12.0)
+        self.declare_parameter("terminate_on_planner_abort", False)
+        self.declare_parameter("planner_abort_grace_s", 5.0)
         self.declare_parameter("goal_x", 0.0)
         self.declare_parameter("goal_y", 0.0)
         self.declare_parameter("goal_yaw", 0.0)
@@ -141,6 +144,10 @@ class EpisodeLoggerNode(Node):
         self._base_cmd = np.zeros(2, dtype=np.float32)
         self._path: tuple[tuple[float, float], ...] = ()
         self._planner_status = int(GoalStatus.STATUS_UNKNOWN)
+        self._planner_statuses: tuple[int, ...] = ()
+        self._planner_abort_tracker = PlannerAbortTracker(
+            grace_s=float(self.get_parameter("planner_abort_grace_s").value)
+        )
         self._failure_prediction = np.zeros(4, dtype=np.float32)
         self._failure_score = 0.0
         self._recovery_state = 0
@@ -263,7 +270,12 @@ class EpisodeLoggerNode(Node):
         if not message.status_list:
             return
         raw_statuses = [int(item.status) for item in message.status_list]
-        active = {GoalStatus.STATUS_ACCEPTED, GoalStatus.STATUS_EXECUTING}
+        self._planner_statuses = tuple(raw_statuses)
+        active = {
+            GoalStatus.STATUS_ACCEPTED,
+            GoalStatus.STATUS_EXECUTING,
+            GoalStatus.STATUS_CANCELING,
+        }
         status = next((item for item in raw_statuses if item in active), raw_statuses[-1])
         self._planner_status = status
         if status == GoalStatus.STATUS_SUCCEEDED and self._odom is not None:
@@ -295,6 +307,11 @@ class EpisodeLoggerNode(Node):
                     EpisodeOutcome.GOAL_REACHED,
                     "recovery manager succeeded with goal-distance verification",
                 )
+        elif self._recovery_state == RecoveryDecision.FAILED:
+            self._set_outcome(
+                EpisodeOutcome.PLANNER_FAILURE,
+                "recovery manager exhausted the configured recovery attempts",
+            )
 
     def _on_humans(self, message: PoseArray) -> None:
         self._human_positions = tuple((pose.position.x, pose.position.y) for pose in message.poses)
@@ -358,6 +375,21 @@ class EpisodeLoggerNode(Node):
         elapsed = now - self._start_time
         if elapsed >= self._timeout:
             self._set_outcome(EpisodeOutcome.TIMEOUT, "configured episode timeout")
+            return
+        if bool(self.get_parameter("terminate_on_planner_abort").value) and (
+            self._planner_abort_tracker.update(
+                statuses=self._planner_statuses,
+                simulated_time_s=elapsed,
+                accepted=int(GoalStatus.STATUS_ACCEPTED),
+                executing=int(GoalStatus.STATUS_EXECUTING),
+                canceling=int(GoalStatus.STATUS_CANCELING),
+                aborted=int(GoalStatus.STATUS_ABORTED),
+            )
+        ):
+            self._set_outcome(
+                EpisodeOutcome.PLANNER_FAILURE,
+                "NavigateToPose remained aborted without a replacement active goal",
+            )
             return
         twist = self._odom.twist.twist
         robot_pose = self._world_robot_pose(self._odom)
