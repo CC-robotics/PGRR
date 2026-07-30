@@ -79,11 +79,12 @@ class GoalMuxNode(Node):
             RecoveryDecision.FAILED,
             RecoveryDecision.SUCCEEDED,
         }
+        pending_stop = self._recovery_state == RecoveryDecision.PENDING_RECOVERY
         direct_recovery = self._recovery_state == RecoveryDecision.EMERGENCY_STOP or (
             self._recovery_state == RecoveryDecision.RECOVERY
             and self._recovery_action in {WAIT_ACTION_ID, BACKUP_ACTION_ID}
         )
-        if terminal_stop:
+        if terminal_stop or pending_stop:
             output = Twist()
         elif direct_recovery:
             output = self._recovery if now - self._recovery_stamp <= self._timeout else Twist()

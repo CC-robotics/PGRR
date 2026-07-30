@@ -27,3 +27,10 @@ def test_recovery_manager_preserves_task_path_and_continue_restores_goal() -> No
     assert "if not self._goal_preempted:" in manager
     assert "if action_id in {REPLAN_ACTION_ID, CONTINUE_ACTION_ID}:" in manager
     assert 'elapsed >= self._float("expert_replan_interval_s")' in manager
+
+
+def test_pending_recovery_is_a_protective_stop() -> None:
+    root = Path(__file__).resolve().parents[2]
+    mux = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/goal_mux_node.py").read_text()
+    assert "pending_stop = self._recovery_state == RecoveryDecision.PENDING_RECOVERY" in mux
+    assert "if terminal_stop or pending_stop:" in mux

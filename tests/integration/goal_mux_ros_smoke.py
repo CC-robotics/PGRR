@@ -76,6 +76,14 @@ def main() -> int:
             executor,
             driver,
             0.0,
+            state=RecoveryDecision.PENDING_RECOVERY,
+            action=-1,
+            recovery_speed=0.0,
+        )
+        _wait_for_speed(
+            executor,
+            driver,
+            0.0,
             state=RecoveryDecision.RECOVERY,
             action=WAIT_ACTION_ID,
             recovery_speed=0.0,
@@ -106,7 +114,8 @@ def main() -> int:
         )
         print(
             "PASS goal mux ROS smoke: "
-            "normal=0.30 wait=0.00 backup=-0.15 subgoal=0.30 succeeded=0.00"
+            "normal=0.30 pending=0.00 wait=0.00 backup=-0.15 "
+            "subgoal=0.30 succeeded=0.00"
         )
         return 0
     finally:
