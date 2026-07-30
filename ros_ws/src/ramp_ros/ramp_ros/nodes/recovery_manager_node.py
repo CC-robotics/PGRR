@@ -525,6 +525,14 @@ class RecoveryManagerNode(Node):
         closest_index = int(valid_indices[np.argmin(values[valid])])
         return float(self._scan.angle_min) + closest_index * float(self._scan.angle_increment)
 
+    def _footprint_stop_distance(self, linear_velocity: float) -> float:
+        return stopping_distance(
+            abs(linear_velocity),
+            self._float("braking_acceleration_mps2"),
+            self._float("control_latency_s"),
+            self._float("footprint_stop_clearance_m"),
+        )
+
     def _footprint_backup_permitted(self, footprint_hazard: bool) -> bool:
         return not footprint_hazard or backup_increases_obstacle_clearance(
             self._nearest_obstacle_angle(),
@@ -698,7 +706,9 @@ class RecoveryManagerNode(Node):
             self._float("stopping_margin_m"),
         )
         motion_clearance = self._motion_clearance(float(self._odom.twist.twist.linear.x))
-        footprint_hazard = self._nearest_clearance() < self._float("footprint_stop_clearance_m")
+        footprint_hazard = self._nearest_clearance() < self._footprint_stop_distance(
+            float(self._odom.twist.twist.linear.x)
+        )
         raw_emergency = motion_clearance < stop or footprint_hazard
         self._emergency, self._emergency_escape_active = self._emergency_escape.update(
             now_s=now_s,
@@ -795,9 +805,10 @@ class RecoveryManagerNode(Node):
                 self._float("control_latency_s"),
                 self._float("stopping_margin_m"),
             )
+            linear_velocity = float(self._odom.twist.twist.linear.x)
             immediate_safety_stop = self._motion_clearance(
-                float(self._odom.twist.twist.linear.x)
-            ) < stop or self._nearest_clearance() < self._float("footprint_stop_clearance_m")
+                linear_velocity
+            ) < stop or self._nearest_clearance() < self._footprint_stop_distance(linear_velocity)
         footprint_hazard = self._scan is not None and self._nearest_clearance() < self._float(
             "footprint_stop_clearance_m"
         )
