@@ -23,3 +23,14 @@ def test_mask_blocks_unsafe_backup() -> None:
     mask = compute_action_mask(Pose2D(0.7, 1.0, 0.0), grid, replan_available=True)
     assert not bool(mask[BACKUP_ACTION_ID])
     validate_selected_action(WAIT_ACTION_ID, mask)
+
+
+def test_mask_blocks_human_anywhere_along_backup_segment() -> None:
+    grid = OccupancyGrid(np.zeros((30, 30), dtype=np.bool_), resolution=0.1)
+    mask = compute_action_mask(
+        Pose2D(1.0, 1.0, 0.0),
+        grid,
+        human_positions=((0.8, 1.0),),
+        replan_available=True,
+    )
+    assert not bool(mask[BACKUP_ACTION_ID])

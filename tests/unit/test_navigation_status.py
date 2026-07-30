@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from ramp_core.evaluation.navigation import PlannerAbortTracker
+from ramp_core.evaluation.navigation import PlannerAbortTracker, timeout_is_invalid_reset
 
 
 def test_abort_requires_full_grace_without_active_replacement() -> None:
@@ -32,3 +32,18 @@ def test_non_abort_and_clock_rewind_reset_or_restart_window() -> None:
 def test_negative_abort_grace_is_rejected() -> None:
     with pytest.raises(ValueError, match="non-negative"):
         PlannerAbortTracker(grace_s=-0.1)
+
+
+def test_timeout_without_active_goal_or_movement_is_invalid_reset() -> None:
+    assert timeout_is_invalid_reset(
+        planner_ever_active=False,
+        maximum_start_displacement_m=0.0,
+    )
+    assert not timeout_is_invalid_reset(
+        planner_ever_active=True,
+        maximum_start_displacement_m=0.0,
+    )
+    assert not timeout_is_invalid_reset(
+        planner_ever_active=False,
+        maximum_start_displacement_m=0.1,
+    )

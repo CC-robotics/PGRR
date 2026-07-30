@@ -82,6 +82,7 @@ class RecoveryStateMachine:
         self._last_recovery_end_s = float("-inf")
         self._consecutive_recoveries = 0
         self._rejoin_retries = 0
+        self._resume_after_emergency: RecoveryState | None = None
 
     @property
     def consecutive_recoveries(self) -> int:
@@ -108,6 +109,7 @@ class RecoveryStateMachine:
         self._last_recovery_end_s = float("-inf")
         self._consecutive_recoveries = 0
         self._rejoin_retries = 0
+        self._resume_after_emergency = None
 
     def update(self, state_input: StateMachineInput) -> StateTransition:
         if not 0.0 <= state_input.failure_score <= 1.0:
@@ -124,13 +126,35 @@ class RecoveryStateMachine:
             self.state = RecoveryState.FAILED
             reason = "unrecoverable_failure"
         elif state_input.emergency_stop:
+            if self.state is not RecoveryState.EMERGENCY_STOP:
+                self._resume_after_emergency = (
+                    self.state
+                    if self.state
+                    in {
+                        RecoveryState.PENDING_RECOVERY,
+                        RecoveryState.RECOVERY,
+                        RecoveryState.REJOIN,
+                    }
+                    else None
+                )
             self.state = RecoveryState.EMERGENCY_STOP
             reason = "safety_stop"
         elif self.state is RecoveryState.EMERGENCY_STOP:
-            if state_input.failure_score > self.config.tau_on:
+            resume = self._resume_after_emergency
+            self._resume_after_emergency = None
+            if state_input.failure_score > self.config.tau_on and resume in {
+                RecoveryState.RECOVERY,
+                RecoveryState.REJOIN,
+            }:
+                self.state = RecoveryState.RECOVERY
+                reason = "safety_clear_resume_recovery"
+            elif state_input.failure_score > self.config.tau_on:
                 self.state = RecoveryState.PENDING_RECOVERY
                 self._high_frames = 1
                 reason = "safety_clear_failure_pending"
+            elif resume in {RecoveryState.RECOVERY, RecoveryState.REJOIN}:
+                self.state = RecoveryState.REJOIN
+                reason = "safety_clear_resume_rejoin"
             else:
                 self.state = RecoveryState.NORMAL
                 self._high_frames = 0

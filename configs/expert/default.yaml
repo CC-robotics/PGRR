@@ -9,8 +9,13 @@ robot_radius_m: 0.36
 prediction_inflation_mps: 0.03
 human_prediction_geometry: constant_velocity_swept_tube
 human_yield_distance_m: 1.3
-scan_obstacle_inflation_m: 0.40
+scan_obstacle_inflation_m: 0.0
+oracle_trigger_horizon_s: 3.0
+oracle_trigger_margin_m: 0.25
+oracle_yield_passed_margin_m: 0.5
+oracle_yield_maximum_retreat_m: 1.4
 rejoin_block_collision_threshold: 0.9
+wait_budget_decisions: 3
 cost:
   collision: 1000000.0
   progress: 8.0

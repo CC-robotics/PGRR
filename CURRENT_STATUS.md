@@ -1,6 +1,6 @@
 # Current status
 
-## Gate 1 revalidation / Gate 2 — observable recovery MVP (in progress)
+## Gate 2 failed / Gate 3 — privileged Oracle prevalidation (in progress)
 
 ### Completed
 
@@ -42,6 +42,10 @@
 - Removed the conflicting Gazebo AMCL source from the known-pose profile. A real 20 s replay keeps Nav2 path starts aligned to robot odometry within 0.047 m median and 0.127 m maximum.
 - Added collision-risk latching, recovery-motion exclusion from freeze/deadlock windows, asynchronous subgoal-command settling, first-response WAIT, and a one-BACKUP-per-sequence cap.
 - Implemented the ROS-independent privileged planning expert, cost decomposition, constant-velocity human rollout, fixed-mask/margin label, and a 20-scene PDF validator. Corrected the 180-beam heuristic mapping to the Jackal's actual 270-degree field of view. The complete quality suite passes 117 tests.
+- Composed short expert decisions into recovery options, added bounded WAIT escalation, distinguished unobserved rear LiDAR from low clearance, removed double footprint inflation, and made emergency stops resume the interrupted recovery sequence without consuming a new recovery attempt.
+- Added a privileged constant-velocity Oracle trigger and an interpretable longitudinal YIELD option. These are confined to the Oracle upper bound and are not available to the formal observable policy.
+- Completed the first valid online Oracle recovery/rejoin success on `crossing_flow_low_train_s01200`: `GOAL_REACHED` after one temporary-subgoal intervention. Generated a raw-hash-linked Base/Oracle pair CSV.
+- Added reset-validity classification for a goal that never becomes active. The complete quality suite now passes 152 tests and the three-package ROS overlay builds.
 
 ### Commands
 
@@ -102,8 +106,9 @@ scripts/arena/smoke_goal_mux.sh
 - Known-pose TF regression: PASS. The 20 s seed-2 smoke made 3.384 m progress; 143 path samples had 0.047 m median path-start error and no AMCL/costmap-bound conflict.
 - Expert synthetic validation: PASS for implementation smoke only. Twenty scenes, zero illegal selected actions, zero selected-rollout collisions, and 20 predicted-success labels under the selected yielding-human model. This is not an Arena Oracle comparison and does not pass Gate 3.
 - Arena-to-expert labeling smoke: PASS as a data-pipeline check. Fifty recovery-relevant states from the corrected known-pose head-on seed-2 episode produced 50 finite legal labels and zero illegal selections. The expert selected lateral subgoals in 38/50 states, WAIT in 2/50, BACKUP in 2/50, and other special actions in 8/50. None met the current three-second rejoin-based `predicted_success` criterion, so this artifact verifies labeling and shows that prolonged WAIT is not the expert's preferred response; it does not establish Oracle recovery success.
-- Online privileged Oracle deployment: PASS as an execution-path validation, FAIL for Gate 3 outcome. The final high-density train seed-2 run completed 120 s without collision, made 4.174 m net progress, maintained 0.736 m minimum human-center distance, and ended `TIMEOUT`. The final low-density train scenario remained collision-free with 0.789 m minimum human distance and 0.367 m minimum LiDAR clearance, but exhausted the recovery budget after 79.054 s and 5.140 m progress (`PLANNER_FAILURE`).
-- Safety regression suite: PASS. The online iterations exposed and fixed task-path corruption, stale CONTINUE goals, non-receding expert actions, repeated-WAIT cost omission, unsafe pending-state command leakage, turning-sweep detector coverage, footprint braking distance, unsafe emergency backup, and emergency-release command pulses. The full offline suite now passes 131 tests and the three-package ROS overlay builds.
+- Historical single-step Oracle diagnostics: execution path passed but the head-on outcomes failed. High-density train seed 2 completed 120 s without collision and made 4.174 m net progress; the earlier low-density version remained collision-free but exhausted its recovery budget. These diagnostics motivated D-017 and are excluded from accepted comparisons.
+- Sequence-level Oracle execution: PASS on one recoverable train episode, but Gate 3 remains pending multi-seed validation. In crossing-flow low seed 1200, Base and Oracle both reached the goal. Base used 102.231 s with 1.272 m minimum human distance; Oracle used 101.831 s with 1.244 m minimum human distance and a 2 s temporary-subgoal intervention. This single pair establishes execution and rejoin, not superiority. The auditable source is `outputs/pilot/crossing_flow_gate3_pair.csv`.
+- Safety regression suite: PASS. The online iterations exposed and fixed task-path corruption, stale CONTINUE goals, non-receding expert actions, repeated-WAIT cost omission, unsafe pending-state command leakage, turning-sweep detector coverage, footprint braking distance, unsafe emergency backup, emergency-release command pulses, emergency interruption accounting, rear-sector observability, and double obstacle inflation. The full offline suite now passes 152 tests and the three-package ROS overlay builds.
 
 ### Failures
 
@@ -118,8 +123,9 @@ scripts/arena/smoke_goal_mux.sh
 - The first strict head-on batch exposed that terminal NavigateToPose aborts were being recorded as timeouts after arbitrary post-abort motion. Those two partial episodes and logs are quarantined and excluded; no affected row is used in the corrected pilot.
 - All B0/B1/B2 dynamic results generated before the known-pose localization patch are superseded for method claims and require paired replay.
 - The final bounded heuristic seed-2 replay is safe but unsuccessful: `TIMEOUT`, 4.836 m progress, 0.739 m minimum human distance, with WAIT used for 777/1202 samples. Gate 2 remains failed.
-- The final online Oracle runs are also unsuccessful. High-density seed 2 is safe but times out; the low-density train scenario is safe but exhausts the configured recovery attempts. Diagnostic Oracle iterations 1--8 are retained as development evidence but are excluded from method comparisons because each directly motivated a code fix.
+- The two-person head-on corridor remains unrecoverable under the selected deterministic fallback's hard 1.3 m robot-avoidance stop: the two fixed pedestrian lanes span the corridor and the actors have no lateral avoidance behavior. Safe Oracle variants time out rather than inventing a passage. These runs are retained as failure analysis, not used to tune test data or claim recovery success.
+- A parallel crossing-flow launch produced one interrupted `SIMULATOR_FAILURE` and one goal-never-active reset. Both are excluded. The logger now classifies a full-horizon no-active-goal/no-movement run as `INVALID_RESET`.
 
 ### Next
 
-Replace the single-step recovery/rejoin loop with a bounded sequence-level recovery option that can commit to retreat, lateral displacement, and rejoin phases while replanning safely within each phase. Keep Gates 2 and 3 failed and do not begin neural-policy training until the Oracle succeeds on recoverable train scenarios.
+Run sequential, paired Base/Oracle validation on additional crossing-flow and doorway train seeds. Gate 3 has one successful recoverable execution but is not accepted until the Oracle advantage and failure modes are assessed across multiple valid episodes. Keep Gate 2 failed and do not begin neural-policy training yet.

@@ -47,6 +47,27 @@ def test_emergency_release_with_failure_remains_protective_pending() -> None:
     assert transition.reason == "safety_clear_failure_pending"
 
 
+def test_emergency_interruptions_resume_same_recovery_sequence() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            cooldown_s=0.0,
+            maximum_consecutive_recoveries=2,
+        )
+    )
+    assert machine.update(StateMachineInput(0.0, 0.8, False)).current is RecoveryState.RECOVERY
+    assert machine.consecutive_recoveries == 1
+    for start in (0.1, 0.3, 0.5):
+        assert (
+            machine.update(StateMachineInput(start, 1.0, False, emergency_stop=True)).current
+            is RecoveryState.EMERGENCY_STOP
+        )
+        resumed = machine.update(StateMachineInput(start + 0.1, 1.0, False, emergency_stop=False))
+        assert resumed.current is RecoveryState.RECOVERY
+        assert resumed.reason == "safety_clear_resume_recovery"
+        assert machine.consecutive_recoveries == 1
+
+
 def test_single_frame_configuration_enters_recovery_immediately() -> None:
     machine = RecoveryStateMachine(RecoveryStateMachineConfig(frames_on=1, cooldown_s=0.0))
     transition = machine.update(StateMachineInput(1.0, 0.8, False))

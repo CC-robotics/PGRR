@@ -5,6 +5,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+def timeout_is_invalid_reset(
+    *,
+    planner_ever_active: bool,
+    maximum_start_displacement_m: float,
+    movement_threshold_m: float = 0.05,
+) -> bool:
+    """Identify episodes whose navigation goal never became executable."""
+    if maximum_start_displacement_m < 0.0 or movement_threshold_m < 0.0:
+        raise ValueError("displacements must be non-negative")
+    return not planner_ever_active and maximum_start_displacement_m < movement_threshold_m
+
+
 @dataclass
 class PlannerAbortTracker:
     """Detect a terminal Nav2 abort after a simulated-time grace interval.

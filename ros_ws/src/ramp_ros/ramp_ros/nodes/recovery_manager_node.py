@@ -32,10 +32,17 @@ from ramp_core.observations import (
 )
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.planning.expert import PlanningRecoveryExpert
-from ramp_core.planning.online import augment_grid_with_scan, estimate_human_states
+from ramp_core.planning.online import (
+    augment_grid_with_scan,
+    directional_scan_clearance,
+    estimate_human_states,
+    privileged_collision_risk,
+)
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.options import (
+    PrivilegedYieldOption,
     constrain_rejoin_actions,
+    constrain_stalled_wait,
     should_continue_recovery_option,
 )
 from ramp_core.recovery.safety import (
@@ -153,6 +160,14 @@ class RecoveryManagerNode(Node):
         self._previous_human_positions: tuple[tuple[float, float], ...] = ()
         self._previous_human_timestamp_s: float | None = None
         self._received_privileged_humans = False
+        self._oracle_yield = PrivilegedYieldOption(
+            task_heading_rad=math.atan2(
+                self._goal.y - self._start.y,
+                self._goal.x - self._start.x,
+            ),
+            passed_margin_m=self._float("oracle_yield_passed_margin_m"),
+            maximum_retreat_m=self._float("oracle_yield_maximum_retreat_m"),
+        )
         self._expert_previous_side = 0
         self._expert_repeated_waits = 0
         self._failure = FailurePrediction(0.0, 0.0, 0.0, 0.0)
@@ -257,6 +272,7 @@ class RecoveryManagerNode(Node):
             "subgoal_settle_s": 1.0,
             "expert_replan_interval_s": 0.5,
             "expert_rejoin_block_threshold": 0.9,
+            "expert_wait_budget_decisions": 3,
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
@@ -267,8 +283,16 @@ class RecoveryManagerNode(Node):
             "emergency_backup_clearance_m": 0.70,
             "emergency_release_speed_mps": 0.03,
             "human_radius_m": 0.35,
+            "robot_radius_m": 0.36,
             "maximum_human_speed_mps": 2.0,
-            "expert_scan_inflation_m": 0.40,
+            # Store raw occupied endpoints. Robot clearance is applied
+            # separately by compute_action_mask; any positive grid-cell
+            # inflation here is additive and can erase narrow corridors.
+            "expert_scan_inflation_m": 0.0,
+            "oracle_trigger_horizon_s": 3.0,
+            "oracle_trigger_margin_m": 0.25,
+            "oracle_yield_passed_margin_m": 0.5,
+            "oracle_yield_maximum_retreat_m": 1.4,
         }
         for name, value in numeric_defaults.items():
             self.declare_parameter(name, value)
@@ -472,7 +496,35 @@ class RecoveryManagerNode(Node):
             self._distance_history.clear()
             self._angular_history.clear()
 
-    def _observation(self) -> RecoveryObservation:
+    def _effective_failure(self, pose: Pose2D) -> FailurePrediction:
+        if (
+            self._policy_type != "expert"
+            or self._odom is None
+            or not self._received_privileged_humans
+        ):
+            return self._failure
+        twist = self._odom.twist.twist
+        oracle_risk = privileged_collision_risk(
+            pose,
+            Velocity2D(float(twist.linear.x), float(twist.angular.z)),
+            self._privileged_humans,
+            horizon_s=self._float("oracle_trigger_horizon_s"),
+            robot_radius_m=self._float("robot_radius_m"),
+            prediction_margin_m=self._float("oracle_trigger_margin_m"),
+        )
+        yielding = self._oracle_yield.update(
+            pose,
+            self._privileged_humans,
+            collision_risk=oracle_risk,
+        )
+        return FailurePrediction(
+            max(self._failure.collision_risk, float(oracle_risk or yielding)),
+            self._failure.freeze,
+            self._failure.oscillation,
+            self._failure.deadlock,
+        )
+
+    def _observation(self, failure: FailurePrediction | None = None) -> RecoveryObservation:
         pose = self._world_pose()
         distance = math.dist((pose.x, pose.y), (self._goal.x, self._goal.y))
         bearing = math.atan2(self._goal.y - pose.y, self._goal.x - pose.x) - pose.yaw
@@ -495,20 +547,33 @@ class RecoveryManagerNode(Node):
             progress_history=np.asarray(progress[-10:], dtype=np.float32),
             angular_velocity_history=np.asarray(angular[-10:], dtype=np.float32),
             planner_status=self._planner_status,
-            failure_prediction=self._failure,
+            failure_prediction=self._failure if failure is None else failure,
         )
 
     def _laser_clearance(self, angle: float) -> float:
         assert self._scan is not None
+        clearance = directional_scan_clearance(
+            self._scan.ranges,
+            angle_min=float(self._scan.angle_min),
+            angle_increment=float(self._scan.angle_increment),
+            direction=angle,
+            half_width_rad=math.radians(12.0),
+        )
+        if clearance is not None:
+            return clearance
         values = np.asarray(self._scan.ranges, dtype=np.float64)
-        angles = self._scan.angle_min + np.arange(values.size) * self._scan.angle_increment
-        error = np.abs(np.arctan2(np.sin(angles - angle), np.cos(angles - angle)))
-        sector = values[error <= math.radians(12.0)]
-        sector = sector[np.isfinite(sector) & (sector >= 0.0)]
-        if sector.size:
-            return float(np.min(sector))
         finite = values[np.isfinite(values) & (values >= 0.0)]
         return float(np.min(finite)) if finite.size else 0.0
+
+    def _observed_laser_clearance(self, angle: float) -> float | None:
+        assert self._scan is not None
+        return directional_scan_clearance(
+            self._scan.ranges,
+            angle_min=float(self._scan.angle_min),
+            angle_increment=float(self._scan.angle_increment),
+            direction=angle,
+            half_width_rad=math.radians(12.0),
+        )
 
     def _motion_clearance(self, linear_velocity: float) -> float:
         """Measure clearance along the direction used by the braking model."""
@@ -567,13 +632,24 @@ class RecoveryManagerNode(Node):
             assert action.radius is not None and action.angle_degrees is not None
             angle = math.radians(action.angle_degrees)
             mask[action.action_id] &= self._laser_clearance(angle) >= action.radius + clearance
-        mask[BACKUP_ACTION_ID] &= self._laser_clearance(math.pi) >= 0.45 + clearance
+        rear_clearance = self._observed_laser_clearance(math.pi)
+        if rear_clearance is not None:
+            mask[BACKUP_ACTION_ID] &= rear_clearance >= 0.45 + clearance
+        elif self._policy_type != "expert" or not self._received_privileged_humans:
+            # A formally observable policy must not reverse into an unobserved
+            # sector. The online Oracle may use its privileged human state;
+            # compute_action_mask has already checked the full backup segment.
+            mask[BACKUP_ACTION_ID] = False
         mask[REPLAN_ACTION_ID] &= self._adapter.ready
         mask[WAIT_ACTION_ID] = True
         mask[CONTINUE_ACTION_ID] = True
         return mask
 
-    def _expert_decision(self, pose: Pose2D) -> CoreRecoveryDecision:
+    def _expert_decision(
+        self,
+        pose: Pose2D,
+        failure: FailurePrediction,
+    ) -> CoreRecoveryDecision:
         if self._map is None or self._scan is None or not self._received_privileged_humans:
             return CoreRecoveryDecision(
                 WAIT_ACTION_ID,
@@ -594,9 +670,25 @@ class RecoveryManagerNode(Node):
         mask = self._action_mask(pose, grid, human_positions)
         mask = constrain_rejoin_actions(
             mask,
-            collision_risk=self._failure.collision_risk,
+            collision_risk=failure.collision_risk,
             release_threshold=self._float("expert_rejoin_block_threshold"),
         )
+        mask = constrain_stalled_wait(
+            mask,
+            consecutive_waits=self._expert_repeated_waits,
+            wait_budget=self._integer("expert_wait_budget_decisions"),
+        )
+        if self._oracle_yield.active:
+            action_id = (
+                BACKUP_ACTION_ID
+                if self._oracle_yield.backup_required and mask[BACKUP_ACTION_ID]
+                else WAIT_ACTION_ID
+            )
+            return CoreRecoveryDecision(
+                action_id,
+                1.0,
+                ("oracle_yield_backup" if action_id == BACKUP_ACTION_ID else "oracle_yield_wait"),
+            )
         twist = self._odom.twist.twist
         privileged = PrivilegedState(
             robot_pose=pose,
@@ -617,7 +709,7 @@ class RecoveryManagerNode(Node):
             assert action.angle_degrees is not None
             self._expert_previous_side = (action.angle_degrees > 0) - (action.angle_degrees < 0)
         if label.action_id == WAIT_ACTION_ID:
-            self._expert_repeated_waits = min(3, self._expert_repeated_waits + 1)
+            self._expert_repeated_waits += 1
         else:
             self._expert_repeated_waits = 0
         confidence = min(1.0, label.margin / (1.0 + abs(label.best_cost)))
@@ -634,10 +726,11 @@ class RecoveryManagerNode(Node):
         self,
         observation: RecoveryObservation,
         pose: Pose2D,
+        failure: FailurePrediction,
     ) -> CoreRecoveryDecision:
         if self._policy_type == "expert":
             try:
-                return self._expert_decision(pose)
+                return self._expert_decision(pose, failure)
             except (RuntimeError, ValueError) as error:
                 self.get_logger().error(f"privileged expert failed safely: {error}")
                 return CoreRecoveryDecision(WAIT_ACTION_ID, 0.0, "oracle_error_wait")
@@ -707,6 +800,7 @@ class RecoveryManagerNode(Node):
         if now_s - self._armed_at_s < self._float("arming_grace_s"):
             return
         pose = self._world_pose()
+        failure = self._effective_failure(pose)
         distance = math.dist((pose.x, pose.y), (self._goal.x, self._goal.y))
         velocity = max(0.0, float(self._odom.twist.twist.linear.x))
         stop = stopping_distance(
@@ -734,7 +828,7 @@ class RecoveryManagerNode(Node):
             policy_type=self._policy_type,
             action_id=self._active_action,
             action_complete=action_complete,
-            failure_score=self._failure.score,
+            failure_score=failure.score,
             tau_off=self._machine.config.tau_off,
             option_elapsed_s=now_s - self._machine.state_since_s,
             maximum_option_duration_s=self._machine.config.maximum_recovery_duration_s,
@@ -742,7 +836,7 @@ class RecoveryManagerNode(Node):
         transition = self._machine.update(
             StateMachineInput(
                 now_s=now_s,
-                failure_score=self._failure.score,
+                failure_score=failure.score,
                 valid_progress=self._valid_progress(),
                 emergency_stop=self._emergency,
                 goal_reached=distance <= self._float("goal_tolerance_m"),
@@ -752,8 +846,8 @@ class RecoveryManagerNode(Node):
         if transition.current is RecoveryState.RECOVERY and (
             transition.changed or persistent_failure_followup
         ):
-            observation = self._observation()
-            decision = self._select_decision(observation, pose)
+            observation = self._observation(failure)
+            decision = self._select_decision(observation, pose, failure)
             temporary = self._execute(decision.action_id, now_s)
             self._publish_decision(
                 decision.action_id, decision.confidence, decision.reason, temporary
@@ -765,7 +859,7 @@ class RecoveryManagerNode(Node):
             # progress that can never resume.
             if self._adapter.restore_original_goal():
                 self._goal_preempted = False
-            self._publish_decision(CONTINUE_ACTION_ID, self._failure.score, transition.reason)
+            self._publish_decision(CONTINUE_ACTION_ID, failure.score, transition.reason)
         elif transition.current is RecoveryState.EMERGENCY_STOP and transition.changed:
             self._active_action = (
                 BACKUP_ACTION_ID if self._emergency_escape_active else WAIT_ACTION_ID
@@ -794,18 +888,19 @@ class RecoveryManagerNode(Node):
         elif transition.previous is RecoveryState.EMERGENCY_STOP and transition.changed:
             self._published_emergency_escape = False
             self._publish_decision(
-                CONTINUE_ACTION_ID, self._failure.score, "emergency_clear_continue_goal"
+                CONTINUE_ACTION_ID, failure.score, "emergency_clear_continue_goal"
             )
         elif (
             transition.current is RecoveryState.NORMAL
             and transition.previous is RecoveryState.REJOIN
         ):
             self._policy.reset()
-            self._expert_previous_side = 0
-            self._expert_repeated_waits = 0
-            self._publish_decision(CONTINUE_ACTION_ID, self._failure.score, transition.reason)
+            if transition.reason == "original_goal_restored":
+                self._expert_previous_side = 0
+                self._expert_repeated_waits = 0
+            self._publish_decision(CONTINUE_ACTION_ID, failure.score, transition.reason)
         elif transition.changed:
-            self._publish_decision(CONTINUE_ACTION_ID, self._failure.score, transition.reason)
+            self._publish_decision(CONTINUE_ACTION_ID, failure.score, transition.reason)
 
     def _control_step(self) -> None:
         command: Twist | None = None

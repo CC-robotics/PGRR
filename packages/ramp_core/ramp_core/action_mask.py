@@ -10,6 +10,7 @@ import numpy as np
 import numpy.typing as npt
 
 from ramp_core.action_space import ACTION_COUNT, ACTIONS, BACKUP_ACTION_ID, REPLAN_ACTION_ID
+from ramp_core.geometry import point_to_polyline_distance
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.types import Pose2D
 
@@ -57,6 +58,10 @@ def compute_action_mask(
     )
     mask[BACKUP_ACTION_ID] = grid.segment_is_free(
         (robot.x, robot.y), backup_end, config.robot_clearance
+    ) and all(
+        point_to_polyline_distance(human, ((robot.x, robot.y), backup_end))
+        >= config.human_clearance
+        for human in humans
     )
     mask[REPLAN_ACTION_ID] = replan_available
     return mask

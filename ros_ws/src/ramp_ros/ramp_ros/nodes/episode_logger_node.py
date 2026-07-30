@@ -15,7 +15,7 @@ from geometry_msgs.msg import PoseArray, Twist
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMessage
 from ramp_core.data.schema import EpisodeMetadata, EpisodeOutcome, NavigationStep
-from ramp_core.evaluation.navigation import PlannerAbortTracker
+from ramp_core.evaluation.navigation import PlannerAbortTracker, timeout_is_invalid_reset
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.clock import Clock, ClockType
 from rclpy.executors import ExternalShutdownException
@@ -146,6 +146,7 @@ class EpisodeLoggerNode(Node):
         self._path: tuple[tuple[float, float], ...] = ()
         self._planner_status = int(GoalStatus.STATUS_UNKNOWN)
         self._planner_statuses: tuple[int, ...] = ()
+        self._planner_ever_active = False
         self._planner_abort_tracker = PlannerAbortTracker(
             grace_s=float(self.get_parameter("planner_abort_grace_s").value)
         )
@@ -277,6 +278,7 @@ class EpisodeLoggerNode(Node):
             GoalStatus.STATUS_EXECUTING,
             GoalStatus.STATUS_CANCELING,
         }
+        self._planner_ever_active |= any(item in active for item in raw_statuses)
         status = next((item for item in raw_statuses if item in active), raw_statuses[-1])
         self._planner_status = status
         if status == GoalStatus.STATUS_SUCCEEDED and self._odom is not None:
@@ -375,7 +377,16 @@ class EpisodeLoggerNode(Node):
             self._start_time = now
         elapsed = now - self._start_time
         if elapsed >= self._timeout:
-            self._set_outcome(EpisodeOutcome.TIMEOUT, "configured episode timeout")
+            if timeout_is_invalid_reset(
+                planner_ever_active=self._planner_ever_active,
+                maximum_start_displacement_m=self._maximum_start_displacement,
+            ):
+                self._set_outcome(
+                    EpisodeOutcome.INVALID_RESET,
+                    "NavigateToPose never became active and robot never left its start",
+                )
+            else:
+                self._set_outcome(EpisodeOutcome.TIMEOUT, "configured episode timeout")
             return
         if bool(self.get_parameter("terminate_on_planner_abort").value) and (
             self._planner_abort_tracker.update(

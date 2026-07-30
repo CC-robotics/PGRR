@@ -66,4 +66,8 @@ The selected experiment is a known-map, known-pose simulator profile. Arena Humb
 
 ## D-017: Recovery must be a bounded sequence-level option
 
-The online Oracle demonstrates that independently safe 0.5 s decisions do not necessarily compose into a successful passage: restoring the original goal after every WAIT, BACKUP, or short lateral action repeatedly drives the robot back into the same reciprocal deadlock. Further threshold tuning on one train seed is frozen. The next implementation will retain the fixed 25-action interface for learning but execute a selected recovery as a bounded multi-phase option with explicit escape, clearance, and rejoin conditions. Safety monitoring remains receding-horizon and may interrupt any phase.
+The online Oracle demonstrates that independently safe 0.5 s decisions do not necessarily compose into a successful passage: restoring the original goal after every WAIT, BACKUP, or short lateral action repeatedly drives the robot back into the same reciprocal deadlock. The implementation retains the fixed 25-action interface but now composes actions inside a bounded option, escalates repeated WAIT when a planned escape is safe, and treats emergency stops as preemptions of the same sequence. Safety monitoring remains receding-horizon and may interrupt any phase.
+
+## D-018: Oracle trigger and YIELD are privileged upper-bound components
+
+Gazebo proxy actors can intermittently be absent from planar LiDAR, so an Oracle driven by the observable rule trigger is not a valid expert upper bound. The Oracle profile now uses privileged relative position/velocity for a finite-horizon closest-approach trigger. For longitudinally approaching humans it executes an interpretable YIELD option: bounded BACKUP followed by WAIT until the threat passes. Neither signal is exposed to heuristic or learned test-time policies. Main-method claims must use the selected observable detector; Oracle results are labeled upper bounds.

@@ -4,9 +4,17 @@ import math
 
 import numpy as np
 import pytest
+from ramp_core.action_mask import compute_action_mask
+from ramp_core.action_space import BACKUP_ACTION_ID
+from ramp_core.observations import HumanState
 from ramp_core.occupancy import OccupancyGrid
-from ramp_core.planning.online import augment_grid_with_scan, estimate_human_states
-from ramp_core.types import Pose2D
+from ramp_core.planning.online import (
+    augment_grid_with_scan,
+    directional_scan_clearance,
+    estimate_human_states,
+    privileged_collision_risk,
+)
+from ramp_core.types import Pose2D, Velocity2D
 
 
 def test_human_velocity_estimation_is_index_stable() -> None:
@@ -54,3 +62,54 @@ def test_scan_ignores_max_range_returns() -> None:
         maximum_range_m=5.0,
     )
     assert not bool(augmented.occupied.any())
+
+
+def test_directional_clearance_distinguishes_unobserved_rear_sector() -> None:
+    ranges = np.full(271, 2.0, dtype=np.float32)
+    clearance = directional_scan_clearance(
+        ranges,
+        angle_min=-3.0 * math.pi / 4.0,
+        angle_increment=math.radians(1.0),
+        direction=math.pi,
+        half_width_rad=math.radians(12.0),
+    )
+    assert clearance is None
+
+
+def test_directional_clearance_reads_observed_front_sector() -> None:
+    ranges = np.full(271, 2.0, dtype=np.float32)
+    ranges[135] = 0.7
+    clearance = directional_scan_clearance(
+        ranges,
+        angle_min=-3.0 * math.pi / 4.0,
+        angle_increment=math.radians(1.0),
+        direction=0.0,
+        half_width_rad=math.radians(2.0),
+    )
+    assert clearance == pytest.approx(0.7)
+
+
+def test_endpoint_uncertainty_does_not_double_inflate_robot_footprint() -> None:
+    static = OccupancyGrid(np.zeros((100, 100), dtype=np.bool_), 0.1)
+    robot = Pose2D(5.0, 5.0, 0.0)
+    augmented = augment_grid_with_scan(
+        static,
+        robot,
+        [0.47, 0.47],
+        angle_min=-math.pi / 2.0,
+        angle_increment=math.pi,
+        minimum_range_m=0.05,
+        maximum_range_m=5.0,
+        inflation_m=0.0,
+    )
+    mask = compute_action_mask(robot, augmented, replan_available=True)
+    assert mask[BACKUP_ACTION_ID]
+
+
+def test_privileged_trigger_predicts_approaching_but_not_receding_human() -> None:
+    robot = Pose2D(0.0, 0.0, 0.0)
+    velocity = Velocity2D(0.3, 0.0)
+    approaching = HumanState(position=(2.0, 0.0), velocity=(-0.5, 0.0), radius=0.35)
+    receding = HumanState(position=(2.0, 0.0), velocity=(0.8, 0.0), radius=0.35)
+    assert privileged_collision_risk(robot, velocity, (approaching,))
+    assert not privileged_collision_risk(robot, velocity, (receding,))

@@ -10,7 +10,78 @@ import numpy.typing as npt
 
 from ramp_core.observations import HumanState
 from ramp_core.occupancy import OccupancyGrid
-from ramp_core.types import Pose2D
+from ramp_core.types import Pose2D, Velocity2D
+
+
+def directional_scan_clearance(
+    ranges: npt.ArrayLike,
+    *,
+    angle_min: float,
+    angle_increment: float,
+    direction: float,
+    half_width_rad: float,
+) -> float | None:
+    """Return sector clearance, or None when that direction is not observed."""
+    if angle_increment <= 0.0 or half_width_rad < 0.0:
+        raise ValueError("scan angle increment must be positive and half-width non-negative")
+    values = np.asarray(ranges, dtype=np.float64)
+    if values.ndim != 1 or values.size == 0:
+        return None
+    angles = angle_min + np.arange(values.size) * angle_increment
+    errors = np.abs(np.arctan2(np.sin(angles - direction), np.cos(angles - direction)))
+    observed = errors <= half_width_rad
+    sector = values[observed & np.isfinite(values) & (values >= 0.0)]
+    return float(np.min(sector)) if sector.size else None
+
+
+def privileged_collision_risk(
+    robot: Pose2D,
+    velocity: Velocity2D,
+    humans: Sequence[HumanState],
+    *,
+    horizon_s: float = 3.0,
+    robot_radius_m: float = 0.36,
+    prediction_margin_m: float = 0.25,
+) -> bool:
+    """Predict a privileged constant-velocity overlap within a finite horizon."""
+    if horizon_s <= 0.0 or robot_radius_m <= 0.0 or prediction_margin_m < 0.0:
+        raise ValueError("prediction horizon/radius must be positive and margin non-negative")
+    robot_velocity = (
+        velocity.linear * math.cos(robot.yaw),
+        velocity.linear * math.sin(robot.yaw),
+    )
+    for human in humans:
+        relative_position = human.position[0] - robot.x, human.position[1] - robot.y
+        relative_velocity = (
+            human.velocity[0] - robot_velocity[0],
+            human.velocity[1] - robot_velocity[1],
+        )
+        speed_squared = (
+            relative_velocity[0] * relative_velocity[0]
+            + relative_velocity[1] * relative_velocity[1]
+        )
+        closest_time = (
+            0.0
+            if speed_squared <= 1.0e-9
+            else max(
+                0.0,
+                min(
+                    horizon_s,
+                    -(
+                        relative_position[0] * relative_velocity[0]
+                        + relative_position[1] * relative_velocity[1]
+                    )
+                    / speed_squared,
+                ),
+            )
+        )
+        closest_distance = math.hypot(
+            relative_position[0] + closest_time * relative_velocity[0],
+            relative_position[1] + closest_time * relative_velocity[1],
+        )
+        if closest_distance <= robot_radius_m + human.radius + prediction_margin_m:
+            return True
+    return False
 
 
 def estimate_human_states(

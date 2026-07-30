@@ -115,3 +115,11 @@ After localization and detector-history fixes, corrected head-on seed 2 changed 
 ## KI-029: Single-step Oracle recovery is safe but does not complete a passage
 
 Online Oracle diagnostics exposed several real integration defects: Nav2 temporary paths replaced the saved task path, CONTINUE failed to restore the original goal, subgoals were not replanned as people moved, repeated WAIT had no accumulated cost, PENDING_RECOVERY leaked classical commands, emergency release bypassed the pending state, and footprint hazards could trigger an unsafe blind backup. These defects now have regression coverage. With the corrected chain, high-density train seed 2 remains collision-free for the full 120 s but times out, and the low-density train scenario remains collision-free but exhausts recovery attempts. The remaining failure is structural: each short action is followed by an immediate original-goal rejoin that can erase lateral/retreat progress. Gate 3 remains failed; intermediate Oracle iterations are diagnostics, not ablations or accepted results.
+
+## KI-030: Goal-never-active runs were mislabeled as algorithm timeouts
+
+Two concurrent software-rendered Gazebo launches reduced the real-time factor and one crossing-flow Nav2 goal never entered accepted or executing state. The robot remained exactly at its start for the full horizon, which the logger originally called `TIMEOUT`. A no-active-goal/no-movement horizon is now `INVALID_RESET`; the interrupted companion is `SIMULATOR_FAILURE`. Both episode IDs are excluded. Dynamic validation runs sequentially unless independent simulator capacity is demonstrated.
+
+## KI-031: Hard-stop proxy can make a two-person head-on corridor unrecoverable
+
+The deterministic fallback pauses a pedestrian whenever its next route step would enter a 1.3 m robot-centered region. In the low-density head-on scenario, two fixed lanes span the corridor and pedestrians have no lateral degree of freedom. WAIT cannot clear the blockage, lateral robot subgoals have no collision-free gap, and retreating to the pedestrian waypoint causes route reversal before a pass. Safe Oracle timeouts are therefore classified as environment/model limitation cases. Oracle execution is validated on recoverable crossing and doorway states; this case remains in failure analysis and must not be presented as a recoverable benchmark.
