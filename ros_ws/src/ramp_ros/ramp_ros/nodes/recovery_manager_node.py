@@ -34,7 +34,10 @@ from ramp_core.occupancy import OccupancyGrid
 from ramp_core.planning.expert import PlanningRecoveryExpert
 from ramp_core.planning.online import augment_grid_with_scan, estimate_human_states
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
-from ramp_core.recovery.options import should_continue_recovery_option
+from ramp_core.recovery.options import (
+    constrain_rejoin_actions,
+    should_continue_recovery_option,
+)
 from ramp_core.recovery.safety import (
     EmergencyEscapeController,
     backup_increases_obstacle_clearance,
@@ -588,6 +591,11 @@ class RecoveryManagerNode(Node):
         )
         human_positions = tuple(human.position for human in self._privileged_humans)
         mask = self._action_mask(pose, grid, human_positions)
+        mask = constrain_rejoin_actions(
+            mask,
+            collision_risk=self._failure.collision_risk,
+            release_threshold=self._machine.config.tau_off,
+        )
         twist = self._odom.twist.twist
         privileged = PrivilegedState(
             robot_pose=pose,

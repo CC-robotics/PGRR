@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from ramp_core.action_space import CONTINUE_ACTION_ID, REPLAN_ACTION_ID
+import numpy as np
+import numpy.typing as npt
+
+from ramp_core.action_space import ACTION_COUNT, CONTINUE_ACTION_ID, REPLAN_ACTION_ID
 
 
 def should_continue_recovery_option(
@@ -28,3 +31,21 @@ def should_continue_recovery_option(
         CONTINUE_ACTION_ID,
         REPLAN_ACTION_ID,
     }
+
+
+def constrain_rejoin_actions(
+    mask: npt.NDArray[np.bool_],
+    *,
+    collision_risk: float,
+    release_threshold: float,
+) -> npt.NDArray[np.bool_]:
+    """Disable task-goal rejoin actions while collision risk remains latched."""
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if not 0.0 <= collision_risk <= 1.0 or not 0.0 <= release_threshold <= 1.0:
+        raise ValueError("collision risk and release threshold must lie in [0, 1]")
+    if collision_risk >= release_threshold:
+        constrained[CONTINUE_ACTION_ID] = False
+        constrained[REPLAN_ACTION_ID] = False
+    return constrained
