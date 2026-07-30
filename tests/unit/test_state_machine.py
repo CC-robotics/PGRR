@@ -76,6 +76,26 @@ def test_single_frame_configuration_enters_recovery_immediately() -> None:
     assert machine.state_since_s == 1.0
 
 
+def test_active_long_option_uses_separate_bounded_duration() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            cooldown_s=0.0,
+            minimum_action_hold_s=0.0,
+            maximum_recovery_duration_s=1.0,
+            maximum_extended_recovery_duration_s=3.0,
+        )
+    )
+    assert machine.update(StateMachineInput(0.0, 1.0, False)).current is RecoveryState.RECOVERY
+    assert (
+        machine.update(StateMachineInput(1.1, 1.0, False, recovery_option_active=True)).current
+        is RecoveryState.RECOVERY
+    )
+    transition = machine.update(StateMachineInput(3.0, 1.0, False, recovery_option_active=True))
+    assert transition.current is RecoveryState.REJOIN
+    assert transition.reason == "recovery_timeout"
+
+
 def test_threshold_order_is_validated() -> None:
     try:
         RecoveryStateMachineConfig(tau_on=0.3, tau_off=0.4)

@@ -27,6 +27,7 @@ class RecoveryStateMachineConfig:
     cooldown_s: float = 2.0
     minimum_action_hold_s: float = 0.5
     maximum_recovery_duration_s: float = 8.0
+    maximum_extended_recovery_duration_s: float = 30.0
     maximum_rejoin_duration_s: float = 5.0
     maximum_rejoin_retries_per_sequence: int = 2
     maximum_consecutive_recoveries: int = 4
@@ -41,11 +42,14 @@ class RecoveryStateMachineConfig:
                 self.cooldown_s,
                 self.minimum_action_hold_s,
                 self.maximum_recovery_duration_s,
+                self.maximum_extended_recovery_duration_s,
                 self.maximum_rejoin_duration_s,
             )
             < 0.0
         ):
             raise ValueError("durations must be non-negative")
+        if self.maximum_extended_recovery_duration_s < self.maximum_recovery_duration_s:
+            raise ValueError("extended recovery duration must cover normal recovery duration")
         if self.maximum_consecutive_recoveries <= 0:
             raise ValueError("maximum_consecutive_recoveries must be positive")
         if self.maximum_rejoin_retries_per_sequence < 0:
@@ -61,6 +65,7 @@ class StateMachineInput:
     goal_reached: bool = False
     unrecoverable_failure: bool = False
     recovery_action_complete: bool = False
+    recovery_option_active: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,7 +209,12 @@ class RecoveryStateMachine:
                 reason = "failure_not_confirmed"
         elif self.state is RecoveryState.RECOVERY:
             elapsed = state_input.now_s - self._state_since_s
-            if elapsed >= self.config.maximum_recovery_duration_s:
+            recovery_limit = (
+                self.config.maximum_extended_recovery_duration_s
+                if state_input.recovery_option_active
+                else self.config.maximum_recovery_duration_s
+            )
+            if elapsed >= recovery_limit:
                 self.state = RecoveryState.REJOIN
                 reason = "recovery_timeout"
             elif (

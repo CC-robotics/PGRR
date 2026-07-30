@@ -64,7 +64,16 @@ class PrivilegedYieldOption:
             passed = valid and all(
                 longitudinal(humans[index].position) <= -self.passed_margin_m for index in valid
             )
-            if passed or not valid:
+            receding = (
+                valid
+                and not collision_risk
+                and all(
+                    humans[index].velocity[0] * tangent[0] + humans[index].velocity[1] * tangent[1]
+                    >= self.minimum_closing_speed_mps
+                    for index in valid
+                )
+            )
+            if passed or receding or not valid:
                 self.threat_indices = ()
                 self.activation_coordinate_m = None
             else:

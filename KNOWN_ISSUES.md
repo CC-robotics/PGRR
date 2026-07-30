@@ -123,3 +123,7 @@ Two concurrent software-rendered Gazebo launches reduced the real-time factor an
 ## KI-031: Hard-stop proxy can make a two-person head-on corridor unrecoverable
 
 The deterministic fallback pauses a pedestrian whenever its next route step would enter a 1.3 m robot-centered region. In the low-density head-on scenario, two fixed lanes span the corridor and pedestrians have no lateral degree of freedom. WAIT cannot clear the blockage, lateral robot subgoals have no collision-free gap, and retreating to the pedestrian waypoint causes route reversal before a pass. Safe Oracle timeouts are therefore classified as environment/model limitation cases. Oracle execution is validated on recoverable crossing and doorway states; this case remains in failure analysis and must not be presented as a recoverable benchmark.
+
+## KI-032: Cyclic doorway routes can re-block immediately after YIELD
+
+Doorway pedestrians reverse at their waypoint and traverse the same door indefinitely. The extended YIELD option correctly stopped periodic original-goal pulses and released when both threats moved away, but the next cycle returned before the robot cleared the bottleneck. The valid seed-1100 Oracle run remained collision-free and reached the door, then timed out with 6.105 m progress. Longer WAIT/BACKUP is not adopted as a fix; cyclic-flow recovery needs a lateral/REPLAN phase, and this episode remains a negative result.

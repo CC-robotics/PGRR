@@ -11,6 +11,7 @@ minimum_action_hold_s: 0.5
 expert_replan_interval_s: 0.5
 expert_wait_budget_decisions: 3
 maximum_recovery_duration_s: 8.0
+maximum_extended_recovery_duration_s: 30.0
 maximum_rejoin_duration_s: 5.0
 maximum_rejoin_retries_per_sequence: 2
 maximum_consecutive_recoveries: 4

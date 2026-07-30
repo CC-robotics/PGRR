@@ -113,6 +113,9 @@ class RecoveryManagerNode(Node):
             cooldown_s=self._float("cooldown_s"),
             minimum_action_hold_s=self._float("minimum_action_hold_s"),
             maximum_recovery_duration_s=self._float("maximum_recovery_duration_s"),
+            maximum_extended_recovery_duration_s=self._float(
+                "maximum_extended_recovery_duration_s"
+            ),
             maximum_rejoin_duration_s=self._float("maximum_rejoin_duration_s"),
             maximum_rejoin_retries_per_sequence=self._integer(
                 "maximum_rejoin_retries_per_sequence"
@@ -244,6 +247,7 @@ class RecoveryManagerNode(Node):
             "cooldown_s": 2.0,
             "minimum_action_hold_s": 0.5,
             "maximum_recovery_duration_s": 8.0,
+            "maximum_extended_recovery_duration_s": 30.0,
             "maximum_rejoin_duration_s": 5.0,
             "maximum_rejoin_retries_per_sequence": 2,
             "maximum_consecutive_recoveries": 4,
@@ -841,6 +845,7 @@ class RecoveryManagerNode(Node):
                 emergency_stop=self._emergency,
                 goal_reached=distance <= self._float("goal_tolerance_m"),
                 recovery_action_complete=action_complete and not persistent_failure_followup,
+                recovery_option_active=self._oracle_yield.active,
             )
         )
         if transition.current is RecoveryState.RECOVERY and (

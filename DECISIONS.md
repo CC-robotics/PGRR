@@ -71,3 +71,5 @@ The online Oracle demonstrates that independently safe 0.5 s decisions do not ne
 ## D-018: Oracle trigger and YIELD are privileged upper-bound components
 
 Gazebo proxy actors can intermittently be absent from planar LiDAR, so an Oracle driven by the observable rule trigger is not a valid expert upper bound. The Oracle profile now uses privileged relative position/velocity for a finite-horizon closest-approach trigger. For longitudinally approaching humans it executes an interpretable YIELD option: bounded BACKUP followed by WAIT until the threat passes. Neither signal is exposed to heuristic or learned test-time policies. Main-method claims must use the selected observable detector; Oracle results are labeled upper bounds.
+
+YIELD uses a separate 30 s hard limit while ordinary recovery actions retain the configured 8 s limit. It releases when tracked threats pass or all reverse away after predicted risk clears. Cyclic doorway traffic can return and re-trigger it, so YIELD is not the complete doorway method; repeated flow requires lateral escape or replanning.

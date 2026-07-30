@@ -116,3 +116,15 @@ def test_privileged_yield_ignores_nonapproaching_human() -> None:
     option = PrivilegedYieldOption(task_heading_rad=0.0)
     receding = HumanState((1.0, 0.0), (0.5, 0.0), 0.35)
     assert not option.update(Pose2D(0.0, 0.0, 0.0), (receding,), collision_risk=True)
+
+
+def test_privileged_yield_releases_when_all_threats_reverse_away() -> None:
+    option = PrivilegedYieldOption(task_heading_rad=0.0)
+    approaching = HumanState((2.0, 0.0), (-0.5, 0.0), 0.35)
+    assert option.update(Pose2D(0.0, 0.0, 0.0), (approaching,), collision_risk=True)
+    reversed_route = HumanState((1.5, 0.0), (0.5, 0.0), 0.35)
+    assert not option.update(
+        Pose2D(-1.0, 0.0, 0.0),
+        (reversed_route,),
+        collision_risk=False,
+    )
