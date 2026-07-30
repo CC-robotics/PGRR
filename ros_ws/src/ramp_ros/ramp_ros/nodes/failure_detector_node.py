@@ -48,7 +48,7 @@ class FailureDetectorNode(Node):
         self.declare_parameter("robot_start_yaw", 0.0)
         self.declare_parameter("trigger_threshold", 0.65)
         self.declare_parameter("collision_front_sector_degrees", 30.0)
-        self.declare_parameter("collision_trend_sector_degrees", 60.0)
+        self.declare_parameter("collision_trend_sector_degrees", 90.0)
         defaults = RuleFailureConfig()
         for name in defaults.__dataclass_fields__:
             self.declare_parameter(name, getattr(defaults, name))

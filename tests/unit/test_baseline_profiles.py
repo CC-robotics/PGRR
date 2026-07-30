@@ -34,3 +34,11 @@ def test_pending_recovery_is_a_protective_stop() -> None:
     mux = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/goal_mux_node.py").read_text()
     assert "pending_stop = self._recovery_state == RecoveryDecision.PENDING_RECOVERY" in mux
     assert "if terminal_stop or pending_stop:" in mux
+
+
+def test_collision_sector_covers_turning_sweep_without_side_wall() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = yaml.safe_load((root / "configs/failure/rules.yaml").read_text())
+    assert config["collision_front_sector_degrees"] == 30.0
+    assert config["collision_trend_sector_degrees"] == 90.0
+    assert config["collision_trend_sector_degrees"] < 180.0
