@@ -267,12 +267,18 @@ class RuleFailureDetector:
                     ]
                 )
             )
+            planner_failure_fraction = float(
+                np.mean(
+                    [
+                        item.planner_status
+                        in {PlannerStatus.NO_VALID_CONTROL, PlannerStatus.ABORTED}
+                        for item in freeze_window
+                    ]
+                )
+            )
             requested_motion = (
                 motion_request_fraction >= self.config.requested_motion_fraction
-                or any(
-                    item.planner_status in {PlannerStatus.NO_VALID_CONTROL, PlannerStatus.ABORTED}
-                    for item in freeze_window
-                )
+                or planner_failure_fraction >= self.config.requested_motion_fraction
             )
             if (
                 sample.goal_distance > self.config.freeze_goal_distance_m

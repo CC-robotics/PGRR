@@ -81,6 +81,37 @@ def test_brief_startup_motion_request_is_not_freeze() -> None:
     assert prediction.freeze == 0.0
 
 
+def test_transient_planner_abort_during_turn_is_not_freeze() -> None:
+    detector = RuleFailureDetector()
+    prediction = None
+    for index in range(7):
+        prediction = detector.update(
+            _sample(
+                index * 0.5,
+                angular=-0.8,
+                base_linear=0.0,
+                status=PlannerStatus.ABORTED if index == 2 else PlannerStatus.ACTIVE,
+            )
+        )
+    assert prediction is not None
+    assert prediction.freeze == 0.0
+
+
+def test_sustained_planner_abort_triggers_freeze_without_linear_request() -> None:
+    detector = RuleFailureDetector()
+    prediction = None
+    for index in range(7):
+        prediction = detector.update(
+            _sample(
+                index * 0.5,
+                base_linear=0.0,
+                status=PlannerStatus.ABORTED if index >= 3 else PlannerStatus.ACTIVE,
+            )
+        )
+    assert prediction is not None
+    assert prediction.freeze == 1.0
+
+
 def test_single_turn_is_not_oscillation_and_deadband_removes_noise() -> None:
     assert angular_sign_changes([0.01, -0.01, 0.3, 0.4, 0.2], deadband=0.08) == 0
     detector = RuleFailureDetector()
