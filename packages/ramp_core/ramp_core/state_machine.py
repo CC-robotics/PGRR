@@ -87,6 +87,10 @@ class RecoveryStateMachine:
     def consecutive_recoveries(self) -> int:
         return self._consecutive_recoveries
 
+    @property
+    def state_since_s(self) -> float:
+        return self._state_since_s
+
     def set_original_goal(self, goal: Pose2D) -> None:
         if (
             self.state in {RecoveryState.RECOVERY, RecoveryState.REJOIN}

@@ -52,6 +52,7 @@ def test_single_frame_configuration_enters_recovery_immediately() -> None:
     transition = machine.update(StateMachineInput(1.0, 0.8, False))
     assert transition.current is RecoveryState.RECOVERY
     assert transition.reason == "failure_confirmed"
+    assert machine.state_since_s == 1.0
 
 
 def test_threshold_order_is_validated() -> None:

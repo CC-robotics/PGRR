@@ -34,6 +34,7 @@ from ramp_core.occupancy import OccupancyGrid
 from ramp_core.planning.expert import PlanningRecoveryExpert
 from ramp_core.planning.online import augment_grid_with_scan, estimate_human_states
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
+from ramp_core.recovery.options import should_continue_recovery_option
 from ramp_core.recovery.safety import (
     EmergencyEscapeController,
     backup_increases_obstacle_clearance,
@@ -720,10 +721,14 @@ class RecoveryManagerNode(Node):
         action_complete = self._machine.state is RecoveryState.RECOVERY and self._action_complete(
             now_s
         )
-        persistent_failure_followup = (
-            action_complete
-            and self._failure.score >= self._machine.config.tau_off
-            and now_s - self._action_started_s < self._machine.config.maximum_recovery_duration_s
+        persistent_failure_followup = should_continue_recovery_option(
+            policy_type=self._policy_type,
+            action_id=self._active_action,
+            action_complete=action_complete,
+            failure_score=self._failure.score,
+            tau_off=self._machine.config.tau_off,
+            option_elapsed_s=now_s - self._machine.state_since_s,
+            maximum_option_duration_s=self._machine.config.maximum_recovery_duration_s,
         )
         transition = self._machine.update(
             StateMachineInput(
