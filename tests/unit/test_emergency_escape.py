@@ -40,6 +40,29 @@ def test_emergency_never_backs_when_rear_clearance_is_unsafe() -> None:
     ) == (True, False)
 
 
+def test_footprint_hazard_cancels_active_backup() -> None:
+    controller = _controller()
+    controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+    )
+    assert controller.update(
+        now_s=0.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+    ) == (True, True)
+    assert controller.update(
+        now_s=0.6,
+        hazard=True,
+        linear_speed_mps=-0.15,
+        rear_clearance_m=2.0,
+        backup_permitted=False,
+    ) == (True, False)
+
+
 def test_emergency_escape_configuration_rejects_negative_values() -> None:
     with pytest.raises(ValueError, match="non-negative"):
         EmergencyEscapeController(-0.1, 0.8, 0.7, 0.03)

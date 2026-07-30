@@ -676,14 +676,14 @@ class RecoveryManagerNode(Node):
             self._float("stopping_margin_m"),
         )
         motion_clearance = self._motion_clearance(float(self._odom.twist.twist.linear.x))
-        raw_emergency = motion_clearance < stop or self._nearest_clearance() < self._float(
-            "footprint_stop_clearance_m"
-        )
+        footprint_hazard = self._nearest_clearance() < self._float("footprint_stop_clearance_m")
+        raw_emergency = motion_clearance < stop or footprint_hazard
         self._emergency, self._emergency_escape_active = self._emergency_escape.update(
             now_s=now_s,
             hazard=raw_emergency,
             linear_speed_mps=float(self._odom.twist.twist.linear.x),
             rear_clearance_m=self._laser_clearance(math.pi),
+            backup_permitted=not footprint_hazard,
         )
         action_complete = self._machine.state is RecoveryState.RECOVERY and self._action_complete(
             now_s
@@ -776,7 +776,14 @@ class RecoveryManagerNode(Node):
             immediate_safety_stop = self._motion_clearance(
                 float(self._odom.twist.twist.linear.x)
             ) < stop or self._nearest_clearance() < self._float("footprint_stop_clearance_m")
-        if self._machine.state is RecoveryState.EMERGENCY_STOP and self._emergency_escape_active:
+        footprint_hazard = self._scan is not None and self._nearest_clearance() < self._float(
+            "footprint_stop_clearance_m"
+        )
+        if (
+            self._machine.state is RecoveryState.EMERGENCY_STOP
+            and self._emergency_escape_active
+            and not footprint_hazard
+        ):
             rear_stop = stopping_distance(
                 self._float("backup_speed_mps"),
                 self._float("braking_acceleration_mps2"),

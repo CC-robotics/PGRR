@@ -33,9 +33,17 @@ class EmergencyEscapeController:
         hazard: bool,
         linear_speed_mps: float,
         rear_clearance_m: float,
+        backup_permitted: bool = True,
     ) -> tuple[bool, bool]:
         """Return ``(emergency_active, safe_backup_active)``."""
 
+        if not backup_permitted:
+            self.escape_until_s = float("-inf")
+            if not hazard:
+                self.hazard_since_s = None
+            elif self.hazard_since_s is None or now_s < self.hazard_since_s:
+                self.hazard_since_s = now_s
+            return hazard, False
         if now_s < self.escape_until_s:
             return True, True
         if not hazard:

@@ -47,6 +47,6 @@ def test_collision_sector_covers_turning_sweep_without_side_wall() -> None:
 def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     root = Path(__file__).resolve().parents[2]
     manager = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py").read_text()
-    assert manager.count("footprint_stop_clearance_m") == 3
+    assert manager.count("footprint_stop_clearance_m") >= 3
     config = yaml.safe_load((root / "configs/failure/recovery_state_machine.yaml").read_text())
     assert config["footprint_stop_clearance_m"] == 0.35
