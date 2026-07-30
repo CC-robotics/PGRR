@@ -20,6 +20,9 @@ class RuleFailureConfig:
     safety_margin_m: float = 0.25
     ttc_threshold_s: float = 1.5
     collision_absolute_distance_m: float = 0.9
+    collision_wide_absolute_distance_m: float = 0.7
+    collision_release_distance_m: float = 1.2
+    collision_hold_s: float = 2.0
     collision_proximity_m: float = 1.50
     collision_closing_speed_mps: float = 0.10
     collision_radial_excess_closing_speed_mps: float = 0.25
@@ -45,6 +48,8 @@ class RuleFailureConfig:
             self.braking_acceleration,
             self.ttc_threshold_s,
             self.collision_absolute_distance_m,
+            self.collision_wide_absolute_distance_m,
+            self.collision_release_distance_m,
             self.collision_proximity_m,
             self.collision_trend_window_s,
             self.freeze_window_s,
@@ -58,6 +63,7 @@ class RuleFailureConfig:
         nonnegative = (
             self.control_latency_s,
             self.safety_margin_m,
+            self.collision_hold_s,
             self.collision_closing_speed_mps,
             self.collision_radial_excess_closing_speed_mps,
             self.collision_max_angular_speed_radps,
@@ -76,6 +82,10 @@ class RuleFailureConfig:
             raise ValueError("collision_proximity_score must lie in [0, 1]")
         if not 0.0 <= self.requested_motion_fraction <= 1.0:
             raise ValueError("requested_motion_fraction must lie in [0, 1]")
+        if self.collision_release_distance_m <= self.collision_wide_absolute_distance_m:
+            raise ValueError(
+                "collision_release_distance_m must exceed collision_wide_absolute_distance_m"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,9 +138,11 @@ class RuleFailureDetector:
         )
         self._history: deque[TimedNavigationSample] = deque()
         self._horizon_s = horizon
+        self._last_collision_risk_timestamp: float | None = None
 
     def reset(self) -> None:
         self._history.clear()
+        self._last_collision_risk_timestamp = None
 
     def _window(self, duration: float) -> list[TimedNavigationSample]:
         if not self._history:
@@ -171,6 +183,12 @@ class RuleFailureDetector:
         # entire episode. Apply the absolute threshold to the forward sector;
         # omnidirectional hazards are handled by their closing trend below.
         if forward_clearance <= self.config.collision_absolute_distance_m:
+            collision = 1.0
+        # The narrow forward sector avoids classifying corridor side walls as
+        # hazards, but a crossing person can leave that sector while remaining
+        # in the robot's swept near field. Use a smaller absolute threshold in
+        # the wider collision sector to cover that observable case.
+        if collision_clearance <= self.config.collision_wide_absolute_distance_m:
             collision = 1.0
         forward_speed = max(0.0, sample.linear_velocity)
         if forward_speed > 1.0e-3:
@@ -220,6 +238,22 @@ class RuleFailureDetector:
                 + self.config.collision_radial_excess_closing_speed_mps
             ):
                 collision = max(collision, self.config.collision_proximity_score)
+
+        # A brief WAIT can make TTC and closing-speed estimates vanish before
+        # the obstacle has actually cleared. Latch an actionable collision
+        # warning for a bounded hold time and, after that, until the wider
+        # collision sector reaches a distinct release distance.
+        if collision >= self.config.collision_proximity_score:
+            self._last_collision_risk_timestamp = sample.timestamp
+        elif self._last_collision_risk_timestamp is not None:
+            time_since_risk = sample.timestamp - self._last_collision_risk_timestamp
+            if (
+                time_since_risk <= self.config.collision_hold_s
+                or collision_clearance < self.config.collision_release_distance_m
+            ):
+                collision = max(collision, self.config.collision_proximity_score)
+            else:
+                self._last_collision_risk_timestamp = None
 
         freeze_window = self._window(self.config.freeze_window_s)
         freeze = 0.0

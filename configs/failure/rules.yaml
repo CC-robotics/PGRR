@@ -3,6 +3,9 @@ control_latency_s: 0.20
 safety_margin_m: 0.25
 ttc_threshold_s: 1.5
 collision_absolute_distance_m: 0.9
+collision_wide_absolute_distance_m: 0.7
+collision_release_distance_m: 1.2
+collision_hold_s: 2.0
 collision_proximity_m: 1.50
 collision_closing_speed_mps: 0.10
 collision_radial_excess_closing_speed_mps: 0.25

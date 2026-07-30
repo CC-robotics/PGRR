@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from ramp_core.failure.metrics import angular_sign_changes
-from ramp_core.failure.rules import RuleFailureDetector, TimedNavigationSample
+from ramp_core.failure.rules import RuleFailureConfig, RuleFailureDetector, TimedNavigationSample
 from ramp_core.types import PlannerStatus
 
 
@@ -155,6 +155,52 @@ def test_forward_near_field_risk_triggers_immediately() -> None:
         _sample(0.0, lidar=0.8, forward_lidar=0.8, linear=0.0, angular=0.0)
     )
     assert prediction.collision_risk == 1.0
+
+
+def test_wide_near_field_risk_catches_obstacle_outside_narrow_front_sector() -> None:
+    prediction = RuleFailureDetector().update(
+        _sample(
+            0.0,
+            lidar=0.65,
+            forward_lidar=3.0,
+            collision_lidar=0.65,
+            linear=0.0,
+            angular=0.0,
+        )
+    )
+    assert prediction.collision_risk == 1.0
+
+
+def test_collision_warning_requires_time_and_clearance_before_release() -> None:
+    detector = RuleFailureDetector()
+    initial = detector.update(_sample(0.0, lidar=0.8, forward_lidar=0.8, collision_lidar=0.8))
+    clear_inside_hold = detector.update(
+        _sample(1.0, lidar=2.0, forward_lidar=3.0, collision_lidar=2.0)
+    )
+    close_after_hold = detector.update(
+        _sample(2.1, lidar=1.1, forward_lidar=3.0, collision_lidar=1.1)
+    )
+    released = detector.update(_sample(4.2, lidar=2.0, forward_lidar=3.0, collision_lidar=2.0))
+    assert initial.collision_risk == 1.0
+    assert close_after_hold.collision_risk == pytest.approx(0.75)
+    assert clear_inside_hold.collision_risk == pytest.approx(0.75)
+    assert released.collision_risk == 0.0
+
+
+def test_collision_latch_reset_clears_previous_warning() -> None:
+    detector = RuleFailureDetector()
+    detector.update(_sample(0.0, lidar=0.8, forward_lidar=0.8, collision_lidar=0.8))
+    detector.reset()
+    prediction = detector.update(_sample(0.1, lidar=2.0, forward_lidar=3.0, collision_lidar=2.0))
+    assert prediction.collision_risk == 0.0
+
+
+def test_collision_release_distance_must_exceed_wide_trigger_distance() -> None:
+    with pytest.raises(ValueError, match="release_distance"):
+        RuleFailureConfig(
+            collision_wide_absolute_distance_m=0.8,
+            collision_release_distance_m=0.8,
+        )
 
 
 def test_side_obstacle_closing_on_stationary_robot_triggers_trend() -> None:
