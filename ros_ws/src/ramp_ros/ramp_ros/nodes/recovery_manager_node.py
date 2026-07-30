@@ -81,6 +81,9 @@ class RecoveryManagerNode(Node):
             minimum_action_hold_s=self._float("minimum_action_hold_s"),
             maximum_recovery_duration_s=self._float("maximum_recovery_duration_s"),
             maximum_rejoin_duration_s=self._float("maximum_rejoin_duration_s"),
+            maximum_rejoin_retries_per_sequence=self._integer(
+                "maximum_rejoin_retries_per_sequence"
+            ),
             maximum_consecutive_recoveries=self._integer("maximum_consecutive_recoveries"),
         )
         self._machine = RecoveryStateMachine(state_config)
@@ -184,6 +187,7 @@ class RecoveryManagerNode(Node):
             "minimum_action_hold_s": 0.5,
             "maximum_recovery_duration_s": 8.0,
             "maximum_rejoin_duration_s": 5.0,
+            "maximum_rejoin_retries_per_sequence": 2,
             "maximum_consecutive_recoveries": 4,
             "side_clearance_ratio": 1.25,
             "collision_wait_clearance_m": 1.3,
@@ -583,9 +587,7 @@ class RecoveryManagerNode(Node):
             and transition.previous is RecoveryState.REJOIN
         ):
             self._policy.reset()
-            self._publish_decision(
-                CONTINUE_ACTION_ID, self._failure.score, "recovery_sequence_completed"
-            )
+            self._publish_decision(CONTINUE_ACTION_ID, self._failure.score, transition.reason)
         elif transition.changed:
             self._publish_decision(CONTINUE_ACTION_ID, self._failure.score, transition.reason)
 

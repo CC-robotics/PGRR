@@ -28,6 +28,7 @@ class RecoveryStateMachineConfig:
     minimum_action_hold_s: float = 0.5
     maximum_recovery_duration_s: float = 8.0
     maximum_rejoin_duration_s: float = 5.0
+    maximum_rejoin_retries_per_sequence: int = 2
     maximum_consecutive_recoveries: int = 4
 
     def __post_init__(self) -> None:
@@ -47,6 +48,8 @@ class RecoveryStateMachineConfig:
             raise ValueError("durations must be non-negative")
         if self.maximum_consecutive_recoveries <= 0:
             raise ValueError("maximum_consecutive_recoveries must be positive")
+        if self.maximum_rejoin_retries_per_sequence < 0:
+            raise ValueError("maximum_rejoin_retries_per_sequence must be non-negative")
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,6 +81,7 @@ class RecoveryStateMachine:
         self._state_since_s = 0.0
         self._last_recovery_end_s = float("-inf")
         self._consecutive_recoveries = 0
+        self._rejoin_retries = 0
 
     @property
     def consecutive_recoveries(self) -> int:
@@ -99,6 +103,7 @@ class RecoveryStateMachine:
         self._state_since_s = now_s
         self._last_recovery_end_s = float("-inf")
         self._consecutive_recoveries = 0
+        self._rejoin_retries = 0
 
     def update(self, state_input: StateMachineInput) -> StateTransition:
         if not 0.0 <= state_input.failure_score <= 1.0:
@@ -135,6 +140,7 @@ class RecoveryStateMachine:
                     else:
                         self.state = RecoveryState.RECOVERY
                         self._consecutive_recoveries += 1
+                        self._rejoin_retries = 0
                         self._low_frames = 0
                         reason = "failure_confirmed"
                 else:
@@ -156,6 +162,7 @@ class RecoveryStateMachine:
                     else:
                         self.state = RecoveryState.RECOVERY
                         self._consecutive_recoveries += 1
+                        self._rejoin_retries = 0
                         self._low_frames = 0
                         reason = "failure_confirmed"
             else:
@@ -191,22 +198,25 @@ class RecoveryStateMachine:
                 # and produced progress, so a later trigger starts a new
                 # sequence rather than consuming a lifetime episode budget.
                 self._consecutive_recoveries = 0
+                self._rejoin_retries = 0
                 self._high_frames = 0
                 self._low_frames = 0
                 reason = "original_goal_restored"
-            elif state_input.failure_score > self.config.tau_on:
-                self.state = RecoveryState.PENDING_RECOVERY
-                self._high_frames = 1
-                reason = "failure_repeated"
-            elif state_input.now_s - self._state_since_s >= self.config.maximum_rejoin_duration_s:
-                if self._consecutive_recoveries >= self.config.maximum_consecutive_recoveries:
-                    self.state = RecoveryState.FAILED
-                    reason = "rejoin_retry_limit"
-                else:
+            elif (
+                state_input.failure_score > self.config.tau_on
+                or state_input.now_s - self._state_since_s >= self.config.maximum_rejoin_duration_s
+            ):
+                if self._rejoin_retries < self.config.maximum_rejoin_retries_per_sequence:
                     self.state = RecoveryState.RECOVERY
-                    self._consecutive_recoveries += 1
+                    self._rejoin_retries += 1
                     self._low_frames = 0
-                    reason = "rejoin_timeout_retry"
+                    reason = "rejoin_failure_retry"
+                else:
+                    self.state = RecoveryState.NORMAL
+                    self._last_recovery_end_s = state_input.now_s
+                    self._high_frames = 0
+                    self._low_frames = 0
+                    reason = "rejoin_retry_exhausted"
 
         changed = self.state is not previous
         if changed:

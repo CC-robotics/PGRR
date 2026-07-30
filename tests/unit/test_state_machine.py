@@ -75,6 +75,7 @@ def test_stalled_rejoin_retries_then_respects_recovery_limit() -> None:
             cooldown_s=0.0,
             minimum_action_hold_s=0.0,
             maximum_rejoin_duration_s=2.0,
+            maximum_rejoin_retries_per_sequence=1,
             maximum_consecutive_recoveries=2,
         )
     )
@@ -85,12 +86,27 @@ def test_stalled_rejoin_retries_then_respects_recovery_limit() -> None:
     )
     retry = machine.update(StateMachineInput(2.1, 0.2, False))
     assert retry.current is RecoveryState.RECOVERY
-    assert retry.reason == "rejoin_timeout_retry"
-    assert machine.consecutive_recoveries == 2
+    assert retry.reason == "rejoin_failure_retry"
+    assert machine.consecutive_recoveries == 1
     assert (
         machine.update(StateMachineInput(2.2, 0.0, False, recovery_action_complete=True)).current
         is RecoveryState.REJOIN
     )
-    failed = machine.update(StateMachineInput(4.2, 0.2, False))
+    exhausted = machine.update(StateMachineInput(4.2, 0.2, False))
+    assert exhausted.current is RecoveryState.NORMAL
+    assert exhausted.reason == "rejoin_retry_exhausted"
+    assert machine.update(StateMachineInput(4.3, 0.8, False)).current is RecoveryState.RECOVERY
+    assert machine.consecutive_recoveries == 2
+    assert (
+        machine.update(StateMachineInput(4.4, 0.0, False, recovery_action_complete=True)).current
+        is RecoveryState.REJOIN
+    )
+    assert machine.update(StateMachineInput(6.4, 0.2, False)).current is RecoveryState.RECOVERY
+    assert (
+        machine.update(StateMachineInput(6.5, 0.0, False, recovery_action_complete=True)).current
+        is RecoveryState.REJOIN
+    )
+    assert machine.update(StateMachineInput(8.5, 0.2, False)).current is RecoveryState.NORMAL
+    failed = machine.update(StateMachineInput(8.6, 0.8, False))
     assert failed.current is RecoveryState.FAILED
-    assert failed.reason == "rejoin_retry_limit"
+    assert failed.reason == "recovery_limit"
