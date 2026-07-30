@@ -41,6 +41,9 @@ docker run --rm --runtime runc --network host --ipc host \
          task_node=/opt/arena_ws/src/arena/arena-rosnav/task_generator/task_generator/node.py
          patch --forward --silent --reject-file=- "$task_node" /workspace/third_party/task_generator_auto_reset.patch 2>/dev/null ||
              grep -q "self._task.is_done and self._auto_reset" "$task_node"
+         robot_manager=/opt/arena_ws/src/arena/arena-rosnav/task_generator/task_generator/manager/robot_manager/robot_manager.py
+         patch --forward --silent --reject-file=- "$robot_manager" /workspace/third_party/task_generator_known_pose.patch 2>/dev/null ||
+             grep -q "'\''amcl'\'': '\''false'\''" "$robot_manager"
      fi
      cd /opt/arena_ws
      source arena.bash
