@@ -57,9 +57,20 @@ def test_collision_risk_waits_when_side_clearance_is_similar() -> None:
 
 
 def test_collision_risk_chooses_clear_legal_side() -> None:
+    policy = HeuristicRecoveryPolicy()
     mask = _full_mask()
     mask[17] = False  # Preferred 1.4 m/+30 deg action must remain masked.
-    decision = HeuristicRecoveryPolicy().select_action(
+    first = policy.select_action(
+        _observation(
+            FailurePrediction(1.0, 0.0, 0.0, 0.0),
+            left_clearance=4.0,
+            right_clearance=1.0,
+            front_clearance=3.0,
+        ),
+        mask,
+    )
+    assert first.action_id == WAIT_ACTION_ID
+    decision = policy.select_action(
         _observation(
             FailurePrediction(1.0, 0.0, 0.0, 0.0),
             left_clearance=4.0,
@@ -131,7 +142,7 @@ def test_close_side_wall_does_not_force_persistent_backup() -> None:
     )
     first = policy.select_action(observation, _full_mask())
     second = policy.select_action(observation, _full_mask())
-    assert ACTIONS[first.action_id].kind is RecoveryActionKind.SUBGOAL
+    assert first.action_id == WAIT_ACTION_ID
     assert ACTIONS[second.action_id].kind is RecoveryActionKind.SUBGOAL
 
 

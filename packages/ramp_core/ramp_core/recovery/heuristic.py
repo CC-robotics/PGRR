@@ -257,10 +257,7 @@ class HeuristicRecoveryPolicy:
             front_clearance = self._front_clearance(observation)
             minimum_clearance = self._minimum_clearance(observation)
             clearance_ratio = max(left, right) / max(1.0e-6, min(left, right))
-            first_decision_wait = self._collision_decisions == 1 and (
-                front_clearance <= self.config.collision_wait_clearance_m
-                or clearance_ratio < self.config.side_clearance_ratio
-            )
+            first_decision_wait = self._collision_decisions == 1
             if (
                 first_decision_wait
                 or front_clearance <= self.config.collision_emergency_wait_clearance_m
