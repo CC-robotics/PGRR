@@ -77,3 +77,7 @@ YIELD uses a separate 30 s hard limit while ordinary recovery actions retain the
 ## D-019: Recurrent-flow escalation is progress-based and mask-conservative
 
 Repeated blockage is defined by insufficient robot task progress between YIELD activations, rather than persistent pedestrian IDs. After the configured recurrence count, the Oracle may evaluate only action-mask-valid lateral subgoals and REPLAN. The restriction is not applied when no such candidate exists, preserving WAIT/BACKUP as the safe fallback. The branch is covered by unit tests but is not yet an accepted online result: the cyclic doorway proxy produced a single long-lived YIELD option rather than a clean repeated activation.
+
+## D-020: Expert quality includes intervention efficiency
+
+The medium-density train diagnostic favored Oracle over Heuristic, but the high-density diagnostic did not: both succeeded and Heuristic used fewer interventions with slightly better time and clearance. Planning-expert quality therefore cannot be judged only by collision-free predicted success. Demonstration analysis must include intervention count/duration and CONTINUE frequency, and an explicit unnecessary-intervention penalty may be tuned only on validation data. No expert-dominance claim is made from the current single-seed diagnostics.
