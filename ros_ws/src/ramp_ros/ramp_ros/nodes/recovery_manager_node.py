@@ -252,13 +252,14 @@ class RecoveryManagerNode(Node):
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
+            "footprint_stop_clearance_m": 0.35,
             "emergency_hold_s": 0.5,
             "emergency_backup_duration_s": 0.8,
             "emergency_backup_clearance_m": 0.70,
             "emergency_release_speed_mps": 0.03,
             "human_radius_m": 0.35,
             "maximum_human_speed_mps": 2.0,
-            "expert_scan_inflation_m": 0.25,
+            "expert_scan_inflation_m": 0.40,
         }
         for name, value in numeric_defaults.items():
             self.declare_parameter(name, value)
@@ -504,6 +505,12 @@ class RecoveryManagerNode(Node):
         """Measure clearance along the direction used by the braking model."""
         return self._laser_clearance(0.0 if linear_velocity >= 0.0 else math.pi)
 
+    def _nearest_clearance(self) -> float:
+        assert self._scan is not None
+        values = np.asarray(self._scan.ranges, dtype=np.float64)
+        finite = values[np.isfinite(values) & (values >= 0.0)]
+        return float(np.min(finite)) if finite.size else 0.0
+
     def _action_mask(
         self,
         pose: Pose2D,
@@ -669,7 +676,9 @@ class RecoveryManagerNode(Node):
             self._float("stopping_margin_m"),
         )
         motion_clearance = self._motion_clearance(float(self._odom.twist.twist.linear.x))
-        raw_emergency = motion_clearance < stop
+        raw_emergency = motion_clearance < stop or self._nearest_clearance() < self._float(
+            "footprint_stop_clearance_m"
+        )
         self._emergency, self._emergency_escape_active = self._emergency_escape.update(
             now_s=now_s,
             hazard=raw_emergency,
@@ -764,9 +773,9 @@ class RecoveryManagerNode(Node):
                 self._float("control_latency_s"),
                 self._float("stopping_margin_m"),
             )
-            immediate_safety_stop = (
-                self._motion_clearance(float(self._odom.twist.twist.linear.x)) < stop
-            )
+            immediate_safety_stop = self._motion_clearance(
+                float(self._odom.twist.twist.linear.x)
+            ) < stop or self._nearest_clearance() < self._float("footprint_stop_clearance_m")
         if self._machine.state is RecoveryState.EMERGENCY_STOP and self._emergency_escape_active:
             rear_stop = stopping_distance(
                 self._float("backup_speed_mps"),
