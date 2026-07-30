@@ -3,7 +3,14 @@ collision_wait_clearance_m: 1.3
 collision_close_clearance_m: 0.60
 collision_emergency_wait_clearance_m: 0.5
 preferred_subgoal_radius_m: 1.0
+minimum_subgoal_progress_m: 0.15
+path_alignment_weight: 1.0
+goal_alignment_weight: 0.5
+progress_reward_weight: 0.4
+clearance_reward_weight: 0.2
+radius_preference_weight: 0.35
 side_cooldown_decisions: 4
 freeze_subgoal_after_decisions: 2
+freeze_max_backup_decisions: 6
 deadlock_backup_after_decisions: 2
 deadlock_replan_after_decisions: 4

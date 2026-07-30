@@ -30,8 +30,15 @@ class HeuristicRecoveryConfig:
     collision_close_clearance_m: float = 0.60
     collision_emergency_wait_clearance_m: float = 0.5
     preferred_subgoal_radius_m: float = 1.0
+    minimum_subgoal_progress_m: float = 0.15
+    path_alignment_weight: float = 1.0
+    goal_alignment_weight: float = 0.5
+    progress_reward_weight: float = 0.4
+    clearance_reward_weight: float = 0.2
+    radius_preference_weight: float = 0.35
     side_cooldown_decisions: int = 4
     freeze_subgoal_after_decisions: int = 2
+    freeze_max_backup_decisions: int = 6
     deadlock_backup_after_decisions: int = 2
     deadlock_replan_after_decisions: int = 4
 
@@ -40,6 +47,16 @@ class HeuristicRecoveryConfig:
             raise ValueError("side_clearance_ratio must be greater than one")
         if self.preferred_subgoal_radius_m <= 0.0:
             raise ValueError("preferred_subgoal_radius_m must be positive")
+        weights = (
+            self.minimum_subgoal_progress_m,
+            self.path_alignment_weight,
+            self.goal_alignment_weight,
+            self.progress_reward_weight,
+            self.clearance_reward_weight,
+            self.radius_preference_weight,
+        )
+        if any(value < 0.0 for value in weights):
+            raise ValueError("subgoal scoring parameters must be non-negative")
         if self.collision_wait_clearance_m <= 0.0:
             raise ValueError("collision_wait_clearance_m must be positive")
         if not 0.0 < self.collision_close_clearance_m <= self.collision_wait_clearance_m:
@@ -55,6 +72,7 @@ class HeuristicRecoveryConfig:
         counts = (
             self.side_cooldown_decisions,
             self.freeze_subgoal_after_decisions,
+            self.freeze_max_backup_decisions,
             self.deadlock_backup_after_decisions,
             self.deadlock_replan_after_decisions,
         )
@@ -62,6 +80,8 @@ class HeuristicRecoveryConfig:
             raise ValueError("heuristic decision counts must be non-negative")
         if self.deadlock_replan_after_decisions < self.deadlock_backup_after_decisions:
             raise ValueError("deadlock replan threshold must not precede backup threshold")
+        if self.freeze_max_backup_decisions < self.freeze_subgoal_after_decisions:
+            raise ValueError("freeze backup limit must not precede its subgoal threshold")
 
 
 class HeuristicRecoveryPolicy:
@@ -127,6 +147,8 @@ class HeuristicRecoveryPolicy:
         side: int = 0,
     ) -> int | None:
         path_angle = self._path_angle(observation)
+        goal_angle = float(observation.goal_polar[1])
+        scan = observation.lidar[-1]
         candidates: list[tuple[float, int]] = []
         for action in ACTIONS:
             if action.kind is not RecoveryActionKind.SUBGOAL or not bool(mask[action.action_id]):
@@ -138,8 +160,24 @@ class HeuristicRecoveryPolicy:
                 if int(math.copysign(1, action.angle_degrees)) != side:
                     continue
             angle = math.radians(action.angle_degrees)
-            score = abs(angle - path_angle) + 0.35 * abs(
-                action.radius - self.config.preferred_subgoal_radius_m
+            goal_progress = action.radius * math.cos(angle - goal_angle)
+            if goal_progress < self.config.minimum_subgoal_progress_m:
+                continue
+            path_error = abs(math.atan2(math.sin(angle - path_angle), math.cos(angle - path_angle)))
+            goal_error = abs(math.atan2(math.sin(angle - goal_angle), math.cos(angle - goal_angle)))
+            index = round((angle + math.pi) / (2.0 * math.pi) * (len(scan) - 1))
+            half_width = max(1, round(len(scan) * 6.0 / 360.0))
+            start = max(0, index - half_width)
+            stop = min(len(scan), index + half_width + 1)
+            directional_clearance = float(np.min(scan[start:stop]))
+            clearance_buffer = max(0.0, directional_clearance - action.radius)
+            score = (
+                self.config.path_alignment_weight * path_error
+                + self.config.goal_alignment_weight * goal_error
+                + self.config.radius_preference_weight
+                * abs(action.radius - self.config.preferred_subgoal_radius_m)
+                - self.config.progress_reward_weight * goal_progress
+                - self.config.clearance_reward_weight * min(clearance_buffer, 2.0)
             )
             candidates.append((score, action.action_id))
         return min(candidates)[1] if candidates else None
@@ -276,6 +314,13 @@ class HeuristicRecoveryPolicy:
                 else:
                     action_id = self._best_subgoal(observation, mask)
                     reason = "freeze_path_aligned_subgoal"
+                if (
+                    action_id is None
+                    and self._freeze_decisions <= self.config.freeze_max_backup_decisions
+                    and bool(mask[BACKUP_ACTION_ID])
+                ):
+                    action_id = BACKUP_ACTION_ID
+                    reason = "freeze_clearance_backup"
                 if action_id is None and bool(mask[REPLAN_ACTION_ID]):
                     action_id = REPLAN_ACTION_ID
                     reason = "freeze_replan"

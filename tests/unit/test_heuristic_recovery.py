@@ -176,6 +176,42 @@ def test_freeze_chooses_stable_side_after_backing_from_blocked_front() -> None:
     assert ACTIONS[decision.action_id].angle_degrees > 0
 
 
+def test_zero_progress_side_subgoals_are_rejected_for_more_backup() -> None:
+    policy = HeuristicRecoveryPolicy()
+    observation = _observation(
+        FailurePrediction(0.0, 1.0, 0.0, 0.0),
+        front_clearance=0.8,
+    )
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[6] = True  # 0.6 m / +90 degrees has zero goal projection.
+    mask[BACKUP_ACTION_ID] = True
+    mask[REPLAN_ACTION_ID] = True
+    assert policy.select_action(observation, mask).action_id == BACKUP_ACTION_ID
+    assert policy.select_action(observation, mask).action_id == BACKUP_ACTION_ID
+    decision = policy.select_action(observation, mask)
+    assert decision.action_id == BACKUP_ACTION_ID
+    assert decision.reason == "freeze_clearance_backup"
+
+
+def test_scored_subgoal_prefers_forward_progress_over_lateral_motion() -> None:
+    policy = HeuristicRecoveryPolicy()
+    observation = _observation(
+        FailurePrediction(0.0, 1.0, 0.0, 0.0),
+        left_clearance=4.0,
+        right_clearance=1.0,
+        front_clearance=0.8,
+    )
+    policy.select_action(observation, _full_mask())
+    policy.select_action(observation, _full_mask())
+    decision = policy.select_action(observation, _full_mask())
+    action = ACTIONS[decision.action_id]
+    assert action.angle_degrees is not None
+    assert 0 < action.angle_degrees < 90
+    assert action.radius is not None
+    projected_progress = action.radius * np.cos(np.deg2rad(action.angle_degrees))
+    assert projected_progress >= policy.config.minimum_subgoal_progress_m
+
+
 def test_low_score_stalled_rejoin_uses_side_subgoal() -> None:
     decision = HeuristicRecoveryPolicy().select_action(
         _observation(
