@@ -10,6 +10,7 @@ prediction_inflation_mps: 0.03
 human_prediction_geometry: constant_velocity_swept_tube
 human_yield_distance_m: 1.3
 scan_obstacle_inflation_m: 0.40
+rejoin_block_collision_threshold: 0.9
 cost:
   collision: 1000000.0
   progress: 8.0

@@ -256,6 +256,7 @@ class RecoveryManagerNode(Node):
             "wait_duration_s": 0.5,
             "subgoal_settle_s": 1.0,
             "expert_replan_interval_s": 0.5,
+            "expert_rejoin_block_threshold": 0.9,
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
@@ -594,7 +595,7 @@ class RecoveryManagerNode(Node):
         mask = constrain_rejoin_actions(
             mask,
             collision_risk=self._failure.collision_risk,
-            release_threshold=self._machine.config.tau_off,
+            release_threshold=self._float("expert_rejoin_block_threshold"),
         )
         twist = self._odom.twist.twist
         privileged = PrivilegedState(

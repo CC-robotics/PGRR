@@ -51,3 +51,10 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert manager.count("_footprint_stop_distance(") >= 3
     config = yaml.safe_load((root / "configs/failure/recovery_state_machine.yaml").read_text())
     assert config["footprint_stop_clearance_m"] == 0.42
+
+
+def test_oracle_rejoin_distinguishes_hard_risk_from_soft_latch() -> None:
+    root = Path(__file__).resolve().parents[2]
+    manager = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py").read_text()
+    assert '"expert_rejoin_block_threshold": 0.9' in manager
+    assert 'release_threshold=self._float("expert_rejoin_block_threshold")' in manager
