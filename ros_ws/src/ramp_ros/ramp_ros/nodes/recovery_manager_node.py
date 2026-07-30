@@ -9,7 +9,7 @@ from typing import Any
 import numpy as np
 import rclpy
 from action_msgs.msg import GoalStatus, GoalStatusArray
-from geometry_msgs.msg import PoseStamped, Twist
+from geometry_msgs.msg import PoseArray, PoseStamped, Twist
 from nav_msgs.msg import OccupancyGrid as OccupancyGridMessage
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMessage
@@ -24,8 +24,15 @@ from ramp_core.action_space import (
     RecoveryActionKind,
 )
 from ramp_core.kinematics import stopping_distance
-from ramp_core.observations import RecoveryObservation, select_local_path_waypoints
+from ramp_core.observations import (
+    HumanState,
+    PrivilegedState,
+    RecoveryObservation,
+    select_local_path_waypoints,
+)
 from ramp_core.occupancy import OccupancyGrid
+from ramp_core.planning.expert import PlanningRecoveryExpert
+from ramp_core.planning.online import augment_grid_with_scan, estimate_human_states
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.safety import EmergencyEscapeController
 from ramp_core.state_machine import (
@@ -34,7 +41,16 @@ from ramp_core.state_machine import (
     RecoveryStateMachineConfig,
     StateMachineInput,
 )
-from ramp_core.types import FailurePrediction, PlannerStatus, Pose2D, select_planner_status
+from ramp_core.types import (
+    FailurePrediction,
+    PlannerStatus,
+    Pose2D,
+    Velocity2D,
+    select_planner_status,
+)
+from ramp_core.types import (
+    RecoveryDecision as CoreRecoveryDecision,
+)
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
@@ -66,6 +82,9 @@ class RecoveryManagerNode(Node):
     def __init__(self) -> None:
         super().__init__("recovery_manager")
         self._declare_parameters()
+        self._policy_type = str(self.get_parameter("policy_type").value)
+        if self._policy_type not in {"heuristic", "expert"}:
+            raise ValueError("policy_type must be heuristic or expert")
         self._goal = Pose2D(self._float("goal_x"), self._float("goal_y"), self._float("goal_yaw"))
         self._start = Pose2D(
             self._float("robot_start_x"),
@@ -123,6 +142,11 @@ class RecoveryManagerNode(Node):
         self._lidar_stack: deque[np.ndarray[Any, np.dtype[np.float32]]] = deque(maxlen=5)
         self._path: tuple[tuple[float, float], ...] = ()
         self._map: OccupancyGrid | None = None
+        self._privileged_humans: tuple[HumanState, ...] = ()
+        self._previous_human_positions: tuple[tuple[float, float], ...] = ()
+        self._previous_human_timestamp_s: float | None = None
+        self._received_privileged_humans = False
+        self._expert_previous_side = 0
         self._failure = FailurePrediction(0.0, 0.0, 0.0, 0.0)
         self._planner_status = PlannerStatus.UNKNOWN
         self._armed = False
@@ -173,6 +197,8 @@ class RecoveryManagerNode(Node):
             "recovery_decision_topic": "recovery_decision",
             "navigate_to_pose_action": "navigate_to_pose",
             "map_frame": "map",
+            "policy_type": "heuristic",
+            "privileged_humans_topic": "/ramp/privileged/humans",
         }
         for name, value in string_defaults.items():
             self.declare_parameter(name, value)
@@ -228,6 +254,9 @@ class RecoveryManagerNode(Node):
             "emergency_backup_duration_s": 0.8,
             "emergency_backup_clearance_m": 0.70,
             "emergency_release_speed_mps": 0.03,
+            "human_radius_m": 0.35,
+            "maximum_human_speed_mps": 2.0,
+            "expert_scan_inflation_m": 0.25,
         }
         for name, value in numeric_defaults.items():
             self.declare_parameter(name, value)
@@ -285,6 +314,12 @@ class RecoveryManagerNode(Node):
                     str(self.get_parameter("failure_status_topic").value),
                     self._on_failure,
                     10,
+                ),
+                self.create_subscription(
+                    PoseArray,
+                    str(self.get_parameter("privileged_humans_topic").value),
+                    self._on_humans,
+                    qos_profile_sensor_data,
                 ),
             ]
         )
@@ -381,6 +416,27 @@ class RecoveryManagerNode(Node):
         )
         self._try_arm()
 
+    def _on_humans(self, message: PoseArray) -> None:
+        timestamp_s = float(message.header.stamp.sec) + float(message.header.stamp.nanosec) * 1.0e-9
+        positions = tuple(
+            (float(pose.position.x), float(pose.position.y)) for pose in message.poses
+        )
+        elapsed_s = (
+            0.0
+            if self._previous_human_timestamp_s is None
+            else max(0.0, timestamp_s - self._previous_human_timestamp_s)
+        )
+        self._privileged_humans = estimate_human_states(
+            positions,
+            self._previous_human_positions,
+            elapsed_s,
+            radius_m=self._float("human_radius_m"),
+            maximum_speed_mps=self._float("maximum_human_speed_mps"),
+        )
+        self._previous_human_positions = positions
+        self._previous_human_timestamp_s = timestamp_s
+        self._received_privileged_humans = True
+
     def _try_arm(self) -> None:
         now_s = self.get_clock().now().nanoseconds * 1.0e-9
         nominal_ready = (
@@ -442,11 +498,22 @@ class RecoveryManagerNode(Node):
         """Measure clearance along the direction used by the braking model."""
         return self._laser_clearance(0.0 if linear_velocity >= 0.0 else math.pi)
 
-    def _action_mask(self, pose: Pose2D) -> np.ndarray[Any, np.dtype[np.bool_]]:
-        if self._map is None:
+    def _action_mask(
+        self,
+        pose: Pose2D,
+        grid: OccupancyGrid | None = None,
+        human_positions: tuple[tuple[float, float], ...] = (),
+    ) -> np.ndarray[Any, np.dtype[np.bool_]]:
+        planning_grid = self._map if grid is None else grid
+        if planning_grid is None:
             mask = np.ones(ACTION_COUNT, dtype=np.bool_)
         else:
-            mask = compute_action_mask(pose, self._map, replan_available=self._adapter.ready)
+            mask = compute_action_mask(
+                pose,
+                planning_grid,
+                human_positions,
+                replan_available=self._adapter.ready,
+            )
         clearance = self._float("robot_clearance_m")
         for action in ACTIONS[:21]:
             assert action.radius is not None and action.angle_degrees is not None
@@ -457,6 +524,66 @@ class RecoveryManagerNode(Node):
         mask[WAIT_ACTION_ID] = True
         mask[CONTINUE_ACTION_ID] = True
         return mask
+
+    def _expert_decision(self, pose: Pose2D) -> CoreRecoveryDecision:
+        if self._map is None or self._scan is None or not self._received_privileged_humans:
+            return CoreRecoveryDecision(
+                WAIT_ACTION_ID,
+                0.0,
+                "oracle_unavailable_wait",
+            )
+        grid = augment_grid_with_scan(
+            self._map,
+            pose,
+            self._scan.ranges,
+            angle_min=float(self._scan.angle_min),
+            angle_increment=float(self._scan.angle_increment),
+            minimum_range_m=max(0.05, float(self._scan.range_min)),
+            maximum_range_m=float(self._scan.range_max),
+            inflation_m=self._float("expert_scan_inflation_m"),
+        )
+        human_positions = tuple(human.position for human in self._privileged_humans)
+        mask = self._action_mask(pose, grid, human_positions)
+        twist = self._odom.twist.twist
+        privileged = PrivilegedState(
+            robot_pose=pose,
+            robot_velocity=Velocity2D(float(twist.linear.x), float(twist.angular.z)),
+            original_goal=self._goal,
+            global_path=self._path if self._path else ((self._goal.x, self._goal.y),),
+            humans=self._privileged_humans,
+            time_step=0.1,
+        )
+        label = PlanningRecoveryExpert(grid).label(
+            privileged,
+            mask,
+            previous_side=self._expert_previous_side,
+        )
+        action = ACTIONS[label.action_id]
+        if action.kind is RecoveryActionKind.SUBGOAL:
+            assert action.angle_degrees is not None
+            self._expert_previous_side = (action.angle_degrees > 0) - (action.angle_degrees < 0)
+        confidence = min(1.0, label.margin / (1.0 + abs(label.best_cost)))
+        return CoreRecoveryDecision(
+            label.action_id,
+            confidence,
+            (
+                f"oracle_rollout best={label.best_cost:.3f} margin={label.margin:.3f} "
+                f"predicted_success={int(label.predicted_success)}"
+            ),
+        )
+
+    def _select_decision(
+        self,
+        observation: RecoveryObservation,
+        pose: Pose2D,
+    ) -> CoreRecoveryDecision:
+        if self._policy_type == "expert":
+            try:
+                return self._expert_decision(pose)
+            except (RuntimeError, ValueError) as error:
+                self.get_logger().error(f"privileged expert failed safely: {error}")
+                return CoreRecoveryDecision(WAIT_ACTION_ID, 0.0, "oracle_error_wait")
+        return self._policy.select_action(observation, self._action_mask(pose))
 
     def _valid_progress(self) -> bool:
         if len(self._distance_history) < 2:
@@ -558,7 +685,7 @@ class RecoveryManagerNode(Node):
             transition.changed or persistent_failure_followup
         ):
             observation = self._observation()
-            decision = self._policy.select_action(observation, self._action_mask(pose))
+            decision = self._select_decision(observation, pose)
             temporary = self._execute(decision.action_id, now_s)
             self._publish_decision(
                 decision.action_id, decision.confidence, decision.reason, temporary
@@ -606,6 +733,7 @@ class RecoveryManagerNode(Node):
             and transition.previous is RecoveryState.REJOIN
         ):
             self._policy.reset()
+            self._expert_previous_side = 0
             self._publish_decision(CONTINUE_ACTION_ID, self._failure.score, transition.reason)
         elif transition.changed:
             self._publish_decision(CONTINUE_ACTION_ID, self._failure.score, transition.reason)

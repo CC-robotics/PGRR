@@ -14,3 +14,7 @@ profiles:
     arena_inter_planner: navigate_w_replanning_time
     behavior_tree_sha256: ec7f48583881583871f2c937f2eeda43b6715556ec4a8ac9a4b66f1247cf0f29
     description: Base profile plus the RAMP observable failure detector and heuristic recovery.
+  oracle:
+    arena_inter_planner: navigate_w_replanning_time
+    behavior_tree_sha256: ec7f48583881583871f2c937f2eeda43b6715556ec4a8ac9a4b66f1247cf0f29
+    description: Privileged planning-expert upper bound; never used as a deployable test policy.

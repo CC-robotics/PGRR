@@ -13,12 +13,12 @@ case "${SOURCE_POLICY}" in
         INTER_PLANNER="navigate_to_pose_w_replanning_and_recovery"
         TERMINATE_ON_PLANNER_ABORT="true"
         ;;
-    heuristic)
+    heuristic|oracle)
         INTER_PLANNER="navigate_w_replanning_time"
         TERMINATE_ON_PLANNER_ABORT="false"
         ;;
     *)
-        echo "ERROR: RAMP_SOURCE_POLICY must be base, standard, or heuristic" >&2
+        echo "ERROR: RAMP_SOURCE_POLICY must be base, standard, heuristic, or oracle" >&2
         exit 2
         ;;
 esac
@@ -219,7 +219,11 @@ mux_pid=$!
     -p update_frequency_hz:="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
     >>"${RUNTIME_LOG}" 2>&1 &
 actor_pid=$!
-if [[ "${SOURCE_POLICY}" == "heuristic" ]]; then
+if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "oracle" ]]; then
+    recovery_policy_type="heuristic"
+    if [[ "${SOURCE_POLICY}" == "oracle" ]]; then
+        recovery_policy_type="expert"
+    fi
     "${ramp_ros_prefix}/lib/ramp_ros/failure_detector" --ros-args \
         -p use_sim_time:=true \
         -p goal_x:="${goal_x}" -p goal_y:="${goal_y}" \
@@ -246,6 +250,8 @@ if [[ "${SOURCE_POLICY}" == "heuristic" ]]; then
         -p navigate_to_pose_action:="${nav_action}" \
         -p failure_status_topic:=/ramp/failure_status \
         -p recovery_decision_topic:=/ramp/recovery_decision \
+        -p policy_type:="${recovery_policy_type}" \
+        -p privileged_humans_topic:=/ramp/privileged/humans \
         >>"${RUNTIME_LOG}" 2>&1 &
     recovery_pid=$!
 fi

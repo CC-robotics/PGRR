@@ -207,7 +207,9 @@ def main() -> None:
     )
     parser.add_argument("--max-reset-retries", type=int, default=2)
     parser.add_argument(
-        "--source-policy", choices=("base", "standard", "heuristic"), default="base"
+        "--source-policy",
+        choices=("base", "standard", "heuristic", "oracle"),
+        default="base",
     )
     parser.add_argument("--episode-suffix")
     parser.add_argument("--seed-min", type=int)
