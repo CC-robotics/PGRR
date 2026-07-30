@@ -103,3 +103,11 @@ The logger samples from a steady wall timer so a paused simulator can still reac
 ## KI-026: Terminal Nav2 aborts were previously allowed to drift into timeout
 
 The original logger classified only startup aborts with less than 0.05 m displacement as `PLANNER_FAILURE`. In corrected head-on seed 0, Nav2 later reached a terminal abort but the robot continued receiving stale control behavior and drifted outside the corridor until `TIMEOUT`. B0/B1 now require an abort with no accepted, executing, or canceling replacement goal for 5 s of simulation time before terminating as `PLANNER_FAILURE`; stale aborted goal records are ignored while a replacement is active. B2 keeps this automatic termination disabled so its recovery manager may intervene, and a manager `FAILED` state is logged as `PLANNER_FAILURE`. The interrupted strict1 artifacts are retained under `data/quarantine/planner_outcome_bug_20260730/` and excluded.
+
+## KI-027: Gazebo launched two conflicting map-to-odom localization sources
+
+The Humble task generator unconditionally set `amcl=true` for Gazebo while its Gazebo simulator also launched a static ground-truth `map -> odom` transform. Nav2 paths consequently began 6–7 m from the odometry-derived robot position even though the requested complexity was known map/known pose. `task_generator_known_pose.patch` disables AMCL for this profile and retains the simulator transform as the single localization source. A 20 s replay produced 143 path samples with 0.047 m median and 0.127 m maximum path-start/robot error. All dynamic results produced before this patch are superseded for method claims and must be rerun.
+
+## KI-028: Rule recovery avoids collision but can settle into WAIT deadlock
+
+After localization and detector-history fixes, corrected head-on seed 2 changed from collision to timeout. The bounded-backup heuristic made 4.836 m net progress and maintained 0.739 m minimum human-center distance, but then remained near a yielding proxy and used WAIT for 777/1202 samples. This is retained as a negative heuristic result, not Gate 2 acceptance. Additional rule branches are frozen; the privileged rollout expert will be used to distinguish transient blockage from recoverable subgoals.

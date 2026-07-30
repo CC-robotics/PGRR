@@ -59,3 +59,7 @@ The braking equation is longitudinal, so its clearance input is measured along c
 ## D-015: Separate classical and standard-recovery behavior trees
 
 The corrected Gate 1 `base` profile uses Arena's `navigate_w_replanning_time` tree (DWB plus periodic replanning, without a recovery subtree). The `standard` profile uses the installed `navigate_to_pose_w_replanning_and_recovery` tree. The `heuristic` profile uses the same base tree plus RAMP's observable detector and recovery manager. This keeps B0, B1, and B2 distinct without adding a custom C++ Nav2 plugin; the exact mapping is locked in `configs/planner/baselines.yaml`.
+
+## D-016: Known-pose Gazebo uses one ground-truth localization source
+
+The selected experiment is a known-map, known-pose simulator profile. Arena Humble's simultaneous AMCL and static map-to-odom publishers are therefore reduced to the static simulator transform using a versioned, runtime-validated patch. This is not privileged policy input: the learned observation remains LiDAR, goal/path, velocity, planner state, and temporal history. Ground-truth actor state remains confined to the expert and evaluation fields.

@@ -39,6 +39,9 @@
 - Completed all 20 B1 crossing episodes: 12 collisions, 8 timeouts, and no goal reaches. Versus B0, the collision-rate difference is -0.05 (95% bootstrap CI [-0.35, 0.25], exact McNemar p=1.0) and mean progress difference is -0.616 m (Wilcoxon p=0.812).
 - Fixed slow-simulator duplicate logging. A real 5 s Arena smoke produced 51 samples, 51 unique stamps, and a strictly increasing sequence from 0.0 to 4.995 s; legacy conversion reports equal-stamp removal and rejects backwards time.
 - Fixed terminal Nav2 abort classification. A real corrected head-on B0 seed now ends as `PLANNER_FAILURE` after 26.6733 simulated seconds and 269 strictly timed samples, rather than drifting until a false timeout.
+- Removed the conflicting Gazebo AMCL source from the known-pose profile. A real 20 s replay keeps Nav2 path starts aligned to robot odometry within 0.047 m median and 0.127 m maximum.
+- Added collision-risk latching, recovery-motion exclusion from freeze/deadlock windows, asynchronous subgoal-command settling, first-response WAIT, and a one-BACKUP-per-sequence cap.
+- Implemented the ROS-independent privileged planning expert, cost decomposition, constant-velocity human rollout, fixed-mask/margin label, and a 20-scene PDF validator. The complete quality suite passes 116 tests.
 
 ### Commands
 
@@ -96,6 +99,8 @@ scripts/arena/smoke_goal_mux.sh
 - Standard-recovery crossing pairing: COMPLETE but no improvement claim. B1 has 12/20 collisions and 8/20 timeouts versus B0's 13/20 and 7/20; both paired collision and progress tests are non-significant and all success rates are zero.
 - Corrected crossing startup exclusions: 8 `INVALID_RESET` attempts are reported separately; all three methods ultimately have 20 valid algorithm outcomes.
 - Planner-abort regression: PASS. Replacement active goals suppress stale abort records; an unopposed abort must persist for 5 s before B0/B1 terminate. B2 remains recoverable and reports `PLANNER_FAILURE` only when its recovery manager reaches `FAILED`.
+- Known-pose TF regression: PASS. The 20 s seed-2 smoke made 3.384 m progress; 143 path samples had 0.047 m median path-start error and no AMCL/costmap-bound conflict.
+- Expert synthetic validation: PASS for implementation smoke only. Twenty scenes, zero illegal selected actions, zero selected-rollout collisions, and 16 predicted-success labels. This is not an Arena Oracle comparison and does not yet pass Gate 3.
 
 ### Failures
 
@@ -108,7 +113,9 @@ scripts/arena/smoke_goal_mux.sh
 - The earlier dense label artifact was generated before LiDAR-visible pedestrian geometry was fixed and is superseded; it must be regenerated from the corrected baseline.
 - Crossing-flow alone does not meet the heuristic MVP acceptance gate: it reduces observed collisions without significance and converts several failures into timeouts instead of successful navigation.
 - The first strict head-on batch exposed that terminal NavigateToPose aborts were being recorded as timeouts after arbitrary post-abort motion. Those two partial episodes and logs are quarantined and excluded; no affected row is used in the corrected pilot.
+- All B0/B1/B2 dynamic results generated before the known-pose localization patch are superseded for method claims and require paired replay.
+- The final bounded heuristic seed-2 replay is safe but unsuccessful: `TIMEOUT`, 4.836 m progress, 0.739 m minimum human distance, with WAIT used for 777/1202 samples. Gate 2 remains failed.
 
 ### Next
 
-Run corrected paired base/standard/heuristic evaluation on head-on and doorway scenarios. Do not begin expert or neural-policy work until corrected Gate 1 and Gate 2 checks pass.
+Connect recorded privileged Arena states to the planning expert and validate Oracle recovery on the corrected known-pose profile. Keep Gate 2 marked failed and do not begin neural-policy training until paired baselines and expert rollouts are validated.

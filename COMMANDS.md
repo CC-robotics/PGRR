@@ -115,6 +115,19 @@ conda run -n ramp-offline python scripts/evaluate/summarize_gate2_pilot.py \
 
 The initial 0-9 artifacts are `corrected_crossing_{base,heuristic}_10.csv`. Resume-safe execution produced later CSV shards after invalid resets; no algorithm row was synthesized while combining them.
 
+Known-pose localization and expert validation:
+
+```bash
+RAMP_DISABLE_AUTO_RESET=1 scripts/bootstrap/arena_container.sh \
+  grep -n "'amcl': 'false'" \
+  /opt/arena_ws/src/arena/arena-rosnav/task_generator/task_generator/manager/robot_manager/robot_manager.py
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  conda run -n ramp-offline python scripts/evaluate/validate_expert.py
+pdfinfo outputs/figures/expert_validation_synthetic.pdf
+```
+
+Results produced before `task_generator_known_pose.patch` are superseded for dynamic method claims.
+
 Standard-recovery crossing run and strict-timestamp smoke:
 
 ```bash

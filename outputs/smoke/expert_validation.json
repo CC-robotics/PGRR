@@ -1,0 +1,208 @@
+{
+  "illegal_action_count": 0,
+  "predicted_success_count": 16,
+  "scene_count": 20,
+  "scenes": [
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.3871324062347412,
+      "masked_action": 0,
+      "predicted_success": true,
+      "scene_id": 0,
+      "second_best_cost": 1.5151324272155762,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.3871324062347412,
+      "masked_action": 1,
+      "predicted_success": true,
+      "scene_id": 1,
+      "second_best_cost": 1.5151324272155762,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.3871324062347412,
+      "masked_action": 2,
+      "predicted_success": true,
+      "scene_id": 2,
+      "second_best_cost": 1.5151324272155762,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.40674614906311035,
+      "masked_action": 3,
+      "predicted_success": true,
+      "scene_id": 3,
+      "second_best_cost": 1.5347461700439453,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.3871324062347412,
+      "masked_action": 4,
+      "predicted_success": true,
+      "scene_id": 4,
+      "second_best_cost": 1.5151324272155762,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.3871324062347412,
+      "masked_action": 5,
+      "predicted_success": true,
+      "scene_id": 5,
+      "second_best_cost": 1.5151324272155762,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.2594561576843262,
+      "margin": 0.30938971042633057,
+      "masked_action": 6,
+      "predicted_success": true,
+      "scene_id": 6,
+      "second_best_cost": 1.5688458681106567,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 2.034656524658203,
+      "margin": 0.029569387435913086,
+      "masked_action": 7,
+      "predicted_success": true,
+      "scene_id": 7,
+      "second_best_cost": 2.064225912094116,
+      "selected_action": 4,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 2.5439999103546143,
+      "margin": 0.15285515785217285,
+      "masked_action": 8,
+      "predicted_success": false,
+      "scene_id": 8,
+      "second_best_cost": 2.696855068206787,
+      "selected_action": 21,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 2.5439999103546143,
+      "margin": 0.2509281635284424,
+      "masked_action": 9,
+      "predicted_success": false,
+      "scene_id": 9,
+      "second_best_cost": 2.7949280738830566,
+      "selected_action": 21,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 2.5439999103546143,
+      "margin": 0.6986472606658936,
+      "masked_action": 10,
+      "predicted_success": false,
+      "scene_id": 10,
+      "second_best_cost": 3.242647171020508,
+      "selected_action": 21,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 2.5439999103546143,
+      "margin": 0.12437105178833008,
+      "masked_action": 11,
+      "predicted_success": false,
+      "scene_id": 11,
+      "second_best_cost": 2.6683709621429443,
+      "selected_action": 21,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 2.368173122406006,
+      "margin": 0.012386322021484375,
+      "masked_action": 12,
+      "predicted_success": true,
+      "scene_id": 12,
+      "second_best_cost": 2.3805594444274902,
+      "selected_action": 8,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 2.0273234844207764,
+      "margin": 0.019919157028198242,
+      "masked_action": 13,
+      "predicted_success": true,
+      "scene_id": 13,
+      "second_best_cost": 2.0472426414489746,
+      "selected_action": 2,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.2594561576843262,
+      "margin": 0.4644174575805664,
+      "masked_action": 14,
+      "predicted_success": true,
+      "scene_id": 14,
+      "second_best_cost": 1.7238736152648926,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.3871324062347412,
+      "masked_action": 15,
+      "predicted_success": true,
+      "scene_id": 15,
+      "second_best_cost": 1.5151324272155762,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.3871324062347412,
+      "masked_action": 16,
+      "predicted_success": true,
+      "scene_id": 16,
+      "second_best_cost": 1.5151324272155762,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.3871324062347412,
+      "masked_action": 17,
+      "predicted_success": true,
+      "scene_id": 17,
+      "second_best_cost": 1.5151324272155762,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.3871324062347412,
+      "masked_action": 18,
+      "predicted_success": true,
+      "scene_id": 18,
+      "second_best_cost": 1.5151324272155762,
+      "selected_action": 24,
+      "selected_collision": false
+    },
+    {
+      "best_cost": 1.128000020980835,
+      "margin": 0.3871324062347412,
+      "masked_action": 19,
+      "predicted_success": true,
+      "scene_id": 19,
+      "second_best_cost": 1.5151324272155762,
+      "selected_action": 24,
+      "selected_collision": false
+    }
+  ],
+  "selected_collision_count": 0
+}
