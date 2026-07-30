@@ -154,6 +154,7 @@ class EpisodeLoggerNode(Node):
         self._failure_score = 0.0
         self._recovery_state = 0
         self._recovery_action = 24
+        self._recovery_reason = "not_triggered"
         self._collision = False
         self._human_positions: tuple[tuple[float, float], ...] = ()
         self._sample_count = 0
@@ -303,6 +304,7 @@ class EpisodeLoggerNode(Node):
     def _on_recovery(self, message: RecoveryDecision) -> None:
         self._recovery_action = int(message.action_id)
         self._recovery_state = int(message.recovery_state)
+        self._recovery_reason = str(message.reason)
         if self._recovery_state == RecoveryDecision.SUCCEEDED and self._odom is not None:
             pose = self._world_robot_pose(self._odom)
             if float(np.linalg.norm(self._goal[:2] - pose[:2])) <= self._goal_tolerance:
@@ -460,6 +462,7 @@ class EpisodeLoggerNode(Node):
             recovery_action=self._recovery_action,
             collision=self._collision,
             timeout=False,
+            recovery_reason=self._recovery_reason,
             privileged={
                 "human_positions": self._human_positions,
                 "nearest_human_distance": nearest_human,

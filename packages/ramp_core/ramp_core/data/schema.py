@@ -80,6 +80,7 @@ class NavigationStep:
     recovery_action: int
     collision: bool
     timeout: bool
+    recovery_reason: str = ""
     privileged: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -108,6 +109,8 @@ class NavigationStep:
             raise ValueError("failure_prediction values must lie in [0, 1]")
         if np.any(self.lidar < 0.0):
             raise ValueError("lidar ranges must be non-negative")
+        if not isinstance(self.recovery_reason, str):
+            raise TypeError("recovery_reason must be a string")
         path = np.asarray(self.global_path, dtype=np.float32)
         if path.size == 0:
             return

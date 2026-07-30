@@ -41,6 +41,7 @@ from ramp_core.planning.online import (
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.options import (
     PrivilegedYieldOption,
+    constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
     constrain_stalled_wait,
     should_continue_recovery_option,
@@ -170,6 +171,10 @@ class RecoveryManagerNode(Node):
             ),
             passed_margin_m=self._float("oracle_yield_passed_margin_m"),
             maximum_retreat_m=self._float("oracle_yield_maximum_retreat_m"),
+            recurrence_progress_m=self._float("oracle_yield_recurrence_progress_m"),
+            maximum_recurrences_without_progress=self._integer(
+                "oracle_yield_maximum_recurrences_without_progress"
+            ),
         )
         self._expert_previous_side = 0
         self._expert_repeated_waits = 0
@@ -297,6 +302,8 @@ class RecoveryManagerNode(Node):
             "oracle_trigger_margin_m": 0.25,
             "oracle_yield_passed_margin_m": 0.5,
             "oracle_yield_maximum_retreat_m": 1.4,
+            "oracle_yield_recurrence_progress_m": 0.75,
+            "oracle_yield_maximum_recurrences_without_progress": 1,
         }
         for name, value in numeric_defaults.items():
             self.declare_parameter(name, value)
@@ -682,7 +689,11 @@ class RecoveryManagerNode(Node):
             consecutive_waits=self._expert_repeated_waits,
             wait_budget=self._integer("expert_wait_budget_decisions"),
         )
-        if self._oracle_yield.active:
+        mask = constrain_recurrent_yield_escape(
+            mask,
+            escape_required=self._oracle_yield.escape_required,
+        )
+        if self._oracle_yield.active and not self._oracle_yield.escape_required:
             action_id = (
                 BACKUP_ACTION_ID
                 if self._oracle_yield.backup_required and mask[BACKUP_ACTION_ID]
@@ -721,7 +732,12 @@ class RecoveryManagerNode(Node):
             label.action_id,
             confidence,
             (
-                f"oracle_rollout best={label.best_cost:.3f} margin={label.margin:.3f} "
+                (
+                    "oracle_recurrent_yield_escape "
+                    if self._oracle_yield.escape_required
+                    else "oracle_rollout "
+                )
+                + f"best={label.best_cost:.3f} margin={label.margin:.3f} "
                 f"predicted_success={int(label.predicted_success)}"
             ),
         )

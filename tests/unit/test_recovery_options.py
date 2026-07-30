@@ -4,14 +4,17 @@ import numpy as np
 import pytest
 from ramp_core.action_space import (
     ACTION_COUNT,
+    ACTIONS,
     BACKUP_ACTION_ID,
     CONTINUE_ACTION_ID,
     REPLAN_ACTION_ID,
     WAIT_ACTION_ID,
+    RecoveryActionKind,
 )
 from ramp_core.observations import HumanState
 from ramp_core.recovery.options import (
     PrivilegedYieldOption,
+    constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
     constrain_stalled_wait,
     should_continue_recovery_option,
@@ -127,4 +130,65 @@ def test_privileged_yield_releases_when_all_threats_reverse_away() -> None:
         Pose2D(-1.0, 0.0, 0.0),
         (reversed_route,),
         collision_risk=False,
+    )
+
+
+def test_privileged_yield_escalates_when_flow_recurs_without_progress() -> None:
+    option = PrivilegedYieldOption(
+        task_heading_rad=0.0,
+        recurrence_progress_m=0.75,
+        maximum_recurrences_without_progress=1,
+    )
+    approaching = HumanState((2.0, 0.0), (-0.5, 0.0), 0.35)
+    assert option.update(Pose2D(0.0, 0.0, 0.0), (approaching,), collision_risk=True)
+    reversed_route = HumanState((1.5, 0.0), (0.5, 0.0), 0.35)
+    assert not option.update(
+        Pose2D(-1.0, 0.0, 0.0),
+        (reversed_route,),
+        collision_risk=False,
+    )
+    returning = HumanState((1.0, 0.0), (-0.5, 0.0), 0.35)
+    assert option.update(Pose2D(-0.8, 0.0, 0.0), (returning,), collision_risk=True)
+    assert option.escape_required
+    assert option.recurrence_count == 1
+
+
+def test_privileged_yield_escalates_when_passed_human_cycles_back() -> None:
+    option = PrivilegedYieldOption(task_heading_rad=0.0)
+    approaching = HumanState((1.0, 0.0), (-0.5, 0.0), 0.35)
+    assert option.update(Pose2D(0.0, 0.0, 0.0), (approaching,), collision_risk=True)
+    passed = HumanState((-0.6, 0.0), (-0.5, 0.0), 0.35)
+    assert not option.update(Pose2D(0.0, 0.0, 0.0), (passed,), collision_risk=False)
+    returning = HumanState((1.0, 0.0), (-0.5, 0.0), 0.35)
+    assert option.update(Pose2D(0.2, 0.0, 0.0), (returning,), collision_risk=True)
+    assert option.escape_required
+
+
+def test_privileged_yield_does_not_escalate_after_robot_clears_window() -> None:
+    option = PrivilegedYieldOption(task_heading_rad=0.0, recurrence_progress_m=0.75)
+    approaching = HumanState((1.0, 0.0), (-0.5, 0.0), 0.35)
+    assert option.update(Pose2D(0.0, 0.0, 0.0), (approaching,), collision_risk=True)
+    passed = HumanState((-0.6, 0.0), (-0.5, 0.0), 0.35)
+    assert not option.update(Pose2D(0.0, 0.0, 0.0), (passed,), collision_risk=False)
+    next_flow = HumanState((2.0, 0.0), (-0.5, 0.0), 0.35)
+    assert option.update(Pose2D(1.0, 0.0, 0.0), (next_flow,), collision_risk=True)
+    assert not option.escape_required
+
+
+def test_recurrent_yield_escape_preserves_only_lateral_and_replan_actions() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    constrained = constrain_recurrent_yield_escape(mask, escape_required=True)
+    for action in ACTIONS:
+        expected = (
+            action.kind is RecoveryActionKind.SUBGOAL and action.angle_degrees != 0
+        ) or action.action_id == REPLAN_ACTION_ID
+        assert bool(constrained[action.action_id]) is expected
+
+
+def test_recurrent_yield_escape_keeps_safe_fallback_without_escape_action() -> None:
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[WAIT_ACTION_ID] = True
+    assert np.array_equal(
+        constrain_recurrent_yield_escape(mask, escape_required=True),
+        mask,
     )

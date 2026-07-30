@@ -44,11 +44,13 @@ def _step(timestamp: float) -> NavigationStep:
         recovery_action=24,
         collision=False,
         timeout=False,
+        recovery_reason="not_triggered",
         privileged={"nearest_human_distance": 1.8},
     )
 
 
 def test_hdf5_round_trip_and_privileged_separation(tmp_path: Path) -> None:
+    assert _step(0.0).as_jsonable()["recovery_reason"] == "not_triggered"
     destination = tmp_path / "episodes.h5"
     write_episode(destination, _metadata(), [_step(0.0), _step(0.1)], EpisodeOutcome.GOAL_REACHED)
     assert validate_file(destination) == {

@@ -127,3 +127,7 @@ The deterministic fallback pauses a pedestrian whenever its next route step woul
 ## KI-032: Cyclic doorway routes can re-block immediately after YIELD
 
 Doorway pedestrians reverse at their waypoint and traverse the same door indefinitely. The extended YIELD option correctly stopped periodic original-goal pulses and released when both threats moved away, but the next cycle returned before the robot cleared the bottleneck. The valid seed-1100 Oracle run remained collision-free and reached the door, then timed out with 6.105 m progress. Longer WAIT/BACKUP is not adopted as a fix; cyclic-flow recovery needs a lateral/REPLAN phase, and this episode remains a negative result.
+
+## KI-033: Cyclic doorway does not segment into stable recurrent options
+
+The progress-based recurrent-flow filter passes deterministic tests, but reason-instrumented doorway replays showed that the proxy interaction is represented online as one long-lived YIELD option with intermittent recovery completion, not a stable sequence of distinct activations. Consequently no `oracle_recurrent_yield_escape` action was observed in the 60 s diagnostic. This branch must be validated on a finite-blockage or reliably segmented scenario before it can support a method claim.

@@ -10,6 +10,7 @@ import numpy.typing as npt
 
 from ramp_core.action_space import (
     ACTION_COUNT,
+    ACTIONS,
     BACKUP_ACTION_ID,
     CONTINUE_ACTION_ID,
     REPLAN_ACTION_ID,
@@ -27,8 +28,13 @@ class PrivilegedYieldOption:
     passed_margin_m: float = 0.5
     minimum_closing_speed_mps: float = 0.05
     maximum_retreat_m: float = 1.4
+    recurrence_progress_m: float = 0.75
+    maximum_recurrences_without_progress: int = 1
     threat_indices: tuple[int, ...] = ()
     activation_coordinate_m: float | None = None
+    previous_activation_coordinate_m: float | None = None
+    recurrence_count: int = 0
+    escape_required: bool = False
     backup_required: bool = False
 
     def __post_init__(self) -> None:
@@ -38,8 +44,11 @@ class PrivilegedYieldOption:
             self.passed_margin_m < 0.0
             or self.minimum_closing_speed_mps < 0.0
             or self.maximum_retreat_m <= 0.0
+            or self.recurrence_progress_m <= 0.0
         ):
             raise ValueError("yield margins and speeds must be non-negative")
+        if self.maximum_recurrences_without_progress <= 0:
+            raise ValueError("maximum recurrences without progress must be positive")
 
     @property
     def active(self) -> bool:
@@ -55,6 +64,13 @@ class PrivilegedYieldOption:
         """Update the option and return whether longitudinal yielding is active."""
         tangent = math.cos(self.task_heading_rad), math.sin(self.task_heading_rad)
         robot_coordinate = robot.x * tangent[0] + robot.y * tangent[1]
+        if (
+            self.previous_activation_coordinate_m is not None
+            and robot_coordinate - self.previous_activation_coordinate_m
+            >= self.recurrence_progress_m
+        ):
+            self.recurrence_count = 0
+            self.escape_required = False
 
         def longitudinal(position: tuple[float, float]) -> float:
             return (position[0] - robot.x) * tangent[0] + (position[1] - robot.y) * tangent[1]
@@ -79,15 +95,26 @@ class PrivilegedYieldOption:
             else:
                 self.threat_indices = valid
         if not self.threat_indices and collision_risk:
-            self.threat_indices = tuple(
+            new_threats = tuple(
                 index
                 for index, human in enumerate(humans)
                 if longitudinal(human.position) > 0.0
                 and human.velocity[0] * tangent[0] + human.velocity[1] * tangent[1]
                 <= -self.minimum_closing_speed_mps
             )
-            if self.threat_indices:
+            if new_threats:
+                if (
+                    self.previous_activation_coordinate_m is not None
+                    and robot_coordinate - self.previous_activation_coordinate_m
+                    < self.recurrence_progress_m
+                ):
+                    self.recurrence_count += 1
+                    self.escape_required = (
+                        self.recurrence_count >= self.maximum_recurrences_without_progress
+                    )
+                self.threat_indices = new_threats
                 self.activation_coordinate_m = robot_coordinate
+                self.previous_activation_coordinate_m = robot_coordinate
         self.backup_required = bool(
             self.threat_indices
             and self.activation_coordinate_m is not None
@@ -137,6 +164,37 @@ def constrain_rejoin_actions(
         constrained[CONTINUE_ACTION_ID] = False
         constrained[REPLAN_ACTION_ID] = False
     return constrained
+
+
+def constrain_recurrent_yield_escape(
+    mask: npt.NDArray[np.bool_],
+    *,
+    escape_required: bool,
+) -> npt.NDArray[np.bool_]:
+    """Escalate a recurrent yield loop to a masked lateral escape or REPLAN.
+
+    The restriction is applied only when at least one already-valid lateral
+    subgoal or REPLAN exists. Otherwise the original mask is returned so the
+    caller retains a safe WAIT/BACKUP fallback.
+    """
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if not escape_required:
+        return constrained
+    escape_ids = (
+        *(
+            action.action_id
+            for action in ACTIONS[:WAIT_ACTION_ID]
+            if action.angle_degrees is not None and action.angle_degrees != 0
+        ),
+        REPLAN_ACTION_ID,
+    )
+    if not any(bool(constrained[action_id]) for action_id in escape_ids):
+        return constrained
+    permitted = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    permitted[list(escape_ids)] = True
+    return constrained & permitted
 
 
 def constrain_stalled_wait(
