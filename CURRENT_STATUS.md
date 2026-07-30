@@ -101,6 +101,7 @@ scripts/arena/smoke_goal_mux.sh
 - Planner-abort regression: PASS. Replacement active goals suppress stale abort records; an unopposed abort must persist for 5 s before B0/B1 terminate. B2 remains recoverable and reports `PLANNER_FAILURE` only when its recovery manager reaches `FAILED`.
 - Known-pose TF regression: PASS. The 20 s seed-2 smoke made 3.384 m progress; 143 path samples had 0.047 m median path-start error and no AMCL/costmap-bound conflict.
 - Expert synthetic validation: PASS for implementation smoke only. Twenty scenes, zero illegal selected actions, zero selected-rollout collisions, and 16 predicted-success labels. This is not an Arena Oracle comparison and does not yet pass Gate 3.
+- Arena-to-expert labeling smoke: PASS as a data-pipeline check. Fifty recovery-relevant states from the corrected known-pose head-on seed-2 episode produced 50 finite legal labels and zero illegal selections. The expert selected lateral subgoals in 38/50 states, WAIT in 2/50, BACKUP in 2/50, and other special actions in 8/50. None met the current three-second rejoin-based `predicted_success` criterion, so this artifact verifies labeling and shows that prolonged WAIT is not the expert's preferred response; it does not establish Oracle recovery success.
 
 ### Failures
 
@@ -118,4 +119,4 @@ scripts/arena/smoke_goal_mux.sh
 
 ### Next
 
-Connect recorded privileged Arena states to the planning expert and validate Oracle recovery on the corrected known-pose profile. Keep Gate 2 marked failed and do not begin neural-policy training until paired baselines and expert rollouts are validated.
+Run the planning expert online as an explicitly privileged Oracle on the corrected known-pose profile. Keep Gate 2 marked failed and do not begin neural-policy training until paired baselines and expert rollouts are validated.

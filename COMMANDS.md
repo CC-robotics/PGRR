@@ -124,6 +124,11 @@ RAMP_DISABLE_AUTO_RESET=1 scripts/bootstrap/arena_container.sh \
 env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
   conda run -n ramp-offline python scripts/evaluate/validate_expert.py
 pdfinfo outputs/figures/expert_validation_synthetic.pdf
+conda run -n ramp-offline python scripts/data/label_expert.py \
+  data/raw/head_on_corridor_high_mining_seed02_strict11_heuristic_dwb.jsonl \
+  --stride 20 \
+  --output data/interim/expert_strict11_smoke.h5 \
+  --summary data/manifests/expert_strict11_smoke_summary.json
 ```
 
 Results produced before `task_generator_known_pose.patch` are superseded for dynamic method claims.
