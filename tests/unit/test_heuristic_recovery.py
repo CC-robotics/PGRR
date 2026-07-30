@@ -110,6 +110,16 @@ def test_imminent_collision_waits_even_when_one_side_is_clearer() -> None:
     )
     assert followup.action_id == BACKUP_ACTION_ID
     assert followup.reason == "collision_persistent_close_backup"
+    third = policy.select_action(
+        _observation(
+            FailurePrediction(1.0, 0.0, 0.0, 0.0),
+            left_clearance=4.0,
+            right_clearance=1.0,
+            front_clearance=0.8,
+        ),
+        _full_mask(),
+    )
+    assert third.action_id != BACKUP_ACTION_ID
 
 
 def test_persistent_close_lateral_hazard_uses_backup_before_slow_subgoal() -> None:
@@ -130,6 +140,7 @@ def test_persistent_close_lateral_hazard_uses_backup_before_slow_subgoal() -> No
     decision = policy.select_action(lateral_close, _full_mask())
     assert decision.action_id == BACKUP_ACTION_ID
     assert decision.reason == "collision_persistent_close_backup"
+    assert policy.select_action(lateral_close, _full_mask()).action_id != BACKUP_ACTION_ID
 
 
 def test_close_side_wall_does_not_force_persistent_backup() -> None:

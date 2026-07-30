@@ -37,6 +37,7 @@ class HeuristicRecoveryConfig:
     clearance_reward_weight: float = 0.2
     radius_preference_weight: float = 0.35
     side_cooldown_decisions: int = 4
+    collision_max_backup_decisions: int = 1
     freeze_subgoal_after_decisions: int = 2
     freeze_max_backup_decisions: int = 6
     deadlock_backup_after_decisions: int = 2
@@ -71,6 +72,7 @@ class HeuristicRecoveryConfig:
             )
         counts = (
             self.side_cooldown_decisions,
+            self.collision_max_backup_decisions,
             self.freeze_subgoal_after_decisions,
             self.freeze_max_backup_decisions,
             self.deadlock_backup_after_decisions,
@@ -92,6 +94,7 @@ class HeuristicRecoveryPolicy:
         self._last_side_decision = -(10**9)
         self._deadlock_decisions = 0
         self._collision_decisions = 0
+        self._collision_backups = 0
         self._freeze_decisions = 0
 
     def reset(self) -> None:
@@ -100,6 +103,7 @@ class HeuristicRecoveryPolicy:
         self._last_side_decision = -(10**9)
         self._deadlock_decisions = 0
         self._collision_decisions = 0
+        self._collision_backups = 0
         self._freeze_decisions = 0
 
     @staticmethod
@@ -271,11 +275,13 @@ class HeuristicRecoveryPolicy:
                     or minimum_clearance <= self.config.collision_close_clearance_m
                 )
                 and bool(mask[BACKUP_ACTION_ID])
+                and self._collision_backups < self.config.collision_max_backup_decisions
             ):
                 # A direct velocity override starts within the current control
                 # cycle.  It is preferable to a Nav2 subgoal when a hazard is
                 # still closing after the initial WAIT hold.
                 action_id = BACKUP_ACTION_ID
+                self._collision_backups += 1
                 reason = "collision_persistent_close_backup"
             elif (
                 clearance_ratio >= self.config.side_clearance_ratio or self._collision_decisions > 1
@@ -284,8 +290,14 @@ class HeuristicRecoveryPolicy:
                     observation, mask, side=self._stable_side(desired_side)
                 )
                 reason = "collision_persistent_choose_side"
-            if action_id is None and self._collision_decisions > 1 and bool(mask[BACKUP_ACTION_ID]):
+            if (
+                action_id is None
+                and self._collision_decisions > 1
+                and bool(mask[BACKUP_ACTION_ID])
+                and self._collision_backups < self.config.collision_max_backup_decisions
+            ):
                 action_id = BACKUP_ACTION_ID
+                self._collision_backups += 1
                 reason = "collision_persistent_backup"
             if action_id is None and bool(mask[WAIT_ACTION_ID]):
                 action_id = WAIT_ACTION_ID

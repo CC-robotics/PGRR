@@ -202,20 +202,6 @@ def test_wide_near_field_risk_catches_obstacle_outside_narrow_front_sector() -> 
     assert prediction.collision_risk == 1.0
 
 
-def test_omnidirectional_near_field_catches_lateral_cut_in() -> None:
-    prediction = RuleFailureDetector().update(
-        _sample(
-            0.0,
-            lidar=0.6,
-            forward_lidar=3.0,
-            collision_lidar=3.0,
-            linear=0.0,
-            angular=0.0,
-        )
-    )
-    assert prediction.collision_risk == 1.0
-
-
 def test_collision_warning_requires_time_and_clearance_before_release() -> None:
     detector = RuleFailureDetector()
     initial = detector.update(_sample(0.0, lidar=0.8, forward_lidar=0.8, collision_lidar=0.8))
@@ -274,14 +260,6 @@ def test_collision_release_distance_must_exceed_wide_trigger_distance() -> None:
         RuleFailureConfig(
             collision_wide_absolute_distance_m=0.8,
             collision_release_distance_m=0.8,
-        )
-
-
-def test_wide_trigger_distance_must_cover_omnidirectional_trigger() -> None:
-    with pytest.raises(ValueError, match="omnidirectional"):
-        RuleFailureConfig(
-            collision_wide_absolute_distance_m=0.6,
-            collision_omnidirectional_distance_m=0.7,
         )
 
 

@@ -21,7 +21,6 @@ class RuleFailureConfig:
     ttc_threshold_s: float = 1.5
     collision_absolute_distance_m: float = 0.9
     collision_wide_absolute_distance_m: float = 0.7
-    collision_omnidirectional_distance_m: float = 0.65
     collision_release_distance_m: float = 1.2
     collision_hold_s: float = 2.0
     collision_proximity_m: float = 1.50
@@ -50,7 +49,6 @@ class RuleFailureConfig:
             self.ttc_threshold_s,
             self.collision_absolute_distance_m,
             self.collision_wide_absolute_distance_m,
-            self.collision_omnidirectional_distance_m,
             self.collision_release_distance_m,
             self.collision_proximity_m,
             self.collision_trend_window_s,
@@ -87,11 +85,6 @@ class RuleFailureConfig:
         if self.collision_release_distance_m <= self.collision_wide_absolute_distance_m:
             raise ValueError(
                 "collision_release_distance_m must exceed collision_wide_absolute_distance_m"
-            )
-        if self.collision_wide_absolute_distance_m < self.collision_omnidirectional_distance_m:
-            raise ValueError(
-                "collision_wide_absolute_distance_m must be at least "
-                "collision_omnidirectional_distance_m"
             )
 
 
@@ -221,8 +214,6 @@ class RuleFailureDetector:
         # in the robot's swept near field. Use a smaller absolute threshold in
         # the wider collision sector to cover that observable case.
         if collision_clearance <= self.config.collision_wide_absolute_distance_m:
-            collision = 1.0
-        if sample.nearest_lidar_distance <= self.config.collision_omnidirectional_distance_m:
             collision = 1.0
         forward_speed = max(0.0, sample.linear_velocity)
         if forward_speed > 1.0e-3:
