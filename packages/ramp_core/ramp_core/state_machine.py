@@ -123,9 +123,14 @@ class RecoveryStateMachine:
             self.state = RecoveryState.EMERGENCY_STOP
             reason = "safety_stop"
         elif self.state is RecoveryState.EMERGENCY_STOP:
-            self.state = RecoveryState.NORMAL
-            self._high_frames = 0
-            reason = "safety_clear"
+            if state_input.failure_score > self.config.tau_on:
+                self.state = RecoveryState.PENDING_RECOVERY
+                self._high_frames = 1
+                reason = "safety_clear_failure_pending"
+            else:
+                self.state = RecoveryState.NORMAL
+                self._high_frames = 0
+                reason = "safety_clear"
         elif self.state is RecoveryState.NORMAL:
             if state_input.failure_score > self.config.tau_on:
                 self._high_frames += 1

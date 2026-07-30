@@ -39,6 +39,14 @@ def test_emergency_stop_has_priority() -> None:
     assert transition.current is RecoveryState.EMERGENCY_STOP
 
 
+def test_emergency_release_with_failure_remains_protective_pending() -> None:
+    machine = RecoveryStateMachine()
+    machine.update(StateMachineInput(1.0, 0.8, False, emergency_stop=True))
+    transition = machine.update(StateMachineInput(1.1, 0.8, False, emergency_stop=False))
+    assert transition.current is RecoveryState.PENDING_RECOVERY
+    assert transition.reason == "safety_clear_failure_pending"
+
+
 def test_single_frame_configuration_enters_recovery_immediately() -> None:
     machine = RecoveryStateMachine(RecoveryStateMachineConfig(frames_on=1, cooldown_s=0.0))
     transition = machine.update(StateMachineInput(1.0, 0.8, False))
