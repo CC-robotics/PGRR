@@ -634,6 +634,16 @@ class EpisodeLoggerNode(Node):
             )
         self._stream.flush()
         self._stream.close()
+        localized_goal_distance: float | None = None
+        if self._odom is not None:
+            localized_goal_distance = float(
+                np.linalg.norm(self._goal[:2] - self._world_robot_pose(self._odom)[:2])
+            )
+        physical_goal_distance = (
+            math.dist(self._goal[:2], self._privileged_robot_pose[:2])
+            if self._privileged_robot_pose is not None
+            else None
+        )
         payload = {
             "episode_id": self._metadata.episode_id,
             "outcome": self._outcome.name if self._outcome is not None else "SIMULATOR_FAILURE",
@@ -642,6 +652,8 @@ class EpisodeLoggerNode(Node):
             ),
             "detail": self._outcome_detail,
             "sample_count": self._sample_count,
+            "localized_goal_distance_m": localized_goal_distance,
+            "physical_goal_distance_m": physical_goal_distance,
         }
         self._outcome_path.write_text(
             json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"

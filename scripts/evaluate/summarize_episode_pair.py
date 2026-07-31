@@ -19,6 +19,17 @@ def summarize(prefix: Path) -> dict[str, Any]:
     rows = [json.loads(line) for line in stream_path.read_text(encoding="utf-8").splitlines()]
     if not rows:
         raise ValueError(f"empty episode stream: {stream_path}")
+    outcome_physical_distance = outcome.get("physical_goal_distance_m")
+    if isinstance(outcome_physical_distance, (int, float)) and math.isfinite(
+        outcome_physical_distance
+    ):
+        actual_goal_distance = float(outcome_physical_distance)
+        actual_goal_distance_source = "outcome_terminal_snapshot"
+    else:
+        actual_goal_distance = math.dist(
+            rows[-1]["goal"][:2], rows[-1]["privileged"]["robot_pose"][:2]
+        )
+        actual_goal_distance_source = "last_sample"
     return {
         "episode_id": metadata["episode_id"],
         "scenario_id": metadata["scenario_id"],
@@ -29,9 +40,8 @@ def summarize(prefix: Path) -> dict[str, Any]:
         "sample_count": len(rows),
         "sim_duration_s": float(rows[-1]["timestamp"]),
         "progress_m": float(rows[0]["distance_to_goal"] - rows[-1]["distance_to_goal"]),
-        "actual_goal_distance_m": math.dist(
-            rows[-1]["goal"][:2], rows[-1]["privileged"]["robot_pose"][:2]
-        ),
+        "actual_goal_distance_m": actual_goal_distance,
+        "actual_goal_distance_source": actual_goal_distance_source,
         "max_localization_error_m": max(
             math.dist(row["robot_pose"][:2], row["privileged"]["robot_pose"][:2]) for row in rows
         ),

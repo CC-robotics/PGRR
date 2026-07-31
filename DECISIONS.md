@@ -174,3 +174,7 @@ Gazebo DiffDrive integrates wheel motion as odometry. The four-wheel skid-steer 
 ## D-043: Yielding pedestrians may leave an active avoidance radius
 
 The deterministic fallback models reciprocal collision avoidance by stopping a pedestrian whose next route step would enter or continue approaching within 1.3 m of the actual Gazebo robot pose. A pedestrian already inside that radius may execute a step only when the candidate strictly increases robot clearance. This prevents an artificial mutual freeze while never permitting a yielding step to approach the robot. The privileged expert remains more conservative: it retains a possible stop-short trajectory even when the runtime pedestrian could move away. Any comparison across this environment boundary must rerun all affected methods.
+
+## D-044: Terminal outcome files carry the confirming pose distances
+
+Periodic JSONL samples are not guaranteed to include the asynchronous pose callback that confirms goal reach. Every new outcome JSON therefore records `localized_goal_distance_m` and `physical_goal_distance_m` from the latest states at finalization. Summary scripts prefer this terminal physical snapshot and explicitly fall back to the last JSONL sample only for legacy outcomes. No historical outcome is rewritten.

@@ -8,6 +8,10 @@ On high-density validation seeds 2201 and 2202, DWB collided after 29.50 and 30.
 
 On high-density validation seed 2220, Base reached the goal in 92.907 s while DAgger timed out after 179.920 s and 1,401 non-CONTINUE samples. During the final 60 s the robot remained in emergency turning while nearby cyclic pedestrians remained 1.03--1.18 m away. The fallback actor controller froze every candidate position inside its 1.3 m avoidance radius, including route motion that increased robot--human distance. This created an artificial reciprocal live-lock. The corrected rule blocks only candidates that remain inside the radius and do not increase clearance. The privileged expert deliberately retains possible stop-short motion as a conservative envelope. The original timeout and its raw hash remain unchanged; both methods require fresh replay under the corrected environment revision.
 
+## KI-065: The JSONL stream omitted the asynchronous physical confirmation frame
+
+The first post-KI-064 DAgger replay received a verified success callback, but its final 10 Hz JSONL row contained a 0.319 m physical goal distance. Physical Gazebo poses arrive at the 2 Hz actor-update rate; `_confirm_goal_reached` accepted the subsequent pose at or below 0.300 m and immediately stopped logging before another periodic row. The outcome file previously contained no numeric terminal snapshot, making the success criterion unauditable from the preserved artifact alone. Finalization now writes both localized and physical goal distances, and pair summaries record whether their goal distance came from the terminal outcome or the last periodic sample. Existing outcome files are immutable and are not backfilled; a fresh replay is required.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.

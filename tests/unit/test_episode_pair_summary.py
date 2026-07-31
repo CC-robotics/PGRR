@@ -68,5 +68,20 @@ def test_pair_summary_uses_raw_episode_values(tmp_path: Path) -> None:
     assert result["min_human_distance_m"] == 0.9
     assert result["recovery_actions"] == 1
     assert result["actual_goal_distance_m"] == 0.25
+    assert result["actual_goal_distance_source"] == "last_sample"
     assert result["max_localization_error_m"] == pytest.approx(0.05)
     assert result["project_commit"] == "abc123"
+
+    prefix.with_suffix(".outcome.json").write_text(
+        json.dumps(
+            {
+                "outcome": "GOAL_REACHED",
+                "localized_goal_distance_m": 0.18,
+                "physical_goal_distance_m": 0.19,
+            }
+        ),
+        encoding="utf-8",
+    )
+    terminal_result = module.summarize(prefix)
+    assert terminal_result["actual_goal_distance_m"] == 0.19
+    assert terminal_result["actual_goal_distance_source"] == "outcome_terminal_snapshot"
