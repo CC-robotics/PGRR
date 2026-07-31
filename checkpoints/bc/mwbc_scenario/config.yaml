@@ -1,0 +1,11 @@
+batch_size: 128
+class_balanced_sampling: false
+device: auto
+early_stopping_patience: 6
+epochs: 30
+learning_rate: 0.0003
+margin_lambda: 1.0
+mirror_augmentation: true
+seed: 0
+validation_fraction: 0.2
+weight_decay: 1.0e-05

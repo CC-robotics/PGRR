@@ -1,0 +1,16 @@
+{
+  "action_counts": {
+    "21": 154,
+    "23": 7
+  },
+  "finite_selected_cost_count": 161,
+  "illegal_action_count": 0,
+  "margin": {
+    "maximum": 1.5896430015563965,
+    "median": 0.3018183708190918,
+    "minimum": 0.0013685226440429688
+  },
+  "predicted_success_count": 161,
+  "sample_count": 161,
+  "source_jsonl": "data/raw/blind_corner_high_train_s01320_final_heuristic_dwb.jsonl"
+}

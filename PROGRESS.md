@@ -42,3 +42,5 @@
 - Added mirror-safe episode stacking, scenario-disjoint validation, cost-sensitive diagnostics, train-only speed variants, and a reproducible one-round DAgger orchestrator.
 - Ran five train-only DAgger-1 policy episodes. Two generated crossing-flow variants reached the goal in 105.395 s and 99.900 s; all new expert actions were legal.
 - Achieved the first held-out learned recovery success: DAgger-1 reached the goal in a crossing-flow case where Base collided and BC-0 timed out.
+- Completed DAgger iteration 2 with three new train-only policy trajectories and 230 legal expert labels; the aggregate now contains 14 episodes and 1,383 recovery samples.
+- Diagnosed two emergency-backup counterexamples and added sustained-clear hysteresis. Under the corrected executor, DAgger-1 reached the locked crossing-flow validation goal in 2/2 repeats, while DAgger-2 reached only 1/2 and is retained as a negative ablation.

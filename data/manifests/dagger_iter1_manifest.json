@@ -1,0 +1,93 @@
+{
+  "base_datasets": [
+    {
+      "path": "data/interim/temporary_blockage_finite2_expert_smoke.h5",
+      "sha256": "114159ac52818820c3e2dedf06a1ca9c8f0fb925716a17887872efb7e4d49288"
+    },
+    {
+      "path": "data/interim/temporary_blockage_medium_train_expert.h5",
+      "sha256": "04b1b0d35bef0f55e0a1aaa834b07917ea51c8b3514e0288d673da6f5acd99e3"
+    },
+    {
+      "path": "data/interim/temporary_blockage_low_train_expert.h5",
+      "sha256": "e1ea7000af203fc21131bb7638486cb1b8512863f6dcd49d6c221f9069655761"
+    },
+    {
+      "path": "data/interim/doorway_high_train_expert.h5",
+      "sha256": "fe94d880c547af3b553a2e6d66a1dee49c0c6d1ed586548e5707666791ada1bc"
+    },
+    {
+      "path": "data/interim/blind_corner_high_train_expert.h5",
+      "sha256": "3b975a6c7dd85ee2884fd8ba2f5de6c88a8cf6fb1b12d57529cd8ba78d3b4059"
+    },
+    {
+      "path": "data/interim/group_blocking_high_train_expert.h5",
+      "sha256": "a87bea834dc3b9ba68a4b6199e83989e69bc8dafa852358feb48470e901cae98"
+    }
+  ],
+  "best_validation_epoch": {
+    "epoch": 2,
+    "train": {
+      "catastrophic_action_rate": 0.03339115351257589,
+      "expert_cost_regret": 33391.5484385387,
+      "invalid_rate": 0.0,
+      "loss": 0.9251248758457479,
+      "near_optimal_rate": 0.6816999132697311,
+      "top1": 0.6418039895923677,
+      "top3": 0.9353859496964441
+    },
+    "validation": {
+      "catastrophic_action_rate": 0.9314285714285714,
+      "expert_cost_regret": 931427.0628571429,
+      "invalid_rate": 0.0,
+      "loss": 1.2513553776059831,
+      "near_optimal_rate": 0.045714285714285714,
+      "top1": 0.02857142857142857,
+      "top3": 0.9657142857142857
+    }
+  },
+  "checkpoint": {
+    "path": "/home/diy/RAMP/checkpoints/dagger/iter_1/best.onnx",
+    "sha256": "8610266c5a8dda6ec500e7a97f6f5b0ec63c5f87ff96158a1e120e6cf49014ce"
+  },
+  "config": {
+    "path": "configs/imitation/bc_uniform_scenario.yaml",
+    "sha256": "dc698252e07641a876f3f0c3de2d4943f506f21f05d741be1bece6d6f32f0d23"
+  },
+  "dagger_shards": [
+    {
+      "path": "data/interim/dagger_iter1_temporary_blockage_high_train.h5",
+      "sha256": "88219cdf2a30df3c4acbafb529a832fd5cdd988f3522e13f7c928f199373fb75"
+    },
+    {
+      "path": "data/interim/dagger_iter1_crossing_flow_high_train.h5",
+      "sha256": "5f785cd2354bff889fb697deb9aef94bf83ab1ea53fb3a3c18e19d654a5497c7"
+    },
+    {
+      "path": "data/interim/dagger_iter1_crossing_flow_s01260_train.h5",
+      "sha256": "ad5e39072a28e9b5a8397fd914b4d0c57a22ba0377b63c76a881bce40d7faf70"
+    },
+    {
+      "path": "data/interim/dagger_iter1_crossing_flow_s01291_train.h5",
+      "sha256": "7b701d6cc2cde2902090998201c5297b3e65443df930ad5ed2de35fb91df2d20"
+    },
+    {
+      "path": "data/interim/dagger_iter1_crossing_flow_s01318_train.h5",
+      "sha256": "589f98639153820149c3a26761966815db3705656a1452b87aa10a398059ddcc"
+    }
+  ],
+  "dataset": {
+    "episode_count": 11,
+    "observation_count": 11706,
+    "path": "/home/diy/RAMP/data/processed/dagger_iter1_train.h5",
+    "sample_count": 1153,
+    "sha256": "932f437215bd55c8d34a0a040db51de44de4d330cd244895e592116e05c8cefe"
+  },
+  "iteration": 1,
+  "project_commit": "fdd83ba1d37fc2df6571f2f35acc9b39d4af7705",
+  "schema_version": 1,
+  "validation_dataset": {
+    "path": "data/interim/temporary_blockage_validation_expert.h5",
+    "sha256": "291e2d46987edfa156bd5f1a8c87e9d501e5a9797aedc0579d74eb48f5866258"
+  }
+}

@@ -106,3 +106,7 @@ Margin weighting and a clipped differentiable full-cost regret term did not impr
 ## D-026: Expand only the train split with deterministic speed variants
 
 The original single crossing-flow train seed was a difficult negative that did not reproduce the validation interaction phase. Three train-only variants change only deterministic pedestrian speeds and receive distinct seeds, IDs, files, and hashes. Validation and test files remain untouched. This expands DAgger coverage without frame-level leakage or test tuning.
+
+## D-027: Select DAgger-1 provisionally; do not assume more aggregation is better
+
+DAgger-2 adds genuine policy-visited train states and completes the prescribed two-round workflow, but its locked validation repeats were one success and one collision, versus two successes for DAgger-1 after the same safety fix. DAgger-1 is therefore the provisional model. The second iteration is retained as a negative result rather than selected by iteration count. Because the two DAgger-1 successes selected only CONTINUE, active learned-recovery benefit still requires evidence on other validation scenarios.

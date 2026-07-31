@@ -1,0 +1,21 @@
+{
+  "action_counts": {
+    "12": 1,
+    "2": 4,
+    "24": 21,
+    "3": 4,
+    "4": 1,
+    "5": 2,
+    "6": 3
+  },
+  "finite_selected_cost_count": 36,
+  "illegal_action_count": 0,
+  "margin": {
+    "maximum": 1.0539064407348633,
+    "median": 0.19751429557800293,
+    "minimum": 0.0
+  },
+  "predicted_success_count": 35,
+  "sample_count": 36,
+  "source_jsonl": "data/raw/crossing_flow_high_train_s01291_dagger1_bc_dwb.jsonl"
+}

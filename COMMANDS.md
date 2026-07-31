@@ -221,3 +221,17 @@ SCENARIO=scenarios/generated/arena/map_empty/crossing_flow_high_validation_s0222
 ROS_DOMAIN_ID=81 GZ_PARTITION=ramp_dagger1_val_cross \
 scripts/arena/run_baseline_episode.sh
 ```
+
+DAgger iteration 2 (train-only policy shards):
+
+```bash
+conda run -n ramp-offline python scripts/train/train_dagger.py \
+  --iteration 2 \
+  --base-datasets data/processed/dagger_iter1_train.h5 \
+  --dagger-shards \
+    data/interim/dagger_iter2_crossing_flow_s01220_train.h5 \
+    data/interim/dagger_iter2_crossing_flow_s01291_train.h5 \
+    data/interim/dagger_iter2_crossing_flow_s01318_train.h5 \
+  --validation-dataset data/interim/temporary_blockage_validation_expert.h5 \
+  --config configs/imitation/bc_uniform_scenario.yaml
+```

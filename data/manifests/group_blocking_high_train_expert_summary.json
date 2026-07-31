@@ -1,0 +1,18 @@
+{
+  "action_counts": {
+    "12": 3,
+    "23": 2,
+    "24": 22,
+    "5": 1
+  },
+  "finite_selected_cost_count": 28,
+  "illegal_action_count": 0,
+  "margin": {
+    "maximum": 1.777449607849121,
+    "median": 0.7425066232681274,
+    "minimum": 0.0
+  },
+  "predicted_success_count": 24,
+  "sample_count": 28,
+  "source_jsonl": "data/raw/group_blocking_high_train_s01420_final_heuristic_dwb.jsonl"
+}

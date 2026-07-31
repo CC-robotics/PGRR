@@ -1,0 +1,18 @@
+{
+  "action_counts": {
+    "1": 1,
+    "23": 1,
+    "24": 18,
+    "4": 155
+  },
+  "finite_selected_cost_count": 175,
+  "illegal_action_count": 0,
+  "margin": {
+    "maximum": 0.60903000831604,
+    "median": 0.028715848922729492,
+    "minimum": 0.0016703605651855469
+  },
+  "predicted_success_count": 171,
+  "sample_count": 175,
+  "source_jsonl": "data/raw/crossing_flow_high_train_s01220_dagger2_policy_dwb.jsonl"
+}

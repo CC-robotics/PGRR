@@ -3,13 +3,10 @@
     "0": 3,
     "1": 7,
     "12": 13,
-    "2": 1,
     "21": 2,
     "23": 43,
-    "24": 96,
-    "4": 2,
-    "5": 1,
-    "9": 1
+    "24": 100,
+    "4": 1
   },
   "finite_selected_cost_count": 169,
   "illegal_action_count": 0,
@@ -18,7 +15,7 @@
     "median": 0.14522933959960938,
     "minimum": 0.0
   },
-  "predicted_success_count": 68,
+  "predicted_success_count": 65,
   "sample_count": 169,
   "source_jsonl": "data/raw/temporary_blockage_high_train_s01720_finite2_heuristic_dwb.jsonl"
 }

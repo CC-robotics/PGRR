@@ -1,0 +1,65 @@
+{
+  "base_datasets": [
+    {
+      "path": "data/processed/dagger_iter1_train.h5",
+      "sha256": "932f437215bd55c8d34a0a040db51de44de4d330cd244895e592116e05c8cefe"
+    }
+  ],
+  "best_validation_epoch": {
+    "epoch": 1,
+    "train": {
+      "catastrophic_action_rate": 0.04880694143167028,
+      "expert_cost_regret": 48807.43923987708,
+      "invalid_rate": 0.0,
+      "loss": 1.2086418016355105,
+      "near_optimal_rate": 0.6449746926970354,
+      "top1": 0.5231381055676066,
+      "top3": 0.9016630513376718
+    },
+    "validation": {
+      "catastrophic_action_rate": 0.9314285714285714,
+      "expert_cost_regret": 931427.0628571429,
+      "invalid_rate": 0.0,
+      "loss": 1.3600632619857789,
+      "near_optimal_rate": 0.045714285714285714,
+      "top1": 0.02857142857142857,
+      "top3": 0.9828571428571429
+    }
+  },
+  "checkpoint": {
+    "path": "/home/diy/RAMP/checkpoints/dagger/iter_2/best.onnx",
+    "sha256": "d6d74089eb3a9169edc7f76646b8ae274d12febc679bd136376829151051690d"
+  },
+  "config": {
+    "path": "configs/imitation/bc_uniform_scenario.yaml",
+    "sha256": "dc698252e07641a876f3f0c3de2d4943f506f21f05d741be1bece6d6f32f0d23"
+  },
+  "dagger_shards": [
+    {
+      "path": "data/interim/dagger_iter2_crossing_flow_s01220_train.h5",
+      "sha256": "1126ecbbdea8c0e388c8f70b7142bd238232e59828bd2d9cf94af8d37106bc97"
+    },
+    {
+      "path": "data/interim/dagger_iter2_crossing_flow_s01291_train.h5",
+      "sha256": "74b058ab8e49a9949839e2d200f2458544627bcb98a4529cd77603fc786ed919"
+    },
+    {
+      "path": "data/interim/dagger_iter2_crossing_flow_s01318_train.h5",
+      "sha256": "a1f80131c8ca323d4e8d39d58b32992d7e768ddf432e506ebba1d4eaba2e7c81"
+    }
+  ],
+  "dataset": {
+    "episode_count": 14,
+    "observation_count": 14778,
+    "path": "/home/diy/RAMP/data/processed/dagger_iter2_train.h5",
+    "sample_count": 1383,
+    "sha256": "15191feb362bb4ae1fb1af42c3981581d6a4659e457b4bb5c198ae4ad68fb733"
+  },
+  "iteration": 2,
+  "project_commit": "6bf5063267a829f797f9f7d31c3e75204b9a6f0b",
+  "schema_version": 1,
+  "validation_dataset": {
+    "path": "data/interim/temporary_blockage_validation_expert.h5",
+    "sha256": "291e2d46987edfa156bd5f1a8c87e9d501e5a9797aedc0579d74eb48f5866258"
+  }
+}

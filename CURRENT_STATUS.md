@@ -155,7 +155,17 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Completed: Uniform BC, MWBC, and full-cost-sensitive BC were trained with scenario-disjoint validation and exported to TorchScript/ONNX. MWBC and full-cost loss did not improve the selected validation distribution and remain negative ablations.
 - Completed: ONNX inference runs inside the Humble Arena container with median logged latency around 0.15 ms and zero masked selections.
 - Completed: DAgger iteration 1 aggregated 11 train episodes, 11,706 observations, and 1,153 expert-labeled recovery states. `data/manifests/dagger_iter1_manifest.json` records hashes.
-- Acceptance result: on synchronized `crossing_flow_high_validation_s02220`, Base=`COLLISION` at 29.104 s, Heuristic=`TIMEOUT`, BC-0=`TIMEOUT`, DAgger-1=`GOAL_REACHED` at 106.893 s, and Oracle=`GOAL_REACHED` at 96.404 s. DAgger-1 minimum human distance was 0.818 m and median ONNX latency was 0.154 ms.
+- Initial acceptance candidate: on synchronized `crossing_flow_high_validation_s02220`, Base=`COLLISION` at 29.104 s, Heuristic=`TIMEOUT`, BC-0=`TIMEOUT`, DAgger-1=`GOAL_REACHED` at 106.893 s, and Oracle=`GOAL_REACHED` at 96.404 s. A clean rerun exposed nondeterministic emergency-escape behavior, so this single comparison was not accepted as final evidence.
 - Failed/degraded: `temporary_blockage_high_validation_s02720` remains an Oracle-timeout environment case; it is retained for safety/failure analysis rather than used as a success gate. One crossing-flow startup without a Nav2 action was classified `INVALID_RESET` and retried once.
 - Validation: `make test` passed 179 tests; the Humble overlay built all three ROS packages.
 - Next: commit the mask/deployment stage, collect train-only DAgger-2 states, retrain iteration 2, and rerun held-out validation with a clean commit ID.
+
+## 2026-07-31 — Gate 5 two-round DAgger accepted, model selection provisional
+
+- Fixed and retained two validation counterexamples: one DAgger-1 rerun collided because the safety layer repeatedly backed beside a pedestrian; a one-backup rule removed the collision but brief hazard-clear pulses reset it and caused timeout. A three-second clear hysteresis now prevents the cross-state loop and passes 180 tests.
+- With commit `6bf5063`, DAgger-1 reached the goal in 2/2 repeated validation runs (both 90.909 s); minimum human distance was 1.104 m and 1.033 m, and median ONNX latency was 0.151 ms and 0.149 ms. Both runs selected only CONTINUE, so this is stability/non-degradation evidence, not active recovery evidence.
+- DAgger iteration 2 collected three train-only policy trajectories with outcomes PLANNER_FAILURE, COLLISION, and GOAL_REACHED. It added 230 legal expert states, producing 14 episodes, 14,778 observations, and 1,383 recovery samples in total.
+- DAgger-2 validation was mixed: one GOAL_REACHED at 111.389 s and one COLLISION at 74.692 s. It was slower and less safe than DAgger-1 on this pilot and remains a negative ablation.
+- Selected candidate: DAgger-1. Gate 5 is accepted because both aggregation rounds and validation analysis are complete; method-performance claims remain provisional until paired multi-scenario pilots show learned non-CONTINUE recovery actions.
+- Evidence: `outputs/pilot/crossing_flow_high_validation_learning_pilot.csv`, `data/manifests/dagger_iter1_manifest.json`, and `data/manifests/dagger_iter2_manifest.json`.
+- Next: run current Base/Heuristic/DAgger-1/Oracle on additional locked validation scenarios, then decide whether optional PPO is justified or the imitation-only manuscript is the honest endpoint.

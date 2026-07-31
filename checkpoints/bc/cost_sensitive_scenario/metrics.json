@@ -1,0 +1,199 @@
+{
+  "dataset": "data/processed/expert_train_smoke.h5",
+  "validation_dataset": "data/interim/temporary_blockage_validation_expert.h5",
+  "device": "cuda",
+  "train_samples": 1840,
+  "validation_samples": 175,
+  "history": [
+    {
+      "epoch": 0,
+      "train": {
+        "loss": 3.543622014833533,
+        "top1": 0.5043478260869565,
+        "top3": 0.7548913043478261,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 91305.18189208819,
+        "near_optimal_rate": 0.5396739130434782,
+        "catastrophic_action_rate": 0.09130434782608696
+      },
+      "validation": {
+        "loss": 11.67392098563058,
+        "top1": 0.02857142857142857,
+        "top3": 0.9542857142857143,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 931427.0628571429,
+        "near_optimal_rate": 0.045714285714285714,
+        "catastrophic_action_rate": 0.9314285714285714
+      }
+    },
+    {
+      "epoch": 1,
+      "train": {
+        "loss": 2.397211966307267,
+        "top1": 0.5467391304347826,
+        "top3": 0.8717391304347826,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 63044.0953125,
+        "near_optimal_rate": 0.5847826086956521,
+        "catastrophic_action_rate": 0.06304347826086956
+      },
+      "validation": {
+        "loss": 10.808200999668665,
+        "top1": 0.02857142857142857,
+        "top3": 0.9714285714285714,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 931427.0628571429,
+        "near_optimal_rate": 0.045714285714285714,
+        "catastrophic_action_rate": 0.9314285714285714
+      }
+    },
+    {
+      "epoch": 2,
+      "train": {
+        "loss": 2.1604653234067173,
+        "top1": 0.5467391304347826,
+        "top3": 0.9320652173913043,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 63044.09565217391,
+        "near_optimal_rate": 0.5847826086956521,
+        "catastrophic_action_rate": 0.06304347826086956
+      },
+      "validation": {
+        "loss": 10.785813549586704,
+        "top1": 0.02857142857142857,
+        "top3": 0.9714285714285714,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 931427.0628571429,
+        "near_optimal_rate": 0.045714285714285714,
+        "catastrophic_action_rate": 0.9314285714285714
+      }
+    },
+    {
+      "epoch": 3,
+      "train": {
+        "loss": 1.739839590114096,
+        "top1": 0.595108695652174,
+        "top3": 0.933695652173913,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 38587.45904356552,
+        "near_optimal_rate": 0.6331521739130435,
+        "catastrophic_action_rate": 0.03858695652173913
+      },
+      "validation": {
+        "loss": 11.530679958888463,
+        "top1": 0.02857142857142857,
+        "top3": 0.9771428571428571,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 931427.0628571429,
+        "near_optimal_rate": 0.045714285714285714,
+        "catastrophic_action_rate": 0.9314285714285714
+      }
+    },
+    {
+      "epoch": 4,
+      "train": {
+        "loss": 1.3080074393230936,
+        "top1": 0.7043478260869566,
+        "top3": 0.9326086956521739,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 21739.33077445652,
+        "near_optimal_rate": 0.7434782608695653,
+        "catastrophic_action_rate": 0.021739130434782608
+      },
+      "validation": {
+        "loss": 12.421902215140207,
+        "top1": 0.02857142857142857,
+        "top3": 0.9714285714285714,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 931427.0628571429,
+        "near_optimal_rate": 0.045714285714285714,
+        "catastrophic_action_rate": 0.9314285714285714
+      }
+    },
+    {
+      "epoch": 5,
+      "train": {
+        "loss": 1.0602727921112725,
+        "top1": 0.7896739130434782,
+        "top3": 0.9456521739130435,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 20652.26847826087,
+        "near_optimal_rate": 0.8304347826086956,
+        "catastrophic_action_rate": 0.020652173913043477
+      },
+      "validation": {
+        "loss": 12.722505160740443,
+        "top1": 0.02857142857142857,
+        "top3": 0.9771428571428571,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 931427.0628571429,
+        "near_optimal_rate": 0.045714285714285714,
+        "catastrophic_action_rate": 0.9314285714285714
+      }
+    },
+    {
+      "epoch": 6,
+      "train": {
+        "loss": 0.934585756322612,
+        "top1": 0.8342391304347826,
+        "top3": 0.9668478260869565,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 20108.7175787445,
+        "near_optimal_rate": 0.8782608695652174,
+        "catastrophic_action_rate": 0.02010869565217391
+      },
+      "validation": {
+        "loss": 13.422612495422364,
+        "top1": 0.02857142857142857,
+        "top3": 0.96,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 931427.0628571429,
+        "near_optimal_rate": 0.045714285714285714,
+        "catastrophic_action_rate": 0.9314285714285714
+      }
+    },
+    {
+      "epoch": 7,
+      "train": {
+        "loss": 0.8414911570756332,
+        "top1": 0.8385869565217391,
+        "top3": 0.9722826086956522,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 20108.713664346546,
+        "near_optimal_rate": 0.8826086956521739,
+        "catastrophic_action_rate": 0.02010869565217391
+      },
+      "validation": {
+        "loss": 13.11602202279227,
+        "top1": 0.02857142857142857,
+        "top3": 0.96,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 931427.0628571429,
+        "near_optimal_rate": 0.045714285714285714,
+        "catastrophic_action_rate": 0.9314285714285714
+      }
+    },
+    {
+      "epoch": 8,
+      "train": {
+        "loss": 0.7620924257713816,
+        "top1": 0.8510869565217392,
+        "top3": 0.9771739130434782,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 19021.750224850228,
+        "near_optimal_rate": 0.8956521739130435,
+        "catastrophic_action_rate": 0.019021739130434784
+      },
+      "validation": {
+        "loss": 13.488768157958985,
+        "top1": 0.02857142857142857,
+        "top3": 0.96,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 931427.0628571429,
+        "near_optimal_rate": 0.045714285714285714,
+        "catastrophic_action_rate": 0.9314285714285714
+      }
+    }
+  ],
+  "warning": ""
+}

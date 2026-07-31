@@ -162,3 +162,7 @@ The host environment exports `ROS_DISTRO=iron`, so direct shell commands print a
 ## KI-041: Emergency reverse pulses formed a continuous-hazard limit cycle
 
 A clean DAgger-1 validation rerun exposed a safety-layer failure that the first run did not: small timing differences changed the first turn angle, after which the controller repeatedly alternated STOP and BACKUP beside one stationary pedestrian and eventually collided. Restricting reverse to one option per uninterrupted emergency removed that collision but brief 0.5 s hazard-clear pulses reset the allowance and produced a safe timeout. The escape controller now requires three continuous clear seconds before resetting its one-backup allowance; a persistent or flickering hazard must transition to an observable turn/forward escape. Both failed reruns remain retained as counterexamples.
+
+## KI-042: Same-seed Gazebo scheduling changes the interaction phase
+
+Repeated runs share the same scenario seed and simulator-time actor controller but still show small early pose differences, which can move a near-threshold interaction between normal, emergency, and collision outcomes. No single run is treated as statistical evidence. Pilot/final comparisons must use repeated paired manifests, retain all valid outcomes, and report this residual nondeterminism as a Gazebo fallback limitation.
