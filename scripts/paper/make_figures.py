@@ -32,46 +32,39 @@ def architecture() -> None:
     output.write_bytes(payload)
 
 
-def corrected_density_pairs() -> None:
-    source = ROOT / "outputs/pilot/crossing_flow_density_confirmed_proxy_pairs.csv"
+def verified_actual_pose_pair() -> None:
+    source = ROOT / "outputs/pilot/crossing_flow_medium_s02201_2164e08_pair.csv"
     with source.open(encoding="utf-8", newline="") as stream:
         rows = list(csv.DictReader(stream))
-    if [row["source_policy"] for row in rows] != ["base", "bc"] * 3:
-        raise RuntimeError("expected three ordered Base/BC corrected-proxy pairs")
-    densities = ["Low", "Medium", "High"]
-    base = rows[::2]
-    learned = rows[1::2]
-    x = np.arange(len(densities))
+    if [row["source_policy"] for row in rows] != ["base", "bc"]:
+        raise RuntimeError("expected one ordered Base/BC verified-pose pair")
+    if len({row["project_commit"] for row in rows}) != 1:
+        raise RuntimeError("paired episodes must come from one project commit")
+    methods = ["DWB", "DAgger"]
+    x = np.arange(len(methods))
     plt.rcParams.update({"font.size": 8, "font.family": "DejaVu Sans"})
     figure, axes = plt.subplots(1, 2, figsize=(3.45, 1.95), constrained_layout=True)
-    axes[0].plot(x, [0.0] * 3, "o-", color="#466B9F", label="DWB: collision")
-    axes[0].plot(x, [1.0] * 3, "s-", color="#16836B", label="DAgger: goal")
+    outcome_score = {"COLLISION": 0.0, "GOAL_REACHED": 1.0}
+    axes[0].bar(
+        x,
+        [outcome_score[row["outcome"]] for row in rows],
+        color=["#466B9F", "#16836B"],
+    )
     axes[0].set_ylabel("Terminal outcome")
     axes[0].set_yticks([0.0, 1.0], ["Collision", "Goal"])
-    axes[0].legend(frameon=False, fontsize=6, loc="center right")
-    axes[1].plot(
+    axes[1].bar(
         x,
-        [float(row["min_human_distance_m"]) for row in base],
-        "o-",
-        color="#466B9F",
-        label="DWB",
-    )
-    axes[1].plot(
-        x,
-        [float(row["min_human_distance_m"]) for row in learned],
-        "s-",
-        color="#16836B",
-        label="DAgger",
+        [float(row["min_human_distance_m"]) for row in rows],
+        color=["#466B9F", "#16836B"],
     )
     axes[1].axhline(0.71, color="#D97706", linestyle="--", linewidth=0.8)
     axes[1].set_ylabel("Minimum human distance [m]")
-    axes[1].legend(frameon=False, fontsize=6)
     for axis in axes:
-        axis.set_xticks(x, densities)
+        axis.set_xticks(x, methods)
         axis.grid(axis="y", color="#D5DBDB", linewidth=0.6)
         axis.set_axisbelow(True)
     figure.savefig(
-        ROOT / "paper/figures/corrected_density_pairs.pdf",
+        ROOT / "paper/figures/verified_actual_pose_pair.pdf",
         metadata={"CreationDate": None, "ModDate": None},
     )
     plt.close(figure)
@@ -80,7 +73,7 @@ def corrected_density_pairs() -> None:
 def main() -> None:
     (ROOT / "paper/figures").mkdir(parents=True, exist_ok=True)
     architecture()
-    corrected_density_pairs()
+    verified_actual_pose_pair()
 
 
 if __name__ == "__main__":

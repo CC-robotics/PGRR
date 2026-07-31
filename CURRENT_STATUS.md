@@ -275,3 +275,23 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Every selected episode passed the privileged-to-LiDAR gate; the six visible ratios are between 99.4% and 100%. One low-density BC launch lacking the NavigateToPose action server is retained as an invalid startup and excluded from algorithm metrics.
 - Validation: 205 offline tests, Ruff, Mypy, and the three-package Humble overlay pass. Evidence is retained in `data/manifests/*confirmed_proxy*lidar_consistency.json` and `outputs/pilot/crossing_flow_density_confirmed_proxy_pairs.csv`, with raw SHA256 values.
 - This is a three-pair precheck, not a significance result. All pre-confirmed dynamic tables are diagnostic-only. Next: freeze this implementation and expand independent validation seeds without tuning.
+
+## 2026-08-01 — Full Gazebo actual-pose evaluation path
+
+- Direct Gazebo transport inspection showed that link-level `kinematic=true` could leave proxy collision bodies near their initial poses despite accepted model-pose requests. A 5 Hz workaround only barely passed the sensor gate and 10 Hz caused backlog, so frequency was not used to hide the error.
+- Proxies are now movable `static=false`, `gravity=false`, `kinematic=false` models. A pinned `ros_gz_bridge` maps `/world/default/dynamic_pose/info` into ROS. The actor controller publishes actual Gazebo pedestrian and Jackal poses on privileged topics; missing or stale feedback marks the episode as simulator failure.
+- Observable policy inputs remain odometry and LiDAR. Actual model poses are used only for outcome classification, simulator-validity checking, and future privileged expert labels.
+- On `crossing_flow_medium_validation_s02201`, Base collided at 29.004 s and 0.710 m actual centre distance. The selected DAgger policy reached the original goal at 173.893 s with 0.733 m minimum actual distance and 832 recovery samples.
+- The learned run passed 774/781 near-human sensor checks (99.1%); Base passed 21/21. This is the first admissible positive pair, but its safety and timeout margins are narrow and no statistical claim is authorized.
+- Validation: 207 tests, Ruff, Mypy, and the Humble overlay pass. Next: commit the actual-pose platform fix, regenerate corrected training data, and rebuild a multi-seed pilot from this version only.
+
+## 2026-08-01 — Verified-pose recovery pair and manuscript refresh
+
+- Invalidated the preceding “first admissible” pair after two independent checks: a 70 kg teleported pedestrian collision body perturbed Jackal motion, and wheel-integrated skid-steer odometry declared arrival while the physical model remained 1.06 m from the goal.
+- Fallback pedestrians are now contactless GPU-LiDAR visuals; robot--human overlap is still classified from actual Gazebo centre distance. The protected runner requires no-auto-reset and command mux, uses bounded teardown, and rejects physical pose jumps.
+- The known-pose Gazebo profile now uses Gazebo's pose-derived OdometryPublisher for the standard odometry/TF interface. Goal success requires both localized distance at most 0.25 m and physical Gazebo distance at most 0.30 m.
+- At commit `2164e08`, the synchronized medium crossing-flow validation pair produced Base COLLISION at 29.4705 s and DAgger GOAL_REACHED at 98.4348 s. Physical goal error was 0.299 m; minimum human distances were 0.665 m and 1.203 m.
+- LiDAR validity passed 26/26 near-human Base frames and 30/30 learned frames. Maximum localization--physical error in the learned run was 0.128 m. The learned controller executed 117 non-CONTINUE samples including temporary subgoals, WAIT, and BACKUP.
+- Evidence: `outputs/pilot/crossing_flow_medium_s02201_2164e08_pair.csv`, the two `data/manifests/*2164e08*lidar_consistency.json` files, generated LaTeX table/figure, and raw hashes in the CSV.
+- Validation: 210 tests, Ruff, Mypy, three ROS packages, `make figures`, `make tables`, and `make paper` pass. `paper/main.pdf` is current.
+- This is a verified single-seed execution result, not statistical evidence. Next: rerun independent validation variants under the frozen platform, then regenerate training data if the existing checkpoint does not generalize.

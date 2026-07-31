@@ -417,3 +417,55 @@ conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
   --prefix data/raw/crossing_flow_high_validation_s02220_confirmed_proxy_bc_r1_dwb \
   --output outputs/pilot/crossing_flow_density_confirmed_proxy_pairs.csv
 ```
+
+Full Gazebo actual-pose validity pair (supersedes every pre-actual-pose comparison):
+
+```bash
+env -u CONDA_PREFIX -u VIRTUAL_ENV make build
+
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+RAMP_SOURCE_POLICY=bc RAMP_ACTOR_UPDATE_HZ=2.0 RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_medium_validation_s02201_full_actual_pose_bc_r2_dwb \
+ROS_DOMAIN_ID=42 GZ_PARTITION=ramp_full_actual_medium2201 \
+IGN_PARTITION=ramp_full_actual_medium2201 \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_medium_validation_s02201.json
+
+conda run -n ramp-offline python scripts/evaluate/validate_human_proxy_lidar.py \
+  data/raw/crossing_flow_medium_validation_s02201_full_actual_pose_bc_r2_dwb.jsonl \
+  --output data/manifests/crossing_flow_medium_validation_s02201_full_actual_pose_bc_r2_lidar_consistency.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/crossing_flow_medium_validation_s02201_full_actual_pose_base_r1_dwb \
+  --prefix data/raw/crossing_flow_medium_validation_s02201_full_actual_pose_bc_r2_dwb \
+  --output outputs/pilot/crossing_flow_medium_s02201_full_actual_pose_pair.csv
+```
+
+Verified-pose pair and paper generation (supersedes the preceding diagnostic):
+
+```bash
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+RAMP_SOURCE_POLICY=base RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_EPISODE_ID=crossing_flow_medium_validation_s02201_2164e08_base_r1_dwb \
+ROS_DOMAIN_ID=51 GZ_PARTITION=ramp_2164e08_medium2201_base \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_medium_validation_s02201.json
+
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+RAMP_SOURCE_POLICY=bc RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_medium_validation_s02201_2164e08_bc_r1_dwb \
+ROS_DOMAIN_ID=52 GZ_PARTITION=ramp_2164e08_medium2201_bc \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_medium_validation_s02201.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/crossing_flow_medium_validation_s02201_2164e08_base_r1_dwb \
+  --prefix data/raw/crossing_flow_medium_validation_s02201_2164e08_bc_r1_dwb \
+  --output outputs/pilot/crossing_flow_medium_s02201_2164e08_pair.csv
+
+make figures
+make tables
+make paper
+```

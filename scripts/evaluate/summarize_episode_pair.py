@@ -7,6 +7,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -23,10 +24,17 @@ def summarize(prefix: Path) -> dict[str, Any]:
         "scenario_id": metadata["scenario_id"],
         "seed": metadata["seed"],
         "source_policy": metadata["source_policy"],
+        "project_commit": metadata["project_commit"],
         "outcome": outcome["outcome"],
         "sample_count": len(rows),
         "sim_duration_s": float(rows[-1]["timestamp"]),
         "progress_m": float(rows[0]["distance_to_goal"] - rows[-1]["distance_to_goal"]),
+        "actual_goal_distance_m": math.dist(
+            rows[-1]["goal"][:2], rows[-1]["privileged"]["robot_pose"][:2]
+        ),
+        "max_localization_error_m": max(
+            math.dist(row["robot_pose"][:2], row["privileged"]["robot_pose"][:2]) for row in rows
+        ),
         "min_human_distance_m": min(
             float(row["privileged"]["nearest_human_distance"]) for row in rows
         ),
