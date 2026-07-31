@@ -168,3 +168,17 @@ env -u CONDA_PREFIX -u VIRTUAL_ENV \
   scripts/arena/run_baseline_episode.sh \
   scenarios/generated/mining/crossing_flow_high_mining_seed00.json
 ```
+
+## 2026-07-31 trigger-selection validation
+
+```bash
+RAMP_SOURCE_POLICY=oracle RAMP_EPISODE_TIMEOUT_S=120 \
+  bash scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_medium_validation_s02210.json
+
+PYTHONPATH=packages/ramp_core \
+  conda run -n ramp-offline python scripts/evaluate/analyze_oracle_trigger.py \
+  --prefix data/raw/crossing_flow_medium_train_s01210_gate3_base_retry1_dwb \
+  --prefix data/raw/crossing_flow_medium_validation_s02210_gate3_base_dwb \
+  --output outputs/pilot/oracle_trigger_replay.json
+```

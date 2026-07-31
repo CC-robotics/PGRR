@@ -13,6 +13,7 @@ from ramp_core.planning.online import (
     directional_scan_clearance,
     estimate_human_states,
     privileged_collision_risk,
+    privileged_time_to_collision,
 )
 from ramp_core.types import Pose2D, Velocity2D
 
@@ -113,3 +114,35 @@ def test_privileged_trigger_predicts_approaching_but_not_receding_human() -> Non
     receding = HumanState(position=(2.0, 0.0), velocity=(0.8, 0.0), radius=0.35)
     assert privileged_collision_risk(robot, velocity, (approaching,))
     assert not privileged_collision_risk(robot, velocity, (receding,))
+
+
+def test_privileged_trigger_respects_planner_turning_trajectory() -> None:
+    robot = Pose2D(0.0, 0.0, 0.0)
+    human = HumanState(position=(1.2, 0.0), velocity=(0.0, 0.0), radius=0.2)
+    straight = Velocity2D(0.5, 0.0)
+    turning = Velocity2D(0.5, 1.0)
+    assert privileged_collision_risk(
+        robot,
+        straight,
+        (human,),
+        prediction_margin_m=0.15,
+    )
+    assert not privileged_collision_risk(
+        robot,
+        turning,
+        (human,),
+        prediction_margin_m=0.15,
+    )
+
+
+def test_privileged_trigger_reports_first_collision_time() -> None:
+    robot = Pose2D(0.0, 0.0, 0.0)
+    human = HumanState(position=(2.0, 0.0), velocity=(-0.5, 0.0), radius=0.35)
+    collision_time = privileged_time_to_collision(
+        robot,
+        Velocity2D(0.5, 0.0),
+        (human,),
+        prediction_margin_m=0.0,
+        prediction_step_s=0.05,
+    )
+    assert collision_time == pytest.approx(1.3)

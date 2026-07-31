@@ -131,3 +131,7 @@ Doorway pedestrians reverse at their waypoint and traverse the same door indefin
 ## KI-033: Cyclic doorway does not segment into stable recurrent options
 
 The progress-based recurrent-flow filter passes deterministic tests, but reason-instrumented doorway replays showed that the proxy interaction is represented online as one long-lived YIELD option with intermittent recovery completion, not a stable sequence of distinct activations. Consequently no `oracle_recurrent_yield_escape` action was observed in the 60 s diagnostic. This branch must be validated on a finite-blockage or reliably segmented scenario before it can support a method claim.
+
+## KI-034: Baseline runner overrode the configured TTC with 3.0 seconds
+
+The Arena episode runner passed `ttc_threshold_s:=3.0` even though `configs/failure/rules.yaml` specifies 1.5 s. This produced early recovery triggers in a validation episode that Base solved safely. The runner now propagates a configurable `RAMP_TTC_THRESHOLD_S` defaulting to 1.5 s, with a regression test forbidding the legacy literal. Historical recovery episodes are labeled legacy-trigger results; selected-trigger comparisons use new episode IDs and raw hashes.

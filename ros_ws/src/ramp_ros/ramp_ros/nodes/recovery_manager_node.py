@@ -36,7 +36,7 @@ from ramp_core.planning.online import (
     augment_grid_with_scan,
     directional_scan_clearance,
     estimate_human_states,
-    privileged_collision_risk,
+    privileged_time_to_collision,
 )
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.options import (
@@ -100,6 +100,12 @@ class RecoveryManagerNode(Node):
         self._policy_type = str(self.get_parameter("policy_type").value)
         if self._policy_type not in {"heuristic", "expert"}:
             raise ValueError("policy_type must be heuristic or expert")
+        if (
+            not 0.0
+            < self._float("oracle_trigger_intervention_horizon_s")
+            <= self._float("oracle_trigger_horizon_s")
+        ):
+            raise ValueError("Oracle intervention horizon must lie inside prediction horizon")
         self._goal = Pose2D(self._float("goal_x"), self._float("goal_y"), self._float("goal_yaw"))
         self._start = Pose2D(
             self._float("robot_start_x"),
@@ -299,7 +305,9 @@ class RecoveryManagerNode(Node):
             # inflation here is additive and can erase narrow corridors.
             "expert_scan_inflation_m": 0.0,
             "oracle_trigger_horizon_s": 3.0,
+            "oracle_trigger_intervention_horizon_s": 1.5,
             "oracle_trigger_margin_m": 0.25,
+            "oracle_trigger_prediction_step_s": 0.1,
             "oracle_yield_passed_margin_m": 0.5,
             "oracle_yield_maximum_retreat_m": 1.4,
             "oracle_yield_recurrence_progress_m": 0.75,
@@ -514,14 +522,21 @@ class RecoveryManagerNode(Node):
             or not self._received_privileged_humans
         ):
             return self._failure
-        twist = self._odom.twist.twist
-        oracle_risk = privileged_collision_risk(
+        planned_velocity = Velocity2D(
+            float(self._base_action[0]),
+            float(self._base_action[1]),
+        )
+        oracle_collision_time = privileged_time_to_collision(
             pose,
-            Velocity2D(float(twist.linear.x), float(twist.angular.z)),
+            planned_velocity,
             self._privileged_humans,
             horizon_s=self._float("oracle_trigger_horizon_s"),
             robot_radius_m=self._float("robot_radius_m"),
             prediction_margin_m=self._float("oracle_trigger_margin_m"),
+            prediction_step_s=self._float("oracle_trigger_prediction_step_s"),
+        )
+        oracle_risk = oracle_collision_time is not None and oracle_collision_time <= self._float(
+            "oracle_trigger_intervention_horizon_s"
         )
         yielding = self._oracle_yield.update(
             pose,

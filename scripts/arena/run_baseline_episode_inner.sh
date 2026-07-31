@@ -4,6 +4,7 @@ set -euo pipefail
 SCENARIO="${RAMP_SCENARIO:?RAMP_SCENARIO is required}"
 TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}"
 SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}"
+TTC_THRESHOLD_S="${RAMP_TTC_THRESHOLD_S:-1.5}"
 case "${SOURCE_POLICY}" in
     base)
         INTER_PLANNER="navigate_w_replanning_time"
@@ -231,7 +232,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "oracle" ]]; th
         -p robot_start_yaw:="${start_yaw}" \
         -p odom_topic:="${odom_topic}" -p scan_topic:="${scan_topic}" \
         -p base_cmd_vel_topic:="${base_cmd_topic}" \
-        -p ttc_threshold_s:=3.0 \
+        -p ttc_threshold_s:="${TTC_THRESHOLD_S}" \
         -p nav_status_topic:="${nav_action}/_action/status" \
         -p failure_status_topic:=/ramp/failure_status \
         -p recovery_decision_topic:=/ramp/recovery_decision \

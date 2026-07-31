@@ -34,6 +34,47 @@ def directional_scan_clearance(
     return float(np.min(sector)) if sector.size else None
 
 
+def privileged_time_to_collision(
+    robot: Pose2D,
+    velocity: Velocity2D,
+    humans: Sequence[HumanState],
+    *,
+    horizon_s: float = 3.0,
+    robot_radius_m: float = 0.36,
+    prediction_margin_m: float = 0.25,
+    prediction_step_s: float = 0.1,
+) -> float | None:
+    """Return first predicted overlap time along a constant-control trajectory."""
+    if (
+        horizon_s <= 0.0
+        or robot_radius_m <= 0.0
+        or prediction_margin_m < 0.0
+        or prediction_step_s <= 0.0
+    ):
+        raise ValueError("prediction horizon/radius must be positive and margin non-negative")
+    steps = max(1, math.ceil(horizon_s / prediction_step_s))
+    angular = velocity.angular
+    for step in range(steps + 1):
+        time_s = min(horizon_s, step * prediction_step_s)
+        if abs(angular) <= 1.0e-6:
+            robot_x = robot.x + velocity.linear * math.cos(robot.yaw) * time_s
+            robot_y = robot.y + velocity.linear * math.sin(robot.yaw) * time_s
+        else:
+            future_yaw = robot.yaw + angular * time_s
+            radius = velocity.linear / angular
+            robot_x = robot.x + radius * (math.sin(future_yaw) - math.sin(robot.yaw))
+            robot_y = robot.y - radius * (math.cos(future_yaw) - math.cos(robot.yaw))
+        for human in humans:
+            human_x = human.position[0] + human.velocity[0] * time_s
+            human_y = human.position[1] + human.velocity[1] * time_s
+            if (
+                math.hypot(human_x - robot_x, human_y - robot_y)
+                <= robot_radius_m + human.radius + prediction_margin_m
+            ):
+                return time_s
+    return None
+
+
 def privileged_collision_risk(
     robot: Pose2D,
     velocity: Velocity2D,
@@ -42,46 +83,21 @@ def privileged_collision_risk(
     horizon_s: float = 3.0,
     robot_radius_m: float = 0.36,
     prediction_margin_m: float = 0.25,
+    prediction_step_s: float = 0.1,
 ) -> bool:
-    """Predict a privileged constant-velocity overlap within a finite horizon."""
-    if horizon_s <= 0.0 or robot_radius_m <= 0.0 or prediction_margin_m < 0.0:
-        raise ValueError("prediction horizon/radius must be positive and margin non-negative")
-    robot_velocity = (
-        velocity.linear * math.cos(robot.yaw),
-        velocity.linear * math.sin(robot.yaw),
+    """Predict overlap along the planner's constant-control unicycle trajectory."""
+    return (
+        privileged_time_to_collision(
+            robot,
+            velocity,
+            humans,
+            horizon_s=horizon_s,
+            robot_radius_m=robot_radius_m,
+            prediction_margin_m=prediction_margin_m,
+            prediction_step_s=prediction_step_s,
+        )
+        is not None
     )
-    for human in humans:
-        relative_position = human.position[0] - robot.x, human.position[1] - robot.y
-        relative_velocity = (
-            human.velocity[0] - robot_velocity[0],
-            human.velocity[1] - robot_velocity[1],
-        )
-        speed_squared = (
-            relative_velocity[0] * relative_velocity[0]
-            + relative_velocity[1] * relative_velocity[1]
-        )
-        closest_time = (
-            0.0
-            if speed_squared <= 1.0e-9
-            else max(
-                0.0,
-                min(
-                    horizon_s,
-                    -(
-                        relative_position[0] * relative_velocity[0]
-                        + relative_position[1] * relative_velocity[1]
-                    )
-                    / speed_squared,
-                ),
-            )
-        )
-        closest_distance = math.hypot(
-            relative_position[0] + closest_time * relative_velocity[0],
-            relative_position[1] + closest_time * relative_velocity[1],
-        )
-        if closest_distance <= robot_radius_m + human.radius + prediction_margin_m:
-            return True
-    return False
 
 
 def estimate_human_states(

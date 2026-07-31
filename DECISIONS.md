@@ -81,3 +81,7 @@ Repeated blockage is defined by insufficient robot task progress between YIELD a
 ## D-020: Expert quality includes intervention efficiency
 
 The medium-density train diagnostic favored Oracle over Heuristic, but the high-density diagnostic did not: both succeeded and Heuristic used fewer interventions with slightly better time and clearance. Planning-expert quality therefore cannot be judged only by collision-free predicted success. Demonstration analysis must include intervention count/duration and CONTINUE frequency, and an explicit unnecessary-intervention penalty may be tuned only on validation data. No expert-dominance claim is made from the current single-seed diagnostics.
+
+## D-021: Trigger on planner-conditioned TTC at 1.5 seconds
+
+The runtime had overridden the configured 1.5 s rule TTC with 3.0 s, and the privileged trigger ignored planner angular commands. Normal validation showed that these choices caused unnecessary recovery in a Base-solvable episode. The trigger now predicts the Jackal's constant-control unicycle trajectory from DWB's current `(v, omega)`, retains a 3.0 s analysis horizon, and intervenes only when predicted TTC is at most 1.5 s. A 1.0 s candidate reduced normal interventions but caused 83 emergency-stop samples on a train collision case; it is rejected as too late. The selected 1.5 s value reduced validation interventions from 197 to 30 while retaining safe recovery on the train failure case. No further threshold tuning is allowed on these episodes.

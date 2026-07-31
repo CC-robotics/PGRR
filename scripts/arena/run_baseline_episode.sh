@@ -28,6 +28,7 @@ exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     RAMP_EPISODE_ID="${RAMP_EPISODE_ID:-}" \
     RAMP_EPISODE_TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}" \
     RAMP_ACTOR_UPDATE_HZ="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
+    RAMP_TTC_THRESHOLD_S="${RAMP_TTC_THRESHOLD_S:-1.5}" \
     RAMP_SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}" \
     RAMP_HOST_UID="$(id -u)" \
     RAMP_HOST_GID="$(id -g)" \
