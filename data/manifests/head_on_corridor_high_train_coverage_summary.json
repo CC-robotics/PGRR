@@ -2,21 +2,20 @@
   "action_counts": {
     "0": 1,
     "1": 6,
-    "2": 1,
-    "21": 105,
-    "23": 103,
-    "24": 16,
-    "3": 1,
-    "9": 1
+    "2": 8,
+    "21": 214,
+    "23": 5
   },
+  "collision_latched_action_clearance": 0.65,
   "finite_selected_cost_count": 234,
   "illegal_action_count": 0,
   "margin": {
-    "maximum": 3.508761167526245,
-    "median": 0.41330766677856445,
-    "minimum": 0.010491132736206055
+    "maximum": 3.8067855834960938,
+    "median": 0.0,
+    "minimum": 0.0
   },
-  "predicted_success_count": 223,
+  "predicted_success_count": 231,
+  "rejoin_release_threshold": 0.65,
   "sample_count": 234,
-  "source_jsonl": "data/raw/head_on_corridor_high_train_s01020_coverage_policy_dwb.jsonl"
+  "source_jsonl": "/home/diy/RAMP/data/raw/head_on_corridor_high_train_s01020_coverage_policy_dwb.jsonl"
 }

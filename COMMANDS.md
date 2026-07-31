@@ -235,3 +235,31 @@ conda run -n ramp-offline python scripts/train/train_dagger.py \
   --validation-dataset data/interim/temporary_blockage_validation_expert.h5 \
   --config configs/imitation/bc_uniform_scenario.yaml
 ```
+
+## Deploy-aligned safety checkpoint and repeat pilot
+
+```bash
+conda run -n ramp-offline python scripts/data/regenerate_selected_labels.py \
+  data/manifests/selected_label_jobs.yaml
+
+conda run -n ramp-offline python scripts/train/train_dagger.py \
+  --iteration 3 \
+  --base-datasets data/processed/dagger_iter1_safety_aligned_train.h5 \
+  --dagger-shards data/interim/head_on_corridor_high_train_coverage.h5 \
+  --validation-dataset data/interim/multiscenario_safety_aligned_validation.h5 \
+  --config configs/imitation/bc_uniform_scenario.yaml \
+  --dataset-output data/processed/dagger_coverage_safety_aligned_train.h5 \
+  --checkpoint-output checkpoints/dagger/coverage_safety_aligned \
+  --manifest data/manifests/dagger_coverage_safety_aligned_manifest.json
+
+RAMP_SOURCE_POLICY=bc RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_high_validation_s02220_coverage_safety_aligned_v1_dwb \
+ROS_DOMAIN_ID=144 GZ_PARTITION=ramp_coverage_safety_v1 \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_repeated_pilot.py \
+  outputs/pilot/crossing_flow_safety_aligned_repeat5.csv \
+  --output outputs/pilot/crossing_flow_safety_aligned_repeat5_summary.json
+```

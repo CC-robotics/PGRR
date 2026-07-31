@@ -1,0 +1,40 @@
+{
+  "input": "outputs/pilot/crossing_flow_safety_aligned_repeat5.csv",
+  "methods": {
+    "base": {
+      "collision_rate": 1.0,
+      "episode_count": 5,
+      "median_min_human_distance_m": 0.7081525276347018,
+      "median_success_time_s": null,
+      "outcome_counts": {
+        "COLLISION": 5
+      },
+      "success_rate": 0.0,
+      "success_rate_95pct_clopper_pearson": [
+        0.0,
+        0.5218237501049814
+      ]
+    },
+    "bc": {
+      "collision_rate": 0.0,
+      "episode_count": 5,
+      "median_min_human_distance_m": 1.079551285961987,
+      "median_success_time_s": 110.4228,
+      "outcome_counts": {
+        "GOAL_REACHED": 3,
+        "TIMEOUT": 2
+      },
+      "success_rate": 0.6,
+      "success_rate_95pct_clopper_pearson": [
+        0.14663279963467318,
+        0.9472550494736831
+      ]
+    }
+  },
+  "schema_version": 1,
+  "unpaired_fisher_success": {
+    "odds_ratio": 0.0,
+    "pvalue_two_sided": 0.16666666666666666
+  },
+  "warning": "Repeated same-seed pilot with residual Gazebo scheduling variance; not final paired multi-seed evidence."
+}

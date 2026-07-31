@@ -1,22 +1,22 @@
 {
   "action_counts": {
-    "0": 2,
-    "1": 6,
-    "2": 19,
-    "21": 88,
-    "23": 71,
-    "24": 32,
-    "5": 5,
-    "9": 1
+    "0": 1,
+    "1": 10,
+    "2": 2,
+    "21": 188,
+    "23": 17,
+    "3": 6
   },
+  "collision_latched_action_clearance": 0.65,
   "finite_selected_cost_count": 224,
   "illegal_action_count": 0,
   "margin": {
-    "maximum": 1.3166186809539795,
-    "median": 0.12585043907165527,
-    "minimum": 0.000629425048828125
+    "maximum": 4.759984016418457,
+    "median": 1.824293851852417,
+    "minimum": 0.0
   },
-  "predicted_success_count": 200,
+  "predicted_success_count": 222,
+  "rejoin_release_threshold": 0.65,
   "sample_count": 224,
-  "source_jsonl": "data/raw/head_on_corridor_high_validation_s02020_dagger1_v1_retry1_dwb.jsonl"
+  "source_jsonl": "/home/diy/RAMP/data/raw/head_on_corridor_high_validation_s02020_dagger1_v1_retry1_dwb.jsonl"
 }

@@ -1,19 +1,17 @@
 {
   "action_counts": {
-    "21": 163,
-    "23": 4,
-    "24": 5,
-    "3": 1,
-    "5": 2
+    "21": 175
   },
+  "collision_latched_action_clearance": 0.65,
   "finite_selected_cost_count": 175,
   "illegal_action_count": 0,
   "margin": {
-    "maximum": 1000000.668548584,
-    "median": 999998.256360054,
-    "minimum": 0.04365408420562744
+    "maximum": 2.5473434925079346,
+    "median": 0.0,
+    "minimum": 0.0
   },
-  "predicted_success_count": 10,
+  "predicted_success_count": 6,
+  "rejoin_release_threshold": 0.65,
   "sample_count": 175,
-  "source_jsonl": "data/raw/temporary_blockage_high_validation_s02720_final_heuristic_dwb.jsonl"
+  "source_jsonl": "/home/diy/RAMP/data/raw/temporary_blockage_high_validation_s02720_final_heuristic_dwb.jsonl"
 }

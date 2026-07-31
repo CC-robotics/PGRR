@@ -1,16 +1,20 @@
 {
   "action_counts": {
     "10": 3,
-    "24": 4
+    "11": 2,
+    "3": 1,
+    "4": 1
   },
+  "collision_latched_action_clearance": 0.65,
   "finite_selected_cost_count": 7,
   "illegal_action_count": 0,
   "margin": {
-    "maximum": 0.14086127281188965,
-    "median": 0.02201712131500244,
+    "maximum": 0.5111995935440063,
+    "median": 0.0065038204193115234,
     "minimum": 0.0
   },
   "predicted_success_count": 7,
+  "rejoin_release_threshold": 0.65,
   "sample_count": 7,
-  "source_jsonl": "data/raw/crossing_flow_high_train_s01260_dagger1_bc_dwb.jsonl"
+  "source_jsonl": "/home/diy/RAMP/data/raw/crossing_flow_high_train_s01260_dagger1_bc_dwb.jsonl"
 }

@@ -179,3 +179,15 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Pilot estimates: Base success 0.0 (95% Clopper--Pearson [0.000, 0.522]); coverage success 0.6 ([0.147, 0.947]); unpaired Fisher p=0.167. Coverage median minimum human distance was 1.115 m and median successful navigation time was 110.889 s.
 - Evidence: `outputs/pilot/crossing_flow_coverage_repeat5.csv` and `outputs/pilot/crossing_flow_coverage_repeat5_summary.json`. This is not final multi-seed statistical evidence.
 - Next: regenerate all selected train labels under the latest path mask, retrain the candidate, then run a multi-seed validation pilot before deciding on PPO or the imitation-only paper scope.
+
+## 2026-08-01 — Deploy-aligned safety candidate
+
+- Regenerated 14 reviewed expert shards after applying the same collision-latched rejoin, path-corridor, LiDAR endpoint, and swept-clearance masks offline and online. All 1,786 selected labels are legal.
+- Fixed a live collision-warning blind spot: stale DDS odometry delivered during Nav2 preemption used to clear all detector history. Non-increasing stamps are now discarded; a fresh detector process remains the episode reset boundary.
+- Increased only collision-latched candidate clearance to 0.65 m and the independent stopping margin to 0.85 m, matching the Gazebo fallback's combined 0.71 m robot-human collision boundary plus braking/callback latency. These are empirical filters, not formal safety guarantees.
+- The selected `coverage_safety_aligned` checkpoint has scenario-disjoint validation top-1 0.910, top-3 0.985, near-optimal rate 0.955, zero invalid selections, and zero catastrophic selections. CPU ONNX inference is approximately 0.035 ms in a local smoke loop.
+- On five retained repeats of `crossing_flow_high_validation_s02220`, Base produced 0/5 `GOAL_REACHED` and 5/5 `COLLISION`; the safety-aligned policy produced 3/5 `GOAL_REACHED`, 0/5 `COLLISION`, and 2/5 `TIMEOUT`. Successful navigation time median was 110.423 s and minimum human-distance median was 1.080 m.
+- Exact success intervals remain wide: Base 0.0 [0.000, 0.522], learned 0.6 [0.147, 0.947], unpaired Fisher p=0.167. This is repeated same-seed pilot evidence, not final multi-seed significance.
+- One timeout stopped beside a 0.22 m lateral LiDAR return that matched neither the empty static scenario nor any privileged pedestrian position; it is retained as an algorithm timeout and a Gazebo proxy/self-return failure case, not excluded.
+- Evidence: `outputs/pilot/crossing_flow_safety_aligned_repeat5.csv`, `outputs/pilot/crossing_flow_safety_aligned_repeat5_summary.json`, and `data/manifests/dagger_coverage_safety_aligned_manifest.json`.
+- Next: run scenario/seed-expanded validation with a locked 180 s manifest, preserve the imitation-only method as the minimum paper path, and attempt PPO only after the multi-seed candidate remains collision-safe.

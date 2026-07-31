@@ -118,3 +118,7 @@ Head-on validation exposed two deployment semantics missing from the learned pol
 ## D-029: Treat repeat-5 active recovery as pilot evidence only
 
 The current coverage model converted three of five repeated crossing-flow Base-failure trials into verified goal reaches and selected real temporary subgoals, but two trials still collided. Exact intervals are wide and Fisher p=0.167. The method is therefore promising enough to continue, but no significance or robustness claim is permitted until scenario/seed expansion. Head-on and overtaking counterexamples remain in failure analysis rather than being removed.
+
+## D-030: Select deploy-aligned safety over a collision-prone equal-success candidate
+
+The earlier coverage checkpoint reached the goal in three of five crossing-flow repeats but collided twice. Offline analysis then exposed two deployment mismatches: collision-risk rejoin actions were not represented in label masks, and ordinary static clearances underestimated the Gazebo fallback's combined robot-human collision radius. After aligning masks and preserving collision history across stale odometry, the safety checkpoint also reached three of five trials but produced zero collisions; the remaining two trials timed out and are retained. This checkpoint is selected for expanded validation because the research question prioritizes recovery without degrading safety. Its longer tail is reported directly, and the 180 s pilot is not mixed with earlier 120 s timeout counts in formal statistics.

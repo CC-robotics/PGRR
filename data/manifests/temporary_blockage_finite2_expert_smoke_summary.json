@@ -1,21 +1,25 @@
 {
   "action_counts": {
-    "0": 3,
-    "1": 7,
-    "12": 13,
-    "21": 2,
-    "23": 43,
-    "24": 100,
-    "4": 1
+    "0": 5,
+    "1": 1,
+    "12": 5,
+    "13": 1,
+    "21": 135,
+    "23": 2,
+    "24": 11,
+    "5": 8,
+    "6": 1
   },
+  "collision_latched_action_clearance": 0.65,
   "finite_selected_cost_count": 169,
   "illegal_action_count": 0,
   "margin": {
-    "maximum": 1.019712209701538,
-    "median": 0.14522933959960938,
+    "maximum": 2.9251458644866943,
+    "median": 0.0,
     "minimum": 0.0
   },
-  "predicted_success_count": 65,
+  "predicted_success_count": 142,
+  "rejoin_release_threshold": 0.65,
   "sample_count": 169,
-  "source_jsonl": "data/raw/temporary_blockage_high_train_s01720_finite2_heuristic_dwb.jsonl"
+  "source_jsonl": "/home/diy/RAMP/data/raw/temporary_blockage_high_train_s01720_finite2_heuristic_dwb.jsonl"
 }

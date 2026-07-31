@@ -3,18 +3,22 @@
     "1": 1,
     "14": 1,
     "2": 2,
-    "24": 8,
-    "4": 1,
-    "5": 1
+    "24": 1,
+    "3": 2,
+    "4": 3,
+    "5": 3,
+    "8": 1
   },
+  "collision_latched_action_clearance": 0.65,
   "finite_selected_cost_count": 14,
   "illegal_action_count": 0,
   "margin": {
-    "maximum": 0.4562891721725464,
-    "median": 0.13913506269454956,
-    "minimum": 0.017600536346435547
+    "maximum": 0.7954641580581665,
+    "median": 0.10670995712280273,
+    "minimum": 0.0014470815658569336
   },
   "predicted_success_count": 14,
+  "rejoin_release_threshold": 0.65,
   "sample_count": 14,
-  "source_jsonl": "data/raw/crossing_flow_high_train_s01318_dagger1_bc_dwb.jsonl"
+  "source_jsonl": "/home/diy/RAMP/data/raw/crossing_flow_high_train_s01318_dagger1_bc_dwb.jsonl"
 }
