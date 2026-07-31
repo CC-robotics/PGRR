@@ -174,3 +174,7 @@ In head-on validation the collision monitor observed a 0.70 m robot-human centre
 ## KI-044: Emergency forward escape originally checked only a centre ray
 
 After the human-clearance correction, a head-on run avoided people but the emergency controller translated forward beside a wall and produced a 0.105 m LiDAR footprint collision. Forward escape now requires a short swept-footprint capsule to be free in addition to centre-ray clearance. This closes the static side-swipe path without changing ordinary planner commands.
+
+## KI-045: Gazebo corridor shelves are absent from the `map_empty` occupancy map
+
+The head-on stress scenario builds corridor walls from Gazebo shelf models while Nav2 receives `map_empty`; repeated lateral recovery can therefore leave the nominal corridor even though the research problem assumes known static geometry. Runtime and offline masks now enforce a configurable 0.9 m corridor around the preserved task-level global path and allow out-of-corridor actions only when they reduce deviation. A future scenario-map compiler should rasterize all static models into the occupancy map; until then this fallback mismatch is disclosed.

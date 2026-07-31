@@ -1,6 +1,7 @@
 import numpy as np
 from ramp_core.action_mask import (
     apply_observable_scan_mask,
+    apply_path_corridor_mask,
     compute_action_mask,
     validate_selected_action,
 )
@@ -55,3 +56,14 @@ def test_observable_scan_mask_blocks_capsule_and_unobserved_backup() -> None:
     )
     assert not bool(constrained[BACKUP_ACTION_ID])
     assert not bool(constrained[3])
+
+
+def test_path_corridor_blocks_outward_actions_and_allows_return() -> None:
+    mask = np.ones(25, dtype=np.bool_)
+    path = ((0.0, 0.0), (10.0, 0.0))
+    inside = apply_path_corridor_mask(mask, Pose2D(2.0, 0.8, 0.0), path)
+    assert not bool(inside[6])  # +90 degrees leaves the 0.9 m corridor.
+    assert bool(inside[0])  # -90 degrees returns toward the task path.
+    outside = apply_path_corridor_mask(mask, Pose2D(2.0, 1.2, 0.0), path)
+    assert not bool(outside[6])
+    assert bool(outside[0])

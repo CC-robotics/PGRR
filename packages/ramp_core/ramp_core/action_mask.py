@@ -75,6 +75,44 @@ def validate_selected_action(action_id: int, mask: npt.NDArray[np.bool_]) -> Non
         raise ValueError(f"action {action_id} is masked or out of range")
 
 
+def apply_path_corridor_mask(
+    mask: npt.ArrayLike,
+    robot: Pose2D,
+    global_path: Iterable[tuple[float, float]],
+    *,
+    maximum_deviation_m: float = 0.9,
+    required_improvement_m: float = 0.05,
+    backup_distance_m: float = 0.45,
+) -> npt.NDArray[np.bool_]:
+    """Keep translational recovery options inside or returning to the task path corridor."""
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    path = tuple(global_path)
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if not path:
+        raise ValueError("global path must not be empty")
+    if maximum_deviation_m <= 0.0 or required_improvement_m < 0.0 or backup_distance_m < 0.0:
+        raise ValueError("path-corridor distances are invalid")
+    current_deviation = point_to_polyline_distance((robot.x, robot.y), path)
+
+    def permitted(point: tuple[float, float]) -> bool:
+        deviation = point_to_polyline_distance(point, path)
+        return deviation <= maximum_deviation_m or (
+            deviation <= current_deviation - required_improvement_m
+        )
+
+    for action in ACTIONS[:21]:
+        target = action.target_pose(robot)
+        assert target is not None
+        constrained[action.action_id] &= permitted((target.x, target.y))
+    backup_end = (
+        robot.x - backup_distance_m * math.cos(robot.yaw),
+        robot.y - backup_distance_m * math.sin(robot.yaw),
+    )
+    constrained[BACKUP_ACTION_ID] &= permitted(backup_end)
+    return constrained
+
+
 def apply_observable_scan_mask(
     mask: npt.ArrayLike,
     ranges: npt.ArrayLike,

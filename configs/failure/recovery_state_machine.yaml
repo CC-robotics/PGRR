@@ -26,6 +26,7 @@ footprint_backup_forward_angle_degrees: 80.0
 backup_duration_s: 0.8
 backup_speed_mps: 0.15
 robot_clearance_m: 0.25
+maximum_recovery_path_deviation_m: 0.9
 braking_acceleration_mps2: 0.8
 control_latency_s: 0.15
 stopping_margin_m: 0.45

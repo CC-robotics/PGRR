@@ -13,7 +13,11 @@ from geometry_msgs.msg import PoseArray, PoseStamped, Twist
 from nav_msgs.msg import OccupancyGrid as OccupancyGridMessage
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMessage
-from ramp_core.action_mask import apply_observable_scan_mask, compute_action_mask
+from ramp_core.action_mask import (
+    apply_observable_scan_mask,
+    apply_path_corridor_mask,
+    compute_action_mask,
+)
 from ramp_core.action_space import (
     ACTION_COUNT,
     ACTIONS,
@@ -305,6 +309,7 @@ class RecoveryManagerNode(Node):
             "deadlock_backup_after_decisions": 2,
             "deadlock_replan_after_decisions": 4,
             "robot_clearance_m": 0.25,
+            "maximum_recovery_path_deviation_m": 0.9,
             "backup_speed_mps": 0.15,
             "backup_duration_s": 0.8,
             "wait_duration_s": 0.5,
@@ -721,6 +726,13 @@ class RecoveryManagerNode(Node):
                 self._policy_type == "expert" and self._received_privileged_humans
             ),
         )
+        if self._path:
+            mask = apply_path_corridor_mask(
+                mask,
+                pose,
+                self._path,
+                maximum_deviation_m=self._float("maximum_recovery_path_deviation_m"),
+            )
         mask[REPLAN_ACTION_ID] &= self._adapter.ready
         mask[WAIT_ACTION_ID] = True
         mask[CONTINUE_ACTION_ID] = True

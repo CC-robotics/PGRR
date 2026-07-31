@@ -11,7 +11,11 @@ from typing import Any
 
 import h5py
 import numpy as np
-from ramp_core.action_mask import apply_observable_scan_mask, compute_action_mask
+from ramp_core.action_mask import (
+    apply_observable_scan_mask,
+    apply_path_corridor_mask,
+    compute_action_mask,
+)
 from ramp_core.observations import HumanState, PrivilegedState, select_local_path_waypoints
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.planning.expert import PlanningRecoveryExpert
@@ -200,6 +204,7 @@ def main() -> None:
             target_clearance_m=0.25,
             allow_unobserved_backup=False,
         )
+        mask = apply_path_corridor_mask(mask, state.robot_pose, state.global_path)
         label = PlanningRecoveryExpert(grid).label(state, mask)
         actions.append(label.action_id)
         costs.append(label.action_costs)
