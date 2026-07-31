@@ -6,6 +6,10 @@ CONDA_ENV_NAME ?= ramp-offline
 SEED ?= 0
 HEADLESS ?= 1
 CONFIG ?=
+EXPERT_RAW ?= data/raw/temporary_blockage_high_train_s01720_finite2_heuristic_dwb.jsonl
+EXPERT_DATASET ?= data/interim/temporary_blockage_finite2_expert_smoke.h5
+BC_CONFIG ?= configs/imitation/bc_smoke.yaml
+BC_OUTPUT ?= checkpoints/bc/smoke
 LOG_DIR ?= $(PROJECT_ROOT)/outputs/logs
 OFFLINE_RUN := env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION conda run -n "$(CONDA_ENV_NAME)"
 
@@ -48,9 +52,12 @@ scenarios: | $(LOG_DIR) ## Compile deterministic scenarios and validate them wit
 mine-failures: ## Mine reproducible planner failures.
 	@SEED_START="$(SEED)" CONDA_ENV_NAME="$(CONDA_ENV_NAME)" scripts/evaluate/mine_failures.sh
 label-expert: ## Label recovery states using the privileged expert.
-	@$(OFFLINE_RUN) python scripts/data/label_expert.py --seed "$(SEED)"
+	@$(OFFLINE_RUN) python scripts/data/label_expert.py "$(EXPERT_RAW)" \
+		--output "$(EXPERT_DATASET)" \
+		--summary data/manifests/temporary_blockage_finite2_expert_smoke_summary.json
 train-bc: ## Train behavior cloning policies.
-	@$(OFFLINE_RUN) python scripts/train/train_bc.py --seed "$(SEED)"
+	@$(OFFLINE_RUN) python scripts/train/train_bc.py "$(EXPERT_DATASET)" \
+		--config "$(BC_CONFIG)" --output "$(BC_OUTPUT)"
 train-dagger: ## Run two DAgger aggregation rounds.
 	@$(OFFLINE_RUN) python scripts/train/train_dagger.py --seed "$(SEED)"
 train-ppo-smoke: ## Run a small action-masked PPO smoke job.

@@ -12,7 +12,7 @@ from typing import Any
 import h5py
 import numpy as np
 from ramp_core.action_mask import compute_action_mask
-from ramp_core.observations import HumanState, PrivilegedState
+from ramp_core.observations import HumanState, PrivilegedState, select_local_path_waypoints
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.planning.expert import PlanningRecoveryExpert
 from ramp_core.types import Pose2D, Velocity2D
@@ -119,6 +119,45 @@ def _selected_indices(rows: list[dict[str, Any]], stride: int, threshold: float)
     ]
 
 
+def _observable_arrays(rows: list[dict[str, Any]]) -> dict[str, np.ndarray]:
+    lidar = np.asarray([row["lidar"] for row in rows], dtype=np.float32)
+    goal_polar: list[tuple[float, float]] = []
+    waypoints: list[np.ndarray] = []
+    progress_history: list[np.ndarray] = []
+    angular_history: list[np.ndarray] = []
+    distances = [float(row["distance_to_goal"]) for row in rows]
+    angular = [float(row["robot_velocity"][1]) for row in rows]
+    for index, row in enumerate(rows):
+        pose = Pose2D(*map(float, row["robot_pose"]))
+        goal = row["goal"]
+        dx, dy = float(goal[0]) - pose.x, float(goal[1]) - pose.y
+        local_x = math.cos(pose.yaw) * dx + math.sin(pose.yaw) * dy
+        local_y = -math.sin(pose.yaw) * dx + math.cos(pose.yaw) * dy
+        goal_polar.append((math.hypot(dx, dy), math.atan2(local_y, local_x)))
+        path = tuple((float(point[0]), float(point[1])) for point in row["global_path"])
+        waypoints.append(select_local_path_waypoints(path, pose))
+        start = max(0, index - 9)
+        distance_window = [distances[start]] * (10 - (index - start + 1)) + distances[
+            start : index + 1
+        ]
+        angular_window = [angular[start]] * (10 - (index - start + 1)) + angular[start : index + 1]
+        progress_history.append(np.asarray(distance_window, dtype=np.float32))
+        angular_history.append(np.asarray(angular_window, dtype=np.float32))
+    return {
+        "lidar": lidar,
+        "goal_polar": np.asarray(goal_polar, dtype=np.float32),
+        "path_waypoints": np.asarray(waypoints, dtype=np.float32),
+        "robot_velocity": np.asarray([row["robot_velocity"] for row in rows], dtype=np.float32),
+        "base_action": np.asarray([row["base_cmd_vel"] for row in rows], dtype=np.float32),
+        "progress_history": np.asarray(progress_history, dtype=np.float32),
+        "angular_velocity_history": np.asarray(angular_history, dtype=np.float32),
+        "planner_status": np.asarray([row["planner_status"] for row in rows], dtype=np.int8),
+        "failure_prediction": np.asarray(
+            [row["failure_prediction"] for row in rows], dtype=np.float32
+        ),
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("raw_jsonl", type=Path)
@@ -158,9 +197,14 @@ def main() -> None:
         masks.append(label.valid_mask)
         margins.append(label.margin)
         successes.append(label.predicted_success)
+    observable = _observable_arrays(rows)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with h5py.File(args.output, "w") as handle:
         handle.attrs["source_jsonl"] = str(args.raw_jsonl)
+        handle.attrs["schema_version"] = 1
+        observations = handle.create_group("observations")
+        for name, values in observable.items():
+            observations.create_dataset(name, data=values, compression="gzip")
         handle.create_dataset("sample_index", data=np.asarray(indices, dtype=np.int32))
         handle.create_dataset(
             "timestamp",
