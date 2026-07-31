@@ -242,3 +242,16 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Evidence: `outputs/pilot/crossing_flow_high_validation_static_collision_classifier_regression.csv` contains both unchanged outcomes and raw SHA256 values.
 - One preceding launch lacked a Nav2 action server and produced no algorithm result; it is retained only as a startup diagnostic and excluded from metrics.
 - Next: collect independent validation seeds under this classifier version before locking the final manifest.
+
+## 2026-08-01 — Proxy synchronization and observable escape candidate
+
+- A high-density temporary-blockage validation run exposed a 1441-sample emergency-spin timeout. An attempted task-aligned forward escape caused a real 0.706 m human overlap and was fully removed.
+- Replaced that unsafe branch with progress-gated BACKUP: another bounded reverse pulse is legal only after at least 0.05 m measured clearance gain, with eight pulses maximum. The hard temporary-blockage phase remained a safe timeout after 30 reverse control samples, so the scenario stays a failure case.
+- Fixed a ROS initialization typo caught only online and made runner crash scanning ignore tracebacks after the explicit cleanup marker while retaining real pre-cleanup crashes.
+- Found that fallback privileged actor trajectories could outrun pending Gazebo pose updates. Route time now freezes on pending futures, and a two-second backlog marks actor health false.
+- Added a scenario-derived near-field filter for the 0.16--0.33 m Jackal self-return cluster only when no static obstacles are declared. Static scenarios retain unfiltered LiDAR.
+- Tightened emergency FORWARD entry and continuation to 0.85 m directional clearance while preserving the 0.85 m collision-latched swept capsule.
+- Final development replay reached the original high-density crossing-flow goal in 176.923 s with 0.995 m minimum human-centre distance, 653 emergency samples, 51 reverse-control samples, and 291 emergency-forward samples.
+- Validation: `make test` passes 202 tests and the Humble overlay builds all three packages.
+- Evidence: `outputs/pilot/crossing_flow_high_validation_runtime_alignment_iteration.csv` and `outputs/pilot/temporary_blockage_high_validation_escape_safety_iteration.csv` retain every valid timeout/collision/success variant and raw hash.
+- This remains validation-only development evidence; multi-scenario locked evaluation is still required before a paper performance claim.

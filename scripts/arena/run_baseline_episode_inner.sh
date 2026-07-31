@@ -56,6 +56,15 @@ start_x="${scenario_values[7]}"
 start_y="${scenario_values[8]}"
 start_yaw="${scenario_values[9]}"
 static_obstacle_count="${scenario_values[10]}"
+lidar_static_collision_enabled=true
+minimum_valid_lidar_range_m=0.0
+if [[ "${static_obstacle_count}" -eq 0 ]]; then
+    lidar_static_collision_enabled=false
+    # The Jackal body can appear below 0.34 m in the Gazebo GPU scan. Open-map
+    # scenarios contain no static contact at that range, while a human proxy
+    # reaches the physical collision boundary at approximately 0.36 m.
+    minimum_valid_lidar_range_m=0.34
+fi
 if [[ -z "${scenario_id}" || -z "${seed}" || -z "${split}" || -z "${map_id}" ]]; then
     echo "ERROR: scenario is missing required ramp_metadata" >&2
     exit 2
@@ -244,6 +253,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOUR
         -p odom_topic:="${odom_topic}" -p scan_topic:="${scan_topic}" \
         -p base_cmd_vel_topic:="${base_cmd_topic}" \
         -p ttc_threshold_s:="${TTC_THRESHOLD_S}" \
+        -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
         -p nav_status_topic:="${nav_action}/_action/status" \
         -p failure_status_topic:=/ramp/failure_status \
         -p recovery_decision_topic:=/ramp/recovery_decision \
@@ -273,16 +283,13 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOUR
         -p failure_status_topic:=/ramp/failure_status \
         -p recovery_decision_topic:=/ramp/recovery_decision \
         -p policy_type:="${recovery_policy_type}" \
+        -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
         -p model_path:="${RAMP_BC_MODEL_PATH:-}" \
         -p privileged_humans_topic:=/ramp/privileged/humans \
         >>"${RUNTIME_LOG}" 2>&1 &
     recovery_pid=$!
 fi
 timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S}")"
-lidar_static_collision_enabled=true
-if [[ "${static_obstacle_count}" -eq 0 ]]; then
-    lidar_static_collision_enabled=false
-fi
 "${ramp_ros_prefix}/lib/ramp_ros/episode_logger" --ros-args \
     -p use_sim_time:=true \
     -p episode_id:="${episode_id}" \
@@ -373,10 +380,15 @@ if [[ ! -s "${stream_file}" ]]; then
     echo "ERROR: valid episode logger outcome has an empty stream" >&2
     exit 1
 fi
-crash_count="$(grep -Eic 'process has died|segmentation fault|core dumped|Traceback \(most recent call last\)' "${RUNTIME_LOG}" || true)"
+crash_pattern='process has died|segmentation fault|core dumped|Traceback \(most recent call last\)'
+crash_count="$(
+    awk '/\[RAMP_BASELINE\] cleanup_started/ {exit} {print}' "${RUNTIME_LOG}" \
+        | grep -Eic "${crash_pattern}" || true
+)"
 if (( crash_count > 0 )); then
     echo "ERROR: detected ${crash_count} runtime crashes during baseline episode" >&2
-    grep -Ei 'process has died|segmentation fault|core dumped|Traceback \(most recent call last\)' "${RUNTIME_LOG}" >&2
+    awk '/\[RAMP_BASELINE\] cleanup_started/ {exit} {print}' "${RUNTIME_LOG}" \
+        | grep -Ei "${crash_pattern}" >&2
     exit 1
 fi
 printf 'Episode PASS: episode=%s policy=%s outcome=%s samples=%s monitor_status=%s\n' \

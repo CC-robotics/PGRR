@@ -15,6 +15,7 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     assert profiles["standard"]["arena_inter_planner"] != profiles["base"]["arena_inter_planner"]
     runtime = (root / "scripts" / "arena" / "run_baseline_episode_inner.sh").read_text()
     wrapper = (root / "scripts" / "arena" / "run_baseline_episode.sh").read_text()
+    manager = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py").read_text()
     for profile in profiles.values():
         assert profile["arena_inter_planner"] in runtime
         assert len(profile["behavior_tree_sha256"]) == 64
@@ -26,6 +27,11 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     assert 'RAMP_BC_MODEL_PATH="${RAMP_BC_MODEL_PATH:-' in wrapper
     assert 'print(len(scenario.get("obstacles", {}).get("static", [])))' in runtime
     assert 'lidar_static_collision_enabled:="${lidar_static_collision_enabled}"' in runtime
+    assert runtime.count('minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}"') == 2
+    assert "minimum_valid_lidar_range_m=0.34" in runtime
+    assert "awk '/\\[RAMP_BASELINE\\] cleanup_started/ {exit} {print}'" in runtime
+    assert "maximum_improving_backups=self._integer(" in manager
+    assert "self._int(" not in manager
 
 
 def test_recovery_manager_preserves_task_path_and_continue_restores_goal() -> None:
@@ -80,6 +86,8 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "self._ready_publisher.publish(ready)" in logger
     assert "entity_names = (proxy_name,)" in actor
     assert "pose update rejected" in actor
+    assert "still applying the previous proxy pose" in actor
+    assert "pose update timed out" in actor
     assert "Gazebo rejected a deterministic pedestrian proxy pose update" in logger
     assert "NavigateToPose did not activate within the startup deadline" in logger
     assert "episode start handshake did not complete before the wall-clock deadline" in logger
@@ -98,7 +106,10 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["collision_latched_action_clearance_m"] == 0.65
     assert config["maximum_recovery_path_deviation_m"] == 0.9
     assert config["emergency_rotation_clearance_m"] == 0.24
+    assert config["emergency_forward_entry_clearance_m"] == 0.85
     assert config["emergency_backup_reset_clear_s"] == 3.0
+    assert config["emergency_maximum_improving_backups"] == 8
+    assert config["emergency_backup_progress_m"] == 0.05
     assert config["emergency_translation_clearance_m"] == 0.36
     assert config["bc_wait_budget_decisions"] == 3
     assert config["bc_replan_budget_decisions"] == 1

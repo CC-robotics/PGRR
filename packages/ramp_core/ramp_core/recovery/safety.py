@@ -91,12 +91,17 @@ class EmergencyEscapeController:
     release_speed_mps: float
     rotation_clearance_m: float = 0.30
     rear_obstacle_angle_rad: float = math.radians(100.0)
+    forward_entry_clearance_m: float = 0.85
     backup_reset_clear_s: float = 3.0
+    maximum_improving_backups: int = 8
+    backup_progress_m: float = 0.05
     hazard_since_s: float | None = None
     hazard_clear_since_s: float | None = None
     escape_until_s: float = float("-inf")
     mode: EmergencyEscapeMode = EmergencyEscapeMode.STOP
     backup_used_in_hazard: bool = False
+    backup_count: int = 0
+    backup_start_clearance_m: float | None = None
 
     def __post_init__(self) -> None:
         values = (
@@ -105,9 +110,11 @@ class EmergencyEscapeController:
             self.backup_clearance_m,
             self.release_speed_mps,
             self.rotation_clearance_m,
+            self.forward_entry_clearance_m,
             self.backup_reset_clear_s,
+            self.backup_progress_m,
         )
-        if any(value < 0.0 for value in values):
+        if any(value < 0.0 for value in values) or self.maximum_improving_backups <= 0:
             raise ValueError("emergency escape parameters must be non-negative")
 
     def update(
@@ -137,6 +144,8 @@ class EmergencyEscapeController:
                 self.hazard_clear_since_s = now_s
             if now_s - self.hazard_clear_since_s >= self.backup_reset_clear_s:
                 self.backup_used_in_hazard = False
+                self.backup_count = 0
+                self.backup_start_clearance_m = None
             return False, self.mode
         self.hazard_clear_since_s = None
         if self.hazard_since_s is None or now_s < self.hazard_since_s:
@@ -147,18 +156,26 @@ class EmergencyEscapeController:
             self.mode = EmergencyEscapeMode.STOP
             return True, self.mode
         rear_safe = rear_observed and rear_clearance_m >= self.backup_clearance_m
-        # Repeating short reverse pulses can create a limit cycle beside an
-        # obstacle: each pulse clears the immediate footprint test without
-        # escaping the continuous hazard. Permit only one reverse option per
-        # hazard interval, then require a turn/forward geometric escape.
-        if backup_permitted and rear_safe and not self.backup_used_in_hazard:
+        improving_repeat = (
+            self.backup_start_clearance_m is not None
+            and math.isfinite(obstacle_clearance_m)
+            and obstacle_clearance_m >= self.backup_start_clearance_m + self.backup_progress_m
+            and self.backup_count < self.maximum_improving_backups
+        )
+        # A single reverse pulse is always bounded. Further pulses are allowed
+        # only while each completed pulse measurably increases the nearest
+        # observable clearance. This permits retreat from a bottleneck but
+        # rejects the unchanged-clearance backup limit cycle.
+        if backup_permitted and rear_safe and (not self.backup_used_in_hazard or improving_repeat):
             self.mode = EmergencyEscapeMode.BACKUP
             self.escape_until_s = now_s + self.backup_duration_s
             self.backup_used_in_hazard = True
+            self.backup_count += 1
+            self.backup_start_clearance_m = obstacle_clearance_m
             return True, self.mode
         wrapped = math.atan2(math.sin(obstacle_angle_rad), math.cos(obstacle_angle_rad))
         obstacle_is_rear = abs(wrapped) >= self.rear_obstacle_angle_rad
-        if obstacle_is_rear and forward_clearance_m >= self.backup_clearance_m:
+        if obstacle_is_rear and forward_clearance_m >= self.forward_entry_clearance_m:
             self.mode = EmergencyEscapeMode.FORWARD
             self.escape_until_s = now_s + self.backup_duration_s
             return True, self.mode

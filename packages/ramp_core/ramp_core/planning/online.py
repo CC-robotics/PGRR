@@ -13,6 +13,22 @@ from ramp_core.occupancy import OccupancyGrid
 from ramp_core.types import Pose2D, Velocity2D
 
 
+def sanitize_near_field_returns(
+    ranges: npt.ArrayLike,
+    *,
+    minimum_valid_range_m: float,
+) -> npt.NDArray[np.float64]:
+    """Replace geometrically impossible near-field returns with infinity."""
+    if not math.isfinite(minimum_valid_range_m) or minimum_valid_range_m < 0.0:
+        raise ValueError("minimum valid LiDAR range must be finite and non-negative")
+    values = np.asarray(ranges, dtype=np.float64).copy()
+    if values.ndim != 1:
+        raise ValueError("ranges must be one-dimensional")
+    self_returns = np.isfinite(values) & (values >= 0.0) & (values < minimum_valid_range_m)
+    values[self_returns] = math.inf
+    return values
+
+
 def directional_scan_clearance(
     ranges: npt.ArrayLike,
     *,

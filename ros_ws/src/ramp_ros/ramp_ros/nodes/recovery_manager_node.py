@@ -41,6 +41,7 @@ from ramp_core.planning.online import (
     directional_scan_clearance,
     estimate_human_states,
     privileged_time_to_collision,
+    sanitize_near_field_returns,
     scan_segment_is_free,
 )
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
@@ -232,7 +233,10 @@ class RecoveryManagerNode(Node):
             backup_clearance_m=self._float("emergency_backup_clearance_m"),
             release_speed_mps=self._float("emergency_release_speed_mps"),
             rotation_clearance_m=self._float("emergency_rotation_clearance_m"),
+            forward_entry_clearance_m=self._float("emergency_forward_entry_clearance_m"),
             backup_reset_clear_s=self._float("emergency_backup_reset_clear_s"),
+            maximum_improving_backups=self._integer("emergency_maximum_improving_backups"),
+            backup_progress_m=self._float("emergency_backup_progress_m"),
         )
         self._decision_publisher = self.create_publisher(
             RecoveryDecision, str(self.get_parameter("recovery_decision_topic").value), 10
@@ -341,10 +345,14 @@ class RecoveryManagerNode(Node):
             # positive lateral margin while permitting in-place narrow-door
             # alignment instead of a permanent conservative stop.
             "emergency_rotation_clearance_m": 0.24,
+            "emergency_forward_entry_clearance_m": 0.85,
             "emergency_backup_reset_clear_s": 3.0,
             "emergency_turn_speed_radps": 0.6,
             "emergency_forward_speed_mps": 0.12,
             "emergency_translation_clearance_m": 0.36,
+            "emergency_maximum_improving_backups": 8,
+            "emergency_backup_progress_m": 0.05,
+            "minimum_valid_lidar_range_m": 0.0,
             "human_radius_m": 0.35,
             "robot_radius_m": 0.36,
             "maximum_human_speed_mps": 2.0,
@@ -458,7 +466,10 @@ class RecoveryManagerNode(Node):
         self._angular_history.append(float(message.twist.twist.angular.z))
 
     def _on_scan(self, message: LaserScan) -> None:
-        source = np.asarray(message.ranges, dtype=np.float32)
+        source = sanitize_near_field_returns(
+            message.ranges,
+            minimum_valid_range_m=self._float("minimum_valid_lidar_range_m"),
+        ).astype(np.float32)
         if source.size == 0:
             return
         maximum = float(message.range_max) if message.range_max > 0.0 else 30.0
@@ -466,6 +477,7 @@ class RecoveryManagerNode(Node):
         sample = np.interp(
             np.linspace(0.0, source.size - 1.0, 180), np.arange(source.size), source
         ).astype(np.float32)
+        message.ranges = source.astype(float).tolist()
         self._scan = message
         self._lidar_stack.append(sample)
 
@@ -1145,7 +1157,9 @@ class RecoveryManagerNode(Node):
             and self._emergency_escape_mode is EmergencyEscapeMode.FORWARD
         ):
             command = Twist()
-            if self._forward_escape_clearance() >= self._float("emergency_backup_clearance_m"):
+            if self._forward_escape_clearance() >= self._float(
+                "emergency_forward_entry_clearance_m"
+            ):
                 command.linear.x = self._float("emergency_forward_speed_mps")
         elif (
             self._machine.state is RecoveryState.EMERGENCY_STOP

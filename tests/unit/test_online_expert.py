@@ -14,6 +14,7 @@ from ramp_core.planning.online import (
     estimate_human_states,
     privileged_collision_risk,
     privileged_time_to_collision,
+    sanitize_near_field_returns,
     scan_segment_is_free,
 )
 from ramp_core.types import Pose2D, Velocity2D
@@ -89,6 +90,21 @@ def test_directional_clearance_reads_observed_front_sector() -> None:
         half_width_rad=math.radians(2.0),
     )
     assert clearance == pytest.approx(0.7)
+
+
+def test_open_map_near_field_sanitizer_removes_only_impossible_returns() -> None:
+    filtered = sanitize_near_field_returns(
+        np.asarray((0.08, 0.15, 0.36, np.inf)), minimum_valid_range_m=0.15
+    )
+    assert np.isinf(filtered[0])
+    assert filtered[1] == pytest.approx(0.15)
+    assert filtered[2] == pytest.approx(0.36)
+    assert np.isinf(filtered[3])
+
+
+def test_near_field_sanitizer_rejects_negative_threshold() -> None:
+    with pytest.raises(ValueError, match="non-negative"):
+        sanitize_near_field_returns((1.0,), minimum_valid_range_m=-0.1)
 
 
 def test_swept_scan_mask_rejects_off_axis_footprint_collision() -> None:

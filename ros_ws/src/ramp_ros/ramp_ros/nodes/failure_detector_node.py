@@ -12,6 +12,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from ramp_core.failure.labels import FailureType
 from ramp_core.failure.rules import RuleFailureConfig, RuleFailureDetector, TimedNavigationSample
+from ramp_core.planning.online import sanitize_near_field_returns
 from ramp_core.types import PlannerStatus, select_planner_status
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.executors import ExternalShutdownException
@@ -49,6 +50,7 @@ class FailureDetectorNode(Node):
         self.declare_parameter("trigger_threshold", 0.65)
         self.declare_parameter("collision_front_sector_degrees", 30.0)
         self.declare_parameter("collision_trend_sector_degrees", 90.0)
+        self.declare_parameter("minimum_valid_lidar_range_m", 0.0)
         defaults = RuleFailureConfig()
         for name in defaults.__dataclass_fields__:
             self.declare_parameter(name, getattr(defaults, name))
@@ -113,7 +115,10 @@ class FailureDetectorNode(Node):
         ]
 
     def _on_scan(self, message: LaserScan) -> None:
-        ranges = np.asarray(message.ranges, dtype=np.float64)
+        ranges = sanitize_near_field_returns(
+            message.ranges,
+            minimum_valid_range_m=float(self.get_parameter("minimum_valid_lidar_range_m").value),
+        )
         angles = float(message.angle_min) + np.arange(ranges.size) * float(message.angle_increment)
         half_width = math.radians(
             float(self.get_parameter("collision_front_sector_degrees").value) / 2.0

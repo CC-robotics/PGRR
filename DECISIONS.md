@@ -142,3 +142,15 @@ Collision prediction is an anticipatory trigger, not a reliable release signal d
 ## D-035: Bind static-contact evidence to declared scenario geometry
 
 Gazebo near-range LiDAR can report the robot body or proxy artifacts below the 0.12 m static-contact threshold. The episode runner therefore derives `lidar_static_collision_enabled` from the compiled scenario's `obstacles.static` count. Static shelves, corridor walls, and doorway geometry retain a two-frame LiDAR contact classifier; open-map crossing flow does not. Human collision classification is independent and always enabled through the privileged centre-distance monitor used only for evaluation. This changes terminal labeling, not policy observations, action selection, or safety control.
+
+## D-036: Repeat emergency backup only with measured clearance gain
+
+One reverse pulse remains available only with observed rear clearance. A continuous hazard may request another pulse only if the completed pulse increased the nearest observed clearance by at least 0.05 m, and no more than eight pulses are permitted. Unchanged-clearance cycles therefore still transition to turning, while a bottleneck retreat can accumulate bounded progress. The temporary-blockage validation replay used 30 reverse control samples and remained collision-free but timed out; this is retained as safe negative evidence, not a recovery-success claim.
+
+## D-037: Synchronize privileged actor truth to accepted pose updates
+
+Route time no longer advances while the corresponding proxy has an unfinished `SetEntityPose` future. A request outstanding for more than two seconds marks `/ramp/actors_healthy` false so the logger reports simulator failure rather than algorithm performance. This preserves the deterministic route definition while preventing privileged evaluation state from accumulating unbounded lead over the LiDAR-visible proxy.
+
+## D-038: Filter only geometrically impossible open-map near returns
+
+For scenarios with no declared static obstacles, ranges below 0.34 m are excluded consistently from the rule detector and recovery observation. The threshold is below the 0.36 m proxy-surface distance at the combined robot--human collision radius. Scenarios with shelves, walls, or door frames retain every non-negative return. Raw episode logs are unchanged so the preprocessing remains auditable.

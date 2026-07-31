@@ -210,3 +210,15 @@ Release hysteresis alone exposed two unsafe transitions. In the first, a turning
 ## KI-053: Near-range LiDAR self-returns can imitate static contact
 
 Two high-density crossing-flow replays terminated after consecutive 0.08--0.09 m LiDAR returns even though the robot was stationary, the scenario declared no static obstacles, and privileged human centres remained 1.16 m or farther away. Treating any such return as static contact creates a false collision label, while globally disabling LiDAR collision evidence would hide real shelf and doorway contacts. The runner now enables the debounced LiDAR static-collision classifier only when the compiled scenario declares static obstacles; the independent robot--human centre-distance classifier remains active in every scenario. A fresh same-scenario replay passed the former false-positive point and reached the goal in 141.891 s with 1.185 m minimum human distance. The earlier outcomes remain unchanged across this explicitly documented classifier-version boundary.
+
+## KI-054: Privileged actor time could outrun an unfinished Gazebo pose request
+
+The fallback actor controller originally advanced route time and published privileged positions even while the previous asynchronous `SetEntityPose` request remained unfinished. Under Gazebo service backlog, the evaluator could therefore place a human directly in front of the robot while its LiDAR proxy remained elsewhere. The controller now freezes that route until the pending request completes and marks actor health false after a two-second request timeout. Historical outcomes are not retroactively relabeled, but pre-fix collision rows are treated as development diagnostics rather than final evidence.
+
+## KI-055: The Jackal GPU scan contains a broad near-field self-return cluster
+
+Open-map crossing replays contain 40 or more contiguous returns between 0.16 and 0.33 m followed by a jump beyond 1.4 m, even with the nearest privileged human more than 1.0 m away. This is a robot-body/GPU-LiDAR self-return cluster, not a point outlier. In scenarios declaring zero static obstacles, detector and policy preprocessing now replace returns below 0.34 m with infinity. The human proxy reaches the geometric collision boundary at approximately 0.36 m, so the filter retains a 0.02 m hard boundary and the ordinary braking trigger acts earlier. Static-geometry scenarios apply no such filter.
+
+## KI-056: Observable safety fixes can trade collision for long recovery time
+
+The final development replay combining proxy synchronization, the open-map self-return filter, strict 0.85 m emergency-forward entry, and progress-gated backup reached the goal in 176.923 s with 0.995 m minimum human distance. It spent 653 samples in emergency state and 781 on non-CONTINUE recovery actions. This is a valid closed-loop success but is close to the 180 s timeout and does not establish an efficiency improvement. The preceding timeout and collision variants remain in `outputs/pilot/crossing_flow_high_validation_runtime_alignment_iteration.csv`.

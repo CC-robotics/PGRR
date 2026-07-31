@@ -237,6 +237,29 @@ def test_unobserved_rear_uses_turn_then_observable_forward_escape() -> None:
     ) == (True, EmergencyEscapeMode.FORWARD)
 
 
+def test_emergency_forward_rejects_clearance_below_strict_entry_margin() -> None:
+    controller = _controller()
+    controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=0.0,
+        rear_observed=False,
+        obstacle_angle_rad=math.radians(120.0),
+        obstacle_clearance_m=0.4,
+    )
+    assert controller.update(
+        now_s=0.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=0.0,
+        rear_observed=False,
+        obstacle_angle_rad=math.radians(120.0),
+        obstacle_clearance_m=0.4,
+        forward_clearance_m=0.8,
+    ) == (True, EmergencyEscapeMode.TURN_RIGHT)
+
+
 def test_emergency_turn_direction_persists_across_bearing_sign_change() -> None:
     controller = _controller()
     controller.update(
@@ -265,6 +288,64 @@ def test_emergency_turn_direction_persists_across_bearing_sign_change() -> None:
         rear_observed=False,
         obstacle_angle_rad=-0.4,
         obstacle_clearance_m=0.8,
+    ) == (True, EmergencyEscapeMode.TURN_RIGHT)
+
+
+def test_continuous_hazard_can_repeat_only_when_backup_improves_clearance() -> None:
+    controller = _controller()
+    controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.4,
+    )
+    assert controller.update(
+        now_s=0.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+    assert controller.update(
+        now_s=1.4,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.46,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+
+
+def test_improving_backup_sequence_has_a_hard_limit() -> None:
+    controller = EmergencyEscapeController(
+        hold_s=0.0,
+        backup_duration_s=0.1,
+        backup_clearance_m=0.7,
+        release_speed_mps=0.03,
+        maximum_improving_backups=2,
+        backup_progress_m=0.05,
+    )
+    assert controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+    assert controller.update(
+        now_s=0.2,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.5,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+    assert controller.update(
+        now_s=0.4,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_angle_rad=0.2,
+        obstacle_clearance_m=0.6,
     ) == (True, EmergencyEscapeMode.TURN_RIGHT)
 
 

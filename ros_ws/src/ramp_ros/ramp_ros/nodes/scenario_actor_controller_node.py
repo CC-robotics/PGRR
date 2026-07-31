@@ -89,6 +89,7 @@ class ScenarioActorController(Node):
         self.declare_parameter("robot_start_yaw", 0.0)
         self.declare_parameter("robot_avoidance_distance_m", 1.3)
         self.declare_parameter("update_frequency_hz", 2.0)
+        self.declare_parameter("pose_update_timeout_s", 2.0)
         scenario_path = Path(str(self.get_parameter("scenario_file").value))
         if not scenario_path.is_file():
             raise ValueError(f"scenario_file is not readable: {scenario_path}")
@@ -123,6 +124,7 @@ class ScenarioActorController(Node):
         self._logger_ready = not self._wait_for_navigation_active
         self._route_elapsed = {route.name: 0.0 for route in self._routes}
         self._pending: dict[str, Any] = {}
+        self._pending_since_s: dict[str, float] = {}
         self._spawn_pending: dict[str, Any] = {}
         self._spawn_attempted: set[str] = set()
         self._spawn_validated: set[str] = set()
@@ -243,6 +245,72 @@ class ScenarioActorController(Node):
         pose_array.header.stamp = self.get_clock().now().to_msg()
         pose_array.header.frame_id = "map"
         for route in self._routes:
+            proxy_name = self._proxy_name(route.name)
+            current = route.pose_at(self._route_elapsed[route.name])
+
+            def make_pose(state: tuple[float, float, float]) -> Pose:
+                actor_pose = Pose()
+                actor_pose.position.x = state[0]
+                actor_pose.position.y = state[1]
+                actor_pose.orientation = _quaternion(state[2])
+                return actor_pose
+
+            current_pose = make_pose(current)
+            if proxy_name not in self._spawn_attempted:
+                request = SpawnEntity.Request()
+                request.entity_factory.name = proxy_name
+                request.entity_factory.allow_renaming = False
+                request.entity_factory.sdf = self._proxy_sdf(proxy_name)
+                request.entity_factory.pose = current_pose
+                request.entity_factory.relative_to = "world"
+                self._spawn_pending[proxy_name] = self._spawn_client.call_async(request)
+                self._spawn_attempted.add(proxy_name)
+                pose_array.poses.append(current_pose)
+                continue
+            spawn_pending = self._spawn_pending.get(proxy_name)
+            if spawn_pending is not None and not spawn_pending.done():
+                pose_array.poses.append(current_pose)
+                continue
+            if proxy_name not in self._spawn_validated:
+                response = spawn_pending.result() if spawn_pending is not None else None
+                if response is None or not bool(getattr(response, "success", False)):
+                    detail = getattr(response, "status_message", "no spawn response")
+                    self._healthy = False
+                    self.get_logger().error(f"failed to spawn LiDAR proxy {proxy_name}: {detail}")
+                    pose_array.poses.append(current_pose)
+                    continue
+                self._spawn_validated.add(proxy_name)
+                self.get_logger().info(f"spawned LiDAR-visible proxy {proxy_name}")
+
+            # Do not advance or publish a new privileged pose while Gazebo is
+            # still applying the previous proxy pose. Otherwise service
+            # backlog lets privileged truth run ahead of the LiDAR obstacle.
+            pending = self._pending.get(proxy_name)
+            if pending is not None and not pending.done():
+                pending_since = self._pending_since_s.get(proxy_name, now)
+                timeout_s = float(self.get_parameter("pose_update_timeout_s").value)
+                if now - pending_since > timeout_s:
+                    self._healthy = False
+                    self.get_logger().error(
+                        f"pose update timed out for {proxy_name}",
+                        throttle_duration_sec=5.0,
+                    )
+                pose_array.poses.append(current_pose)
+                continue
+            if pending is not None:
+                try:
+                    response = pending.result()
+                except Exception as error:  # pragma: no cover - ROS future boundary
+                    self._healthy = False
+                    self.get_logger().error(f"pose update failed for {proxy_name}: {error}")
+                    pose_array.poses.append(current_pose)
+                    continue
+                if response is None or not bool(response.success):
+                    self._healthy = False
+                    self.get_logger().error(f"pose update rejected for {proxy_name}")
+                    pose_array.poses.append(current_pose)
+                    continue
+
             candidate_elapsed = self._route_elapsed[route.name] + step_s
             candidate = route.pose_at(candidate_elapsed)
             blocked_by_robot = (
@@ -253,33 +321,8 @@ class ScenarioActorController(Node):
             if not blocked_by_robot:
                 self._route_elapsed[route.name] = candidate_elapsed
             x, y, yaw = route.pose_at(self._route_elapsed[route.name])
-            pose = Pose()
-            pose.position.x = x
-            pose.position.y = y
-            pose.orientation = _quaternion(yaw)
+            pose = make_pose((x, y, yaw))
             pose_array.poses.append(pose)
-            proxy_name = self._proxy_name(route.name)
-            if proxy_name not in self._spawn_attempted:
-                request = SpawnEntity.Request()
-                request.entity_factory.name = proxy_name
-                request.entity_factory.allow_renaming = False
-                request.entity_factory.sdf = self._proxy_sdf(proxy_name)
-                request.entity_factory.pose = pose
-                request.entity_factory.relative_to = "world"
-                self._spawn_pending[proxy_name] = self._spawn_client.call_async(request)
-                self._spawn_attempted.add(proxy_name)
-                continue
-            spawn_pending = self._spawn_pending.get(proxy_name)
-            if spawn_pending is not None and not spawn_pending.done():
-                continue
-            if proxy_name not in self._spawn_validated:
-                response = spawn_pending.result() if spawn_pending is not None else None
-                if response is None or not bool(getattr(response, "success", False)):
-                    detail = getattr(response, "status_message", "no spawn response")
-                    self.get_logger().error(f"failed to spawn LiDAR proxy {proxy_name}: {detail}")
-                    continue
-                self._spawn_validated.add(proxy_name)
-                self.get_logger().info(f"spawned LiDAR-visible proxy {proxy_name}")
             entity_names = (proxy_name,)
             if bool(self.get_parameter("update_native_actors").value):
                 entity_names = (route.name, proxy_name)
@@ -303,6 +346,7 @@ class ScenarioActorController(Node):
                 request.entity.type = Entity.MODEL
                 request.pose = pose
                 self._pending[entity_name] = self._client.call_async(request)
+                self._pending_since_s[entity_name] = now
         self._publisher.publish(pose_array)
         health = Bool()
         health.data = self._healthy
