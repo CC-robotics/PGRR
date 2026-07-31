@@ -106,6 +106,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert manager.count("_forward_escape_clearance()") >= 2
     detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()
     assert "RecoveryDecision.EMERGENCY_STOP" in detector
+    assert "timestamp <= self._last_timestamp" in detector
+    assert "self._detector.reset()" not in detector
 
 
 def test_oracle_rejoin_distinguishes_hard_risk_from_soft_latch() -> None:

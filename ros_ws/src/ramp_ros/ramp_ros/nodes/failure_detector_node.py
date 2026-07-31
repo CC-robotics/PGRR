@@ -161,11 +161,12 @@ class FailureDetectorNode(Node):
             return
         stamp = message.header.stamp
         timestamp = float(stamp.sec) + float(stamp.nanosec) * 1.0e-9
-        if self._last_timestamp is not None:
-            if timestamp < self._last_timestamp:
-                self._detector.reset()
-            elif timestamp == self._last_timestamp:
-                return
+        # DDS may deliver a stale odometry sample after a newer sample when
+        # Nav2 goals are preempted. Resetting temporal rules here creates a
+        # collision-warning blind spot. Each episode launches a fresh node,
+        # so non-increasing samples are safely discarded instead.
+        if self._last_timestamp is not None and timestamp <= self._last_timestamp:
+            return
         self._last_timestamp = timestamp
         local_x = float(message.pose.pose.position.x)
         local_y = float(message.pose.pose.position.y)

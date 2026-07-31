@@ -178,3 +178,7 @@ After the human-clearance correction, a head-on run avoided people but the emerg
 ## KI-045: Gazebo corridor shelves are absent from the `map_empty` occupancy map
 
 The head-on stress scenario builds corridor walls from Gazebo shelf models while Nav2 receives `map_empty`; repeated lateral recovery can therefore leave the nominal corridor even though the research problem assumes known static geometry. Runtime and offline masks now enforce a configurable 0.9 m corridor around the preserved task-level global path and allow out-of-corridor actions only when they reduce deviation. A future scenario-map compiler should rasterize all static models into the occupancy map; until then this fallback mismatch is disclosed.
+
+## KI-046: Out-of-order odometry cleared the collision-risk latch
+
+A deploy-aligned crossing-flow replay retained collision risk in an offline reconstruction, but the live detector briefly returned zero while a pedestrian remained in the 90-degree collision sector. Nav2 goal preemption can expose a stale DDS odometry sample; the detector treated any backwards stamp as a simulator reset and erased its temporal collision history. Episodes already launch a fresh detector and disable automatic reset, so non-increasing samples are now discarded. The failed episode remains a collision counterexample and the corrected behavior requires a fresh closed-loop rerun.
