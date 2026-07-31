@@ -255,3 +255,12 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Validation: `make test` passes 202 tests and the Humble overlay builds all three packages.
 - Evidence: `outputs/pilot/crossing_flow_high_validation_runtime_alignment_iteration.csv` and `outputs/pilot/temporary_blockage_high_validation_escape_safety_iteration.csv` retain every valid timeout/collision/success variant and raw hash.
 - This remains validation-only development evidence; multi-scenario locked evaluation is still required before a paper performance claim.
+
+## 2026-08-01 — Independent medium-density candidate pair
+
+- Froze commit `100b09f` and reran both methods on `crossing_flow_medium_validation_s02210` after actor synchronization.
+- Base collided at 29.204 s after 6.937 m progress and 0.707 m minimum human-centre distance.
+- The selected DAgger recovery avoided collision for 179.920 s and made 9.210 m progress, but timed out after 1286 recovery samples; minimum human-centre distance was 0.774 m.
+- This is a safety/stall tradeoff, not a recovery-success result. It confirms the candidate still over-intervenes outside the tuned high-density replay.
+- Evidence: `outputs/pilot/crossing_flow_medium_validation_candidate_100b09f_pair.csv` with both raw SHA256 values.
+- Next: run the low-density validation pair without parameter changes; reject the candidate from final evaluation if it also fails to complete.
