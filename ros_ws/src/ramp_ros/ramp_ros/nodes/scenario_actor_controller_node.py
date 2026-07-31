@@ -13,6 +13,7 @@ from action_msgs.msg import GoalStatus, GoalStatusArray
 from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Quaternion
 from nav_msgs.msg import Odometry
 from ramp_core.evaluation.navigation import navigation_status_is_active
+from ramp_core.planning.rollout import yielding_human_step
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
@@ -373,11 +374,15 @@ class ScenarioActorController(Node):
 
             candidate_elapsed = self._route_elapsed[route.name] + step_s
             candidate = route.pose_at(candidate_elapsed)
-            blocked_by_robot = (
-                self._robot_position is not None
-                and math.dist(candidate[:2], self._robot_position)
-                < route.robot_avoidance_distance_m
-            )
+            blocked_by_robot = False
+            if self._robot_position is not None:
+                permitted = yielding_human_step(
+                    self._robot_position,
+                    current[:2],
+                    candidate[:2],
+                    route.robot_avoidance_distance_m,
+                )
+                blocked_by_robot = permitted == current[:2]
             target_elapsed = (
                 self._route_elapsed[route.name] if blocked_by_robot else candidate_elapsed
             )

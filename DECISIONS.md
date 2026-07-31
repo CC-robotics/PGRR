@@ -170,3 +170,7 @@ The fallback cylinder is an evaluation surrogate, not a rigid-body model of a pe
 ## D-042: Use pose-derived odometry in the known-pose Gazebo profile
 
 Gazebo DiffDrive integrates wheel motion as odometry. The four-wheel skid-steer Jackal accumulated 0.93 m position error during a recovery-heavy run and declared success while the physical model remained 1.06 m from the goal. The Gazebo profile now routes DiffDrive odometry to an unused diagnostic topic and publishes the standard `odom` interface from Gazebo's `OdometryPublisher`, which derives motion from the model pose. This is the simulator's declared known-pose localization source, analogous to replacing it with AMCL on a mapped real platform; pedestrian truth remains excluded from policy input. Episode success still requires a physical-pose goal-distance check.
+
+## D-043: Yielding pedestrians may leave an active avoidance radius
+
+The deterministic fallback models reciprocal collision avoidance by stopping a pedestrian whose next route step would enter or continue approaching within 1.3 m of the actual Gazebo robot pose. A pedestrian already inside that radius may execute a step only when the candidate strictly increases robot clearance. This prevents an artificial mutual freeze while never permitting a yielding step to approach the robot. The privileged expert remains more conservative: it retains a possible stop-short trajectory even when the runtime pedestrian could move away. Any comparison across this environment boundary must rerun all affected methods.

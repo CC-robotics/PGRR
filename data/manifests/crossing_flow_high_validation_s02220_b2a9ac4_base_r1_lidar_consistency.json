@@ -1,0 +1,11 @@
+{
+  "episode": "data/raw/crossing_flow_high_validation_s02220_b2a9ac4_base_r1_dwb.jsonl",
+  "maximum_surface_range_error_m": 0.11666281927592526,
+  "minimum_center_distance_m": 0.9843332353417712,
+  "near_distance_m": 1.3,
+  "near_sample_count": 135,
+  "passed": true,
+  "tolerance_m": 0.2,
+  "visible_ratio": 1.0,
+  "visible_sample_count": 135
+}

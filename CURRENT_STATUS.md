@@ -8,6 +8,7 @@
 - The learned runs used 254/263 non-CONTINUE recovery samples, including WAIT, BACKUP, and temporary subgoals. This is not an always-WAIT outcome, but recovery is slow and the safety--time trade-off is a current limitation.
 - `paper/main.tex`, its generated two-seed table/figure, and `paper/main.pdf` are regenerated from tracked CSV evidence. The draft states that two validation seeds are insufficient for significance.
 - Next: expand the frozen validation pilot across additional seeds and scenario families before locking any final test manifest. PPO and the learned detector remain optional and are not claimed.
+- Expansion seed 2220 is a retained counterexample: DWB reached the goal in 92.91 s, while DAgger timed out after 179.92 s and 1401 recovery samples. Its last 60 s were a pure emergency-turning live-lock with multiple fallback pedestrians frozen inside their 1.3 m avoidance radius. The actor rule now permits an already-close pedestrian to take a route step only when that step increases physical robot clearance; the conservative expert still models possible stop-short behavior. Fresh same-manifest replay is required.
 
 ## Gate 2 failed / Gate 3 — privileged Oracle prevalidation (in progress)
 

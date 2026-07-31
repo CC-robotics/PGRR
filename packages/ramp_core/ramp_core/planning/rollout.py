@@ -15,6 +15,34 @@ from ramp_core.planning.pure_pursuit import pure_pursuit_command
 from ramp_core.types import Pose2D, Velocity2D
 
 
+def yielding_human_step(
+    robot_position: tuple[float, float],
+    current_position: tuple[float, float],
+    candidate_position: tuple[float, float],
+    avoidance_distance_m: float,
+) -> tuple[float, float]:
+    """Hold a human only when its candidate step fails to increase robot clearance.
+
+    A person already inside the avoidance radius must remain able to walk away.
+    Freezing every candidate inside the radius creates a reciprocal deadlock in
+    which neither the robot nor the yielding person can restore clearance.
+    """
+
+    if avoidance_distance_m < 0.0 or not math.isfinite(avoidance_distance_m):
+        raise ValueError("avoidance_distance_m must be finite and non-negative")
+    values = (*robot_position, *current_position, *candidate_position)
+    if any(not math.isfinite(value) for value in values):
+        raise ValueError("yielding positions must be finite")
+    current_distance = math.dist(robot_position, current_position)
+    candidate_distance = math.dist(robot_position, candidate_position)
+    blocked = (
+        avoidance_distance_m > 0.0
+        and candidate_distance < avoidance_distance_m
+        and candidate_distance <= current_distance
+    )
+    return current_position if blocked else candidate_position
+
+
 @dataclass(frozen=True, slots=True)
 class RolloutConfig:
     horizon_s: float = 3.0
@@ -165,9 +193,10 @@ def rollout_action(
             # Constant velocity alone is optimistic when a person brakes or
             # yields. Treat every point from the current position to the CV
             # prediction as reachable during this step, then inflate that
-            # swept tube with time. The yielding branch mirrors the selected
-            # Arena fallback's declared actor dynamics; set its distance to
-            # zero for a pure constant-velocity environment.
+            # swept tube with time. Unlike the online fallback, the expert
+            # intentionally does not assume that a receding person must keep
+            # moving; set the yielding distance to zero for a pure
+            # constant-velocity environment.
             distance = point_to_polyline_distance(
                 (pose.x, pose.y),
                 (current_human, predicted),

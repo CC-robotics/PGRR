@@ -1,6 +1,7 @@
 # Progress log
 
 - 2026-08-01: Completed two verified-pose high-density crossing-flow validation pairs under frozen commit `6cf9535`. DWB collided on seeds 2201 and 2202; triggered DAgger physically reached the goal on both. All four near-human LiDAR gates passed at 100% visibility. Added raw-hash-linked pair CSVs and regenerated the manuscript with a descriptive two-seed table and figure; no significance claim is made.
+- 2026-08-01: Retained high-density validation seed 2220 as a nominal-regression counterexample: Base reached the goal and DAgger timed out in an emergency-turning live-lock. Fixed the fallback yielding rule so a pedestrian inside the avoidance radius may move away but not closer; expert rollout remains conservative to a possible stop. Added seven unit tests; the full suite passes 217 tests and the ROS overlay builds.
 
 - 2026-07-29: Began Gate 0; completed non-mutating system inventory and created the repository skeleton.
 - 2026-07-29: Created and locked `ramp-offline`; verified CUDA access and repaired inherited ROS pytest contamination. Offline quality checks pass.
