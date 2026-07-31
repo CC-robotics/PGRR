@@ -92,7 +92,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert manager.count("_footprint_stop_distance(") >= 3
     config = yaml.safe_load((root / "configs/failure/recovery_state_machine.yaml").read_text())
     assert config["footprint_stop_clearance_m"] == 0.48
-    assert config["collision_latched_stop_clearance_m"] == 0.70
+    assert config["collision_latched_stop_clearance_m"] == 0.85
+    assert config["collision_latched_action_clearance_m"] == 0.65
     assert config["maximum_recovery_path_deviation_m"] == 0.9
     assert config["emergency_rotation_clearance_m"] == 0.24
     assert config["emergency_backup_reset_clear_s"] == 3.0

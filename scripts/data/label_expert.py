@@ -179,6 +179,7 @@ def main() -> None:
     parser.add_argument("--stride", type=int, default=5)
     parser.add_argument("--failure-threshold", type=float, default=0.65)
     parser.add_argument("--rejoin-release-threshold", type=float, default=0.65)
+    parser.add_argument("--collision-latched-action-clearance", type=float, default=0.65)
     args = parser.parse_args()
     rows = _load(args.raw_jsonl)
     indices = _selected_indices(rows, args.stride, args.failure_threshold)
@@ -197,19 +198,25 @@ def main() -> None:
             replan_available=True,
         )
         scan = np.asarray(rows[index]["lidar"], dtype=np.float64)
+        collision_risk = float(rows[index]["failure_prediction"][0])
+        collision_latched = collision_risk >= args.rejoin_release_threshold
         mask = apply_observable_scan_mask(
             mask,
             scan,
             angle_min=-LIDAR_FOV_RADIANS / 2.0,
             angle_increment=LIDAR_FOV_RADIANS / max(1, scan.size - 1),
-            swept_clearance_m=0.48,
-            target_clearance_m=0.25,
+            swept_clearance_m=(
+                args.collision_latched_action_clearance if collision_latched else 0.48
+            ),
+            target_clearance_m=(
+                args.collision_latched_action_clearance if collision_latched else 0.25
+            ),
             allow_unobserved_backup=False,
         )
         mask = apply_path_corridor_mask(mask, state.robot_pose, state.global_path)
         mask = constrain_rejoin_actions(
             mask,
-            collision_risk=float(rows[index]["failure_prediction"][0]),
+            collision_risk=collision_risk,
             release_threshold=args.rejoin_release_threshold,
         )
         label = PlanningRecoveryExpert(grid).label(state, mask)
@@ -246,6 +253,7 @@ def main() -> None:
         ),
         "predicted_success_count": int(sum(successes)),
         "rejoin_release_threshold": args.rejoin_release_threshold,
+        "collision_latched_action_clearance": args.collision_latched_action_clearance,
         "finite_selected_cost_count": int(
             sum(
                 math.isfinite(float(cost[action]))

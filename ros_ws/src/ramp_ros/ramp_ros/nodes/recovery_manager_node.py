@@ -324,7 +324,8 @@ class RecoveryManagerNode(Node):
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
             "footprint_stop_clearance_m": 0.48,
-            "collision_latched_stop_clearance_m": 0.70,
+            "collision_latched_stop_clearance_m": 0.85,
+            "collision_latched_action_clearance_m": 0.65,
             "footprint_backup_forward_angle_degrees": 80.0,
             "emergency_hold_s": 0.5,
             "emergency_backup_duration_s": 0.8,
@@ -704,6 +705,7 @@ class RecoveryManagerNode(Node):
         pose: Pose2D,
         grid: OccupancyGrid | None = None,
         human_positions: tuple[tuple[float, float], ...] = (),
+        collision_risk: float = 0.0,
     ) -> np.ndarray[Any, np.dtype[np.bool_]]:
         planning_grid = self._map if grid is None else grid
         if planning_grid is None:
@@ -715,13 +717,21 @@ class RecoveryManagerNode(Node):
                 human_positions,
                 replan_available=self._adapter.ready,
             )
+        action_clearance = self._float("robot_clearance_m")
+        swept_clearance = self._float("footprint_stop_clearance_m")
+        if collision_risk >= self._float("bc_rejoin_block_threshold"):
+            action_clearance = max(
+                action_clearance,
+                self._float("collision_latched_action_clearance_m"),
+            )
+            swept_clearance = max(swept_clearance, action_clearance)
         mask = apply_observable_scan_mask(
             mask,
             self._scan.ranges,
             angle_min=float(self._scan.angle_min),
             angle_increment=float(self._scan.angle_increment),
-            swept_clearance_m=self._float("footprint_stop_clearance_m"),
-            target_clearance_m=self._float("robot_clearance_m"),
+            swept_clearance_m=swept_clearance,
+            target_clearance_m=action_clearance,
             allow_unobserved_backup=(
                 self._policy_type == "expert" and self._received_privileged_humans
             ),
@@ -760,7 +770,12 @@ class RecoveryManagerNode(Node):
             inflation_m=self._float("expert_scan_inflation_m"),
         )
         human_positions = tuple(human.position for human in self._privileged_humans)
-        mask = self._action_mask(pose, grid, human_positions)
+        mask = self._action_mask(
+            pose,
+            grid,
+            human_positions,
+            collision_risk=failure.collision_risk,
+        )
         mask = constrain_rejoin_actions(
             mask,
             collision_risk=failure.collision_risk,
@@ -836,7 +851,7 @@ class RecoveryManagerNode(Node):
             except (RuntimeError, ValueError) as error:
                 self.get_logger().error(f"privileged expert failed safely: {error}")
                 return CoreRecoveryDecision(WAIT_ACTION_ID, 0.0, "oracle_error_wait")
-        mask = self._action_mask(pose)
+        mask = self._action_mask(pose, collision_risk=failure.collision_risk)
         if self._policy_type == "bc":
             if self._valid_progress():
                 self._bc_waits_without_progress = 0
