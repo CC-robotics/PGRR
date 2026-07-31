@@ -1,0 +1,58 @@
+schema_version: 1
+jobs:
+  - split: train
+    raw_jsonl: data/raw/temporary_blockage_high_train_s01720_finite2_heuristic_dwb.jsonl
+    output_hdf5: data/interim/temporary_blockage_finite2_expert_smoke.h5
+    summary_json: data/manifests/temporary_blockage_finite2_expert_smoke_summary.json
+  - split: train
+    raw_jsonl: data/raw/temporary_blockage_medium_train_s01710_final_heuristic_dwb.jsonl
+    output_hdf5: data/interim/temporary_blockage_medium_train_expert.h5
+    summary_json: data/manifests/temporary_blockage_medium_train_expert_summary.json
+  - split: train
+    raw_jsonl: data/raw/temporary_blockage_low_train_s01700_final_heuristic_dwb.jsonl
+    output_hdf5: data/interim/temporary_blockage_low_train_expert.h5
+    summary_json: data/manifests/temporary_blockage_low_train_expert_summary.json
+  - split: train
+    raw_jsonl: data/raw/doorway_bottleneck_high_train_s01120_final_heuristic_dwb.jsonl
+    output_hdf5: data/interim/doorway_high_train_expert.h5
+    summary_json: data/manifests/doorway_high_train_expert_summary.json
+  - split: train
+    raw_jsonl: data/raw/blind_corner_high_train_s01320_final_heuristic_dwb.jsonl
+    output_hdf5: data/interim/blind_corner_high_train_expert.h5
+    summary_json: data/manifests/blind_corner_high_train_expert_summary.json
+  - split: train
+    raw_jsonl: data/raw/group_blocking_high_train_s01420_final_heuristic_dwb.jsonl
+    output_hdf5: data/interim/group_blocking_high_train_expert.h5
+    summary_json: data/manifests/group_blocking_high_train_expert_summary.json
+  - split: train
+    raw_jsonl: data/raw/temporary_blockage_high_train_s01720_dagger1_bc_v2_dwb.jsonl
+    output_hdf5: data/interim/dagger_iter1_temporary_blockage_high_train.h5
+    summary_json: data/manifests/dagger_iter1_temporary_blockage_high_train_summary.json
+  - split: train
+    raw_jsonl: data/raw/crossing_flow_high_train_s01220_dagger1_aligned_bc_dwb.jsonl
+    output_hdf5: data/interim/dagger_iter1_crossing_flow_high_train.h5
+    summary_json: data/manifests/dagger_iter1_crossing_flow_high_train_summary.json
+  - split: train
+    raw_jsonl: data/raw/crossing_flow_high_train_s01260_dagger1_bc_dwb.jsonl
+    output_hdf5: data/interim/dagger_iter1_crossing_flow_s01260_train.h5
+    summary_json: data/manifests/dagger_iter1_crossing_flow_s01260_train_summary.json
+  - split: train
+    raw_jsonl: data/raw/crossing_flow_high_train_s01291_dagger1_bc_dwb.jsonl
+    output_hdf5: data/interim/dagger_iter1_crossing_flow_s01291_train.h5
+    summary_json: data/manifests/dagger_iter1_crossing_flow_s01291_train_summary.json
+  - split: train
+    raw_jsonl: data/raw/crossing_flow_high_train_s01318_dagger1_bc_dwb.jsonl
+    output_hdf5: data/interim/dagger_iter1_crossing_flow_s01318_train.h5
+    summary_json: data/manifests/dagger_iter1_crossing_flow_s01318_train_summary.json
+  - split: train
+    raw_jsonl: data/raw/head_on_corridor_high_train_s01020_coverage_policy_dwb.jsonl
+    output_hdf5: data/interim/head_on_corridor_high_train_coverage.h5
+    summary_json: data/manifests/head_on_corridor_high_train_coverage_summary.json
+  - split: validation
+    raw_jsonl: data/raw/temporary_blockage_high_validation_s02720_final_heuristic_dwb.jsonl
+    output_hdf5: data/interim/temporary_blockage_validation_expert.h5
+    summary_json: data/manifests/temporary_blockage_validation_expert_summary.json
+  - split: validation
+    raw_jsonl: data/raw/head_on_corridor_high_validation_s02020_dagger1_v1_retry1_dwb.jsonl
+    output_hdf5: data/interim/head_on_corridor_validation_dagger1_probe.h5
+    summary_json: data/manifests/head_on_corridor_validation_dagger1_probe_summary.json
