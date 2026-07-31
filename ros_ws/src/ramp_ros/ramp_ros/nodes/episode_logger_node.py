@@ -73,6 +73,7 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("goal_yaw", 0.0)
         self.declare_parameter("goal_tolerance_m", 0.25)
         self.declare_parameter("physical_goal_tolerance_m", 0.30)
+        self.declare_parameter("goal_confirmation_timeout_s", 1.0)
         self.declare_parameter("robot_start_x", 0.0)
         self.declare_parameter("robot_start_y", 0.0)
         self.declare_parameter("robot_start_yaw", 0.0)
@@ -174,6 +175,8 @@ class EpisodeLoggerNode(Node):
         self._maximum_start_displacement = 0.0
         self._outcome: EpisodeOutcome | None = None
         self._outcome_detail = ""
+        self._pending_goal_detail: str | None = None
+        self._pending_goal_start_wall_s: float | None = None
         self._odom: Odometry | None = None
         self._lidar: np.ndarray[Any, np.dtype[np.float32]] | None = None
         self._cmd = np.zeros(2, dtype=np.float32)
@@ -400,6 +403,8 @@ class EpisodeLoggerNode(Node):
                 "Gazebo robot pose jumped during the active episode",
             )
         self._privileged_robot_pose = new_pose
+        if self._pending_goal_detail is not None:
+            self._confirm_goal_reached(self._pending_goal_detail)
 
     def _on_actor_health(self, message: Bool) -> None:
         if not bool(message.data):
@@ -424,10 +429,9 @@ class EpisodeLoggerNode(Node):
             return
         physical_distance = math.dist(self._goal[:2], self._privileged_robot_pose[:2])
         if physical_distance > float(self.get_parameter("physical_goal_tolerance_m").value):
-            self._set_outcome(
-                EpisodeOutcome.SIMULATOR_FAILURE,
-                "localized goal success disagrees with Gazebo robot pose",
-            )
+            if self._pending_goal_detail is None:
+                self._pending_goal_detail = detail
+                self._pending_goal_start_wall_s = self._wall_clock.now().nanoseconds * 1.0e-9
             return
         self._set_outcome(EpisodeOutcome.GOAL_REACHED, detail)
 
@@ -469,6 +473,16 @@ class EpisodeLoggerNode(Node):
         ready.data = True
         self._ready_publisher.publish(ready)
         wall_now = self._wall_clock.now().nanoseconds * 1.0e-9
+        if (
+            self._pending_goal_start_wall_s is not None
+            and wall_now - self._pending_goal_start_wall_s
+            >= float(self.get_parameter("goal_confirmation_timeout_s").value)
+        ):
+            self._set_outcome(
+                EpisodeOutcome.SIMULATOR_FAILURE,
+                "localized goal success disagrees with Gazebo robot pose",
+            )
+            return
         if (
             self._wait_for_navigation_active
             and not self._episode_started
