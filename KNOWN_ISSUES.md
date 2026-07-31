@@ -167,6 +167,10 @@ A clean DAgger-1 validation rerun exposed a safety-layer failure that the first 
 
 Repeated runs share the same scenario seed and simulator-time actor controller but still show small early pose differences, which can move a near-threshold interaction between normal, emergency, and collision outcomes. No single run is treated as statistical evidence. Pilot/final comparisons must use repeated paired manifests, retain all valid outcomes, and report this residual nondeterminism as a Gazebo fallback limitation.
 
+## KI-057: Static fallback proxies accepted pose requests without moving LiDAR geometry
+
+The deterministic actor controller originally spawned pedestrian proxy cylinders with `<static>true>`. Gazebo's pose service returned success while a low-density run placed privileged truth at a 0.697 m robot--human centre distance and LiDAR still measured 1.473 m in the expected direction. A first non-static fix still published requested truth one 2 Hz step before geometry confirmation, producing up to 0.462 m error in one episode. Proxies are now gravity-disabled kinematic links, and route time plus privileged truth commit only after the matching pose future succeeds. `validate_human_proxy_lidar.py` requires near-human LiDAR agreement before an exposed episode can enter evidence. All six final density-precheck episodes pass at 99.4--100% visibility. Runs without a close encounter provide insufficient evidence rather than a proxy pass.
+
 ## KI-043: LiDAR-proxy surface distance underestimates the collision margin
 
 In head-on validation the collision monitor observed a 0.70 m robot-human centre distance while the point-like LiDAR proxy could still report 0.50--0.63 m, above the original 0.48 m generic footprint stop. The pedestrian controller had correctly yielded; the robot's recovery maneuver approached the stopped actor. The generic narrow-space threshold remains 0.48 m, but a latched observable collision prediction raises the emergency margin to 0.70 m so rotation starts before the centre-distance collision boundary. This is an empirical safety filter, not a formal collision guarantee.

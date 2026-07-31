@@ -1,0 +1,11 @@
+{
+  "episode": "data/raw/crossing_flow_low_validation_s02200_confirmed_proxy_bc_r3_dwb.jsonl",
+  "maximum_surface_range_error_m": 0.01700246521026816,
+  "minimum_center_distance_m": 1.166423232926209,
+  "near_distance_m": 1.3,
+  "near_sample_count": 78,
+  "passed": true,
+  "tolerance_m": 0.2,
+  "visible_ratio": 1.0,
+  "visible_sample_count": 78
+}

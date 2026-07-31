@@ -365,3 +365,55 @@ conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
   --prefix data/raw/crossing_flow_high_validation_s02220_self_filter_bc_r6_dwb \
   --output outputs/pilot/crossing_flow_high_validation_runtime_alignment_iteration.csv
 ```
+
+Kinematic pedestrian-proxy validity gate and corrected low-density pair:
+
+```bash
+make test
+env -u CONDA_PREFIX -u VIRTUAL_ENV make build
+
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+RAMP_SOURCE_POLICY=bc RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_low_validation_s02200_kinematic_proxy_bc_r1_dwb \
+ROS_DOMAIN_ID=211 GZ_PARTITION=ramp_cross_low_kinematic_r1 \
+IGN_PARTITION=ramp_cross_low_kinematic_r1 \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_low_validation_s02200.json
+
+conda run -n ramp-offline python scripts/evaluate/validate_human_proxy_lidar.py \
+  data/raw/crossing_flow_low_validation_s02200_kinematic_proxy_bc_r1_dwb.jsonl \
+  --output data/manifests/crossing_flow_low_validation_s02200_kinematic_proxy_bc_r1_lidar_consistency.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/crossing_flow_low_validation_s02200_kinematic_proxy_base_r1_dwb \
+  --prefix data/raw/crossing_flow_low_validation_s02200_kinematic_proxy_bc_r1_dwb \
+  --output outputs/pilot/crossing_flow_low_validation_kinematic_proxy_pair.csv
+```
+
+Final confirmed-pose three-density precheck (the complete commands differ only in scenario,
+episode ID, and isolated ROS/Gazebo domains):
+
+```bash
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+RAMP_SOURCE_POLICY=bc RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_high_validation_s02220_confirmed_proxy_bc_r1_dwb \
+ROS_DOMAIN_ID=217 GZ_PARTITION=ramp_cross_high_confirmed_bc_r1 \
+IGN_PARTITION=ramp_cross_high_confirmed_bc_r1 \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json
+
+conda run -n ramp-offline python scripts/evaluate/validate_human_proxy_lidar.py \
+  data/raw/crossing_flow_high_validation_s02220_confirmed_proxy_bc_r1_dwb.jsonl \
+  --output data/manifests/crossing_flow_high_validation_s02220_confirmed_proxy_bc_r1_lidar_consistency.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/crossing_flow_low_validation_s02200_confirmed_proxy_base_r2_dwb \
+  --prefix data/raw/crossing_flow_low_validation_s02200_confirmed_proxy_bc_r3_dwb \
+  --prefix data/raw/crossing_flow_medium_validation_s02210_confirmed_proxy_base_r2_dwb \
+  --prefix data/raw/crossing_flow_medium_validation_s02210_confirmed_proxy_bc_r2_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02220_confirmed_proxy_base_r1_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02220_confirmed_proxy_bc_r1_dwb \
+  --output outputs/pilot/crossing_flow_density_confirmed_proxy_pairs.csv
+```

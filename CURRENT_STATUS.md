@@ -264,3 +264,14 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - This is a safety/stall tradeoff, not a recovery-success result. It confirms the candidate still over-intervenes outside the tuned high-density replay.
 - Evidence: `outputs/pilot/crossing_flow_medium_validation_candidate_100b09f_pair.csv` with both raw SHA256 values.
 - Next: run the low-density validation pair without parameter changes; reject the candidate from final evaluation if it also fails to complete.
+
+## 2026-08-01 — Kinematic pedestrian proxy validity gate
+
+- Rejected the previous dynamic validation evidence after a low-density run exposed a privileged pedestrian centre at 0.697 m while LiDAR still reported 1.473 m in the expected direction. The fallback proxy had been declared static, so accepted pose-service responses did not establish collision-geometry motion.
+- Replaced each static proxy with a gravity-disabled kinematic link and added an evaluation-only privileged-to-observable LiDAR consistency checker. Privileged positions remain excluded from detector and policy inputs.
+- In the corrected BC replay, all 89 samples with a human centre inside 1.3 m contained a LiDAR return in the expected angular footprint. The nearest centre distance was 1.149 m, the expected cylinder-surface distance was 0.799 m, and the measured sector range was approximately 0.789--0.803 m; maximum positive surface-range error was 0.019 m.
+- A second audit found one remaining actor-step lead: requested privileged poses were published before the associated geometry update was confirmed. Route time and privileged truth now commit only after the Gazebo future succeeds; requests in flight freeze the public state.
+- Under the final confirmed semantics, Base collided at low, medium, and high crossing-flow density after 29--30 s. The selected DAgger checkpoint reached the original goal in all three paired episodes in 108.924, 117.915, and 125.408 s. Minimum human-centre distances were 1.166, 1.151, and 0.936 m, respectively.
+- Every selected episode passed the privileged-to-LiDAR gate; the six visible ratios are between 99.4% and 100%. One low-density BC launch lacking the NavigateToPose action server is retained as an invalid startup and excluded from algorithm metrics.
+- Validation: 205 offline tests, Ruff, Mypy, and the three-package Humble overlay pass. Evidence is retained in `data/manifests/*confirmed_proxy*lidar_consistency.json` and `outputs/pilot/crossing_flow_density_confirmed_proxy_pairs.csv`, with raw SHA256 values.
+- This is a three-pair precheck, not a significance result. All pre-confirmed dynamic tables are diagnostic-only. Next: freeze this implementation and expand independent validation seeds without tuning.

@@ -125,6 +125,7 @@ class ScenarioActorController(Node):
         self._route_elapsed = {route.name: 0.0 for route in self._routes}
         self._pending: dict[str, Any] = {}
         self._pending_since_s: dict[str, float] = {}
+        self._pending_target_elapsed: dict[str, float] = {}
         self._spawn_pending: dict[str, Any] = {}
         self._spawn_attempted: set[str] = set()
         self._spawn_validated: set[str] = set()
@@ -157,9 +158,18 @@ class ScenarioActorController(Node):
         return f"""<?xml version="1.0"?>
 <sdf version="1.9">
   <model name="{name}">
-    <static>true</static>
+    <static>false</static>
     <link name="body">
       <pose>0 0 0.85 0 0 0</pose>
+      <gravity>false</gravity>
+      <kinematic>true</kinematic>
+      <inertial>
+        <mass>70.0</mass>
+        <inertia>
+          <ixx>17.63</ixx><iyy>17.63</iyy><izz>4.29</izz>
+          <ixy>0.0</ixy><ixz>0.0</ixz><iyz>0.0</iyz>
+        </inertia>
+      </inertial>
       <collision name="collision">
         <geometry><cylinder><radius>0.35</radius><length>1.70</length></cylinder></geometry>
       </collision>
@@ -282,9 +292,9 @@ class ScenarioActorController(Node):
                 self._spawn_validated.add(proxy_name)
                 self.get_logger().info(f"spawned LiDAR-visible proxy {proxy_name}")
 
-            # Do not advance or publish a new privileged pose while Gazebo is
-            # still applying the previous proxy pose. Otherwise service
-            # backlog lets privileged truth run ahead of the LiDAR obstacle.
+            # Commit route time and publish privileged truth only after Gazebo
+            # confirms the corresponding proxy pose. Publishing the requested
+            # pose here would lead LiDAR geometry by one 2 Hz actor step.
             pending = self._pending.get(proxy_name)
             if pending is not None and not pending.done():
                 pending_since = self._pending_since_s.get(proxy_name, now)
@@ -310,6 +320,13 @@ class ScenarioActorController(Node):
                     self.get_logger().error(f"pose update rejected for {proxy_name}")
                     pose_array.poses.append(current_pose)
                     continue
+                self._route_elapsed[route.name] = self._pending_target_elapsed.pop(
+                    proxy_name, self._route_elapsed[route.name]
+                )
+                self._pending.pop(proxy_name, None)
+                self._pending_since_s.pop(proxy_name, None)
+                current = route.pose_at(self._route_elapsed[route.name])
+                current_pose = make_pose(current)
 
             candidate_elapsed = self._route_elapsed[route.name] + step_s
             candidate = route.pose_at(candidate_elapsed)
@@ -318,21 +335,29 @@ class ScenarioActorController(Node):
                 and math.dist(candidate[:2], self._robot_position)
                 < route.robot_avoidance_distance_m
             )
-            if not blocked_by_robot:
-                self._route_elapsed[route.name] = candidate_elapsed
-            x, y, yaw = route.pose_at(self._route_elapsed[route.name])
-            pose = make_pose((x, y, yaw))
-            pose_array.poses.append(pose)
-            entity_names = (proxy_name,)
+            target_elapsed = (
+                self._route_elapsed[route.name] if blocked_by_robot else candidate_elapsed
+            )
+            x, y, yaw = route.pose_at(target_elapsed)
+            target_pose = make_pose((x, y, yaw))
+            pose_array.poses.append(current_pose)
+
+            request = SetEntityPose.Request()
+            request.entity.name = proxy_name
+            request.entity.type = Entity.MODEL
+            request.pose = target_pose
+            self._pending[proxy_name] = self._client.call_async(request)
+            self._pending_since_s[proxy_name] = now
+            self._pending_target_elapsed[proxy_name] = target_elapsed
+
             if bool(self.get_parameter("update_native_actors").value):
-                entity_names = (route.name, proxy_name)
-            for entity_name in entity_names:
-                pending = self._pending.get(entity_name)
-                if pending is not None:
-                    if not pending.done():
-                        continue
+                entity_name = route.name
+                native_pending = self._pending.get(entity_name)
+                if native_pending is not None and not native_pending.done():
+                    continue
+                if native_pending is not None:
                     try:
-                        response = pending.result()
+                        response = native_pending.result()
                     except Exception as error:  # pragma: no cover - ROS future boundary
                         self._healthy = False
                         self.get_logger().error(f"pose update failed for {entity_name}: {error}")
@@ -344,7 +369,7 @@ class ScenarioActorController(Node):
                 request = SetEntityPose.Request()
                 request.entity.name = entity_name
                 request.entity.type = Entity.MODEL
-                request.pose = pose
+                request.pose = target_pose
                 self._pending[entity_name] = self._client.call_async(request)
                 self._pending_since_s[entity_name] = now
         self._publisher.publish(pose_array)

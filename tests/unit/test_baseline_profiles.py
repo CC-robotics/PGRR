@@ -84,10 +84,16 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "episode handshake complete" in actor
     assert "and self._logger_ready" in actor
     assert "self._ready_publisher.publish(ready)" in logger
-    assert "entity_names = (proxy_name,)" in actor
+    assert "request.entity.name = proxy_name" in actor
     assert "pose update rejected" in actor
-    assert "still applying the previous proxy pose" in actor
+    assert "pending is not None and not pending.done()" in actor
     assert "pose update timed out" in actor
+    assert "self._pending_target_elapsed" in actor
+    assert "Publishing the requested" in actor
+    assert "<static>false</static>" in actor
+    assert "<kinematic>true</kinematic>" in actor
+    assert "<gravity>false</gravity>" in actor
+    assert "<static>true</static>" not in actor
     assert "Gazebo rejected a deterministic pedestrian proxy pose update" in logger
     assert "NavigateToPose did not activate within the startup deadline" in logger
     assert "episode start handshake did not complete before the wall-clock deadline" in logger

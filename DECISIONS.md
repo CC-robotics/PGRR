@@ -38,7 +38,7 @@ Runtime introspection found Nav2 `NavigateToPose` and DWB in the accepted Arena 
 
 ## D-010: Deterministic Gazebo actor proxy for the Humble dynamic fallback
 
-The pinned Arena task generator injects `libHuNavSystemPluginIGN.so`, but the accepted installer does not install that plugin. The upstream plugin repository additionally depends on `arena_people_msgs`, which is neither published nor present in the Arena workspace. For Gate 1, Arena still owns Gazebo, Jackal, Nav2, LiDAR, maps, and scenario resets; a project ROS node spawns named cylindrical pedestrian proxies through the official `SpawnEntity` service and advances fixed scenario trajectories through `SetEntityPose`. It publishes true positions only on a privileged topic. This is an explicit deterministic kinematic fallback, not a HuNav social-force result. Replacing it with a pinned complete HuNav dependency chain remains preferred when that chain is reproducibly available.
+The pinned Arena task generator injects `libHuNavSystemPluginIGN.so`, but the accepted installer does not install that plugin. The upstream plugin repository additionally depends on `arena_people_msgs`, which is neither published nor present in the Arena workspace. For Gate 1, Arena still owns Gazebo, Jackal, Nav2, LiDAR, maps, and scenario resets; a project ROS node spawns named cylindrical pedestrian proxies through the official `SpawnEntity` service and advances fixed scenario trajectories through `SetEntityPose`. It publishes confirmed positions only on a privileged topic. This is an explicit deterministic kinematic fallback, not a HuNav social-force result. Replacing it with a pinned complete HuNav dependency chain remains preferred when that chain is reproducibly available.
 
 ## D-011: Sensor timestamps are authoritative episode simulation time
 
@@ -50,7 +50,7 @@ The pinned Jackal asset renders a 640 x 16 GPU LiDAR through Mesa because the ho
 
 ## D-013: LiDAR-visible, robot-yielding pedestrian fallback
 
-Gazebo's task-generated `actor` entities are visible in rendering but produced no planar-LiDAR return. The fallback controller now spawns a uniquely named static cylindrical proxy for every visual actor, moves both on the same seeded route, and verifies each spawn response. Route advancement pauses before the next step enters a 1.3 m robot-centered region and resumes after the robot yields, avoiding the artifact of a kinematic pedestrian walking through a stopped robot. Robot pose is used only by simulator behavior and is not included in recovery observations. Earlier actor-only results are retained but superseded.
+Gazebo's task-generated `actor` entities are visible in rendering but produced no planar-LiDAR return. The fallback controller now spawns a uniquely named kinematic cylindrical proxy for every visual actor, advances it on the seeded route, and verifies each spawn and pose response. Route advancement pauses before the next step enters a 1.3 m robot-centered region and resumes after the robot yields, avoiding the artifact of a kinematic pedestrian walking through a stopped robot. Robot pose is used only by simulator behavior and is not included in recovery observations. Earlier actor-only results are retained but superseded.
 
 ## D-014: Direction-consistent braking clearance
 
@@ -154,3 +154,7 @@ Route time no longer advances while the corresponding proxy has an unfinished `S
 ## D-038: Filter only geometrically impossible open-map near returns
 
 For scenarios with no declared static obstacles, ranges below 0.34 m are excluded consistently from the rule detector and recovery observation. The threshold is below the 0.36 m proxy-surface distance at the combined robot--human collision radius. Scenarios with shelves, walls, or door frames retain every non-negative return. Raw episode logs are unchanged so the preprocessing remains auditable.
+
+## D-039: Admit dynamic evidence only after a kinematic-proxy sensor check
+
+Fallback pedestrian cylinders are non-static links with gravity disabled and kinematic motion enabled. Route time and privileged positions commit only after Gazebo confirms the matching collision-geometry update. For any validation episode that brings a privileged human centre inside 1.3 m, an evaluation-only checker projects that centre into the 360-degree LiDAR and requires at least 90% of five or more exposed samples to contain a surface return within 0.20 m of the expected cylinder range. Privileged positions are used only for this simulator-validity check and outcome evaluation, never by the deployed policy. Pre-confirmed dynamic tables remain available for diagnosis but cannot support manuscript performance claims.
