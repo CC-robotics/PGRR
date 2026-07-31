@@ -34,6 +34,46 @@ def directional_scan_clearance(
     return float(np.min(sector)) if sector.size else None
 
 
+def scan_segment_is_free(
+    ranges: npt.ArrayLike,
+    *,
+    angle_min: float,
+    angle_increment: float,
+    target: tuple[float, float],
+    clearance_m: float,
+) -> bool:
+    """Check a robot-frame segment against the swept circular footprint.
+
+    Each finite LiDAR return is treated as an obstacle-surface point.  The
+    segment is executable only when every point lies outside the capsule made
+    by the robot centreline and ``clearance_m`` radius.
+    """
+    if angle_increment <= 0.0:
+        raise ValueError("scan angle increment must be positive")
+    if clearance_m < 0.0:
+        raise ValueError("clearance_m must be non-negative")
+    endpoint = np.asarray(target, dtype=np.float64)
+    if endpoint.shape != (2,) or not bool(np.isfinite(endpoint).all()):
+        raise ValueError("target must contain two finite coordinates")
+    values = np.asarray(ranges, dtype=np.float64)
+    if values.ndim != 1:
+        raise ValueError("ranges must be one-dimensional")
+    valid = np.isfinite(values) & (values >= 0.0)
+    if not bool(valid.any()):
+        return True
+    angles = angle_min + np.flatnonzero(valid) * angle_increment
+    distances = values[valid]
+    points = np.column_stack((distances * np.cos(angles), distances * np.sin(angles)))
+    length_squared = float(endpoint @ endpoint)
+    if length_squared <= 1.0e-12:
+        closest = np.zeros_like(points)
+    else:
+        fractions = np.clip(points @ endpoint / length_squared, 0.0, 1.0)
+        closest = fractions[:, None] * endpoint
+    distances_to_segment = np.linalg.norm(points - closest, axis=1)
+    return bool(np.all(distances_to_segment >= clearance_m))
+
+
 def privileged_time_to_collision(
     robot: Pose2D,
     velocity: Velocity2D,

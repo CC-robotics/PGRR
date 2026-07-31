@@ -7,165 +7,165 @@ scenarios:
   map_id: map_empty
   seed: 1000
   path: arena/map_empty/head_on_corridor_low_train_s01000.json
-  sha256: 15672e90c755712136f261e3e57f61bd82c40968033e0f7b4d913eba6f2a5207
+  sha256: 69cf8133380a4b727cd616b825e9d1111bbc492c0ca004d7f78fd959482f5d83
 - scenario_id: head_on_corridor_medium_train_s01010
   family: head_on_corridor
   density: medium
   map_id: map_empty
   seed: 1010
   path: arena/map_empty/head_on_corridor_medium_train_s01010.json
-  sha256: 086c4c31a0e663583e3e654f97a2c14f051208727d7392cf035075f55f684301
+  sha256: 74ed7ca524edcede4964cc69a5a314fb5fa86a7b4ba0d923a6af12e6bad017db
 - scenario_id: head_on_corridor_high_train_s01020
   family: head_on_corridor
   density: high
   map_id: map_empty
   seed: 1020
   path: arena/map_empty/head_on_corridor_high_train_s01020.json
-  sha256: 4a9123515eaae97691b4900d759f43857aaa751c9f17f46580441f7b640c2a21
+  sha256: d91f541749f0a408006a74efebcaecb975fd45fc926d2b3886ef22f7c0b0e08b
 - scenario_id: doorway_bottleneck_low_train_s01100
   family: doorway_bottleneck
   density: low
   map_id: map_empty
   seed: 1100
   path: arena/map_empty/doorway_bottleneck_low_train_s01100.json
-  sha256: 828669972611c484a6dcceeebba11bd9d8554e303d8f245f7f815ef5aae04e2e
+  sha256: 63daf3cbf4735cb73687b4273d39a4cee7113eeb3cdeef5058f23d7dd0a43858
 - scenario_id: doorway_bottleneck_medium_train_s01110
   family: doorway_bottleneck
   density: medium
   map_id: map_empty
   seed: 1110
   path: arena/map_empty/doorway_bottleneck_medium_train_s01110.json
-  sha256: 1a6f6b3bfb24a8eef357b307e53a6fa82bf74af41c6b2ddb0bd264b5b7d4b642
+  sha256: 4c430e25d1dd7f5a0b550c9322c164c0bd6e111074c5474b00ce5780f27eddb6
 - scenario_id: doorway_bottleneck_high_train_s01120
   family: doorway_bottleneck
   density: high
   map_id: map_empty
   seed: 1120
   path: arena/map_empty/doorway_bottleneck_high_train_s01120.json
-  sha256: 737b1b2ab2004d1e770dab37eef2c0ba21031623d115f083e59e728e70c692a7
+  sha256: 92884d6a2a9c02cda7a1578b3b5a21eec41aecd4bb42c0bc28b18d60deccf484
 - scenario_id: crossing_flow_low_train_s01200
   family: crossing_flow
   density: low
   map_id: map_empty
   seed: 1200
   path: arena/map_empty/crossing_flow_low_train_s01200.json
-  sha256: 1fa9fba2662c2b4603a9162c2a58e2a07c20bf68a800b0f032156d996d523c0a
+  sha256: 64349847f41c06f9fbcb68f1049ba208a914b4969bd1a785c30e57324b2ee3a6
 - scenario_id: crossing_flow_medium_train_s01210
   family: crossing_flow
   density: medium
   map_id: map_empty
   seed: 1210
   path: arena/map_empty/crossing_flow_medium_train_s01210.json
-  sha256: 0481df5e3504afa4666071206affc6af9300a5c5d3bd104eef68d26020885d91
+  sha256: 4798f75947ac8f843d1eaf746a5770fa892652fc4658ff31eb6e866aeabc6169
 - scenario_id: crossing_flow_high_train_s01220
   family: crossing_flow
   density: high
   map_id: map_empty
   seed: 1220
   path: arena/map_empty/crossing_flow_high_train_s01220.json
-  sha256: e1ee7800e552a30e34e4ba5cf7872d7672fbd7ee05711391565f546e891a2ff8
+  sha256: 17c563738ad19d4f4d00f4c95f252d5db1f5f9b0fa2cc5a374a2e12f4a6565c6
 - scenario_id: blind_corner_low_train_s01300
   family: blind_corner
   density: low
   map_id: map_empty
   seed: 1300
   path: arena/map_empty/blind_corner_low_train_s01300.json
-  sha256: 9ee3b17bfbeec5923f4908057b29524b374c0f4705b359f663fda6e12112901e
+  sha256: 052901d9f06443940e16b3b8d5055221d1e2781628082451919ded5e781e3224
 - scenario_id: blind_corner_medium_train_s01310
   family: blind_corner
   density: medium
   map_id: map_empty
   seed: 1310
   path: arena/map_empty/blind_corner_medium_train_s01310.json
-  sha256: 9378cbb5eeab561d66dbf3fc2f240e617df01f381d2000de5bf7f21358b4c138
+  sha256: 6b3f6c2233df24d34932112a3120ad605d5e2a3f5a95dddf17e9ebf226b39035
 - scenario_id: blind_corner_high_train_s01320
   family: blind_corner
   density: high
   map_id: map_empty
   seed: 1320
   path: arena/map_empty/blind_corner_high_train_s01320.json
-  sha256: 7398b9ce269f33dde288d1bb340076d6f5c791a5417779dbf344a046ec8d7798
+  sha256: f9a5f992bd104b207831b5b03d257920e75d255363aae9bab1f4db7c800757f0
 - scenario_id: group_blocking_low_train_s01400
   family: group_blocking
   density: low
   map_id: map_empty
   seed: 1400
   path: arena/map_empty/group_blocking_low_train_s01400.json
-  sha256: 38d9253914a9cb09b66aafcb4dbc040e07a1d1b20f569944144395eaced190ea
+  sha256: 8c1e633a3d23c0992adc003ab76e13bacdcc2d0dc37ba37ab60327380543c8a5
 - scenario_id: group_blocking_medium_train_s01410
   family: group_blocking
   density: medium
   map_id: map_empty
   seed: 1410
   path: arena/map_empty/group_blocking_medium_train_s01410.json
-  sha256: cd2cd54cb7423393f9cebef0ce3244d7ec4b7b3e8845550153cc6e5a46dee335
+  sha256: fd5dc83144d6956c9a0ec4889d26b3e83f0e0395bda7b2fcc741925305e7f39e
 - scenario_id: group_blocking_high_train_s01420
   family: group_blocking
   density: high
   map_id: map_empty
   seed: 1420
   path: arena/map_empty/group_blocking_high_train_s01420.json
-  sha256: 0e012b56c6e7d0cc6d3eec894d25f5fa35942c7f522b3a8e72b1aadf76598cb7
+  sha256: d9d91ca39278e7ed5eec1f1ebe2a4741067e81ae1e9f2045b94c12272b9d6315
 - scenario_id: overtaking_low_train_s01500
   family: overtaking
   density: low
   map_id: map_empty
   seed: 1500
   path: arena/map_empty/overtaking_low_train_s01500.json
-  sha256: 78a1da1867b78f5539860703ba2db3d26ccbe07532d46fa366be295a4a52a510
+  sha256: 8f151b4d3af49808b65cad8a29cf6337f9a02a6648a86fb52a75edf20bec48a0
 - scenario_id: overtaking_medium_train_s01510
   family: overtaking
   density: medium
   map_id: map_empty
   seed: 1510
   path: arena/map_empty/overtaking_medium_train_s01510.json
-  sha256: 59e38f43ad4ec9ce379f3fcb0b8a2f70456766db6c220c00df5f546528071304
+  sha256: 168ec6e55d710c7f68121b31a22deffa820406de4869a41ca7825650387bc1f7
 - scenario_id: overtaking_high_train_s01520
   family: overtaking
   density: high
   map_id: map_empty
   seed: 1520
   path: arena/map_empty/overtaking_high_train_s01520.json
-  sha256: 430544d33100190ef6d762a32145862ccc4a21a1a71c9fb9f3ad6169735da1d9
+  sha256: ba5a760ec036d933dd3289d5a2cfcd0e7f7f5b664cd87b5e4a3ea097474babd8
 - scenario_id: opposite_streams_low_train_s01600
   family: opposite_streams
   density: low
   map_id: map_empty
   seed: 1600
   path: arena/map_empty/opposite_streams_low_train_s01600.json
-  sha256: 20d37a91c451d2fa3c164c118eebd7989cd10d183e9d1213f1ccb73bdfde2c60
+  sha256: b515027a4ea6aaad06514af4563cc644bc9fd6686fa36567a019c51211c63525
 - scenario_id: opposite_streams_medium_train_s01610
   family: opposite_streams
   density: medium
   map_id: map_empty
   seed: 1610
   path: arena/map_empty/opposite_streams_medium_train_s01610.json
-  sha256: df03c806cc4f30d5d1675fbc6932e35992f6fa367a091b52d28b735e6e2c0273
+  sha256: 20e0ad5e8665f69fb0ae37ffa8ee8df9138d517c798c751aa8541ae848c3bde2
 - scenario_id: opposite_streams_high_train_s01620
   family: opposite_streams
   density: high
   map_id: map_empty
   seed: 1620
   path: arena/map_empty/opposite_streams_high_train_s01620.json
-  sha256: 4b1b0f86f887173bcf3ff0822f7f48dabc336010629bf9251f6b4f82c4d4d7f1
+  sha256: 062291438e17de9fd674d25d5e1c0a56d9c6a7e6a98c5d817372d8c3524c918b
 - scenario_id: temporary_blockage_low_train_s01700
   family: temporary_blockage
   density: low
   map_id: map_empty
   seed: 1700
   path: arena/map_empty/temporary_blockage_low_train_s01700.json
-  sha256: e2fb57028d1d22d443e393a333eab03f2c31d2114cb1e5b03fcc412c4d2bc5f3
+  sha256: 4234ebf2d0f1d83ad47cb816eb3c8d9cf686be1b6c18cddf720a7f8371a97695
 - scenario_id: temporary_blockage_medium_train_s01710
   family: temporary_blockage
   density: medium
   map_id: map_empty
   seed: 1710
   path: arena/map_empty/temporary_blockage_medium_train_s01710.json
-  sha256: 7ff0845430b6b71e26479ba82936ea164a240406f0eb426f096a12ae20cde660
+  sha256: da0e6a018064f92da82e872bdcccf0b8ee7b0b5c3bc5ec36784faa4a3abf2814
 - scenario_id: temporary_blockage_high_train_s01720
   family: temporary_blockage
   density: high
   map_id: map_empty
   seed: 1720
   path: arena/map_empty/temporary_blockage_high_train_s01720.json
-  sha256: 08148badfb25ec5040d457d4e8af438cb6fad50ec672d3569d68be0d746e53fc
+  sha256: 3029c7830ad38acd20624cb6564b9f22cd25747f84e87ed115911341127d1b04

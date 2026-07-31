@@ -139,3 +139,7 @@ The Arena episode runner passed `ttc_threshold_s:=3.0` even though `configs/fail
 ## KI-035: Task reset latency changed pedestrian phase across policies
 
 The actor controller previously advanced from node startup while the logger timed from its first odometry sample. Arena startup latency therefore shifted both pedestrian phase and robot progress across runs with the same seed. It also sent unchecked pose requests to absent native `ped_*` names in addition to the spawned LiDAR proxies. The explicit D-022 start barrier and proxy-health path fix both defects. All pre-barrier comparative results are superseded for paired claims. Arena can still intermittently fail before the barrier; these runs are classified separately, and a 90 s wall-clock startup watchdog bounds the loss.
+
+## KI-036: Temporary blockage was cyclic and emergency stop lacked an observable escape
+
+The original compiler reversed doorway-crossing actors forever and froze them 1.3 m from the robot, so “temporary” blockage could never clear. Separately, a robot stopped near a door frame could not BACKUP because the 270-degree LiDAR does not observe the rear centreline. D-023 corrects both issues without weakening collision classification. One final-definition Base attempt failed before required topics appeared and is retained as `INVALID_RESET`; its bounded retry produced the valid `PLANNER_FAILURE` row. Heuristic still times out at the upper door frame, while Oracle reaches the goal; learning labels must therefore come from the Oracle, not the heuristic.

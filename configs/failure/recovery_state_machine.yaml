@@ -29,3 +29,5 @@ emergency_hold_s: 0.5
 emergency_backup_duration_s: 0.8
 emergency_backup_clearance_m: 0.70
 emergency_release_speed_mps: 0.03
+emergency_turn_speed_radps: 0.6
+emergency_forward_speed_mps: 0.12

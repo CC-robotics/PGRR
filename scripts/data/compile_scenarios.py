@@ -108,9 +108,9 @@ def _human_routes(layout: str, count: int, offset: float) -> list[tuple[list[flo
         elif layout == "temporary_blockage":
             x = 15.5 + 0.22 * lane
             if index % 2:
-                routes.append(([x, 10.8 - 0.35 * index, math.pi / 2], [x, 13.2, math.pi / 2]))
+                routes.append(([x, 8.5 - 0.25 * index, math.pi / 2], [x, 16.5, math.pi / 2]))
             else:
-                routes.append(([x, 13.2 + 0.25 * index, -math.pi / 2], [x, 10.8, -math.pi / 2]))
+                routes.append(([x, 15.5 + 0.25 * index, -math.pi / 2], [x, 7.5, -math.pi / 2]))
         else:
             raise ValueError(f"unknown scenario layout: {layout}")
     return routes
@@ -147,6 +147,9 @@ def _build_scenario(
     humans: list[dict[str, Any]] = []
     for index, (start, goal) in enumerate(routes):
         speed = float(rng.uniform(speed_min, speed_max))
+        cyclic = str(family["layout"]) != "temporary_blockage"
+        behavior = _behavior()
+        behavior["once"] = not cyclic
         humans.append(
             {
                 "name": f"ped_{index:02d}",
@@ -157,9 +160,10 @@ def _build_scenario(
                 "waypoints": [start, goal],
                 "max_vel": round(speed, 4),
                 "radius": 0.35,
-                "cyclic_goals": True,
+                "robot_avoidance_distance_m": 0.8 if not cyclic else 1.3,
+                "cyclic_goals": cyclic,
                 "goal_radius": 0.3,
-                "behavior": _behavior(),
+                "behavior": behavior,
             }
         )
     scenario_id = f"{family['id']}_{density}_{split}_s{seed:05d}"
@@ -173,7 +177,11 @@ def _build_scenario(
             "seed": seed,
             "map_id": map_id,
             "human_speed_range_mps": [speed_min, speed_max],
-            "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
+            "human_behavior_model": (
+                "deterministic one-shot waypoint kinematic proxy"
+                if str(family["layout"]) == "temporary_blockage"
+                else "deterministic cyclic-waypoint kinematic proxy"
+            ),
             "requested_hunav_behavior": (
                 "regular social-force fields retained for schema compatibility"
             ),

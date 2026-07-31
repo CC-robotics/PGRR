@@ -14,6 +14,7 @@ from ramp_core.planning.online import (
     estimate_human_states,
     privileged_collision_risk,
     privileged_time_to_collision,
+    scan_segment_is_free,
 )
 from ramp_core.types import Pose2D, Velocity2D
 
@@ -88,6 +89,39 @@ def test_directional_clearance_reads_observed_front_sector() -> None:
         half_width_rad=math.radians(2.0),
     )
     assert clearance == pytest.approx(0.7)
+
+
+def test_swept_scan_mask_rejects_off_axis_footprint_collision() -> None:
+    ranges = np.full(271, np.inf, dtype=np.float32)
+    obstacle_angle = math.radians(37.0)
+    obstacle_index = round((obstacle_angle + 3.0 * math.pi / 4.0) / math.radians(1.0))
+    ranges[obstacle_index] = 0.5
+
+    assert not scan_segment_is_free(
+        ranges,
+        angle_min=-3.0 * math.pi / 4.0,
+        angle_increment=math.radians(1.0),
+        target=(1.0, 0.0),
+        clearance_m=0.4,
+    )
+    assert scan_segment_is_free(
+        ranges,
+        angle_min=-3.0 * math.pi / 4.0,
+        angle_increment=math.radians(1.0),
+        target=(1.0, 0.0),
+        clearance_m=0.25,
+    )
+
+
+def test_swept_scan_mask_validates_inputs() -> None:
+    with pytest.raises(ValueError, match="positive"):
+        scan_segment_is_free(
+            [1.0],
+            angle_min=0.0,
+            angle_increment=0.0,
+            target=(1.0, 0.0),
+            clearance_m=0.4,
+        )
 
 
 def test_endpoint_uncertainty_does_not_double_inflate_robot_footprint() -> None:

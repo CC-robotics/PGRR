@@ -37,6 +37,7 @@ from ramp_core.planning.online import (
     directional_scan_clearance,
     estimate_human_states,
     privileged_time_to_collision,
+    scan_segment_is_free,
 )
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.options import (
@@ -48,6 +49,7 @@ from ramp_core.recovery.options import (
 )
 from ramp_core.recovery.safety import (
     EmergencyEscapeController,
+    EmergencyEscapeMode,
     backup_increases_obstacle_clearance,
 )
 from ramp_core.state_machine import (
@@ -199,6 +201,7 @@ class RecoveryManagerNode(Node):
         self._action_started_s = float("-inf")
         self._emergency = False
         self._emergency_escape_active = False
+        self._emergency_escape_mode = EmergencyEscapeMode.STOP
         self._published_emergency_escape = False
         self._emergency_escape = EmergencyEscapeController(
             hold_s=self._float("emergency_hold_s"),
@@ -297,6 +300,8 @@ class RecoveryManagerNode(Node):
             "emergency_backup_duration_s": 0.8,
             "emergency_backup_clearance_m": 0.70,
             "emergency_release_speed_mps": 0.03,
+            "emergency_turn_speed_radps": 0.6,
+            "emergency_forward_speed_mps": 0.12,
             "human_radius_m": 0.35,
             "robot_radius_m": 0.36,
             "maximum_human_speed_mps": 2.0,
@@ -658,6 +663,16 @@ class RecoveryManagerNode(Node):
             assert action.radius is not None and action.angle_degrees is not None
             angle = math.radians(action.angle_degrees)
             mask[action.action_id] &= self._laser_clearance(angle) >= action.radius + clearance
+            mask[action.action_id] &= scan_segment_is_free(
+                self._scan.ranges,
+                angle_min=float(self._scan.angle_min),
+                angle_increment=float(self._scan.angle_increment),
+                target=(
+                    action.radius * math.cos(angle),
+                    action.radius * math.sin(angle),
+                ),
+                clearance_m=self._float("footprint_stop_clearance_m"),
+            )
         rear_clearance = self._observed_laser_clearance(math.pi)
         if rear_clearance is not None:
             mask[BACKUP_ACTION_ID] &= rear_clearance >= 0.45 + clearance
@@ -849,13 +864,20 @@ class RecoveryManagerNode(Node):
             float(self._odom.twist.twist.linear.x)
         )
         raw_emergency = motion_clearance < stop or footprint_hazard
-        self._emergency, self._emergency_escape_active = self._emergency_escape.update(
+        rear_clearance = self._observed_laser_clearance(math.pi)
+        nearest_angle = self._nearest_obstacle_angle()
+        self._emergency, self._emergency_escape_mode = self._emergency_escape.update(
             now_s=now_s,
             hazard=raw_emergency,
             linear_speed_mps=float(self._odom.twist.twist.linear.x),
-            rear_clearance_m=self._laser_clearance(math.pi),
+            rear_clearance_m=0.0 if rear_clearance is None else rear_clearance,
             backup_permitted=self._footprint_backup_permitted(footprint_hazard),
+            obstacle_angle_rad=nearest_angle,
+            obstacle_clearance_m=self._nearest_clearance(),
+            forward_clearance_m=self._laser_clearance(0.0),
+            rear_observed=rear_clearance is not None,
         )
+        self._emergency_escape_active = self._emergency_escape_mode is EmergencyEscapeMode.BACKUP
         action_complete = self._machine.state is RecoveryState.RECOVERY and self._action_complete(
             now_s
         )
@@ -959,7 +981,7 @@ class RecoveryManagerNode(Node):
         )
         if (
             self._machine.state is RecoveryState.EMERGENCY_STOP
-            and self._emergency_escape_active
+            and self._emergency_escape_mode is EmergencyEscapeMode.BACKUP
             and self._footprint_backup_permitted(footprint_hazard)
         ):
             rear_stop = stopping_distance(
@@ -971,6 +993,23 @@ class RecoveryManagerNode(Node):
             command = Twist()
             if self._laser_clearance(math.pi) >= rear_stop:
                 command.linear.x = -self._float("backup_speed_mps")
+        elif (
+            self._machine.state is RecoveryState.EMERGENCY_STOP
+            and self._emergency_escape_mode is EmergencyEscapeMode.FORWARD
+        ):
+            command = Twist()
+            if self._laser_clearance(0.0) >= self._float("emergency_backup_clearance_m"):
+                command.linear.x = self._float("emergency_forward_speed_mps")
+        elif (
+            self._machine.state is RecoveryState.EMERGENCY_STOP
+            and self._emergency_escape_mode
+            in {EmergencyEscapeMode.TURN_LEFT, EmergencyEscapeMode.TURN_RIGHT}
+        ):
+            command = Twist()
+            direction = (
+                1.0 if self._emergency_escape_mode is EmergencyEscapeMode.TURN_LEFT else -1.0
+            )
+            command.angular.z = direction * self._float("emergency_turn_speed_radps")
         elif (
             immediate_safety_stop
             or self._machine.state is RecoveryState.EMERGENCY_STOP

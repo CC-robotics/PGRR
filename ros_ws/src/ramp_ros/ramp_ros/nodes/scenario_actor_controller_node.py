@@ -26,12 +26,19 @@ class ActorRoute:
     name: str
     points: tuple[tuple[float, float], ...]
     speed: float
+    cyclic: bool = True
+    robot_avoidance_distance_m: float = 1.3
+
+    def __post_init__(self) -> None:
+        if self.robot_avoidance_distance_m <= 0.71:
+            raise ValueError("robot avoidance distance must exceed combined collision radii")
 
     @property
     def segment_lengths(self) -> tuple[float, ...]:
-        cyclic = (*self.points, self.points[0])
+        route_points = (*self.points, self.points[0]) if self.cyclic else self.points
         return tuple(
-            math.dist(cyclic[index], cyclic[index + 1]) for index in range(len(self.points))
+            math.dist(route_points[index], route_points[index + 1])
+            for index in range(len(route_points) - 1)
         )
 
     def pose_at(self, elapsed: float) -> tuple[float, float, float]:
@@ -39,13 +46,14 @@ class ActorRoute:
         total = sum(lengths)
         if total <= 1.0e-6:
             return self.points[0][0], self.points[0][1], 0.0
-        distance = (elapsed * self.speed) % total
-        cyclic = (*self.points, self.points[0])
+        travelled = max(0.0, elapsed) * self.speed
+        distance = travelled % total if self.cyclic else min(travelled, total)
+        route_points = (*self.points, self.points[0]) if self.cyclic else self.points
         for index, length in enumerate(lengths):
             if distance <= length or index == len(lengths) - 1:
                 fraction = 0.0 if length <= 1.0e-6 else distance / length
-                x0, y0 = cyclic[index]
-                x1, y1 = cyclic[index + 1]
+                x0, y0 = route_points[index]
+                x1, y1 = route_points[index + 1]
                 return (
                     x0 + fraction * (x1 - x0),
                     y0 + fraction * (y1 - y0),
@@ -207,6 +215,8 @@ class ScenarioActorController(Node):
                     name=str(actor["name"]),
                     points=points,
                     speed=float(actor.get("max_vel", 0.4)),
+                    cyclic=bool(actor.get("cyclic_goals", True)),
+                    robot_avoidance_distance_m=float(actor.get("robot_avoidance_distance_m", 1.3)),
                 )
             )
         return tuple(routes)
@@ -229,7 +239,6 @@ class ScenarioActorController(Node):
             self._last_update_s = now
         step_s = max(0.0, now - self._last_update_s) if self._experiment_started else 0.0
         self._last_update_s = now
-        avoidance_distance = float(self.get_parameter("robot_avoidance_distance_m").value)
         pose_array = PoseArray()
         pose_array.header.stamp = self.get_clock().now().to_msg()
         pose_array.header.frame_id = "map"
@@ -238,7 +247,8 @@ class ScenarioActorController(Node):
             candidate = route.pose_at(candidate_elapsed)
             blocked_by_robot = (
                 self._robot_position is not None
-                and math.dist(candidate[:2], self._robot_position) < avoidance_distance
+                and math.dist(candidate[:2], self._robot_position)
+                < route.robot_avoidance_distance_m
             )
             if not blocked_by_robot:
                 self._route_elapsed[route.name] = candidate_elapsed

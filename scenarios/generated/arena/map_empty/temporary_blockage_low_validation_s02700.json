@@ -8,13 +8,13 @@
           "duration": 60.0,
           "goal_force_factor": 2.0,
           "obstacle_force_factor": 40.0,
-          "once": false,
+          "once": true,
           "other_force_factor": 10.0,
           "social_force_factor": 5.0,
           "type": 1,
           "vel": 0.6
         },
-        "cyclic_goals": true,
+        "cyclic_goals": false,
         "goal_radius": 0.3,
         "id": 1,
         "max_vel": 0.2919,
@@ -22,20 +22,21 @@
         "name": "ped_00",
         "pos": [
           15.379,
-          13.2,
+          15.5,
           -1.5707963267948966
         ],
         "radius": 0.35,
+        "robot_avoidance_distance_m": 0.8,
         "type": "adult",
         "waypoints": [
           [
             15.379,
-            13.2,
+            15.5,
             -1.5707963267948966
           ],
           [
             15.379,
-            10.8,
+            7.5,
             -1.5707963267948966
           ]
         ]
@@ -47,13 +48,13 @@
           "duration": 60.0,
           "goal_force_factor": 2.0,
           "obstacle_force_factor": 40.0,
-          "once": false,
+          "once": true,
           "other_force_factor": 10.0,
           "social_force_factor": 5.0,
           "type": 1,
           "vel": 0.6
         },
-        "cyclic_goals": true,
+        "cyclic_goals": false,
         "goal_radius": 0.3,
         "id": 2,
         "max_vel": 0.1673,
@@ -61,20 +62,21 @@
         "name": "ped_01",
         "pos": [
           15.621,
-          10.450000000000001,
+          8.25,
           1.5707963267948966
         ],
         "radius": 0.35,
+        "robot_avoidance_distance_m": 0.8,
         "type": "adult",
         "waypoints": [
           [
             15.621,
-            10.450000000000001,
+            8.25,
             1.5707963267948966
           ],
           [
             15.621,
-            13.2,
+            16.5,
             1.5707963267948966
           ]
         ]
@@ -267,7 +269,7 @@
   "ramp_metadata": {
     "density": "low",
     "family": "temporary_blockage",
-    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
+    "human_behavior_model": "deterministic one-shot waypoint kinematic proxy",
     "human_speed_range_mps": [
       0.08,
       0.3
