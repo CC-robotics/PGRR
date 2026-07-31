@@ -19,6 +19,7 @@ from ramp_core.action_mask import (
 from ramp_core.observations import HumanState, PrivilegedState, select_local_path_waypoints
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.planning.expert import PlanningRecoveryExpert
+from ramp_core.recovery.options import constrain_rejoin_actions
 from ramp_core.types import Pose2D, Velocity2D
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -177,6 +178,7 @@ def main() -> None:
     )
     parser.add_argument("--stride", type=int, default=5)
     parser.add_argument("--failure-threshold", type=float, default=0.65)
+    parser.add_argument("--rejoin-release-threshold", type=float, default=0.65)
     args = parser.parse_args()
     rows = _load(args.raw_jsonl)
     indices = _selected_indices(rows, args.stride, args.failure_threshold)
@@ -205,6 +207,11 @@ def main() -> None:
             allow_unobserved_backup=False,
         )
         mask = apply_path_corridor_mask(mask, state.robot_pose, state.global_path)
+        mask = constrain_rejoin_actions(
+            mask,
+            collision_risk=float(rows[index]["failure_prediction"][0]),
+            release_threshold=args.rejoin_release_threshold,
+        )
         label = PlanningRecoveryExpert(grid).label(state, mask)
         actions.append(label.action_id)
         costs.append(label.action_costs)
@@ -238,6 +245,7 @@ def main() -> None:
             sum(not bool(mask[action]) for mask, action in zip(masks, actions, strict=True))
         ),
         "predicted_success_count": int(sum(successes)),
+        "rejoin_release_threshold": args.rejoin_release_threshold,
         "finite_selected_cost_count": int(
             sum(
                 math.isfinite(float(cost[action]))
