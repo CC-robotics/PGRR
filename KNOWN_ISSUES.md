@@ -16,6 +16,10 @@ The first post-KI-064 DAgger replay received a verified success callback, but it
 
 Under one current environment/code commit on high-density crossing-flow seeds 2201, 2202, and 2220, Base reached two goals and collided once while DAgger reached all three. Median terminal time nevertheless increased from 91.675 to 128.405 s, and the learned policy used a median 308 non-CONTINUE samples. This is a concrete safety--efficiency trade-off, not an efficiency improvement. The pilot contains one discordant outcome and is too small for a significance or generalization claim; further tuning remains validation-only and final test parameters are not locked.
 
+## KI-067: Off-axis radial closing ignored the configured minimum speed
+
+On `temporary_blockage_high_validation_s02720`, Base collided at 37.995 s and DAgger collided at 41.026 s. At 34.13--35.13 s the learned run's nearest LiDAR return closed from 0.83 to 0.60 m while the robot moved at 0.23--0.26 m/s, yet collision risk remained zero because the human was outside the forward/wide sectors. The omnidirectional trend required closing speed to exceed the full robot speed plus 0.25 m/s; this incorrectly treats orthogonal robot motion as explaining a lateral range change. The configuration's explicit `collision_closing_speed_mps=0.10` was never used. Both raw outcomes and passing sensor gates are retained. The correction must be evaluated against nominal false-trigger rate before final configuration lock.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.
