@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import json
+import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -16,7 +18,24 @@ ROOT = Path(__file__).resolve().parents[2]
 def architecture() -> None:
     source = ROOT / "paper/figures/system_architecture.dot"
     output = ROOT / "paper/figures/system_architecture.pdf"
-    subprocess.run(["dot", "-Tpdf", str(source), "-o", str(output)], check=True)
+    environment = os.environ.copy()
+    environment["SOURCE_DATE_EPOCH"] = "0"
+    subprocess.run(
+        ["dot", "-Tpdf", str(source), "-o", str(output)],
+        check=True,
+        env=environment,
+    )
+    # Cairo 1.16 ignores SOURCE_DATE_EPOCH and writes wall-clock metadata.
+    # The fixed-width replacement leaves PDF object offsets unchanged.
+    payload = output.read_bytes()
+    payload, replacements = re.subn(
+        rb"/CreationDate \(D:\d{14}[+-]\d{2}'\d{2}\)",
+        rb"/CreationDate (D:19700101000000+00'00)",
+        payload,
+    )
+    if replacements != 1:
+        raise RuntimeError("expected exactly one Graphviz PDF creation date")
+    output.write_bytes(payload)
 
 
 def pilot_outcomes() -> None:
@@ -48,7 +67,10 @@ def pilot_outcomes() -> None:
         va="top",
         fontsize=6.5,
     )
-    figure.savefig(ROOT / "paper/figures/pilot_outcomes.pdf")
+    figure.savefig(
+        ROOT / "paper/figures/pilot_outcomes.pdf",
+        metadata={"CreationDate": None, "ModDate": None},
+    )
     plt.close(figure)
 
 
