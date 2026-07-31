@@ -41,7 +41,7 @@
   },
   # TF Data (Gazebo -> ROS2)
   {
-    "gz_topic": "/model/{robot_name}/tf",
+    "gz_topic": "/model/{robot_name}/ground_truth_pose",
     "ros_topic": "/tf",
     "ros_type": "tf2_msgs/msg/TFMessage",
     "gz_type": "gz.msgs.Pose_V",

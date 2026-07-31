@@ -108,6 +108,7 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "episode start handshake did not complete before the wall-clock deadline" in logger
     assert runtime.count("episode_start_topic:=/ramp/episode_started") == 3
     assert runtime.count("logger_ready_topic:=/ramp/logger_ready") == 2
+    assert runtime.count("odometry_is_world_frame:=true") == 3
 
 
 def test_episode_cleanup_is_bounded_for_every_auxiliary_process() -> None:

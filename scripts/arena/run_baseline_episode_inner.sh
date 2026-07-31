@@ -269,6 +269,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOUR
         -p goal_x:="${goal_x}" -p goal_y:="${goal_y}" \
         -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
         -p robot_start_yaw:="${start_yaw}" \
+        -p odometry_is_world_frame:=true \
         -p odom_topic:="${odom_topic}" -p scan_topic:="${scan_topic}" \
         -p base_cmd_vel_topic:="${base_cmd_topic}" \
         -p ttc_threshold_s:="${TTC_THRESHOLD_S}" \
@@ -293,6 +294,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOUR
         -p goal_x:="${goal_x}" -p goal_y:="${goal_y}" -p goal_yaw:="${goal_yaw}" \
         -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
         -p robot_start_yaw:="${start_yaw}" \
+        -p odometry_is_world_frame:=true \
         -p odom_topic:="${odom_topic}" -p scan_topic:="${scan_topic}" \
         -p base_cmd_vel_topic:="${base_cmd_topic}" \
         -p cmd_vel_topic:=/ramp/recovery_cmd_vel \
@@ -330,6 +332,7 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p goal_x:="${goal_x}" -p goal_y:="${goal_y}" -p goal_yaw:="${goal_yaw}" \
     -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
     -p robot_start_yaw:="${start_yaw}" \
+    -p odometry_is_world_frame:=true \
     -p odom_topic:="${odom_topic}" -p scan_topic:="${scan_topic}" \
     -p cmd_vel_topic:="${mux_cmd_topic}" -p base_cmd_vel_topic:="${base_cmd_topic}" \
     -p global_path_topic:="${path_topic}" \

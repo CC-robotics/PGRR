@@ -23,4 +23,8 @@ def test_known_pose_profile_uses_gazebo_pose_odometry() -> None:
     assert "gz-sim-odometry-publisher-system" in plugin
     assert "/model/$(arg name)/ground_truth_odometry" in plugin
     assert "/model/$(arg name)/wheel_odometry" in plugin
+    assert "/model/$(arg name)/wheel_tf" in plugin
     assert '"gz_topic": "/model/{robot_name}/ground_truth_odometry"' in mappings
+    assert '"gz_topic": "/model/{robot_name}/ground_truth_pose"' in mappings
+    container = (root / "scripts/bootstrap/arena_container.sh").read_text()
+    assert "task_generator_ground_truth_odom.patch" in container

@@ -76,6 +76,7 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("robot_start_x", 0.0)
         self.declare_parameter("robot_start_y", 0.0)
         self.declare_parameter("robot_start_yaw", 0.0)
+        self.declare_parameter("odometry_is_world_frame", False)
         self.declare_parameter("odom_topic", "odom")
         self.declare_parameter("scan_topic", "scan")
         self.declare_parameter("cmd_vel_topic", "cmd_vel")
@@ -306,7 +307,7 @@ class EpisodeLoggerNode(Node):
 
     def _on_path(self, message: PathMessage) -> None:
         frame = message.header.frame_id.rstrip("/")
-        if frame.endswith("odom"):
+        if frame.endswith("odom") and not bool(self.get_parameter("odometry_is_world_frame").value):
             start_yaw = float(self._robot_start[2])
             cosine = math.cos(start_yaw)
             sine = math.sin(start_yaw)
@@ -442,6 +443,11 @@ class EpisodeLoggerNode(Node):
             pose.orientation.z,
             pose.orientation.w,
         )
+        if bool(self.get_parameter("odometry_is_world_frame").value):
+            return np.asarray(
+                [pose.position.x, pose.position.y, yaw],
+                dtype=np.float32,
+            )
         start_yaw = float(self._robot_start[2])
         return np.asarray(
             [

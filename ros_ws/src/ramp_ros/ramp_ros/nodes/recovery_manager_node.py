@@ -280,6 +280,7 @@ class RecoveryManagerNode(Node):
             "robot_start_x": 0.0,
             "robot_start_y": 0.0,
             "robot_start_yaw": 0.0,
+            "odometry_is_world_frame": False,
             "goal_tolerance_m": 0.25,
             "decision_frequency_hz": 2.0,
             "control_frequency_hz": 10.0,
@@ -439,6 +440,8 @@ class RecoveryManagerNode(Node):
         assert self._odom is not None
         local = self._odom.pose.pose.position
         local_yaw = _yaw_from_odometry(self._odom)
+        if bool(self.get_parameter("odometry_is_world_frame").value):
+            return Pose2D(float(local.x), float(local.y), local_yaw)
         return Pose2D(
             self._start.x
             + math.cos(self._start.yaw) * local.x

@@ -44,6 +44,9 @@ docker run --rm --runtime runc --network host --ipc host \
          robot_manager=/opt/arena_ws/src/arena/arena-rosnav/task_generator/task_generator/manager/robot_manager/robot_manager.py
          patch --forward --silent --reject-file=- "$robot_manager" /workspace/third_party/task_generator_known_pose.patch 2>/dev/null ||
              grep -q "'\''amcl'\'': '\''false'\''" "$robot_manager"
+         gazebo_simulator=/opt/arena_ws/src/arena/arena-rosnav/task_generator/task_generator/simulators/sim/gazebo_simulator/gazebo_simulator.py
+         patch --forward --silent --reject-file=- "$gazebo_simulator" /workspace/third_party/task_generator_ground_truth_odom.patch 2>/dev/null ||
+             grep -q "Ground-truth odometry already uses map coordinates" "$gazebo_simulator"
      fi
      cd /opt/arena_ws
      source arena.bash

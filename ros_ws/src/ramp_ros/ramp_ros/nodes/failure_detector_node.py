@@ -47,6 +47,7 @@ class FailureDetectorNode(Node):
         self.declare_parameter("robot_start_x", 0.0)
         self.declare_parameter("robot_start_y", 0.0)
         self.declare_parameter("robot_start_yaw", 0.0)
+        self.declare_parameter("odometry_is_world_frame", False)
         self.declare_parameter("trigger_threshold", 0.65)
         self.declare_parameter("collision_front_sector_degrees", 30.0)
         self.declare_parameter("collision_trend_sector_degrees", 90.0)
@@ -176,8 +177,11 @@ class FailureDetectorNode(Node):
         local_x = float(message.pose.pose.position.x)
         local_y = float(message.pose.pose.position.y)
         start_x, start_y, start_yaw = self._robot_start
-        world_x = start_x + math.cos(start_yaw) * local_x - math.sin(start_yaw) * local_y
-        world_y = start_y + math.sin(start_yaw) * local_x + math.cos(start_yaw) * local_y
+        if bool(self.get_parameter("odometry_is_world_frame").value):
+            world_x, world_y = local_x, local_y
+        else:
+            world_x = start_x + math.cos(start_yaw) * local_x - math.sin(start_yaw) * local_y
+            world_y = start_y + math.sin(start_yaw) * local_x + math.cos(start_yaw) * local_y
         goal_distance = math.dist((world_x, world_y), self._goal)
         prediction = self._detector.update(
             TimedNavigationSample(

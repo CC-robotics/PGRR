@@ -1,0 +1,26 @@
+--- gazebo_simulator.py
++++ gazebo_simulator.py
+@@ -175,6 +175,13 @@
+                 if isinstance(entity, Robot):
+                     odom_frame = arena_simulation_setup.entities.robot.Robot(entity.model.name).model_params.odom_frame
+ 
++                # Ground-truth odometry already uses map coordinates. Robots
++                # therefore need an identity map-to-odom transform; applying
++                # their spawn pose again would double the world offset.
++                transform_pose = entity.pose
++                if isinstance(entity, Robot):
++                    transform_pose = Pose()
++
+-                qx, qy, qz, qw = entity.pose.orientation.x, entity.pose.orientation.y, entity.pose.orientation.z, entity.pose.orientation.w
++                qx, qy, qz, qw = transform_pose.orientation.x, transform_pose.orientation.y, transform_pose.orientation.z, transform_pose.orientation.w
+                 transform_pub_node = launch_ros.actions.Node(
+                     package="tf2_ros",
+                     executable="static_transform_publisher",
+@@ -182,7 +189,7 @@
+                     name="map_to_odomframe_publisher",
+                     arguments=[
+-                        str(entity.pose.position.x), str(entity.pose.position.y), str(entity.pose.position.z),
++                        str(transform_pose.position.x), str(transform_pose.position.y), str(transform_pose.position.z),
+                         str(qx), str(qy), str(qz), str(qw),
+                         "map",
+                         entity.frame(odom_frame),
