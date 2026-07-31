@@ -10,6 +10,11 @@ EXPERT_RAW ?= data/raw/temporary_blockage_high_train_s01720_finite2_heuristic_dw
 EXPERT_DATASET ?= data/interim/temporary_blockage_finite2_expert_smoke.h5
 BC_CONFIG ?= configs/imitation/bc_smoke.yaml
 BC_OUTPUT ?= checkpoints/bc/smoke
+DAGGER_ITERATION ?= 1
+DAGGER_BASE_DATASETS ?= data/interim/temporary_blockage_finite2_expert_smoke.h5 data/interim/temporary_blockage_medium_train_expert.h5 data/interim/temporary_blockage_low_train_expert.h5 data/interim/doorway_high_train_expert.h5 data/interim/blind_corner_high_train_expert.h5 data/interim/group_blocking_high_train_expert.h5
+DAGGER_SHARDS ?= data/interim/dagger_iter1_temporary_blockage_high_train.h5 data/interim/dagger_iter1_crossing_flow_high_train.h5 data/interim/dagger_iter1_crossing_flow_s01260_train.h5 data/interim/dagger_iter1_crossing_flow_s01291_train.h5 data/interim/dagger_iter1_crossing_flow_s01318_train.h5
+DAGGER_VALIDATION ?= data/interim/temporary_blockage_validation_expert.h5
+DAGGER_CONFIG ?= configs/imitation/bc_uniform_scenario.yaml
 LOG_DIR ?= $(PROJECT_ROOT)/outputs/logs
 OFFLINE_RUN := env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION conda run -n "$(CONDA_ENV_NAME)"
 
@@ -58,8 +63,11 @@ label-expert: ## Label recovery states using the privileged expert.
 train-bc: ## Train behavior cloning policies.
 	@$(OFFLINE_RUN) python scripts/train/train_bc.py "$(EXPERT_DATASET)" \
 		--config "$(BC_CONFIG)" --output "$(BC_OUTPUT)"
-train-dagger: ## Run two DAgger aggregation rounds.
-	@$(OFFLINE_RUN) python scripts/train/train_dagger.py --seed "$(SEED)"
+train-dagger: ## Aggregate and train one configured DAgger round.
+	@$(OFFLINE_RUN) python scripts/train/train_dagger.py \
+		--iteration "$(DAGGER_ITERATION)" --base-datasets $(DAGGER_BASE_DATASETS) \
+		--dagger-shards $(DAGGER_SHARDS) --validation-dataset "$(DAGGER_VALIDATION)" \
+		--config "$(DAGGER_CONFIG)"
 train-ppo-smoke: ## Run a small action-masked PPO smoke job.
 	@$(OFFLINE_RUN) python scripts/train/train_ppo.py --profile smoke --seed "$(SEED)"
 train-ppo: ## Run configured PPO training.

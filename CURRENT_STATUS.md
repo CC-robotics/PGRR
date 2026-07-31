@@ -149,3 +149,13 @@ scripts/arena/smoke_goal_mux.sh
 ### Next
 
 Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Oracle evaluation on train and untouched validation scenarios, then generate a smoke expert dataset only from legal Oracle states. Gate 2 remains failed and Heuristic is retained as a weak baseline; two synchronized scenario families now demonstrate Oracle goal recovery, but Gate 3 remains statistically unaccepted.
+## 2026-07-31 — Gate 5 DAgger-1 held-out closed-loop success
+
+- Completed: a single observable LiDAR action mask is now shared by offline expert labeling and ROS inference; rear-unobserved BACKUP is excluded, swept subgoals use a 0.48 m capsule, and every regenerated expert label is legal.
+- Completed: Uniform BC, MWBC, and full-cost-sensitive BC were trained with scenario-disjoint validation and exported to TorchScript/ONNX. MWBC and full-cost loss did not improve the selected validation distribution and remain negative ablations.
+- Completed: ONNX inference runs inside the Humble Arena container with median logged latency around 0.15 ms and zero masked selections.
+- Completed: DAgger iteration 1 aggregated 11 train episodes, 11,706 observations, and 1,153 expert-labeled recovery states. `data/manifests/dagger_iter1_manifest.json` records hashes.
+- Acceptance result: on synchronized `crossing_flow_high_validation_s02220`, Base=`COLLISION` at 29.104 s, Heuristic=`TIMEOUT`, BC-0=`TIMEOUT`, DAgger-1=`GOAL_REACHED` at 106.893 s, and Oracle=`GOAL_REACHED` at 96.404 s. DAgger-1 minimum human distance was 0.818 m and median ONNX latency was 0.154 ms.
+- Failed/degraded: `temporary_blockage_high_validation_s02720` remains an Oracle-timeout environment case; it is retained for safety/failure analysis rather than used as a success gate. One crossing-flow startup without a Nav2 action was classified `INVALID_RESET` and retried once.
+- Validation: `make test` passed 179 tests; the Humble overlay built all three ROS packages.
+- Next: commit the mask/deployment stage, collect train-only DAgger-2 states, retrain iteration 2, and rerun held-out validation with a clean commit ID.

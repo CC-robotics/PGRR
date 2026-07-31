@@ -13,7 +13,7 @@ from geometry_msgs.msg import PoseArray, PoseStamped, Twist
 from nav_msgs.msg import OccupancyGrid as OccupancyGridMessage
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMessage
-from ramp_core.action_mask import compute_action_mask
+from ramp_core.action_mask import apply_observable_scan_mask, compute_action_mask
 from ramp_core.action_space import (
     ACTION_COUNT,
     ACTIONS,
@@ -37,7 +37,6 @@ from ramp_core.planning.online import (
     directional_scan_clearance,
     estimate_human_states,
     privileged_time_to_collision,
-    scan_segment_is_free,
 )
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.options import (
@@ -68,6 +67,7 @@ from ramp_core.types import (
 from ramp_core.types import (
     RecoveryDecision as CoreRecoveryDecision,
 )
+from ramp_ml.inference import ONNXRecoveryPolicy
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
@@ -100,8 +100,8 @@ class RecoveryManagerNode(Node):
         super().__init__("recovery_manager")
         self._declare_parameters()
         self._policy_type = str(self.get_parameter("policy_type").value)
-        if self._policy_type not in {"heuristic", "expert"}:
-            raise ValueError("policy_type must be heuristic or expert")
+        if self._policy_type not in {"heuristic", "expert", "bc"}:
+            raise ValueError("policy_type must be heuristic, expert, or bc")
         if (
             not 0.0
             < self._float("oracle_trigger_intervention_horizon_s")
@@ -133,30 +133,41 @@ class RecoveryManagerNode(Node):
         )
         self._machine = RecoveryStateMachine(state_config)
         self._machine.set_original_goal(self._goal)
-        self._policy = HeuristicRecoveryPolicy(
-            HeuristicRecoveryConfig(
-                side_clearance_ratio=self._float("side_clearance_ratio"),
-                collision_wait_clearance_m=self._float("collision_wait_clearance_m"),
-                collision_close_clearance_m=self._float("collision_close_clearance_m"),
-                collision_emergency_wait_clearance_m=self._float(
-                    "collision_emergency_wait_clearance_m"
-                ),
-                preferred_subgoal_radius_m=self._float("preferred_subgoal_radius_m"),
-                minimum_subgoal_progress_m=self._float("minimum_subgoal_progress_m"),
-                path_alignment_weight=self._float("path_alignment_weight"),
-                goal_alignment_weight=self._float("goal_alignment_weight"),
-                progress_reward_weight=self._float("progress_reward_weight"),
-                clearance_reward_weight=self._float("clearance_reward_weight"),
-                radius_preference_weight=self._float("radius_preference_weight"),
-                lidar_field_of_view_degrees=self._float("lidar_field_of_view_degrees"),
-                side_cooldown_decisions=self._integer("side_cooldown_decisions"),
-                collision_max_backup_decisions=self._integer("collision_max_backup_decisions"),
-                freeze_subgoal_after_decisions=self._integer("freeze_subgoal_after_decisions"),
-                freeze_max_backup_decisions=self._integer("freeze_max_backup_decisions"),
-                deadlock_backup_after_decisions=self._integer("deadlock_backup_after_decisions"),
-                deadlock_replan_after_decisions=self._integer("deadlock_replan_after_decisions"),
+        if self._policy_type == "bc":
+            self._policy = ONNXRecoveryPolicy(
+                str(self.get_parameter("model_path").value),
+                lidar_max_m=self._float("model_lidar_max_m"),
+                execution_provider=str(self.get_parameter("onnx_execution_provider").value),
             )
-        )
+        else:
+            self._policy = HeuristicRecoveryPolicy(
+                HeuristicRecoveryConfig(
+                    side_clearance_ratio=self._float("side_clearance_ratio"),
+                    collision_wait_clearance_m=self._float("collision_wait_clearance_m"),
+                    collision_close_clearance_m=self._float("collision_close_clearance_m"),
+                    collision_emergency_wait_clearance_m=self._float(
+                        "collision_emergency_wait_clearance_m"
+                    ),
+                    preferred_subgoal_radius_m=self._float("preferred_subgoal_radius_m"),
+                    minimum_subgoal_progress_m=self._float("minimum_subgoal_progress_m"),
+                    path_alignment_weight=self._float("path_alignment_weight"),
+                    goal_alignment_weight=self._float("goal_alignment_weight"),
+                    progress_reward_weight=self._float("progress_reward_weight"),
+                    clearance_reward_weight=self._float("clearance_reward_weight"),
+                    radius_preference_weight=self._float("radius_preference_weight"),
+                    lidar_field_of_view_degrees=self._float("lidar_field_of_view_degrees"),
+                    side_cooldown_decisions=self._integer("side_cooldown_decisions"),
+                    collision_max_backup_decisions=self._integer("collision_max_backup_decisions"),
+                    freeze_subgoal_after_decisions=self._integer("freeze_subgoal_after_decisions"),
+                    freeze_max_backup_decisions=self._integer("freeze_max_backup_decisions"),
+                    deadlock_backup_after_decisions=self._integer(
+                        "deadlock_backup_after_decisions"
+                    ),
+                    deadlock_replan_after_decisions=self._integer(
+                        "deadlock_replan_after_decisions"
+                    ),
+                )
+            )
         self._adapter = Nav2Adapter(
             self,
             str(self.get_parameter("navigate_to_pose_action").value),
@@ -208,6 +219,7 @@ class RecoveryManagerNode(Node):
             backup_duration_s=self._float("emergency_backup_duration_s"),
             backup_clearance_m=self._float("emergency_backup_clearance_m"),
             release_speed_mps=self._float("emergency_release_speed_mps"),
+            rotation_clearance_m=self._float("emergency_rotation_clearance_m"),
         )
         self._decision_publisher = self.create_publisher(
             RecoveryDecision, str(self.get_parameter("recovery_decision_topic").value), 10
@@ -239,6 +251,8 @@ class RecoveryManagerNode(Node):
             "map_frame": "map",
             "policy_type": "heuristic",
             "privileged_humans_topic": "/ramp/privileged/humans",
+            "model_path": "",
+            "onnx_execution_provider": "CPUExecutionProvider",
         }
         for name, value in string_defaults.items():
             self.declare_parameter(name, value)
@@ -252,6 +266,8 @@ class RecoveryManagerNode(Node):
             "goal_tolerance_m": 0.25,
             "decision_frequency_hz": 2.0,
             "control_frequency_hz": 10.0,
+            "model_lidar_max_m": 6.0,
+            "bc_action_interval_s": 0.5,
             "arming_grace_s": 1.0,
             "startup_failure_arm_s": 4.0,
             "tau_on": 0.65,
@@ -294,12 +310,17 @@ class RecoveryManagerNode(Node):
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
-            "footprint_stop_clearance_m": 0.42,
+            "footprint_stop_clearance_m": 0.48,
             "footprint_backup_forward_angle_degrees": 80.0,
             "emergency_hold_s": 0.5,
             "emergency_backup_duration_s": 0.8,
             "emergency_backup_clearance_m": 0.70,
             "emergency_release_speed_mps": 0.03,
+            # Jackal's measured half width is smaller than its 0.36 m
+            # circumscribed collision radius. This threshold preserves a
+            # positive lateral margin while permitting in-place narrow-door
+            # alignment instead of a permanent conservative stop.
+            "emergency_rotation_clearance_m": 0.24,
             "emergency_turn_speed_radps": 0.6,
             "emergency_forward_speed_mps": 0.12,
             "human_radius_m": 0.35,
@@ -658,29 +679,17 @@ class RecoveryManagerNode(Node):
                 human_positions,
                 replan_available=self._adapter.ready,
             )
-        clearance = self._float("robot_clearance_m")
-        for action in ACTIONS[:21]:
-            assert action.radius is not None and action.angle_degrees is not None
-            angle = math.radians(action.angle_degrees)
-            mask[action.action_id] &= self._laser_clearance(angle) >= action.radius + clearance
-            mask[action.action_id] &= scan_segment_is_free(
-                self._scan.ranges,
-                angle_min=float(self._scan.angle_min),
-                angle_increment=float(self._scan.angle_increment),
-                target=(
-                    action.radius * math.cos(angle),
-                    action.radius * math.sin(angle),
-                ),
-                clearance_m=self._float("footprint_stop_clearance_m"),
-            )
-        rear_clearance = self._observed_laser_clearance(math.pi)
-        if rear_clearance is not None:
-            mask[BACKUP_ACTION_ID] &= rear_clearance >= 0.45 + clearance
-        elif self._policy_type != "expert" or not self._received_privileged_humans:
-            # A formally observable policy must not reverse into an unobserved
-            # sector. The online Oracle may use its privileged human state;
-            # compute_action_mask has already checked the full backup segment.
-            mask[BACKUP_ACTION_ID] = False
+        mask = apply_observable_scan_mask(
+            mask,
+            self._scan.ranges,
+            angle_min=float(self._scan.angle_min),
+            angle_increment=float(self._scan.angle_increment),
+            swept_clearance_m=self._float("footprint_stop_clearance_m"),
+            target_clearance_m=self._float("robot_clearance_m"),
+            allow_unobserved_backup=(
+                self._policy_type == "expert" and self._received_privileged_humans
+            ),
+        )
         mask[REPLAN_ACTION_ID] &= self._adapter.ready
         mask[WAIT_ACTION_ID] = True
         mask[CONTINUE_ACTION_ID] = True
@@ -801,6 +810,8 @@ class RecoveryManagerNode(Node):
             return elapsed >= self._float("minimum_action_hold_s")
         if self._policy_type == "expert":
             return elapsed >= self._float("expert_replan_interval_s")
+        if self._policy_type == "bc":
+            return elapsed >= self._float("bc_action_interval_s")
         return self._adapter.get_status() is PlannerStatus.SUCCEEDED
 
     def _execute(self, action_id: int, now_s: float) -> Pose2D | None:

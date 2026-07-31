@@ -207,3 +207,17 @@ conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
   --prefix data/raw/crossing_flow_high_validation_s02220_sync3_oracle_retry1_dwb \
   --output outputs/pilot/crossing_flow_high_validation_sync3_methods.csv
 ```
+## Gate 4/5 observable BC and DAgger
+
+```bash
+make test
+env -u CONDA_PREFIX -u VIRTUAL_ENV make build
+make train-dagger
+
+RAMP_SOURCE_POLICY=bc \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/iter_1/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_high_validation_s02220_dagger1_dwb \
+SCENARIO=scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json \
+ROS_DOMAIN_ID=81 GZ_PARTITION=ramp_dagger1_val_cross \
+scripts/arena/run_baseline_episode.sh
+```

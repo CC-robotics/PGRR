@@ -11,12 +11,25 @@ from torch.utils.data import Dataset
 
 
 class RecoveryHDF5Dataset(Dataset[dict[str, torch.Tensor]]):
-    def __init__(self, path: str | Path, lidar_stack: int = 5, lidar_max_m: float = 6.0) -> None:
+    _mirror_actions = np.asarray(
+        [6, 5, 4, 3, 2, 1, 0, 13, 12, 11, 10, 9, 8, 7, 20, 19, 18, 17, 16, 15, 14, 21, 22, 23, 24],
+        dtype=np.int64,
+    )
+
+    def __init__(
+        self,
+        path: str | Path,
+        lidar_stack: int = 5,
+        lidar_max_m: float = 6.0,
+        *,
+        mirror_augmentation: bool = False,
+    ) -> None:
         if lidar_stack <= 0 or lidar_max_m <= 0.0:
             raise ValueError("lidar stack and range must be positive")
         self.path = Path(path)
         self.lidar_stack = lidar_stack
         self.lidar_max_m = lidar_max_m
+        self.mirror_augmentation = mirror_augmentation
         with h5py.File(self.path, "r") as handle:
             self.sample_index = handle["sample_index"][:].astype(np.int64)
             self.observations = {
@@ -30,11 +43,16 @@ class RecoveryHDF5Dataset(Dataset[dict[str, torch.Tensor]]):
             raise ValueError("sample and label lengths differ")
 
     def __len__(self) -> int:
-        return len(self.sample_index)
+        multiplier = 2 if self.mirror_augmentation else 1
+        return multiplier * len(self.sample_index)
 
     def __getitem__(self, item: int) -> dict[str, torch.Tensor]:
+        mirrored = item >= len(self.sample_index)
+        item %= len(self.sample_index)
         index = int(self.sample_index[item])
-        start = max(0, index - self.lidar_stack + 1)
+        episode_start_values = self.observations.get("episode_start_index")
+        episode_start = 0 if episode_start_values is None else int(episode_start_values[index])
+        start = max(episode_start, index - self.lidar_stack + 1)
         scan = self.observations["lidar"][start : index + 1]
         if len(scan) < self.lidar_stack:
             scan = np.concatenate(
@@ -56,11 +74,24 @@ class RecoveryHDF5Dataset(Dataset[dict[str, torch.Tensor]]):
                 self.observations["failure_prediction"][index],
             ]
         ).astype(np.float32)
+        action = int(self.actions[item])
+        mask = self.masks[item].copy()
+        costs = self.costs[item].copy()
+        if mirrored:
+            scan = scan[:, ::-1].copy()
+            state[1] *= -1.0
+            state[np.arange(3, 18, 2)] *= -1.0
+            state[19] *= -1.0
+            state[21] *= -1.0
+            state[32:42] *= -1.0
+            action = int(self._mirror_actions[action])
+            mask = mask[self._mirror_actions]
+            costs = costs[self._mirror_actions]
         return {
             "lidar": torch.from_numpy(np.clip(scan, 0.0, self.lidar_max_m) / self.lidar_max_m),
             "state": torch.from_numpy(state),
-            "action": torch.tensor(self.actions[item], dtype=torch.long),
+            "action": torch.tensor(action, dtype=torch.long),
             "margin": torch.tensor(self.margins[item], dtype=torch.float32),
-            "mask": torch.from_numpy(self.masks[item]),
-            "costs": torch.from_numpy(self.costs[item]),
+            "mask": torch.from_numpy(mask),
+            "costs": torch.from_numpy(costs),
         }

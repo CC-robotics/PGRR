@@ -95,3 +95,14 @@ The kinematic fallback now updates only the spawned `ramp_lidar_proxy_*` models 
 ## D-023: Finite blockage semantics and observable geometric safety escape
 
 `temporary_blockage` uses one-shot pedestrian routes whose endpoints lie outside the doorway; cyclic reversal was inconsistent with the scenario name and made clearance impossible. Its actors retain a 0.8 m robot stop distance, above the 0.71 m combined collision radii, while other social scenarios retain 1.3 m. Recovery subgoals are masked against the full LiDAR-derived swept-footprint capsule rather than only a narrow target ray. If a footprint stop occurs with an unobserved rear sector, the safety layer may rotate in place and make a bounded, observed forward escape; this deterministic reflex remains above the learned policy and is not a formal safety guarantee.
+## D-024: Share one observable action mask between labeling and deployment
+
+The first BC deployment exposed that offline labels allowed privileged/unobserved BACKUP and used a looser grid clearance than the ROS policy. Expert demonstrations are now constrained first by the exact deployable 270-degree LiDAR mask: unobserved rear motion is disabled, each temporary goal must have directional clearance, and its full centreline capsule must have 0.48 m swept clearance. Privileged human trajectories affect expert rollout cost, not the deployed mask. All affected labels and checkpoints were regenerated; pre-alignment accuracy numbers are superseded.
+
+## D-025: Select DAgger over margin or full-cost weighting on closed-loop evidence
+
+Margin weighting and a clipped differentiable full-cost regret term did not improve scenario-disjoint validation. BC-0 also entered a repeat CONTINUE/safety-BACKUP loop online. DAgger-1 added only train-split policy-visited states and produced a held-out `GOAL_REACHED` on the synchronized crossing-flow validation episode. The selected minimum method is therefore Uniform BC plus DAgger and planning masks. MWBC and full-cost losses remain honest negative ablations unless later evidence changes the selection.
+
+## D-026: Expand only the train split with deterministic speed variants
+
+The original single crossing-flow train seed was a difficult negative that did not reproduce the validation interaction phase. Three train-only variants change only deterministic pedestrian speeds and receive distinct seeds, IDs, files, and hashes. Validation and test files remain untouched. This expands DAgger coverage without frame-level leakage or test tuning.

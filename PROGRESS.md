@@ -35,3 +35,10 @@
 - 2026-07-31: Corrected `temporary_blockage` from cyclic traffic to finite one-shot routes and added route-specific collision-safe actor yielding. Added a swept-footprint LiDAR action mask and an observable turn/forward emergency escape reflex. All 72 scenarios parse, 168 tests pass, and the ROS overlay builds.
 - 2026-07-31: On synchronized high-density train seed 1720 with the final finite-blockage definition, Base ended `PLANNER_FAILURE`, Heuristic timed out, and the privileged Oracle reached the original goal in 105.894 s. The raw-hash table is `outputs/pilot/temporary_blockage_high_train_finite2_methods.csv`; this is execution evidence, not statistical acceptance.
 - 2026-07-31: Exported 169 finite-blockage recovery states with complete observable arrays and expert labels: 0 illegal actions and 68 expert-predicted successes. Trained and exported the first action-masked MWBC smoke model; its single-episode holdout reached 0.618 top-1, 0.941 top-3, 0 invalid action rate, and 0.122 expert-cost regret. This validates the pipeline only.
+## 2026-07-31
+
+- Aligned offline and online action-mask semantics and regenerated all six initial train shards plus the validation shard.
+- Added CPU ONNX inference to `recovery_manager`, configurable model paths, BC episode profile, and inference-environment validation.
+- Added mirror-safe episode stacking, scenario-disjoint validation, cost-sensitive diagnostics, train-only speed variants, and a reproducible one-round DAgger orchestrator.
+- Ran five train-only DAgger-1 policy episodes. Two generated crossing-flow variants reached the goal in 105.395 s and 99.900 s; all new expert actions were legal.
+- Achieved the first held-out learned recovery success: DAgger-1 reached the goal in a crossing-flow case where Base collided and BC-0 timed out.

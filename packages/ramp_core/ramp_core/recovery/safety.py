@@ -35,7 +35,7 @@ class EmergencyEscapeController:
     backup_duration_s: float
     backup_clearance_m: float
     release_speed_mps: float
-    rotation_clearance_m: float = 0.36
+    rotation_clearance_m: float = 0.30
     rear_obstacle_angle_rad: float = math.radians(100.0)
     hazard_since_s: float | None = None
     escape_until_s: float = float("-inf")

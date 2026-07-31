@@ -15,7 +15,7 @@ import yaml
 from ramp_ml.bc import run_epoch
 from ramp_ml.datasets import RecoveryHDF5Dataset
 from ramp_ml.recovery_policy import RecoveryPolicyNetwork
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, WeightedRandomSampler
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("dataset", type=Path)
+    parser.add_argument("--validation-dataset", type=Path)
     parser.add_argument("--config", type=Path, default=ROOT / "configs/imitation/bc_smoke.yaml")
     parser.add_argument("--output", type=Path, default=ROOT / "checkpoints/bc/smoke")
     args = parser.parse_args()
@@ -39,22 +40,51 @@ def main() -> None:
         if device_name == "auto"
         else device_name
     )
-    dataset = RecoveryHDF5Dataset(args.dataset)
-    generator = np.random.default_rng(seed)
-    order = generator.permutation(len(dataset))
-    validation_count = max(1, round(len(dataset) * float(config["validation_fraction"])))
-    validation_indices = order[:validation_count].tolist()
-    train_indices = order[validation_count:].tolist()
-    if not train_indices:
-        raise ValueError("dataset is too small for a train/validation smoke split")
+    dataset = RecoveryHDF5Dataset(
+        args.dataset,
+        mirror_augmentation=bool(config.get("mirror_augmentation", False)),
+    )
+    validation_dataset = (
+        RecoveryHDF5Dataset(args.validation_dataset)
+        if args.validation_dataset is not None
+        else dataset
+    )
+    if args.validation_dataset is None:
+        generator = np.random.default_rng(seed)
+        order = generator.permutation(len(dataset))
+        validation_count = max(1, round(len(dataset) * float(config["validation_fraction"])))
+        validation_indices = order[:validation_count].tolist()
+        train_indices = order[validation_count:].tolist()
+        warning = "single-dataset random split is pipeline smoke only, not paper evidence"
+    else:
+        train_indices = list(range(len(dataset)))
+        validation_indices = list(range(len(validation_dataset)))
+        warning = ""
+    if not train_indices or not validation_indices:
+        raise ValueError("train and validation datasets must be non-empty")
+    train_subset = Subset(dataset, train_indices)
+    sampler: WeightedRandomSampler | None = None
+    if bool(config.get("class_balanced_sampling", False)):
+        actions = np.asarray(
+            [int(dataset[index]["action"]) for index in train_indices], dtype=np.int64
+        )
+        counts = np.bincount(actions, minlength=25)
+        weights = np.asarray([1.0 / counts[action] for action in actions], dtype=np.float64)
+        sampler = WeightedRandomSampler(
+            torch.from_numpy(weights),
+            num_samples=len(weights),
+            replacement=True,
+            generator=torch.Generator().manual_seed(seed),
+        )
     train_loader = DataLoader(
-        Subset(dataset, train_indices),
+        train_subset,
         batch_size=int(config["batch_size"]),
-        shuffle=True,
+        shuffle=sampler is None,
+        sampler=sampler,
         generator=torch.Generator().manual_seed(seed),
     )
     validation_loader = DataLoader(
-        Subset(dataset, validation_indices),
+        Subset(validation_dataset, validation_indices),
         batch_size=int(config["batch_size"]),
         shuffle=False,
     )
@@ -75,6 +105,7 @@ def main() -> None:
             device=device,
             optimizer=optimizer,
             margin_lambda=float(config["margin_lambda"]),
+            cost_regret_lambda=float(config.get("cost_regret_lambda", 0.0)),
         )
         with torch.no_grad():
             validation_metrics = run_epoch(
@@ -83,6 +114,7 @@ def main() -> None:
                 device=device,
                 optimizer=None,
                 margin_lambda=float(config["margin_lambda"]),
+                cost_regret_lambda=float(config.get("cost_regret_lambda", 0.0)),
             )
         history.append(
             {
@@ -115,15 +147,37 @@ def main() -> None:
         ),
     )
     traced.save(str(args.output / "best.ts"))
+    torch.onnx.export(
+        model,
+        (
+            example["lidar"][None],
+            example["state"][None],
+            example["mask"][None],
+        ),
+        args.output / "best.onnx",
+        input_names=("lidar", "state", "mask"),
+        output_names=("masked_logits",),
+        dynamic_axes={
+            "lidar": {0: "batch"},
+            "state": {0: "batch"},
+            "mask": {0: "batch"},
+            "masked_logits": {0: "batch"},
+        },
+        opset_version=17,
+        dynamo=False,
+    )
     (args.output / "metrics.json").write_text(
         json.dumps(
             {
                 "dataset": str(args.dataset),
+                "validation_dataset": (
+                    None if args.validation_dataset is None else str(args.validation_dataset)
+                ),
                 "device": str(device),
                 "train_samples": len(train_indices),
                 "validation_samples": len(validation_indices),
                 "history": history,
-                "warning": "single-episode random split is pipeline smoke only, not paper evidence",
+                "warning": warning,
             },
             indent=2,
         )

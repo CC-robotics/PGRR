@@ -14,12 +14,12 @@ case "${SOURCE_POLICY}" in
         INTER_PLANNER="navigate_to_pose_w_replanning_and_recovery"
         TERMINATE_ON_PLANNER_ABORT="true"
         ;;
-    heuristic|oracle)
+    heuristic|bc|oracle)
         INTER_PLANNER="navigate_w_replanning_time"
         TERMINATE_ON_PLANNER_ABORT="false"
         ;;
     *)
-        echo "ERROR: RAMP_SOURCE_POLICY must be base, standard, heuristic, or oracle" >&2
+        echo "ERROR: RAMP_SOURCE_POLICY must be base, standard, heuristic, bc, or oracle" >&2
         exit 2
         ;;
 esac
@@ -227,10 +227,12 @@ mux_pid=$!
     -p update_frequency_hz:="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
     >>"${RUNTIME_LOG}" 2>&1 &
 actor_pid=$!
-if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "oracle" ]]; then
+if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOURCE_POLICY}" == "oracle" ]]; then
     recovery_policy_type="heuristic"
     if [[ "${SOURCE_POLICY}" == "oracle" ]]; then
         recovery_policy_type="expert"
+    elif [[ "${SOURCE_POLICY}" == "bc" ]]; then
+        recovery_policy_type="bc"
     fi
     "${ramp_ros_prefix}/lib/ramp_ros/failure_detector" --ros-args \
         -p use_sim_time:=true \
@@ -245,7 +247,17 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "oracle" ]]; th
         -p recovery_decision_topic:=/ramp/recovery_decision \
         >>"${RUNTIME_LOG}" 2>&1 &
     detector_pid=$!
-    "${ramp_ros_prefix}/lib/ramp_ros/recovery_manager" --ros-args \
+    recovery_command=("${ramp_ros_prefix}/lib/ramp_ros/recovery_manager")
+    if [[ "${SOURCE_POLICY}" == "bc" ]]; then
+        inference_python="/workspace/.venv-inference/bin/python"
+        model_path="${RAMP_BC_MODEL_PATH:-/workspace/checkpoints/bc/uniform_scenario/best.onnx}"
+        if [[ ! -x "${inference_python}" || ! -f "${model_path}" ]]; then
+            echo "ERROR: BC inference runtime or model is missing" >&2
+            exit 2
+        fi
+        recovery_command=("${inference_python}" -m ramp_ros.nodes.recovery_manager_node)
+    fi
+    "${recovery_command[@]}" --ros-args \
         -p use_sim_time:=true \
         -p goal_x:="${goal_x}" -p goal_y:="${goal_y}" -p goal_yaw:="${goal_yaw}" \
         -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
@@ -259,6 +271,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "oracle" ]]; th
         -p failure_status_topic:=/ramp/failure_status \
         -p recovery_decision_topic:=/ramp/recovery_decision \
         -p policy_type:="${recovery_policy_type}" \
+        -p model_path:="${RAMP_BC_MODEL_PATH:-}" \
         -p privileged_humans_topic:=/ramp/privileged/humans \
         >>"${RUNTIME_LOG}" 2>&1 &
     recovery_pid=$!

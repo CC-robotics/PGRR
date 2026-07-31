@@ -38,7 +38,7 @@ def test_emergency_stops_before_allowing_bounded_safe_backup() -> None:
     ) == (False, EmergencyEscapeMode.STOP)
 
 
-def test_emergency_never_backs_when_rear_clearance_is_unsafe() -> None:
+def test_emergency_uses_rotation_instead_of_backing_when_rear_is_unsafe() -> None:
     controller = _controller()
     controller.update(now_s=0.0, hazard=True, linear_speed_mps=0.0, rear_clearance_m=0.4)
     assert controller.update(
@@ -47,7 +47,7 @@ def test_emergency_never_backs_when_rear_clearance_is_unsafe() -> None:
         linear_speed_mps=0.0,
         rear_clearance_m=0.4,
         obstacle_clearance_m=0.3,
-    ) == (True, EmergencyEscapeMode.STOP)
+    ) == (True, EmergencyEscapeMode.TURN_RIGHT)
 
 
 def test_footprint_hazard_cancels_active_backup() -> None:
@@ -104,6 +104,28 @@ def test_unobserved_rear_uses_turn_then_observable_forward_escape() -> None:
         obstacle_clearance_m=0.4,
         forward_clearance_m=1.0,
     ) == (True, EmergencyEscapeMode.FORWARD)
+
+
+def test_narrow_door_rotation_uses_inscribed_clearance_not_circumscribed_radius() -> None:
+    controller = _controller()
+    controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=0.0,
+        rear_observed=False,
+        obstacle_angle_rad=-0.4,
+        obstacle_clearance_m=0.31,
+    )
+    assert controller.update(
+        now_s=0.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=0.0,
+        rear_observed=False,
+        obstacle_angle_rad=-0.4,
+        obstacle_clearance_m=0.31,
+    ) == (True, EmergencyEscapeMode.TURN_LEFT)
 
 
 def test_backup_direction_guard_distinguishes_front_and_rear_obstacles() -> None:

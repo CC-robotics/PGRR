@@ -10,15 +10,20 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     config = yaml.safe_load((root / "configs" / "planner" / "baselines.yaml").read_text())
     profiles = config["profiles"]
     assert profiles["base"]["arena_inter_planner"] == profiles["heuristic"]["arena_inter_planner"]
+    assert profiles["base"]["arena_inter_planner"] == profiles["bc"]["arena_inter_planner"]
     assert profiles["base"]["arena_inter_planner"] == profiles["oracle"]["arena_inter_planner"]
     assert profiles["standard"]["arena_inter_planner"] != profiles["base"]["arena_inter_planner"]
     runtime = (root / "scripts" / "arena" / "run_baseline_episode_inner.sh").read_text()
+    wrapper = (root / "scripts" / "arena" / "run_baseline_episode.sh").read_text()
     for profile in profiles.values():
         assert profile["arena_inter_planner"] in runtime
         assert len(profile["behavior_tree_sha256"]) == 64
     assert 'inter_planner:="${INTER_PLANNER}"' in runtime
     assert 'policy_type:="${recovery_policy_type}"' in runtime
-    assert '"${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "oracle"' in runtime
+    assert '"${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc"' in runtime
+    assert "/workspace/.venv-inference/bin/python" in runtime
+    assert "-m ramp_ros.nodes.recovery_manager_node" in runtime
+    assert 'RAMP_BC_MODEL_PATH="${RAMP_BC_MODEL_PATH:-' in wrapper
 
 
 def test_recovery_manager_preserves_task_path_and_continue_restores_goal() -> None:
@@ -86,7 +91,12 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert manager.count("footprint_stop_clearance_m") >= 3
     assert manager.count("_footprint_stop_distance(") >= 3
     config = yaml.safe_load((root / "configs/failure/recovery_state_machine.yaml").read_text())
-    assert config["footprint_stop_clearance_m"] == 0.42
+    assert config["footprint_stop_clearance_m"] == 0.48
+    assert config["emergency_rotation_clearance_m"] == 0.24
+    assert '"emergency_rotation_clearance_m": 0.24' in manager
+    assert "apply_observable_scan_mask(" in manager
+    detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()
+    assert "RecoveryDecision.EMERGENCY_STOP" in detector
 
 
 def test_oracle_rejoin_distinguishes_hard_risk_from_soft_latch() -> None:

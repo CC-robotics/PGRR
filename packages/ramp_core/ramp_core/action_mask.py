@@ -12,6 +12,7 @@ import numpy.typing as npt
 from ramp_core.action_space import ACTION_COUNT, ACTIONS, BACKUP_ACTION_ID, REPLAN_ACTION_ID
 from ramp_core.geometry import point_to_polyline_distance
 from ramp_core.occupancy import OccupancyGrid
+from ramp_core.planning.online import directional_scan_clearance, scan_segment_is_free
 from ramp_core.types import Pose2D
 
 
@@ -72,3 +73,63 @@ def validate_selected_action(action_id: int, mask: npt.NDArray[np.bool_]) -> Non
         raise ValueError(f"action mask must have shape ({ACTION_COUNT},)")
     if not 0 <= action_id < ACTION_COUNT or not bool(mask[action_id]):
         raise ValueError(f"action {action_id} is masked or out of range")
+
+
+def apply_observable_scan_mask(
+    mask: npt.ArrayLike,
+    ranges: npt.ArrayLike,
+    *,
+    angle_min: float,
+    angle_increment: float,
+    swept_clearance_m: float = 0.48,
+    target_clearance_m: float = 0.25,
+    backup_distance_m: float = 0.45,
+    sector_half_width_rad: float = math.radians(12.0),
+    allow_unobserved_backup: bool = False,
+) -> npt.NDArray[np.bool_]:
+    """Apply the deployable LiDAR capsule and rear-observability constraints.
+
+    This helper is shared by online inference and offline expert labeling so a
+    demonstration can never rely on an action that the deployed policy masks.
+    """
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if swept_clearance_m < 0.0 or target_clearance_m < 0.0 or backup_distance_m < 0.0:
+        raise ValueError("scan-mask clearances and distances must be non-negative")
+    for action in ACTIONS[:21]:
+        assert action.radius is not None and action.angle_degrees is not None
+        direction = math.radians(action.angle_degrees)
+        directional_clearance = directional_scan_clearance(
+            ranges,
+            angle_min=angle_min,
+            angle_increment=angle_increment,
+            direction=direction,
+            half_width_rad=sector_half_width_rad,
+        )
+        constrained[action.action_id] &= (
+            directional_clearance is not None
+            and directional_clearance >= action.radius + target_clearance_m
+        )
+        constrained[action.action_id] &= scan_segment_is_free(
+            ranges,
+            angle_min=angle_min,
+            angle_increment=angle_increment,
+            target=(
+                action.radius * math.cos(direction),
+                action.radius * math.sin(direction),
+            ),
+            clearance_m=swept_clearance_m,
+        )
+    rear_clearance = directional_scan_clearance(
+        ranges,
+        angle_min=angle_min,
+        angle_increment=angle_increment,
+        direction=math.pi,
+        half_width_rad=sector_half_width_rad,
+    )
+    if rear_clearance is None:
+        constrained[BACKUP_ACTION_ID] &= allow_unobserved_backup
+    else:
+        constrained[BACKUP_ACTION_ID] &= rear_clearance >= backup_distance_m + target_clearance_m
+    return constrained

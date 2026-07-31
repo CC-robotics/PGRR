@@ -25,12 +25,12 @@ class RecoveryPolicyNetwork(nn.Module):
             nn.ReLU(),
             nn.Conv1d(16, 32, kernel_size=5, stride=2, padding=2),
             nn.ReLU(),
-            nn.AdaptiveAvgPool1d(8),
+            nn.AvgPool1d(kernel_size=4, stride=4),
             nn.Flatten(),
-            nn.LayerNorm(256),
+            nn.LayerNorm(224),
         )
         self.state_encoder = nn.Sequential(nn.Linear(state_dim, 128), nn.ReLU(), nn.LayerNorm(128))
-        self.head = nn.Sequential(nn.Linear(384, 128), nn.ReLU(), nn.Linear(128, action_count))
+        self.head = nn.Sequential(nn.Linear(352, 128), nn.ReLU(), nn.Linear(128, action_count))
 
     def forward(self, lidar: torch.Tensor, state: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         features = torch.cat((self.lidar_encoder(lidar), self.state_encoder(state)), dim=-1)

@@ -143,3 +143,18 @@ The actor controller previously advanced from node startup while the logger time
 ## KI-036: Temporary blockage was cyclic and emergency stop lacked an observable escape
 
 The original compiler reversed doorway-crossing actors forever and froze them 1.3 m from the robot, so “temporary” blockage could never clear. Separately, a robot stopped near a door frame could not BACKUP because the 270-degree LiDAR does not observe the rear centreline. D-023 corrects both issues without weakening collision classification. One final-definition Base attempt failed before required topics appeared and is retained as `INVALID_RESET`; its bounded retry produced the valid `PLANNER_FAILURE` row. Heuristic still times out at the upper door frame, while Oracle reaches the goal; learning labels must therefore come from the Oracle, not the heuristic.
+## KI-037: Offline and online recovery masks initially disagreed
+
+The initial labeler used privileged humans and a sparse 0.25 m grid clearance, while deployment also applied a stricter LiDAR swept capsule and rejected unobserved rear motion. This made some expert labels impossible for the deployed policy. D-024 replaces both paths with one shared observable scan-mask function and all learning artifacts were regenerated. Earlier 93.14% top-1 validation accuracy is invalidated and must not appear in the paper.
+
+## KI-038: Emergency priority can hide policy quality in narrow static geometry
+
+The safety layer correctly has higher priority than learning, but an omnidirectional footprint stop can own the controller around a door frame even when failure scores are high. Rotation uses the Jackal's inscribed lateral clearance and stopped-motion evidence is retained, but the Oracle-timeout temporary-blockage validation seed remains unresolved. It is reported as an environment/safety interaction; the learned-policy acceptance gate uses the recoverable crossing-flow validation case.
+
+## KI-039: DAgger artifacts produced from a dirty tree need a clean-commit rerun
+
+The first successful DAgger-1 artifact manifest records the previous HEAD while its mask and training changes were still uncommitted. Raw files and hashes are valid, but the project commit alone is insufficient provenance. Commit the code stage, then regenerate the selected checkpoint/manifest and rerun the held-out episode before paper tables are locked.
+
+## KI-040: Host shell advertises ROS Iron while Arena is pinned to Humble
+
+The host environment exports `ROS_DISTRO=iron`, so direct shell commands print a mixing warning. Project Make targets explicitly clear host ROS variables for offline work, and Arena runtime commands execute inside the pinned Humble container. Never source the host Iron installation into the Arena overlay; use `make test`, `make build`, or the documented container entry points.

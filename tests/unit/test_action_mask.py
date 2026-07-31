@@ -1,5 +1,9 @@
 import numpy as np
-from ramp_core.action_mask import compute_action_mask, validate_selected_action
+from ramp_core.action_mask import (
+    apply_observable_scan_mask,
+    compute_action_mask,
+    validate_selected_action,
+)
 from ramp_core.action_space import BACKUP_ACTION_ID, REPLAN_ACTION_ID, WAIT_ACTION_ID
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.types import Pose2D
@@ -34,3 +38,20 @@ def test_mask_blocks_human_anywhere_along_backup_segment() -> None:
         replan_available=True,
     )
     assert not bool(mask[BACKUP_ACTION_ID])
+
+
+def test_observable_scan_mask_blocks_capsule_and_unobserved_backup() -> None:
+    mask = np.ones(25, dtype=np.bool_)
+    ranges = np.full(180, 6.0, dtype=np.float64)
+    angle_min = -3.0 * np.pi / 4.0
+    angle_increment = 3.0 * np.pi / 2.0 / 179.0
+    center = round((0.0 - angle_min) / angle_increment)
+    ranges[center] = 0.4
+    constrained = apply_observable_scan_mask(
+        mask,
+        ranges,
+        angle_min=angle_min,
+        angle_increment=angle_increment,
+    )
+    assert not bool(constrained[BACKUP_ACTION_ID])
+    assert not bool(constrained[3])

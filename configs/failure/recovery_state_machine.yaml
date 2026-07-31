@@ -17,7 +17,7 @@ maximum_rejoin_retries_per_sequence: 2
 maximum_consecutive_recoveries: 4
 wait_duration_s: 0.5
 subgoal_settle_s: 1.0
-footprint_stop_clearance_m: 0.42
+footprint_stop_clearance_m: 0.48
 footprint_backup_forward_angle_degrees: 80.0
 backup_duration_s: 0.8
 backup_speed_mps: 0.15
@@ -29,5 +29,6 @@ emergency_hold_s: 0.5
 emergency_backup_duration_s: 0.8
 emergency_backup_clearance_m: 0.70
 emergency_release_speed_mps: 0.03
+emergency_rotation_clearance_m: 0.24
 emergency_turn_speed_radps: 0.6
 emergency_forward_speed_mps: 0.12

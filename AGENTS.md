@@ -29,6 +29,6 @@ The working paper title is **Planning-Guided Failure-Triggered Recovery via Imit
 
 ## Current milestone and acceptance
 
-Gate 0 is accepted with the pinned `arena_humble_docker` Gazebo profile. The original 30-episode Gate 1 table is superseded because visual actors were invisible to LiDAR; corrected runs use uniquely named LiDAR/collision proxies with deterministic robot-occupancy yielding. Current work is **Gate 1 paired revalidation and Gate 2 rule-based heuristic recovery**. Do not begin network training before corrected baseline evidence and multi-seed heuristic acceptance are complete.
+Gates 0--4 are accepted on the pinned `arena_humble_docker` Gazebo profile: the synchronized classical baseline, temporary-goal recovery chain, privileged expert, offline BC pipeline, ONNX deployment, and runtime action masking are operational. Gate 5 is active. DAgger iteration 1 has a real held-out success on `crossing_flow_high_validation_s02220`: Base collided, Heuristic and BC-0 timed out, while DAgger-1 reached the goal. Complete a second train-only DAgger aggregation and rerun the locked validation episode before considering optional PPO. All pre-synchronization and pre-mask-alignment learning artifacts are diagnostic only.
 
 If PPO, the learned detector, a second planner, or Gazebo cannot be completed honestly, follow the documented imitation-learning minimum path; do not block the core system or claim those modules succeeded.

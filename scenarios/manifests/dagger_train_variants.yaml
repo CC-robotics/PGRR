@@ -1,0 +1,16 @@
+schema_version: 1
+split: train
+source: scenarios/generated/arena/map_empty/crossing_flow_high_train_s01220.json
+variants:
+- scenario_id: crossing_flow_high_train_s01260
+  seed: 1260
+  path: scenarios/generated/arena/map_empty/crossing_flow_high_train_s01260.json
+  sha256: ba97c6b896b440c92df84c4f6d01f94444558abccbc969740a8abb750482eb30
+- scenario_id: crossing_flow_high_train_s01291
+  seed: 1291
+  path: scenarios/generated/arena/map_empty/crossing_flow_high_train_s01291.json
+  sha256: aa985a34abd7e142bf03b14258346843f5dcc1de7489dd461dc894b088f84770
+- scenario_id: crossing_flow_high_train_s01318
+  seed: 1318
+  path: scenarios/generated/arena/map_empty/crossing_flow_high_train_s01318.json
+  sha256: d2a9fb2604e51f5191955a8ba1abe702d054dc0d8928341efc46371c773a616b

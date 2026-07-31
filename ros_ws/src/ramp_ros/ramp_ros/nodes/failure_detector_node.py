@@ -142,9 +142,14 @@ class FailureDetectorNode(Node):
             )
 
     def _on_recovery_decision(self, message: RecoveryDecision) -> None:
+        # Continue accumulating stopped-motion evidence while the independent
+        # safety layer owns the command. Otherwise a persistent emergency stop
+        # clears the detector history forever and the learned recovery policy
+        # can never receive the resulting freeze/deadlock state after release.
         self._motion_rules_enabled = int(message.recovery_state) in {
             RecoveryDecision.NORMAL,
             RecoveryDecision.PENDING_RECOVERY,
+            RecoveryDecision.EMERGENCY_STOP,
         }
 
     def _on_odom(self, message: Odometry) -> None:

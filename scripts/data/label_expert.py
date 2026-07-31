@@ -11,7 +11,7 @@ from typing import Any
 
 import h5py
 import numpy as np
-from ramp_core.action_mask import compute_action_mask
+from ramp_core.action_mask import apply_observable_scan_mask, compute_action_mask
 from ramp_core.observations import HumanState, PrivilegedState, select_local_path_waypoints
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.planning.expert import PlanningRecoveryExpert
@@ -188,8 +188,17 @@ def main() -> None:
         mask = compute_action_mask(
             state.robot_pose,
             grid,
-            (human.position for human in state.humans),
             replan_available=True,
+        )
+        scan = np.asarray(rows[index]["lidar"], dtype=np.float64)
+        mask = apply_observable_scan_mask(
+            mask,
+            scan,
+            angle_min=-LIDAR_FOV_RADIANS / 2.0,
+            angle_increment=LIDAR_FOV_RADIANS / max(1, scan.size - 1),
+            swept_clearance_m=0.48,
+            target_clearance_m=0.25,
+            allow_unobserved_backup=False,
         )
         label = PlanningRecoveryExpert(grid).label(state, mask)
         actions.append(label.action_id)
@@ -205,6 +214,7 @@ def main() -> None:
         observations = handle.create_group("observations")
         for name, values in observable.items():
             observations.create_dataset(name, data=values, compression="gzip")
+        observations.create_dataset("episode_start_index", data=np.zeros(len(rows), dtype=np.int32))
         handle.create_dataset("sample_index", data=np.asarray(indices, dtype=np.int32))
         handle.create_dataset(
             "timestamp",
