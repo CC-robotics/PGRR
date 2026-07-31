@@ -10,6 +10,7 @@ cooldown_s: 2.0
 minimum_action_hold_s: 0.5
 expert_replan_interval_s: 0.5
 expert_wait_budget_decisions: 3
+bc_rejoin_block_threshold: 0.65
 bc_wait_budget_decisions: 3
 bc_replan_budget_decisions: 1
 maximum_recovery_duration_s: 8.0

@@ -110,3 +110,7 @@ The original single crossing-flow train seed was a difficult negative that did n
 ## D-027: Select DAgger-1 provisionally; do not assume more aggregation is better
 
 DAgger-2 adds genuine policy-visited train states and completes the prescribed two-round workflow, but its locked validation repeats were one success and one collision, versus two successes for DAgger-1 after the same safety fix. DAgger-1 is therefore the provisional model. The second iteration is retained as a negative result rather than selected by iteration count. Because the two DAgger-1 successes selected only CONTINUE, active learned-recovery benefit still requires evidence on other validation scenarios.
+
+## D-028: Apply temporal and collision-latched masks to learned options
+
+Head-on validation exposed two deployment semantics missing from the learned policy: WAIT and REPLAN could repeat without progress, and CONTINUE/REPLAN remained available while observable collision risk was latched. The BC mask now budgets three no-progress WAIT decisions and one REPLAN, and blocks rejoin actions while collision risk is at least the configured 0.65 trigger threshold. A budget is enforced only when a planning-valid alternative exists; otherwise WAIT remains the safe fallback.

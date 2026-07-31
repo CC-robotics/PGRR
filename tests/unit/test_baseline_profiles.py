@@ -96,6 +96,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["emergency_backup_reset_clear_s"] == 3.0
     assert config["bc_wait_budget_decisions"] == 3
     assert config["bc_replan_budget_decisions"] == 1
+    assert config["bc_rejoin_block_threshold"] == 0.65
     assert '"emergency_rotation_clearance_m": 0.24' in manager
     assert '"emergency_backup_reset_clear_s": 3.0' in manager
     assert "apply_observable_scan_mask(" in manager
@@ -108,3 +109,4 @@ def test_oracle_rejoin_distinguishes_hard_risk_from_soft_latch() -> None:
     manager = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py").read_text()
     assert '"expert_rejoin_block_threshold": 0.9' in manager
     assert 'release_threshold=self._float("expert_rejoin_block_threshold")' in manager
+    assert 'release_threshold=self._float("bc_rejoin_block_threshold")' in manager

@@ -311,6 +311,7 @@ class RecoveryManagerNode(Node):
             "expert_replan_interval_s": 0.5,
             "expert_rejoin_block_threshold": 0.9,
             "expert_wait_budget_decisions": 3,
+            "bc_rejoin_block_threshold": 0.65,
             "bc_wait_budget_decisions": 3,
             "bc_replan_budget_decisions": 1,
             "braking_acceleration_mps2": 0.8,
@@ -805,6 +806,11 @@ class RecoveryManagerNode(Node):
             if self._valid_progress():
                 self._bc_waits_without_progress = 0
                 self._bc_replans_without_progress = 0
+            mask = constrain_rejoin_actions(
+                mask,
+                collision_risk=failure.collision_risk,
+                release_threshold=self._float("bc_rejoin_block_threshold"),
+            )
             mask = constrain_stalled_wait(
                 mask,
                 consecutive_waits=self._bc_waits_without_progress,
