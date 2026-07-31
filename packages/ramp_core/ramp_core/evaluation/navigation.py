@@ -29,6 +29,25 @@ def timeout_is_invalid_reset(
 
 
 @dataclass
+class ConsecutiveEvidenceTracker:
+    """Confirm a threshold event only after consecutive synchronized samples."""
+
+    confirmation_frames: int
+    consecutive_frames: int = 0
+
+    def __post_init__(self) -> None:
+        if self.confirmation_frames <= 0:
+            raise ValueError("confirmation_frames must be positive")
+
+    def update(self, evidence: bool) -> bool:
+        if evidence:
+            self.consecutive_frames += 1
+        else:
+            self.consecutive_frames = 0
+        return self.consecutive_frames >= self.confirmation_frames
+
+
+@dataclass
 class PlannerAbortTracker:
     """Detect a terminal Nav2 abort after a simulated-time grace interval.
 

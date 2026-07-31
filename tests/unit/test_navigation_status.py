@@ -2,10 +2,24 @@ from __future__ import annotations
 
 import pytest
 from ramp_core.evaluation.navigation import (
+    ConsecutiveEvidenceTracker,
     PlannerAbortTracker,
     navigation_status_is_active,
     timeout_is_invalid_reset,
 )
+
+
+def test_collision_evidence_requires_consecutive_frames() -> None:
+    tracker = ConsecutiveEvidenceTracker(confirmation_frames=2)
+    assert not tracker.update(True)
+    assert not tracker.update(False)
+    assert not tracker.update(True)
+    assert tracker.update(True)
+
+
+def test_collision_evidence_rejects_empty_confirmation_window() -> None:
+    with pytest.raises(ValueError, match="positive"):
+        ConsecutiveEvidenceTracker(confirmation_frames=0)
 
 
 def test_navigation_activation_ignores_stale_terminal_goals() -> None:

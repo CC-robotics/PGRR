@@ -521,6 +521,11 @@ class RecoveryManagerNode(Node):
             float(message.oscillation),
             float(message.deadlock),
         )
+        # The control timer runs faster than the high-level decision timer.
+        # Latch an actionable warning in this callback so a turning approach
+        # cannot travel for another decision period with the generic margin.
+        if self._failure.collision_risk >= self._float("bc_rejoin_block_threshold"):
+            self._collision_safety_latched = True
         self._try_arm()
 
     def _on_humans(self, message: PoseArray) -> None:

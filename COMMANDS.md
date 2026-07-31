@@ -319,3 +319,24 @@ conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
   --prefix data/raw/crossing_flow_high_validation_s02220_latched_capsule_bc_v7_dwb \
   --output outputs/pilot/crossing_flow_high_validation_safety_iteration.csv
 ```
+
+Scenario-aware static-contact regression:
+
+```bash
+make test
+env -u CONDA_PREFIX -u VIRTUAL_ENV scripts/bootstrap/build_overlay.sh
+
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+RAMP_SOURCE_POLICY=bc RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_high_validation_s02220_static_aware_bc_r2_dwb \
+ROS_DOMAIN_ID=193 GZ_PARTITION=ramp_high_static_aware_r2 \
+IGN_PARTITION=ramp_high_static_aware_r2 \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/crossing_flow_high_validation_s02220_persistent_turn_bc_r1_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02220_static_aware_bc_r2_dwb \
+  --output outputs/pilot/crossing_flow_high_validation_static_collision_classifier_regression.csv
+```

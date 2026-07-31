@@ -202,6 +202,20 @@ def test_wide_near_field_risk_catches_obstacle_outside_narrow_front_sector() -> 
     assert prediction.collision_risk == 1.0
 
 
+def test_wide_near_field_stops_before_combined_human_radius_overlap() -> None:
+    prediction = RuleFailureDetector().update(
+        _sample(
+            0.0,
+            lidar=0.84,
+            forward_lidar=3.0,
+            collision_lidar=0.84,
+            linear=0.26,
+            angular=-0.37,
+        )
+    )
+    assert prediction.collision_risk == 1.0
+
+
 def test_collision_warning_requires_time_and_clearance_before_release() -> None:
     detector = RuleFailureDetector()
     initial = detector.update(_sample(0.0, lidar=0.8, forward_lidar=0.8, collision_lidar=0.8))
@@ -269,7 +283,7 @@ def test_side_obstacle_closing_on_stationary_robot_triggers_trend() -> None:
     prediction = detector.update(
         _sample(0.5, lidar=0.85, forward_lidar=3.0, collision_lidar=0.85, linear=0.0)
     )
-    assert prediction.collision_risk == pytest.approx(0.75)
+    assert prediction.collision_risk == 1.0
 
 
 def test_side_wall_range_change_explained_by_robot_motion_is_not_dynamic_risk() -> None:
@@ -303,7 +317,7 @@ def test_close_side_obstacle_closing_while_turning_is_not_suppressed() -> None:
             angular=0.9,
         )
     )
-    assert prediction.collision_risk == pytest.approx(0.75)
+    assert prediction.collision_risk == 1.0
 
 
 def test_history_rejects_nonmonotonic_timestamps() -> None:

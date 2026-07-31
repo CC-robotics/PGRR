@@ -42,6 +42,7 @@ print(robot["goal"][2] if len(robot["goal"]) > 2 else 0.0)
 print(robot["start"][0])
 print(robot["start"][1])
 print(robot["start"][2] if len(robot["start"]) > 2 else 0.0)
+print(len(scenario.get("obstacles", {}).get("static", [])))
 PY
 )
 scenario_id="${scenario_values[0]}"
@@ -54,6 +55,7 @@ goal_yaw="${scenario_values[6]}"
 start_x="${scenario_values[7]}"
 start_y="${scenario_values[8]}"
 start_yaw="${scenario_values[9]}"
+static_obstacle_count="${scenario_values[10]}"
 if [[ -z "${scenario_id}" || -z "${seed}" || -z "${split}" || -z "${map_id}" ]]; then
     echo "ERROR: scenario is missing required ramp_metadata" >&2
     exit 2
@@ -277,6 +279,10 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOUR
     recovery_pid=$!
 fi
 timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S}")"
+lidar_static_collision_enabled=true
+if [[ "${static_obstacle_count}" -eq 0 ]]; then
+    lidar_static_collision_enabled=false
+fi
 "${ramp_ros_prefix}/lib/ramp_ros/episode_logger" --ros-args \
     -p use_sim_time:=true \
     -p episode_id:="${episode_id}" \
@@ -307,6 +313,7 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p episode_start_topic:=/ramp/episode_started \
     -p logger_ready_topic:=/ramp/logger_ready \
     -p lidar_collision_distance_m:=0.12 \
+    -p lidar_static_collision_enabled:="${lidar_static_collision_enabled}" \
     -p failure_status_topic:=/ramp/failure_status \
     -p recovery_decision_topic:=/ramp/recovery_decision \
     >>"${RUNTIME_LOG}" 2>&1 &

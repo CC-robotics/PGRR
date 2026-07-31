@@ -231,3 +231,14 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Validation: `make test` passes 193 tests and the Humble overlay builds all three packages.
 - Evidence: all timeout/collision/success rows and raw hashes are retained in `outputs/pilot/crossing_flow_high_validation_safety_iteration.csv`.
 - Next: freeze this code and collect repeated high-density outcomes before updating aggregate claims.
+
+## 2026-08-01 — Scenario-aware collision classification validated online
+
+- Retained two high-density runs that were labeled collision after consecutive 0.08--0.09 m LiDAR returns despite a stopped robot, no declared static obstacles, and more than 1.16 m privileged human-centre clearance.
+- Added two-frame debounce and a scenario-derived switch: LiDAR static-contact termination is enabled only for scenarios with declared static obstacles. Evaluation-time human overlap remains independently active for every scenario.
+- Increased the observable turning-sector collision guard to 0.85 m, latched collision safety immediately in the detector callback, and preserved a chosen emergency turn direction until a safe separating translation is available.
+- A fresh synchronized high-density replay crossed the former false-contact point and reached the original goal in 141.891 s. It maintained 1.185 m minimum human-centre distance and 0.421 m minimum LiDAR distance while executing 494 non-CONTINUE recovery samples.
+- Validation: `make test` passes 197 tests and the Humble overlay builds all three packages.
+- Evidence: `outputs/pilot/crossing_flow_high_validation_static_collision_classifier_regression.csv` contains both unchanged outcomes and raw SHA256 values.
+- One preceding launch lacked a Nav2 action server and produced no algorithm result; it is retained only as a startup diagnostic and excluded from metrics.
+- Next: collect independent validation seeds under this classifier version before locking the final manifest.

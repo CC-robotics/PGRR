@@ -163,6 +163,15 @@ class EmergencyEscapeController:
             self.escape_until_s = now_s + self.backup_duration_s
             return True, self.mode
         if obstacle_clearance_m >= self.rotation_clearance_m:
+            # Keep a safe turn direction through the +/-pi bearing wrap and
+            # through nearest-obstacle identity changes. Re-choosing from the
+            # instantaneous sign can produce an endless left/right limit
+            # cycle before a separating forward heading is reached.
+            if self.mode in {
+                EmergencyEscapeMode.TURN_LEFT,
+                EmergencyEscapeMode.TURN_RIGHT,
+            }:
+                return True, self.mode
             self.mode = (
                 EmergencyEscapeMode.TURN_RIGHT if wrapped >= 0.0 else EmergencyEscapeMode.TURN_LEFT
             )

@@ -16,6 +16,7 @@ from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMessage
 from ramp_core.data.schema import EpisodeMetadata, EpisodeOutcome, NavigationStep
 from ramp_core.evaluation.navigation import (
+    ConsecutiveEvidenceTracker,
     PlannerAbortTracker,
     navigation_status_is_active,
     timeout_is_invalid_reset,
@@ -90,6 +91,8 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("robot_radius_m", 0.36)
         self.declare_parameter("human_radius_m", 0.35)
         self.declare_parameter("lidar_collision_distance_m", 0.12)
+        self.declare_parameter("lidar_collision_confirmation_frames", 2)
+        self.declare_parameter("lidar_static_collision_enabled", True)
 
         episode_id = self._string_parameter("episode_id")
         scenario_id = self._string_parameter("scenario_id")
@@ -177,6 +180,9 @@ class EpisodeLoggerNode(Node):
         self._planner_ever_active = False
         self._planner_abort_tracker = PlannerAbortTracker(
             grace_s=float(self.get_parameter("planner_abort_grace_s").value)
+        )
+        self._lidar_collision_tracker = ConsecutiveEvidenceTracker(
+            confirmation_frames=int(self.get_parameter("lidar_collision_confirmation_frames").value)
         )
         self._failure_prediction = np.zeros(4, dtype=np.float32)
         self._failure_score = 0.0
@@ -506,7 +512,10 @@ class EpisodeLoggerNode(Node):
             )
         distance = float(np.linalg.norm(self._goal[:2] - robot_pose[:2]))
         nearest_obstacle = float(np.min(self._lidar))
-        if nearest_obstacle <= float(self.get_parameter("lidar_collision_distance_m").value):
+        lidar_static_collision = bool(
+            self.get_parameter("lidar_static_collision_enabled").value
+        ) and nearest_obstacle <= float(self.get_parameter("lidar_collision_distance_m").value)
+        if self._lidar_collision_tracker.update(lidar_static_collision):
             self._collision = True
             self._set_outcome(
                 EpisodeOutcome.COLLISION,

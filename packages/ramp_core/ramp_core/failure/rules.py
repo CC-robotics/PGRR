@@ -20,7 +20,7 @@ class RuleFailureConfig:
     safety_margin_m: float = 0.25
     ttc_threshold_s: float = 1.5
     collision_absolute_distance_m: float = 0.9
-    collision_wide_absolute_distance_m: float = 0.7
+    collision_wide_absolute_distance_m: float = 0.85
     collision_release_distance_m: float = 1.2
     collision_hold_s: float = 2.0
     collision_proximity_m: float = 1.50

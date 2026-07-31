@@ -138,3 +138,7 @@ The state-machine transition `rejoin_failure_retry` is direct evidence that CONT
 ## D-034: Release collision safety only after measured clearance recovery
 
 Collision prediction is an anticipatory trigger, not a reliable release signal during rapid in-place rotation. Once its 0.65 threshold is crossed, the 0.85 m footprint and emergency-translation clearances remain latched until the nearest observed return exceeds 0.90 m. Emergency entry thresholds do not change, and a 0.05 m release hysteresis prevents threshold chatter from resetting the escape controller. A bounded translation may still begin inside the conservative capsule only when it strictly separates from every overlapping return. This composes prediction, measured geometry, and hysteresis without exposing privileged state or weakening the collision boundary.
+
+## D-035: Bind static-contact evidence to declared scenario geometry
+
+Gazebo near-range LiDAR can report the robot body or proxy artifacts below the 0.12 m static-contact threshold. The episode runner therefore derives `lidar_static_collision_enabled` from the compiled scenario's `obstacles.static` count. Static shelves, corridor walls, and doorway geometry retain a two-frame LiDAR contact classifier; open-map crossing flow does not. Human collision classification is independent and always enabled through the privileged centre-distance monitor used only for evaluation. This changes terminal labeling, not policy observations, action selection, or safety control.

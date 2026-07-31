@@ -24,6 +24,8 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     assert "/workspace/.venv-inference/bin/python" in runtime
     assert "-m ramp_ros.nodes.recovery_manager_node" in runtime
     assert 'RAMP_BC_MODEL_PATH="${RAMP_BC_MODEL_PATH:-' in wrapper
+    assert 'print(len(scenario.get("obstacles", {}).get("static", [])))' in runtime
+    assert 'lidar_static_collision_enabled:="${lidar_static_collision_enabled}"' in runtime
 
 
 def test_recovery_manager_preserves_task_path_and_continue_restores_goal() -> None:
