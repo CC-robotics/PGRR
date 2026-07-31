@@ -59,8 +59,9 @@ Method & Outcome & Time [s] & $d_g^{\\mathrm{phys}}$ [m] & $d_{\\min}$ [m] & Rec
 
 def high_density_pilot() -> None:
     sources = [
-        ROOT / "outputs/pilot/crossing_flow_high_s02201_6cf9535_pair.csv",
-        ROOT / "outputs/pilot/crossing_flow_high_s02202_6cf9535_pair.csv",
+        ROOT / "outputs/pilot/crossing_flow_high_s02201_8577ff1_pair.csv",
+        ROOT / "outputs/pilot/crossing_flow_high_s02202_8577ff1_pair.csv",
+        ROOT / "outputs/pilot/crossing_flow_high_s02220_8577ff1_pair.csv",
     ]
     results: dict[str, list[dict[str, str]]] = {"base": [], "bc": []}
     commits: set[str] = set()
@@ -77,6 +78,7 @@ def high_density_pilot() -> None:
 
     names = {"base": "Classical DWB", "bc": "Triggered DAgger"}
     rows = []
+    episode_count = len(sources)
     for policy in ("base", "bc"):
         payload = results[policy]
         successes = sum(row["outcome"] == "GOAL_REACHED" for row in payload)
@@ -85,15 +87,16 @@ def high_density_pilot() -> None:
         median_clearance = statistics.median(float(row["min_human_distance_m"]) for row in payload)
         median_actions = statistics.median(int(row["recovery_actions"]) for row in payload)
         rows.append(
-            f"{names[policy]} & {successes}/2 & {collisions}/2 & {median_time:.1f} & "
+            f"{names[policy]} & {successes}/{episode_count} & {collisions}/{episode_count} & "
+            f"{median_time:.1f} & "
             f"{median_clearance:.3f} & {median_actions:.1f} \\\\"
         )
     caption = (
-        "High-density crossing-flow validation pilot on two fixed seeds. Values are "
-        "descriptive medians; $n=2$ is insufficient for significance testing."
+        "High-density crossing-flow validation pilot on three fixed seeds. Values are "
+        "descriptive medians; $n=3$ is insufficient for significance testing."
     )
     table = (
-        """% Generated from two outputs/pilot/crossing_flow_high_*_6cf9535_pair.csv files
+        """% Generated from three outputs/pilot/crossing_flow_high_*_8577ff1_pair.csv files
 \\begin{table}[t]
 \\caption{__CAPTION__}
 \\label{tab:high-density-pilot}

@@ -10,7 +10,7 @@ make smoke
 make test
 ```
 
-Verified-pose high-density validation pilot (commit `6cf9535`):
+Historical verified-pose high-density pilot (commit `6cf9535`):
 
 ```bash
 env -u CONDA_PREFIX -u VIRTUAL_ENV \
@@ -34,6 +34,23 @@ conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
   --prefix data/raw/crossing_flow_high_validation_s02201_6cf9535_bc_r1_dwb \
   --output outputs/pilot/crossing_flow_high_s02201_6cf9535_pair.csv
 
+make figures
+make tables
+make paper
+```
+
+Current terminal-evidence pilot (commit `8577ff1`) uses the same commands with
+episode IDs and partitions suffixed by `8577ff1`, ROS domains 65--70, and all
+three scenarios `s02201`, `s02202`, and `s02220`. Generate the accepted pair
+CSVs and manuscript artifacts with:
+
+```bash
+for seed in s02201 s02202 s02220; do
+  conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+    --prefix "data/raw/crossing_flow_high_validation_${seed}_8577ff1_base_r1_dwb" \
+    --prefix "data/raw/crossing_flow_high_validation_${seed}_8577ff1_bc_r1_dwb" \
+    --output "outputs/pilot/crossing_flow_high_${seed}_8577ff1_pair.csv"
+done
 make figures
 make tables
 make paper

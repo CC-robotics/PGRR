@@ -12,6 +12,10 @@ On high-density validation seed 2220, Base reached the goal in 92.907 s while DA
 
 The first post-KI-064 DAgger replay received a verified success callback, but its final 10 Hz JSONL row contained a 0.319 m physical goal distance. Physical Gazebo poses arrive at the 2 Hz actor-update rate; `_confirm_goal_reached` accepted the subsequent pose at or below 0.300 m and immediately stopped logging before another periodic row. The outcome file previously contained no numeric terminal snapshot, making the success criterion unauditable from the preserved artifact alone. Finalization now writes both localized and physical goal distances, and pair summaries record whether their goal distance came from the terminal outcome or the last periodic sample. Existing outcome files are immutable and are not backfilled; a fresh replay is required.
 
+## KI-066: The current learned pilot improves outcomes but increases terminal time
+
+Under one current environment/code commit on high-density crossing-flow seeds 2201, 2202, and 2220, Base reached two goals and collided once while DAgger reached all three. Median terminal time nevertheless increased from 91.675 to 128.405 s, and the learned policy used a median 308 non-CONTINUE samples. This is a concrete safety--efficiency trade-off, not an efficiency improvement. The pilot contains one discordant outcome and is too small for a significance or generalization claim; further tuning remains validation-only and final test parameters are not locked.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.

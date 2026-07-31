@@ -72,8 +72,9 @@ def verified_actual_pose_pair() -> None:
 
 def high_density_pilot() -> None:
     sources = [
-        ROOT / "outputs/pilot/crossing_flow_high_s02201_6cf9535_pair.csv",
-        ROOT / "outputs/pilot/crossing_flow_high_s02202_6cf9535_pair.csv",
+        ROOT / "outputs/pilot/crossing_flow_high_s02201_8577ff1_pair.csv",
+        ROOT / "outputs/pilot/crossing_flow_high_s02202_8577ff1_pair.csv",
+        ROOT / "outputs/pilot/crossing_flow_high_s02220_8577ff1_pair.csv",
     ]
     pairs: list[list[dict[str, str]]] = []
     for source in sources:
@@ -88,7 +89,8 @@ def high_density_pilot() -> None:
 
     methods = ["DWB", "Triggered\nDAgger"]
     colors = ["#466B9F", "#16836B"]
-    offsets = [-0.18, 0.18]
+    offsets = [-0.24, 0.0, 0.24]
+    hatches = ["", "//", "xx"]
     outcome_score = {"COLLISION": 0.0, "GOAL_REACHED": 1.0}
     plt.rcParams.update({"font.size": 8, "font.family": "DejaVu Sans"})
     figure, axes = plt.subplots(1, 2, figsize=(3.45, 2.05), constrained_layout=True)
@@ -97,23 +99,21 @@ def high_density_pilot() -> None:
         axes[0].bar(
             x,
             [outcome_score[row["outcome"]] for row in pair],
-            width=0.32,
+            width=0.22,
             color=colors,
-            alpha=0.75 + 0.2 * seed_index,
-            hatch="" if seed_index == 0 else "//",
-            label=f"seed {pair[0]['seed']}",
+            alpha=0.72 + 0.12 * seed_index,
+            hatch=hatches[seed_index],
         )
         axes[1].bar(
             x,
             [float(row["min_human_distance_m"]) for row in pair],
-            width=0.32,
+            width=0.22,
             color=colors,
-            alpha=0.75 + 0.2 * seed_index,
-            hatch="" if seed_index == 0 else "//",
+            alpha=0.72 + 0.12 * seed_index,
+            hatch=hatches[seed_index],
         )
     axes[0].set_ylabel("Terminal outcome")
     axes[0].set_yticks([0.0, 1.0], ["Collision", "Goal"])
-    axes[0].legend(frameon=False, fontsize=7, loc="lower right")
     axes[1].axhline(0.71, color="#D97706", linestyle="--", linewidth=0.8)
     axes[1].set_ylabel("Minimum human distance [m]")
     for axis in axes:
