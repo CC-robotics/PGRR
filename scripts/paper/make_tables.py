@@ -4,12 +4,13 @@
 from __future__ import annotations
 
 import csv
+import statistics
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def main() -> None:
+def verified_actual_pose_pair() -> None:
     source = ROOT / "outputs/pilot/crossing_flow_medium_s02201_2164e08_pair.csv"
     with source.open(encoding="utf-8", newline="") as stream:
         payload = list(csv.DictReader(stream))
@@ -54,6 +55,70 @@ Method & Outcome & Time [s] & $d_g^{\\mathrm{phys}}$ [m] & $d_{\\min}$ [m] & Rec
     output = ROOT / "paper/generated/verified_actual_pose_pair.tex"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(table, encoding="utf-8")
+
+
+def high_density_pilot() -> None:
+    sources = [
+        ROOT / "outputs/pilot/crossing_flow_high_s02201_6cf9535_pair.csv",
+        ROOT / "outputs/pilot/crossing_flow_high_s02202_6cf9535_pair.csv",
+    ]
+    results: dict[str, list[dict[str, str]]] = {"base": [], "bc": []}
+    commits: set[str] = set()
+    for source in sources:
+        with source.open(encoding="utf-8", newline="") as stream:
+            payload = list(csv.DictReader(stream))
+        if [row["source_policy"] for row in payload] != ["base", "bc"]:
+            raise RuntimeError(f"expected an ordered Base/BC pair in {source}")
+        for row in payload:
+            results[row["source_policy"]].append(row)
+            commits.add(row["project_commit"])
+    if len(commits) != 1:
+        raise RuntimeError("high-density pilot episodes must come from one project commit")
+
+    names = {"base": "Classical DWB", "bc": "Triggered DAgger"}
+    rows = []
+    for policy in ("base", "bc"):
+        payload = results[policy]
+        successes = sum(row["outcome"] == "GOAL_REACHED" for row in payload)
+        collisions = sum(row["outcome"] == "COLLISION" for row in payload)
+        median_time = statistics.median(float(row["sim_duration_s"]) for row in payload)
+        median_clearance = statistics.median(float(row["min_human_distance_m"]) for row in payload)
+        median_actions = statistics.median(int(row["recovery_actions"]) for row in payload)
+        rows.append(
+            f"{names[policy]} & {successes}/2 & {collisions}/2 & {median_time:.1f} & "
+            f"{median_clearance:.3f} & {median_actions:.1f} \\\\"
+        )
+    caption = (
+        "High-density crossing-flow validation pilot on two fixed seeds. Values are "
+        "descriptive medians; $n=2$ is insufficient for significance testing."
+    )
+    table = (
+        """% Generated from two outputs/pilot/crossing_flow_high_*_6cf9535_pair.csv files
+\\begin{table}[t]
+\\caption{__CAPTION__}
+\\label{tab:high-density-pilot}
+\\centering
+\\small
+\\resizebox{\\columnwidth}{!}{%
+\\begin{tabular}{lrrrrr}
+\\hline
+Method & Goal & Collision & Time [s] & $d_{\\min}$ [m] & Recovery \\\\
+\\hline
+"""
+        + "\n".join(rows)
+        + """
+\\hline
+\\end{tabular}
+}
+\\end{table}
+"""
+    ).replace("__CAPTION__", caption)
+    (ROOT / "paper/generated/high_density_pilot.tex").write_text(table, encoding="utf-8")
+
+
+def main() -> None:
+    verified_actual_pose_pair()
+    high_density_pilot()
 
 
 if __name__ == "__main__":

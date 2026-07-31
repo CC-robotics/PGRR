@@ -1,5 +1,9 @@
 # Known issues
 
+## KI-063: The verified learned recovery is conservative and slow
+
+On high-density validation seeds 2201 and 2202, DWB collided after 29.50 and 30.00 s, whereas the selected DAgger hierarchy reached the physical goal after 114.92 and 118.91 s. It used 254 and 263 non-CONTINUE samples, including 140/185 WAIT samples and 35/27 BACKUP samples. The result is a real collision-to-goal conversion rather than an always-WAIT timeout, but it exposes a strong safety--time trade-off. The final evaluation must report navigation time, intervention ratio, WAIT/BACKUP use, and timeout rate together with collision and success; the validation pilot must not be described as efficiency improvement.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.

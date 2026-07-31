@@ -1,5 +1,7 @@
 # Progress log
 
+- 2026-08-01: Completed two verified-pose high-density crossing-flow validation pairs under frozen commit `6cf9535`. DWB collided on seeds 2201 and 2202; triggered DAgger physically reached the goal on both. All four near-human LiDAR gates passed at 100% visibility. Added raw-hash-linked pair CSVs and regenerated the manuscript with a descriptive two-seed table and figure; no significance claim is made.
+
 - 2026-07-29: Began Gate 0; completed non-mutating system inventory and created the repository skeleton.
 - 2026-07-29: Created and locked `ramp-offline`; verified CUDA access and repaired inherited ROS pytest contamination. Offline quality checks pass.
 - 2026-07-29: Accepted Gate 0 using the pinned Arena Humble Docker fallback. Gazebo spawned Jackal; clock, TF, LiDAR, odometry, and NavigateToPose were live; goal submission and controlled teardown passed.

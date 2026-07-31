@@ -10,6 +10,35 @@ make smoke
 make test
 ```
 
+Verified-pose high-density validation pilot (commit `6cf9535`):
+
+```bash
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+RAMP_SOURCE_POLICY=base RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_EPISODE_ID=crossing_flow_high_validation_s02201_6cf9535_base_r1_dwb \
+ROS_DOMAIN_ID=57 GZ_PARTITION=ramp_6cf9535_high2201_base \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02201.json
+
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+RAMP_SOURCE_POLICY=bc RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_high_validation_s02201_6cf9535_bc_r1_dwb \
+ROS_DOMAIN_ID=58 GZ_PARTITION=ramp_6cf9535_high2201_bc \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02201.json
+
+# Repeat with scenario seed 2202, unique episode IDs, ROS domains, and partitions.
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/crossing_flow_high_validation_s02201_6cf9535_base_r1_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02201_6cf9535_bc_r1_dwb \
+  --output outputs/pilot/crossing_flow_high_s02201_6cf9535_pair.csv
+
+make figures
+make tables
+make paper
+```
+
 Validated offline environment:
 
 ```bash

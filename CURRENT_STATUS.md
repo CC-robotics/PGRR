@@ -1,5 +1,14 @@
 # Current status
 
+## 2026-08-01 — verified-pose DAgger pilot (active)
+
+- The selected safety-aligned DAgger checkpoint has two independent high-density validation successes under frozen commit `6cf9535`. On seeds 2201/2202, DWB ended in `COLLISION` at 29.50/30.00 s; triggered DAgger ended in `GOAL_REACHED` at 114.92/118.91 s.
+- Physical final goal errors are 0.294/0.292 m. Minimum robot--human centre distances are 0.653/0.631 m for DWB and 1.125/1.024 m for DAgger.
+- All four evaluation-only LiDAR consistency gates pass at 100% visibility over 26, 180, 31, and 200 near-human samples. Maximum pose-derived localization disagreement is below 0.139 m.
+- The learned runs used 254/263 non-CONTINUE recovery samples, including WAIT, BACKUP, and temporary subgoals. This is not an always-WAIT outcome, but recovery is slow and the safety--time trade-off is a current limitation.
+- `paper/main.tex`, its generated two-seed table/figure, and `paper/main.pdf` are regenerated from tracked CSV evidence. The draft states that two validation seeds are insufficient for significance.
+- Next: expand the frozen validation pilot across additional seeds and scenario families before locking any final test manifest. PPO and the learned detector remain optional and are not claimed.
+
 ## Gate 2 failed / Gate 3 — privileged Oracle prevalidation (in progress)
 
 ### Completed
