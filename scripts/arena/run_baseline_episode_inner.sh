@@ -101,45 +101,47 @@ recovery_pid=""
 monitor_pid=""
 cleanup_started=0
 
-stop_logger() {
-    if [[ -n "${logger_pid}" ]] && kill -0 "${logger_pid}" 2>/dev/null; then
-        kill -INT "${logger_pid}" 2>/dev/null || true
-        for _ in $(seq 1 15); do
-            kill -0 "${logger_pid}" 2>/dev/null || break
+stop_pid_bounded() {
+    local pid="${1:-}"
+    local signal="${2:-INT}"
+    local attempts="${3:-10}"
+    [[ -n "${pid}" ]] || return 0
+    kill -0 "${pid}" 2>/dev/null || return 0
+    kill -"${signal}" "${pid}" 2>/dev/null || true
+    for _ in $(seq 1 "${attempts}"); do
+        kill -0 "${pid}" 2>/dev/null || break
+        sleep 1
+    done
+    if kill -0 "${pid}" 2>/dev/null; then
+        kill -TERM "${pid}" 2>/dev/null || true
+        for _ in $(seq 1 5); do
+            kill -0 "${pid}" 2>/dev/null || break
             sleep 1
         done
-        if kill -0 "${logger_pid}" 2>/dev/null; then
-            kill -TERM "${logger_pid}" 2>/dev/null || true
-        fi
-        wait "${logger_pid}" 2>/dev/null || true
     fi
+    if kill -0 "${pid}" 2>/dev/null; then
+        kill -KILL "${pid}" 2>/dev/null || true
+    fi
+    wait "${pid}" 2>/dev/null || true
+}
+
+stop_logger() {
+    stop_pid_bounded "${logger_pid}" INT 15
 }
 
 stop_actor_controller() {
-    if [[ -n "${actor_pid}" ]] && kill -0 "${actor_pid}" 2>/dev/null; then
-        kill -INT "${actor_pid}" 2>/dev/null || true
-        wait "${actor_pid}" 2>/dev/null || true
-    fi
-    if [[ -n "${pose_bridge_pid}" ]] && kill -0 "${pose_bridge_pid}" 2>/dev/null; then
-        kill -INT "${pose_bridge_pid}" 2>/dev/null || true
-        wait "${pose_bridge_pid}" 2>/dev/null || true
-    fi
+    stop_pid_bounded "${actor_pid}" INT 10
+    stop_pid_bounded "${pose_bridge_pid}" INT 10
 }
 
 stop_recovery_nodes() {
     for recovery_node_pid in "${recovery_pid}" "${detector_pid}" "${mux_pid}"; do
-        if [[ -n "${recovery_node_pid}" ]] && kill -0 "${recovery_node_pid}" 2>/dev/null; then
-            kill -INT "${recovery_node_pid}" 2>/dev/null || true
-            wait "${recovery_node_pid}" 2>/dev/null || true
-        fi
+        stop_pid_bounded "${recovery_node_pid}" INT 10
     done
 }
 
 stop_monitor() {
-    if [[ -n "${monitor_pid}" ]] && kill -0 "${monitor_pid}" 2>/dev/null; then
-        kill -TERM "${monitor_pid}" 2>/dev/null || true
-        wait "${monitor_pid}" 2>/dev/null || true
-    fi
+    stop_pid_bounded "${monitor_pid}" TERM 5
 }
 
 cleanup() {

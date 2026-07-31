@@ -99,12 +99,24 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "<static>false</static>" in actor
     assert "<kinematic>false</kinematic>" in actor
     assert "<gravity>false</gravity>" in actor
+    assert '<collision name="collision">' not in actor
+    assert "self._robot_position = (float(pose.position.x), float(pose.position.y))" in actor
+    assert "if self._actual_robot_pose is not None:" in actor
     assert "<static>true</static>" not in actor
     assert "Gazebo rejected a deterministic pedestrian proxy pose update" in logger
     assert "NavigateToPose did not activate within the startup deadline" in logger
     assert "episode start handshake did not complete before the wall-clock deadline" in logger
     assert runtime.count("episode_start_topic:=/ramp/episode_started") == 3
     assert runtime.count("logger_ready_topic:=/ramp/logger_ready") == 2
+
+
+def test_episode_cleanup_is_bounded_for_every_auxiliary_process() -> None:
+    root = Path(__file__).resolve().parents[2]
+    runtime = (root / "scripts/arena/run_baseline_episode_inner.sh").read_text(encoding="utf-8")
+    assert "stop_pid_bounded" in runtime
+    assert 'stop_pid_bounded "${recovery_node_pid}" INT 10' in runtime
+    assert 'stop_pid_bounded "${actor_pid}" INT 10' in runtime
+    assert 'kill -KILL "${pid}"' in runtime
 
 
 def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:

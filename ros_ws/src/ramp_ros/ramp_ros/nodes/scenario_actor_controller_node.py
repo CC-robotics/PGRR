@@ -182,15 +182,12 @@ class ScenarioActorController(Node):
       <gravity>false</gravity>
       <kinematic>false</kinematic>
       <inertial>
-        <mass>70.0</mass>
+        <mass>1.0</mass>
         <inertia>
-          <ixx>17.63</ixx><iyy>17.63</iyy><izz>4.29</izz>
+          <ixx>0.25</ixx><iyy>0.25</iyy><izz>0.06</izz>
           <ixy>0.0</ixy><ixz>0.0</ixz><iyz>0.0</iyz>
         </inertia>
       </inertial>
-      <collision name="collision">
-        <geometry><cylinder><radius>0.35</radius><length>1.70</length></cylinder></geometry>
-      </collision>
       <visual name="visual">
         <geometry><cylinder><radius>0.35</radius><length>1.70</length></cylinder></geometry>
         <material><ambient>0.85 0.25 0.12 1</ambient><diffuse>0.85 0.25 0.12 1</diffuse></material>
@@ -204,6 +201,12 @@ class ScenarioActorController(Node):
         return f"ramp_lidar_proxy_{actor_name}"
 
     def _on_odom(self, message: Odometry) -> None:
+        if self._actual_robot_pose is not None:
+            self._robot_position = (
+                float(self._actual_robot_pose.position.x),
+                float(self._actual_robot_pose.position.y),
+            )
+            return
         local_x = float(message.pose.pose.position.x)
         local_y = float(message.pose.pose.position.y)
         start_x = float(self.get_parameter("robot_start_x").value)
@@ -247,6 +250,7 @@ class ScenarioActorController(Node):
             pose.orientation = transform.transform.rotation
             if name == robot_name:
                 self._actual_robot_pose = pose
+                self._robot_position = (float(pose.position.x), float(pose.position.y))
             else:
                 self._actual_proxy_poses[name] = pose
             received = True

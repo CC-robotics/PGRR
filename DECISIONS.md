@@ -162,3 +162,7 @@ Fallback pedestrian cylinders are non-static links with gravity disabled and kin
 ## D-040: Evaluation truth comes from Gazebo dynamic-pose feedback
 
 SetEntityPose success is treated only as command acknowledgement. Fallback pedestrian links are dynamic with gravity disabled, and their physical poses plus the Jackal physical pose are read from `/world/default/dynamic_pose/info` through `ros_gz_bridge`. The actor controller publishes these on evaluation-only privileged topics and fails health on stale feedback. Collision classification and the LiDAR consistency gate use actual-to-actual centre geometry; policy observations continue to use odometry and LiDAR. This decision supersedes D-039's kinematic-link implementation while retaining its sensor gate.
+
+## D-041: Separate LiDAR visibility from contact dynamics in fallback pedestrians
+
+The fallback cylinder is an evaluation surrogate, not a rigid-body model of a person. A 70 kg teleported collision body pushed the Jackal during prolonged close recovery, creating up to 3.0 m disagreement between wheel odometry and Gazebo pose. The proxy therefore retains its rendered cylinder for GPU LiDAR but has no contact collision element. Robot--human collision remains the unchanged actual-pose centre-distance test, and the sensor-consistency gate must confirm that the visual is observed by LiDAR. Pedestrian route yielding uses the actual Gazebo Jackal position once available. This removes an unintended simulator impulse without weakening terminal collision labels or exposing privileged data to the policy.
