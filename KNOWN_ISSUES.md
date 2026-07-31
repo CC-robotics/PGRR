@@ -20,6 +20,8 @@ Under one current environment/code commit on high-density crossing-flow seeds 22
 
 On `temporary_blockage_high_validation_s02720`, Base collided at 37.995 s and DAgger collided at 41.026 s. At 34.13--35.13 s the learned run's nearest LiDAR return closed from 0.83 to 0.60 m while the robot moved at 0.23--0.26 m/s, yet collision risk remained zero because the human was outside the forward/wide sectors. The omnidirectional trend required closing speed to exceed the full robot speed plus 0.25 m/s; this incorrectly treats orthogonal robot motion as explaining a lateral range change. The configuration's explicit `collision_closing_speed_mps=0.10` was never used. Both raw outcomes and passing sensor gates are retained. The correction must be evaluated against nominal false-trigger rate before final configuration lock.
 
+The corrected online replay still collided at 40.493 s and recorded no early collision-risk score, despite an offline reconstruction predicting earlier trend activation. This shows that a minimum-of-scan temporal trend is sensitive to callback sampling and nearest-return identity in dense multi-person flow. The branch remains as an additional cue but is not treated as a sufficient fix.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.
