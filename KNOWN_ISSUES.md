@@ -166,3 +166,7 @@ A clean DAgger-1 validation rerun exposed a safety-layer failure that the first 
 ## KI-042: Same-seed Gazebo scheduling changes the interaction phase
 
 Repeated runs share the same scenario seed and simulator-time actor controller but still show small early pose differences, which can move a near-threshold interaction between normal, emergency, and collision outcomes. No single run is treated as statistical evidence. Pilot/final comparisons must use repeated paired manifests, retain all valid outcomes, and report this residual nondeterminism as a Gazebo fallback limitation.
+
+## KI-043: LiDAR-proxy surface distance underestimates the collision margin
+
+In head-on validation the collision monitor observed a 0.702 m robot-human centre distance while the nearest LiDAR return was still about 0.50 m, just above the 0.48 m generic footprint stop. This is consistent with sensor offset and proxy/collision-geometry differences. The generic narrow-space threshold remains 0.48 m, but a latched observable collision prediction raises the emergency margin to 0.55 m. This is an empirical safety filter, not a formal collision guarantee.

@@ -318,6 +318,7 @@ class RecoveryManagerNode(Node):
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
             "footprint_stop_clearance_m": 0.48,
+            "collision_latched_stop_clearance_m": 0.55,
             "footprint_backup_forward_angle_degrees": 80.0,
             "emergency_hold_s": 0.5,
             "emergency_backup_duration_s": 0.8,
@@ -656,11 +657,14 @@ class RecoveryManagerNode(Node):
         return float(self._scan.angle_min) + closest_index * float(self._scan.angle_increment)
 
     def _footprint_stop_distance(self, linear_velocity: float) -> float:
+        margin = self._float("footprint_stop_clearance_m")
+        if self._failure.collision_risk >= self._float("bc_rejoin_block_threshold"):
+            margin = max(margin, self._float("collision_latched_stop_clearance_m"))
         return stopping_distance(
             abs(linear_velocity),
             self._float("braking_acceleration_mps2"),
             self._float("control_latency_s"),
-            self._float("footprint_stop_clearance_m"),
+            margin,
         )
 
     def _footprint_backup_permitted(self, footprint_hazard: bool) -> bool:
