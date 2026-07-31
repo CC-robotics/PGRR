@@ -295,3 +295,11 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Evidence: `outputs/pilot/crossing_flow_medium_s02201_2164e08_pair.csv`, the two `data/manifests/*2164e08*lidar_consistency.json` files, generated LaTeX table/figure, and raw hashes in the CSV.
 - Validation: 210 tests, Ruff, Mypy, three ROS packages, `make figures`, `make tables`, and `make paper` pass. `paper/main.pdf` is current.
 - This is a verified single-seed execution result, not statistical evidence. Next: rerun independent validation variants under the frozen platform, then regenerate training data if the existing checkpoint does not generalize.
+
+## 2026-08-01 — Independent nominal-case non-degradation pair
+
+- On validation seed 2202, both methods physically reached the goal under commit `a856923`: Base in 93.606 s and triggered DAgger in 92.907 s.
+- Physical goal errors were 0.119 m and 0.289 m; minimum human distances were 1.335 m and 1.330 m. DAgger used 29 temporary-subgoal samples and no WAIT/BACKUP, avoiding the long-intervention failure seen in earlier development runs.
+- Neither run placed a human centre inside the sensor checker's 1.3 m audit radius, so their per-episode proxy reports correctly state insufficient evidence. The selected platform's close-range validity remains established by the seed-2201 26/26 and 30/30 checks.
+- The first BC attempt on this seed remains an unchanged `SIMULATOR_FAILURE` because the old logger compared asynchronous localized/physical frames immediately. The fixed one-second confirmation window produced the fresh valid pair; no outcome was rewritten.
+- Evidence: `outputs/pilot/crossing_flow_medium_s02202_a856923_pair.csv` with raw SHA256 values. This is a nominal non-degradation check, not a recovery improvement claim.
