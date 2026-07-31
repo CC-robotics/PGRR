@@ -121,6 +121,35 @@ def test_continuous_hazard_cannot_repeat_backup_limit_cycle() -> None:
         rear_clearance_m=2.0,
         obstacle_angle_rad=0.2,
         obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.TURN_RIGHT)
+
+    controller.update(
+        now_s=4.0,
+        hazard=False,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+    )
+    controller.update(
+        now_s=7.0,
+        hazard=False,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+    )
+    assert controller.update(
+        now_s=7.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_angle_rad=0.2,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.STOP)
+    assert controller.update(
+        now_s=8.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_angle_rad=0.2,
+        obstacle_clearance_m=0.4,
     ) == (True, EmergencyEscapeMode.BACKUP)
 
 

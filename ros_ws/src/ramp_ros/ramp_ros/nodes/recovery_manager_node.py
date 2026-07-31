@@ -220,6 +220,7 @@ class RecoveryManagerNode(Node):
             backup_clearance_m=self._float("emergency_backup_clearance_m"),
             release_speed_mps=self._float("emergency_release_speed_mps"),
             rotation_clearance_m=self._float("emergency_rotation_clearance_m"),
+            backup_reset_clear_s=self._float("emergency_backup_reset_clear_s"),
         )
         self._decision_publisher = self.create_publisher(
             RecoveryDecision, str(self.get_parameter("recovery_decision_topic").value), 10
@@ -321,6 +322,7 @@ class RecoveryManagerNode(Node):
             # positive lateral margin while permitting in-place narrow-door
             # alignment instead of a permanent conservative stop.
             "emergency_rotation_clearance_m": 0.24,
+            "emergency_backup_reset_clear_s": 3.0,
             "emergency_turn_speed_radps": 0.6,
             "emergency_forward_speed_mps": 0.12,
             "human_radius_m": 0.35,

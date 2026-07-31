@@ -37,7 +37,9 @@ class EmergencyEscapeController:
     release_speed_mps: float
     rotation_clearance_m: float = 0.30
     rear_obstacle_angle_rad: float = math.radians(100.0)
+    backup_reset_clear_s: float = 3.0
     hazard_since_s: float | None = None
+    hazard_clear_since_s: float | None = None
     escape_until_s: float = float("-inf")
     mode: EmergencyEscapeMode = EmergencyEscapeMode.STOP
     backup_used_in_hazard: bool = False
@@ -49,6 +51,7 @@ class EmergencyEscapeController:
             self.backup_clearance_m,
             self.release_speed_mps,
             self.rotation_clearance_m,
+            self.backup_reset_clear_s,
         )
         if any(value < 0.0 for value in values):
             raise ValueError("emergency escape parameters must be non-negative")
@@ -76,11 +79,14 @@ class EmergencyEscapeController:
         if not hazard:
             self.hazard_since_s = None
             self.mode = EmergencyEscapeMode.STOP
-            self.backup_used_in_hazard = False
+            if self.hazard_clear_since_s is None or now_s < self.hazard_clear_since_s:
+                self.hazard_clear_since_s = now_s
+            if now_s - self.hazard_clear_since_s >= self.backup_reset_clear_s:
+                self.backup_used_in_hazard = False
             return False, self.mode
+        self.hazard_clear_since_s = None
         if self.hazard_since_s is None or now_s < self.hazard_since_s:
             self.hazard_since_s = now_s
-            self.backup_used_in_hazard = False
         stopped = abs(linear_speed_mps) <= self.release_speed_mps
         held = now_s - self.hazard_since_s >= self.hold_s
         if not stopped or not held:
