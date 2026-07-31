@@ -178,3 +178,7 @@ The deterministic fallback models reciprocal collision avoidance by stopping a p
 ## D-044: Terminal outcome files carry the confirming pose distances
 
 Periodic JSONL samples are not guaranteed to include the asynchronous pose callback that confirms goal reach. Every new outcome JSON therefore records `localized_goal_distance_m` and `physical_goal_distance_m` from the latest states at finalization. Summary scripts prefer this terminal physical snapshot and explicitly fall back to the last JSONL sample only for legacy outcomes. No historical outcome is rewritten.
+
+## D-045: Detect off-axis closing without subtracting longitudinal robot speed
+
+For the nearest LiDAR return outside the $\pm45^\circ$ collision sector, longitudinal robot speed does not explain a lateral range decrease. The radial trend therefore triggers at the existing `collision_closing_speed_mps` threshold when angular speed is below the configured turning guard. Returns inside the collision sector retain the original robot-speed-plus-excess test, and fixed or slowly jittering side ranges remain negative. The change uses only LiDAR and odometry; no human truth enters deployment. Validation determines whether the added warning duration is acceptably conservative.

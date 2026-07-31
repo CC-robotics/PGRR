@@ -295,6 +295,38 @@ def test_side_wall_range_change_explained_by_robot_motion_is_not_dynamic_risk() 
     assert prediction.collision_risk == 0.0
 
 
+def test_off_axis_obstacle_closing_while_robot_moves_forward_triggers_trend() -> None:
+    detector = RuleFailureDetector()
+    detector.update(
+        _sample(
+            0.0,
+            lidar=1.20,
+            forward_lidar=3.0,
+            collision_lidar=3.0,
+            linear=0.25,
+        )
+    )
+    prediction = detector.update(
+        _sample(
+            0.5,
+            lidar=1.10,
+            forward_lidar=3.0,
+            collision_lidar=3.0,
+            linear=0.25,
+        )
+    )
+    assert prediction.collision_risk == pytest.approx(0.75)
+
+
+def test_off_axis_range_jitter_below_closing_threshold_does_not_trigger() -> None:
+    detector = RuleFailureDetector()
+    detector.update(_sample(0.0, lidar=1.20, forward_lidar=3.0, collision_lidar=3.0, linear=0.25))
+    prediction = detector.update(
+        _sample(0.5, lidar=1.16, forward_lidar=3.0, collision_lidar=3.0, linear=0.25)
+    )
+    assert prediction.collision_risk == 0.0
+
+
 def test_close_side_obstacle_closing_while_turning_is_not_suppressed() -> None:
     detector = RuleFailureDetector()
     detector.update(

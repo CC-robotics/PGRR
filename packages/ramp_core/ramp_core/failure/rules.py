@@ -250,6 +250,7 @@ class RuleFailureDetector:
                 collision_window[0].nearest_lidar_distance
                 - collision_window[-1].nearest_lidar_distance
             ) / max(duration, 1.0e-6)
+            off_axis_nearest = sample.nearest_lidar_distance + 1.0e-3 < collision_clearance
             if (
                 collision_clearance <= self.config.collision_proximity_m
                 and closing_speed
@@ -258,11 +259,16 @@ class RuleFailureDetector:
                 and abs(sample.angular_velocity) <= self.config.collision_max_angular_speed_radps
             ):
                 collision = max(collision, self.config.collision_proximity_score)
-            if (
-                sample.nearest_lidar_distance <= self.config.collision_proximity_m
-                and radial_closing_speed
+            if sample.nearest_lidar_distance <= self.config.collision_proximity_m and (
+                radial_closing_speed
                 >= abs(sample.linear_velocity)
                 + self.config.collision_radial_excess_closing_speed_mps
+                or (
+                    off_axis_nearest
+                    and radial_closing_speed >= self.config.collision_closing_speed_mps
+                    and abs(sample.angular_velocity)
+                    <= self.config.collision_max_angular_speed_radps
+                )
             ):
                 collision = max(collision, self.config.collision_proximity_score)
 
