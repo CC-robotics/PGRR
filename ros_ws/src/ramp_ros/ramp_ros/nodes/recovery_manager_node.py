@@ -677,6 +677,7 @@ class RecoveryManagerNode(Node):
             angle_increment=float(self._scan.angle_increment),
             target=(travel, 0.0),
             clearance_m=self._float("emergency_translation_clearance_m"),
+            allow_initial_overlap_when_separating=True,
         ):
             return 0.0
         return self._laser_clearance(0.0)

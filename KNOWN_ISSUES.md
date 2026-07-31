@@ -190,3 +190,7 @@ The observable mask originally used 0.25 m endpoint and 0.48 m swept clearance i
 ## KI-048: The host has no system LaTeX installation
 
 Neither `latexmk` nor `pdflatex` is installed and adding system TeX would require sudo. The isolated offline environment now declares Tectonic 0.17 and caches its TeX bundle in user space. `scripts/paper/build_paper.sh` prefers `latexmk` when available and otherwise uses Tectonic, then rejects unresolved references, citations, overfull boxes, or a missing PDF. This change does not touch the ROS/Arena runtime.
+
+## KI-049: Swept-footprint escape rejected motion away from an existing overlap
+
+The selected policy initially timed out on Base-solvable medium-density validation seed 2210. It spent 126.2 s in `EMERGENCY_STOP` and rotated beside a 0.24--0.35 m rear-side LiDAR cluster even though its forward half-plane had at least 1.86 m clearance. The emergency forward check used an ordinary swept capsule, which necessarily includes the already-overlapping start footprint and therefore rejected every escape translation. The check now exempts only initial returns whose dot product with the translation is strictly negative; all forward/lateral initial returns and every newly intersected return remain blocking. On the exact retained counterexample, the corrected policy reached the goal in 114.386 s with 0.964 m minimum human-center distance and 219 recovery samples versus the old timeout's 1275. This is an anti-regression result, not evidence of superiority over Base, which reached the goal in 100.866 s.

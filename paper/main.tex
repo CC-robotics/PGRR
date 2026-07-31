@@ -68,6 +68,8 @@ The current pilot repeats one locked high-density crossing-flow validation seed 
 \section{Pilot Results and Analysis}
 Table~\ref{tab:pilot} and Fig.~\ref{fig:pilot} show a concrete closed-loop signal: the selected policy executes WAIT, BACKUP, and temporary subgoals, rejoins the original goal, and removes collisions in these five repeats. Three episodes reach the goal. Two time out, including one episode stopped beside a lateral LiDAR return inconsistent with both scenario geometry and privileged pedestrian positions. We retain both timeouts. The sample is too small for a statistical improvement claim, and the different navigation-time tail remains a central tradeoff for expanded evaluation.
 
+A separate retained medium-density counterexample exposed a safety-controller limit cycle: the ordinary swept capsule rejected translation because its start footprint was already within a rear obstacle's conservative clearance. Requiring emergency translation to increase distance from every initial overlap repaired the exact replay (goal reached in 114.4 s instead of a 180 s timeout), but classical DWB remained faster at 100.9 s. We therefore treat this as anti-regression evidence rather than learned-policy superiority.
+
 Offline scenario-disjoint validation of the selected checkpoint gives 90.98\% top-1, 98.50\% top-3, 95.49\% near-optimal actions, zero invalid selections, and zero catastrophic selections under the expert cost. These metrics validate deployment alignment but cannot replace closed-loop navigation outcomes.
 
 \section{Limitations}

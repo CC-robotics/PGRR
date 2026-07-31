@@ -126,3 +126,7 @@ The earlier coverage checkpoint reached the goal in three of five crossing-flow 
 ## D-031: Use the imitation-only title until PPO earns a closed-loop claim
 
 The repository does not yet contain a validated PPO environment or training result, while the planning-expert, BC, two-round DAgger, deployment mask, and closed-loop policy are implemented and evidenced. The manuscript therefore uses *Planning-Guided Failure-Triggered Recovery via Imitation Learning for Dynamic Social Navigation*. PPO remains optional future work; it may enter the title and contributions only after multiple seeds outperform or complement the selected DAgger policy without reward hacking.
+
+## D-032: Permit emergency translation only when it separates every initial overlap
+
+A footprint capsule is correct for an ordinary candidate action but cannot represent recovery when the robot is already inside its conservative clearance boundary: every segment contains the unsafe start point. The emergency reflex may therefore ignore an initially overlapping LiDAR return only if the proposed translation immediately increases its distance (`point dot translation < 0`). It still applies the full swept capsule to all other returns, retains the 0.36 m translation clearance, moves at 0.12 m/s for at most 0.8 s per option, and remains interruptible. This observable geometric exception repaired a retained medium-density limit cycle without reducing collision thresholds or changing the learned checkpoint.

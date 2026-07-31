@@ -263,3 +263,22 @@ conda run -n ramp-offline python scripts/evaluate/summarize_repeated_pilot.py \
   outputs/pilot/crossing_flow_safety_aligned_repeat5.csv \
   --output outputs/pilot/crossing_flow_safety_aligned_repeat5_summary.json
 ```
+
+Medium-density emergency-escape regression:
+
+```bash
+env -u CONDA_PREFIX -u VIRTUAL_ENV make build
+RAMP_SOURCE_POLICY=bc RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_medium_validation_s02210_safety_escape_bc_v2_dwb \
+ROS_DOMAIN_ID=178 GZ_PARTITION=ramp_safety_escape_v2 \
+IGN_PARTITION=ramp_safety_escape_v2 \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_medium_validation_s02210.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/crossing_flow_medium_validation_s02210_gate3_base_dwb \
+  --prefix data/raw/crossing_flow_medium_validation_s02210_safety_density_bc_v1_dwb \
+  --prefix data/raw/crossing_flow_medium_validation_s02210_safety_escape_bc_v2_dwb \
+  --output outputs/pilot/crossing_flow_medium_validation_escape_regression.csv
+```

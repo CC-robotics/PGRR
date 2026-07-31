@@ -201,3 +201,12 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - The title intentionally omits reinforcement learning because PPO has not been implemented or validated. The abstract explicitly labels the 5-repeat result as a non-conclusive pilot.
 - Validation: `make test` passes 186 tests and `make paper` produces a nonempty PDF.
 - Next: expand and lock the multi-scenario evaluation before replacing pilot wording with final claims.
+
+## 2026-08-01 — Medium-density emergency-escape regression fixed
+
+- Diagnosed a real learned-policy degradation on synchronized `crossing_flow_medium_validation_s02210`: Base reached the goal in 100.866 s, while the selected policy timed out after 180 s with 1262 emergency-stop samples and 1275 recovery-action samples.
+- The terminal LiDAR cluster was not isolated noise. It occupied roughly 16 contiguous beams, remained behind the robot while it rotated, and coexisted with at least 1.86 m forward clearance. The ordinary swept-capsule check nevertheless rejected forward escape because the conservative start footprint was already overlapping.
+- Added a strictly separating emergency-capsule mode. Only initial returns behind the requested translation are exempted; forward/lateral overlaps and all newly swept obstacles remain blocking. Two regression tests cover the allowed rear escape and forbidden front escape.
+- Corrected online replay on the exact scenario reached the goal in 114.386 s, with 0.964 m minimum human-center distance, 0.300 m minimum LiDAR distance, and 219 recovery samples. The old timeout is retained and linked in `outputs/pilot/crossing_flow_medium_validation_escape_regression.csv`.
+- Validation: `make test` passes 188 tests and the Humble overlay builds all three packages.
+- Next: run independent low/medium/high validation seeds, then update the pilot statistics and manuscript only with all valid outcomes retained.

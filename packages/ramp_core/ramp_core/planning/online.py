@@ -41,12 +41,15 @@ def scan_segment_is_free(
     angle_increment: float,
     target: tuple[float, float],
     clearance_m: float,
+    allow_initial_overlap_when_separating: bool = False,
 ) -> bool:
     """Check a robot-frame segment against the swept circular footprint.
 
     Each finite LiDAR return is treated as an obstacle-surface point.  The
     segment is executable only when every point lies outside the capsule made
-    by the robot centreline and ``clearance_m`` radius.
+    by the robot centreline and ``clearance_m`` radius.  A bounded emergency
+    escape may permit points already inside the initial footprint only when
+    the commanded translation moves strictly away from every such point.
     """
     if angle_increment <= 0.0:
         raise ValueError("scan angle increment must be positive")
@@ -64,6 +67,16 @@ def scan_segment_is_free(
     angles = angle_min + np.flatnonzero(valid) * angle_increment
     distances = values[valid]
     points = np.column_stack((distances * np.cos(angles), distances * np.sin(angles)))
+    initial_distances = np.linalg.norm(points, axis=1)
+    initially_overlapping = initial_distances < clearance_m
+    if bool(initially_overlapping.any()):
+        if not allow_initial_overlap_when_separating:
+            return False
+        # For p relative to the robot and translation e, p.e < 0 means that
+        # ||p - t e|| grows immediately for t > 0.  Do not exempt a lateral or
+        # forward obstacle: those motions can scrape or approach it.
+        if bool(np.any(points[initially_overlapping] @ endpoint >= 0.0)):
+            return False
     length_squared = float(endpoint @ endpoint)
     if length_squared <= 1.0e-12:
         closest = np.zeros_like(points)
@@ -71,6 +84,8 @@ def scan_segment_is_free(
         fractions = np.clip(points @ endpoint / length_squared, 0.0, 1.0)
         closest = fractions[:, None] * endpoint
     distances_to_segment = np.linalg.norm(points - closest, axis=1)
+    if allow_initial_overlap_when_separating:
+        distances_to_segment[initially_overlapping] = clearance_m
     return bool(np.all(distances_to_segment >= clearance_m))
 
 
