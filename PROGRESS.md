@@ -44,3 +44,5 @@
 - Achieved the first held-out learned recovery success: DAgger-1 reached the goal in a crossing-flow case where Base collided and BC-0 timed out.
 - Completed DAgger iteration 2 with three new train-only policy trajectories and 230 legal expert labels; the aggregate now contains 14 episodes and 1,383 recovery samples.
 - Diagnosed two emergency-backup counterexamples and added sustained-clear hysteresis. Under the corrected executor, DAgger-1 reached the locked crossing-flow validation goal in 2/2 repeats, while DAgger-2 reached only 1/2 and is retained as a negative ablation.
+- Added head-on train coverage, multi-scenario epoch selection, bounded learned options, collision-latched masks, swept emergency motion, and a path-corridor constraint after retaining several closed-loop counterexamples.
+- Completed a no-deletion repeat-5 pilot on crossing flow: Base 0/5 goals and coverage policy 3/5 goals. The learned policy executed actual +60-degree temporary subgoals; Fisher p=0.167, so the result remains preliminary.

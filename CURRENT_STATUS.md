@@ -169,3 +169,13 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Selected candidate: DAgger-1. Gate 5 is accepted because both aggregation rounds and validation analysis are complete; method-performance claims remain provisional until paired multi-scenario pilots show learned non-CONTINUE recovery actions.
 - Evidence: `outputs/pilot/crossing_flow_high_validation_learning_pilot.csv`, `data/manifests/dagger_iter1_manifest.json`, and `data/manifests/dagger_iter2_manifest.json`.
 - Next: run current Base/Heuristic/DAgger-1/Oracle on additional locked validation scenarios, then decide whether optional PPO is justified or the imitation-only manuscript is the honest endpoint.
+
+## 2026-07-31 — Active-recovery repeat-5 pilot
+
+- Added a train-only head-on coverage shard (234 states; 103 REPLAN, 105 WAIT) and selected epochs on a two-scenario validation set without adding validation frames to training.
+- Added bounded no-progress WAIT/REPLAN masks, collision-latched rejoin blocking, a collision-risk clearance margin, swept emergency-translation checks, and a 0.9 m original-path corridor mask. The current suite passes 185 tests.
+- `head_on_corridor` remains a retained failure: its Gazebo shelf walls are absent from `map_empty`, so recovery/rejoin can collide with unmodeled static geometry. `overtaking` is also not an acceptance scenario because the current Oracle collided.
+- On recoverable `crossing_flow_high_validation_s02220`, five valid Base repeats produced 0 GOAL_REACHED / 5 COLLISION. Five coverage-policy repeats produced 3 GOAL_REACHED / 2 COLLISION and executed WAIT plus +60-degree temporary subgoals.
+- Pilot estimates: Base success 0.0 (95% Clopper--Pearson [0.000, 0.522]); coverage success 0.6 ([0.147, 0.947]); unpaired Fisher p=0.167. Coverage median minimum human distance was 1.115 m and median successful navigation time was 110.889 s.
+- Evidence: `outputs/pilot/crossing_flow_coverage_repeat5.csv` and `outputs/pilot/crossing_flow_coverage_repeat5_summary.json`. This is not final multi-seed statistical evidence.
+- Next: regenerate all selected train labels under the latest path mask, retrain the candidate, then run a multi-seed validation pilot before deciding on PPO or the imitation-only paper scope.

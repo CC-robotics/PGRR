@@ -1,0 +1,57 @@
+{
+  "base_datasets": [
+    {
+      "path": "data/processed/dagger_iter1_train.h5",
+      "sha256": "932f437215bd55c8d34a0a040db51de44de4d330cd244895e592116e05c8cefe"
+    }
+  ],
+  "best_validation_epoch": {
+    "epoch": 1,
+    "train": {
+      "catastrophic_action_rate": 0.04253785147801009,
+      "expert_cost_regret": 42538.33002883922,
+      "invalid_rate": 0.0,
+      "loss": 1.0444028842079613,
+      "near_optimal_rate": 0.640591204037491,
+      "top1": 0.581831290555155,
+      "top3": 0.935832732516222
+    },
+    "validation": {
+      "catastrophic_action_rate": 0.40852130325814534,
+      "expert_cost_regret": 408520.6995904768,
+      "invalid_rate": 0.0,
+      "loss": 1.344433475556529,
+      "near_optimal_rate": 0.46365914786967416,
+      "top1": 0.2807017543859649,
+      "top3": 0.9097744360902256
+    }
+  },
+  "checkpoint": {
+    "path": "checkpoints/dagger/coverage_multival/best.onnx",
+    "sha256": "383c0d8bf49504790100c1c153b3a793a513327aad18042ee3a9b0a8837912b3"
+  },
+  "config": {
+    "path": "configs/imitation/bc_uniform_scenario.yaml",
+    "sha256": "dc698252e07641a876f3f0c3de2d4943f506f21f05d741be1bece6d6f32f0d23"
+  },
+  "dagger_shards": [
+    {
+      "path": "data/interim/head_on_corridor_high_train_coverage.h5",
+      "sha256": "9718bda28ffa7d0b09a7ff86d8167144ff4c167cb39cc67a39325830099a5368"
+    }
+  ],
+  "dataset": {
+    "episode_count": 12,
+    "observation_count": 13081,
+    "path": "data/processed/dagger_coverage_train.h5",
+    "sample_count": 1387,
+    "sha256": "401cf117891db7600e591e6b5163cd7d7de27379f38b4e1d6bbc626acd7564dd"
+  },
+  "iteration": 3,
+  "project_commit": "624bf3b17004b5db26637a9039df0957475714d3",
+  "schema_version": 1,
+  "validation_dataset": {
+    "path": "data/interim/multiscenario_validation.h5",
+    "sha256": "6fc4699c5d997fd55032faea6bcde07b697e1ea22844db040a3bafff33fdc2d5"
+  }
+}

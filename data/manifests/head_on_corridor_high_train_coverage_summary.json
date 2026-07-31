@@ -1,0 +1,22 @@
+{
+  "action_counts": {
+    "0": 1,
+    "1": 6,
+    "2": 1,
+    "21": 105,
+    "23": 103,
+    "24": 16,
+    "3": 1,
+    "9": 1
+  },
+  "finite_selected_cost_count": 234,
+  "illegal_action_count": 0,
+  "margin": {
+    "maximum": 3.508761167526245,
+    "median": 0.41330766677856445,
+    "minimum": 0.010491132736206055
+  },
+  "predicted_success_count": 223,
+  "sample_count": 234,
+  "source_jsonl": "data/raw/head_on_corridor_high_train_s01020_coverage_policy_dwb.jsonl"
+}

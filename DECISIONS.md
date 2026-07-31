@@ -114,3 +114,7 @@ DAgger-2 adds genuine policy-visited train states and completes the prescribed t
 ## D-028: Apply temporal and collision-latched masks to learned options
 
 Head-on validation exposed two deployment semantics missing from the learned policy: WAIT and REPLAN could repeat without progress, and CONTINUE/REPLAN remained available while observable collision risk was latched. The BC mask now budgets three no-progress WAIT decisions and one REPLAN, and blocks rejoin actions while collision risk is at least the configured 0.65 trigger threshold. A budget is enforced only when a planning-valid alternative exists; otherwise WAIT remains the safe fallback.
+
+## D-029: Treat repeat-5 active recovery as pilot evidence only
+
+The current coverage model converted three of five repeated crossing-flow Base-failure trials into verified goal reaches and selected real temporary subgoals, but two trials still collided. Exact intervals are wide and Fisher p=0.167. The method is therefore promising enough to continue, but no significance or robustness claim is permitted until scenario/seed expansion. Head-on and overtaking counterexamples remain in failure analysis rather than being removed.
