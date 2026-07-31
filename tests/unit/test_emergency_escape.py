@@ -74,6 +74,56 @@ def test_footprint_hazard_cancels_active_backup() -> None:
     ) == (True, EmergencyEscapeMode.STOP)
 
 
+def test_continuous_hazard_cannot_repeat_backup_limit_cycle() -> None:
+    controller = _controller()
+    controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_angle_rad=0.2,
+        obstacle_clearance_m=0.4,
+    )
+    assert controller.update(
+        now_s=0.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_angle_rad=0.2,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+    assert controller.update(
+        now_s=1.4,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_angle_rad=0.2,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.TURN_RIGHT)
+    controller.update(
+        now_s=2.0,
+        hazard=False,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+    )
+    assert controller.update(
+        now_s=2.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_angle_rad=0.2,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.STOP)
+    assert controller.update(
+        now_s=3.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_angle_rad=0.2,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+
+
 def test_unobserved_rear_uses_turn_then_observable_forward_escape() -> None:
     controller = _controller()
     controller.update(

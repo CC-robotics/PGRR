@@ -40,6 +40,7 @@ class EmergencyEscapeController:
     hazard_since_s: float | None = None
     escape_until_s: float = float("-inf")
     mode: EmergencyEscapeMode = EmergencyEscapeMode.STOP
+    backup_used_in_hazard: bool = False
 
     def __post_init__(self) -> None:
         values = (
@@ -75,18 +76,25 @@ class EmergencyEscapeController:
         if not hazard:
             self.hazard_since_s = None
             self.mode = EmergencyEscapeMode.STOP
+            self.backup_used_in_hazard = False
             return False, self.mode
         if self.hazard_since_s is None or now_s < self.hazard_since_s:
             self.hazard_since_s = now_s
+            self.backup_used_in_hazard = False
         stopped = abs(linear_speed_mps) <= self.release_speed_mps
         held = now_s - self.hazard_since_s >= self.hold_s
         if not stopped or not held:
             self.mode = EmergencyEscapeMode.STOP
             return True, self.mode
         rear_safe = rear_observed and rear_clearance_m >= self.backup_clearance_m
-        if backup_permitted and rear_safe:
+        # Repeating short reverse pulses can create a limit cycle beside an
+        # obstacle: each pulse clears the immediate footprint test without
+        # escaping the continuous hazard. Permit only one reverse option per
+        # hazard interval, then require a turn/forward geometric escape.
+        if backup_permitted and rear_safe and not self.backup_used_in_hazard:
             self.mode = EmergencyEscapeMode.BACKUP
             self.escape_until_s = now_s + self.backup_duration_s
+            self.backup_used_in_hazard = True
             return True, self.mode
         wrapped = math.atan2(math.sin(obstacle_angle_rad), math.cos(obstacle_angle_rad))
         obstacle_is_rear = abs(wrapped) >= self.rear_obstacle_angle_rad

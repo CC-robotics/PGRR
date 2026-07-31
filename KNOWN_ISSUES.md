@@ -158,3 +158,7 @@ The first successful DAgger-1 artifact manifest records the previous HEAD while 
 ## KI-040: Host shell advertises ROS Iron while Arena is pinned to Humble
 
 The host environment exports `ROS_DISTRO=iron`, so direct shell commands print a mixing warning. Project Make targets explicitly clear host ROS variables for offline work, and Arena runtime commands execute inside the pinned Humble container. Never source the host Iron installation into the Arena overlay; use `make test`, `make build`, or the documented container entry points.
+
+## KI-041: Emergency reverse pulses formed a continuous-hazard limit cycle
+
+A clean DAgger-1 validation rerun exposed a safety-layer failure that the first run did not: small timing differences changed the first turn angle, after which the controller repeatedly alternated STOP and BACKUP beside one stationary pedestrian and eventually collided. The escape controller now permits at most one bounded reverse option per uninterrupted hazard interval; a persistent hazard must transition to an observable turn/forward escape. The failed rerun remains retained as a collision counterexample.
