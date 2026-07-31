@@ -210,3 +210,13 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Corrected online replay on the exact scenario reached the goal in 114.386 s, with 0.964 m minimum human-center distance, 0.300 m minimum LiDAR distance, and 219 recovery samples. The old timeout is retained and linked in `outputs/pilot/crossing_flow_medium_validation_escape_regression.csv`.
 - Validation: `make test` passes 188 tests and the Humble overlay builds all three packages.
 - Next: run independent low/medium/high validation seeds, then update the pilot statistics and manuscript only with all valid outcomes retained.
+
+## 2026-08-01 — High-density stalled-rejoin regression fixed
+
+- Retained a post-escape `PLANNER_FAILURE`: the policy reached `(17.01, 14.47)` with 0.97 m LiDAR clearance and a valid global path, but Nav2 repeatedly failed its progress checker for roughly 90 s.
+- Diagnosed the temporal loop from raw rows and runtime logs. Each five-second rejoin timeout correctly requested a recovery retry, but the cleared detector vector led BC to select CONTINUE again, repeatedly submitting an unchanged task goal.
+- Added a deployment-only temporal mask that blocks CONTINUE on a failed-rejoin retry only when a planning-valid locomotion alternative exists. WAIT remains available and a no-alternative mask retains CONTINUE.
+- Fresh synchronized high-density replay reached the goal in 107.426 s with 1.136 m minimum human-center distance, 0.588 m minimum LiDAR distance, and 187 recovery samples. Base's retained synchronized outcome is collision at 29.104 s; the preceding failed learned replay remains in the comparison artifact.
+- Validation: `make test` passes 190 tests and the Humble overlay builds all three packages.
+- Evidence: `outputs/pilot/crossing_flow_high_validation_rejoin_regression.csv` with raw SHA256 values.
+- Next: repeat the corrected high-density configuration and construct validation-only seed variants before any statistical claim.

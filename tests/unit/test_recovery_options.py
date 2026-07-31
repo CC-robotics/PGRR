@@ -17,6 +17,7 @@ from ramp_core.recovery.options import (
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
     constrain_repeated_replan,
+    constrain_stalled_rejoin,
     constrain_stalled_wait,
     should_continue_recovery_option,
 )
@@ -77,6 +78,26 @@ def test_cleared_collision_latch_restores_rejoin_actions() -> None:
     )
     assert mask[CONTINUE_ACTION_ID]
     assert mask[REPLAN_ACTION_ID]
+
+
+def test_stalled_rejoin_masks_continue_when_planned_escape_exists() -> None:
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[3] = True
+    mask[WAIT_ACTION_ID] = True
+    mask[CONTINUE_ACTION_ID] = True
+    constrained = constrain_stalled_rejoin(mask, escape_required=True)
+    assert constrained[3]
+    assert constrained[WAIT_ACTION_ID]
+    assert not constrained[CONTINUE_ACTION_ID]
+
+
+def test_stalled_rejoin_keeps_continue_when_wait_is_only_alternative() -> None:
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[WAIT_ACTION_ID] = True
+    mask[CONTINUE_ACTION_ID] = True
+    constrained = constrain_stalled_rejoin(mask, escape_required=True)
+    assert constrained[WAIT_ACTION_ID]
+    assert constrained[CONTINUE_ACTION_ID]
 
 
 def test_wait_budget_forces_available_escape_action() -> None:

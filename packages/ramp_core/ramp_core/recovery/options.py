@@ -166,6 +166,34 @@ def constrain_rejoin_actions(
     return constrained
 
 
+def constrain_stalled_rejoin(
+    mask: npt.NDArray[np.bool_],
+    *,
+    escape_required: bool,
+) -> npt.NDArray[np.bool_]:
+    """Prevent a no-progress rejoin retry from selecting CONTINUE again.
+
+    The state machine requests a recovery retry only after the restored task
+    goal failed to produce progress for its full rejoin window.  Re-submitting
+    the same CONTINUE action is therefore a no-op loop.  Disable it only when
+    a planning-valid subgoal, BACKUP, or REPLAN alternative exists; WAIT stays
+    available as the safety fallback but does not by itself justify masking.
+    """
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if not escape_required:
+        return constrained
+    escape_available = bool(
+        constrained[:WAIT_ACTION_ID].any()
+        or constrained[BACKUP_ACTION_ID]
+        or constrained[REPLAN_ACTION_ID]
+    )
+    if escape_available:
+        constrained[CONTINUE_ACTION_ID] = False
+    return constrained
+
+
 def constrain_recurrent_yield_escape(
     mask: npt.NDArray[np.bool_],
     *,

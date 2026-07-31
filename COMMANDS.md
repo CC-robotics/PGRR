@@ -282,3 +282,21 @@ conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
   --prefix data/raw/crossing_flow_medium_validation_s02210_safety_escape_bc_v2_dwb \
   --output outputs/pilot/crossing_flow_medium_validation_escape_regression.csv
 ```
+
+High-density stalled-rejoin regression:
+
+```bash
+RAMP_SOURCE_POLICY=bc RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_high_validation_s02220_rejoin_escape_bc_v2_dwb \
+ROS_DOMAIN_ID=180 GZ_PARTITION=ramp_high_rejoin_v2 \
+IGN_PARTITION=ramp_high_rejoin_v2 \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/crossing_flow_high_validation_s02220_sync3_base_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02220_safety_escape_bc_v1_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02220_rejoin_escape_bc_v2_dwb \
+  --output outputs/pilot/crossing_flow_high_validation_rejoin_regression.csv
+```

@@ -49,6 +49,7 @@ from ramp_core.recovery.options import (
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
     constrain_repeated_replan,
+    constrain_stalled_rejoin,
     constrain_stalled_wait,
     should_continue_recovery_option,
 )
@@ -845,6 +846,8 @@ class RecoveryManagerNode(Node):
         observation: RecoveryObservation,
         pose: Pose2D,
         failure: FailurePrediction,
+        *,
+        stalled_rejoin: bool = False,
     ) -> CoreRecoveryDecision:
         if self._policy_type == "expert":
             try:
@@ -862,6 +865,7 @@ class RecoveryManagerNode(Node):
                 collision_risk=failure.collision_risk,
                 release_threshold=self._float("bc_rejoin_block_threshold"),
             )
+            mask = constrain_stalled_rejoin(mask, escape_required=stalled_rejoin)
             mask = constrain_stalled_wait(
                 mask,
                 consecutive_waits=self._bc_waits_without_progress,
@@ -1001,7 +1005,12 @@ class RecoveryManagerNode(Node):
             transition.changed or persistent_failure_followup
         ):
             observation = self._observation(failure)
-            decision = self._select_decision(observation, pose, failure)
+            decision = self._select_decision(
+                observation,
+                pose,
+                failure,
+                stalled_rejoin=transition.reason == "rejoin_failure_retry",
+            )
             temporary = self._execute(decision.action_id, now_s)
             self._publish_decision(
                 decision.action_id, decision.confidence, decision.reason, temporary
