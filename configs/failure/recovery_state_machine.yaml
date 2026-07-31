@@ -21,7 +21,7 @@ maximum_consecutive_recoveries: 4
 wait_duration_s: 0.5
 subgoal_settle_s: 1.0
 footprint_stop_clearance_m: 0.48
-collision_latched_stop_clearance_m: 0.55
+collision_latched_stop_clearance_m: 0.70
 footprint_backup_forward_angle_degrees: 80.0
 backup_duration_s: 0.8
 backup_speed_mps: 0.15

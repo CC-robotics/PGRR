@@ -318,7 +318,7 @@ class RecoveryManagerNode(Node):
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
             "footprint_stop_clearance_m": 0.48,
-            "collision_latched_stop_clearance_m": 0.55,
+            "collision_latched_stop_clearance_m": 0.70,
             "footprint_backup_forward_angle_degrees": 80.0,
             "emergency_hold_s": 0.5,
             "emergency_backup_duration_s": 0.8,
