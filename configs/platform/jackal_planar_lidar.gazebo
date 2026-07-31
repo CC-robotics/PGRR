@@ -93,7 +93,26 @@
       <right_joint>rear_right_wheel_joint</right_joint>
       <wheel_separation>${track}</wheel_separation>
       <wheel_radius>${wheel_radius}</wheel_radius>
+      <odom_topic>/model/$(arg name)/wheel_odometry</odom_topic>
       <odom_publish_frequency>50</odom_publish_frequency>
+    </plugin>
+  </gazebo>
+
+  <!-- Known-pose simulation localization. The four-wheel skid-steer model's
+       integrated wheel odometry drifts during repeated recovery turns. This
+       publisher derives odometry from the model pose and is replaced by a
+       real localization source outside simulation. -->
+  <gazebo>
+    <plugin
+      filename="gz-sim-odometry-publisher-system"
+      name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>$(arg name)/odom</odom_frame>
+      <robot_base_frame>$(arg name)/base_link</robot_base_frame>
+      <odom_topic>/model/$(arg name)/ground_truth_odometry</odom_topic>
+      <tf_topic>/model/$(arg name)/ground_truth_pose</tf_topic>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <dimensions>2</dimensions>
+      <gaussian_noise>0</gaussian_noise>
     </plugin>
   </gazebo>
 

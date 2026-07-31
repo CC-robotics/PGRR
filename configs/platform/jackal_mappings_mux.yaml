@@ -1,7 +1,7 @@
 [
   # Odometry (Gazebo -> ROS2)
   {
-    "gz_topic": "/model/{robot_name}/odometry",
+    "gz_topic": "/model/{robot_name}/ground_truth_odometry",
     "ros_topic": "odom",
     "ros_type": "nav_msgs/msg/Odometry",
     "gz_type": "gz.msgs.Odometry",

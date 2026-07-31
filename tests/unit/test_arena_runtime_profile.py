@@ -14,3 +14,13 @@ def test_arena_task_boundary_exceeds_algorithm_episode_timeout() -> None:
     assert parameters["auto_reset"] is False
     assert isinstance(parameters["timeout"], int)
     assert parameters["timeout"] > 120.0
+
+
+def test_known_pose_profile_uses_gazebo_pose_odometry() -> None:
+    root = Path(__file__).resolve().parents[2]
+    plugin = (root / "configs/platform/jackal_planar_lidar.gazebo").read_text()
+    mappings = (root / "configs/platform/jackal_mappings_mux.yaml").read_text()
+    assert "gz-sim-odometry-publisher-system" in plugin
+    assert "/model/$(arg name)/ground_truth_odometry" in plugin
+    assert "/model/$(arg name)/wheel_odometry" in plugin
+    assert '"gz_topic": "/model/{robot_name}/ground_truth_odometry"' in mappings

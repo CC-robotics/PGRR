@@ -126,6 +126,9 @@ def test_episode_logger_rejects_privileged_robot_pose_jumps() -> None:
     assert 'declare_parameter("maximum_privileged_pose_jump_m", 1.0)' in logger
     assert "Gazebo robot pose jumped during the active episode" in logger
     assert "math.dist(new_pose[:2], self._privileged_robot_pose[:2])" in logger
+    assert 'declare_parameter("physical_goal_tolerance_m", 0.30)' in logger
+    assert "localized goal success disagrees with Gazebo robot pose" in logger
+    assert logger.count("self._confirm_goal_reached(") == 2
 
 
 def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:

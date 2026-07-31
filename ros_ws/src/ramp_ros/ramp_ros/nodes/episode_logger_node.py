@@ -72,6 +72,7 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("goal_y", 0.0)
         self.declare_parameter("goal_yaw", 0.0)
         self.declare_parameter("goal_tolerance_m", 0.25)
+        self.declare_parameter("physical_goal_tolerance_m", 0.30)
         self.declare_parameter("robot_start_x", 0.0)
         self.declare_parameter("robot_start_y", 0.0)
         self.declare_parameter("robot_start_yaw", 0.0)
@@ -344,9 +345,7 @@ class EpisodeLoggerNode(Node):
         status = next((item for item in raw_statuses if item in active), raw_statuses[-1])
         self._planner_status = status
         if status == GoalStatus.STATUS_SUCCEEDED and self._odom is not None:
-            pose = self._world_robot_pose(self._odom)
-            if float(np.linalg.norm(self._goal[:2] - pose[:2])) <= self._goal_tolerance:
-                self._set_outcome(EpisodeOutcome.GOAL_REACHED, "original NavigateToPose succeeded")
+            self._confirm_goal_reached("original NavigateToPose succeeded")
 
     def _on_collision(self, message: Bool) -> None:
         self._collision = bool(message.data)
@@ -367,12 +366,7 @@ class EpisodeLoggerNode(Node):
         self._recovery_state = int(message.recovery_state)
         self._recovery_reason = str(message.reason)
         if self._recovery_state == RecoveryDecision.SUCCEEDED and self._odom is not None:
-            pose = self._world_robot_pose(self._odom)
-            if float(np.linalg.norm(self._goal[:2] - pose[:2])) <= self._goal_tolerance:
-                self._set_outcome(
-                    EpisodeOutcome.GOAL_REACHED,
-                    "recovery manager succeeded with goal-distance verification",
-                )
+            self._confirm_goal_reached("recovery manager succeeded with goal-distance verification")
         elif self._recovery_state == RecoveryDecision.FAILED:
             self._set_outcome(
                 EpisodeOutcome.PLANNER_FAILURE,
@@ -420,6 +414,21 @@ class EpisodeLoggerNode(Node):
         if self._outcome is None:
             self._outcome = outcome
             self._outcome_detail = detail
+
+    def _confirm_goal_reached(self, detail: str) -> None:
+        if self._odom is None or self._privileged_robot_pose is None:
+            return
+        localized_pose = self._world_robot_pose(self._odom)
+        if float(np.linalg.norm(self._goal[:2] - localized_pose[:2])) > self._goal_tolerance:
+            return
+        physical_distance = math.dist(self._goal[:2], self._privileged_robot_pose[:2])
+        if physical_distance > float(self.get_parameter("physical_goal_tolerance_m").value):
+            self._set_outcome(
+                EpisodeOutcome.SIMULATOR_FAILURE,
+                "localized goal success disagrees with Gazebo robot pose",
+            )
+            return
+        self._set_outcome(EpisodeOutcome.GOAL_REACHED, detail)
 
     @property
     def terminal(self) -> bool:
