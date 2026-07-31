@@ -16,6 +16,7 @@ from ramp_core.recovery.options import (
     PrivilegedYieldOption,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
+    constrain_repeated_replan,
     constrain_stalled_wait,
     should_continue_recovery_option,
 )
@@ -85,6 +86,31 @@ def test_wait_budget_forces_available_escape_action() -> None:
     constrained = constrain_stalled_wait(mask, consecutive_waits=3, wait_budget=3)
     assert not constrained[WAIT_ACTION_ID]
     assert constrained[BACKUP_ACTION_ID]
+
+
+def test_wait_budget_treats_replan_as_an_escape() -> None:
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[WAIT_ACTION_ID] = True
+    mask[REPLAN_ACTION_ID] = True
+    constrained = constrain_stalled_wait(mask, consecutive_waits=3, wait_budget=3)
+    assert not constrained[WAIT_ACTION_ID]
+    assert constrained[REPLAN_ACTION_ID]
+
+
+def test_replan_budget_forces_an_available_alternative() -> None:
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[WAIT_ACTION_ID] = True
+    mask[REPLAN_ACTION_ID] = True
+    constrained = constrain_repeated_replan(mask, replan_count=1, replan_budget=1)
+    assert constrained[WAIT_ACTION_ID]
+    assert not constrained[REPLAN_ACTION_ID]
+
+
+def test_replan_remains_when_it_is_the_only_legal_action() -> None:
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[REPLAN_ACTION_ID] = True
+    constrained = constrain_repeated_replan(mask, replan_count=1, replan_budget=1)
+    assert constrained[REPLAN_ACTION_ID]
 
 
 def test_wait_remains_valid_before_budget_is_exhausted() -> None:

@@ -43,6 +43,7 @@ from ramp_core.recovery.options import (
     PrivilegedYieldOption,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
+    constrain_repeated_replan,
     constrain_stalled_wait,
     should_continue_recovery_option,
 )
@@ -197,6 +198,8 @@ class RecoveryManagerNode(Node):
         )
         self._expert_previous_side = 0
         self._expert_repeated_waits = 0
+        self._bc_waits_without_progress = 0
+        self._bc_replans_without_progress = 0
         self._failure = FailurePrediction(0.0, 0.0, 0.0, 0.0)
         self._planner_status = PlannerStatus.UNKNOWN
         self._armed = False
@@ -308,6 +311,8 @@ class RecoveryManagerNode(Node):
             "expert_replan_interval_s": 0.5,
             "expert_rejoin_block_threshold": 0.9,
             "expert_wait_budget_decisions": 3,
+            "bc_wait_budget_decisions": 3,
+            "bc_replan_budget_decisions": 1,
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
@@ -795,7 +800,28 @@ class RecoveryManagerNode(Node):
             except (RuntimeError, ValueError) as error:
                 self.get_logger().error(f"privileged expert failed safely: {error}")
                 return CoreRecoveryDecision(WAIT_ACTION_ID, 0.0, "oracle_error_wait")
-        return self._policy.select_action(observation, self._action_mask(pose))
+        mask = self._action_mask(pose)
+        if self._policy_type == "bc":
+            if self._valid_progress():
+                self._bc_waits_without_progress = 0
+                self._bc_replans_without_progress = 0
+            mask = constrain_stalled_wait(
+                mask,
+                consecutive_waits=self._bc_waits_without_progress,
+                wait_budget=self._integer("bc_wait_budget_decisions"),
+            )
+            mask = constrain_repeated_replan(
+                mask,
+                replan_count=self._bc_replans_without_progress,
+                replan_budget=self._integer("bc_replan_budget_decisions"),
+            )
+        decision = self._policy.select_action(observation, mask)
+        if self._policy_type == "bc":
+            if decision.action_id == WAIT_ACTION_ID:
+                self._bc_waits_without_progress += 1
+            elif decision.action_id == REPLAN_ACTION_ID:
+                self._bc_replans_without_progress += 1
+        return decision
 
     def _valid_progress(self) -> bool:
         if len(self._distance_history) < 2:

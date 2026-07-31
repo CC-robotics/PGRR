@@ -215,7 +215,30 @@ def constrain_stalled_wait(
         raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
     if consecutive_waits < 0 or wait_budget <= 0:
         raise ValueError("wait counters must be non-negative and budget positive")
-    escape_available = bool(constrained[:WAIT_ACTION_ID].any() or constrained[BACKUP_ACTION_ID])
+    escape_available = bool(
+        constrained[:WAIT_ACTION_ID].any()
+        or constrained[BACKUP_ACTION_ID]
+        or constrained[REPLAN_ACTION_ID]
+    )
     if consecutive_waits >= wait_budget and escape_available:
         constrained[WAIT_ACTION_ID] = False
+    return constrained
+
+
+def constrain_repeated_replan(
+    mask: npt.NDArray[np.bool_],
+    *,
+    replan_count: int,
+    replan_budget: int,
+) -> npt.NDArray[np.bool_]:
+    """Prevent repeated REPLAN requests from starving executable options."""
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if replan_count < 0 or replan_budget <= 0:
+        raise ValueError("replan count must be non-negative and budget positive")
+    alternatives = constrained.copy()
+    alternatives[REPLAN_ACTION_ID] = False
+    if replan_count >= replan_budget and bool(alternatives.any()):
+        constrained[REPLAN_ACTION_ID] = False
     return constrained
