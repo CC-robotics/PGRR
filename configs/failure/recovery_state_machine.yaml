@@ -37,3 +37,4 @@ emergency_rotation_clearance_m: 0.24
 emergency_backup_reset_clear_s: 3.0
 emergency_turn_speed_radps: 0.6
 emergency_forward_speed_mps: 0.12
+emergency_translation_clearance_m: 0.36

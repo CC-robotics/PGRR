@@ -95,12 +95,14 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["collision_latched_stop_clearance_m"] == 0.70
     assert config["emergency_rotation_clearance_m"] == 0.24
     assert config["emergency_backup_reset_clear_s"] == 3.0
+    assert config["emergency_translation_clearance_m"] == 0.36
     assert config["bc_wait_budget_decisions"] == 3
     assert config["bc_replan_budget_decisions"] == 1
     assert config["bc_rejoin_block_threshold"] == 0.65
     assert '"emergency_rotation_clearance_m": 0.24' in manager
     assert '"emergency_backup_reset_clear_s": 3.0' in manager
     assert "apply_observable_scan_mask(" in manager
+    assert manager.count("_forward_escape_clearance()") >= 2
     detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()
     assert "RecoveryDecision.EMERGENCY_STOP" in detector
 

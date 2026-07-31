@@ -37,6 +37,7 @@ from ramp_core.planning.online import (
     directional_scan_clearance,
     estimate_human_states,
     privileged_time_to_collision,
+    scan_segment_is_free,
 )
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.options import (
@@ -332,6 +333,7 @@ class RecoveryManagerNode(Node):
             "emergency_backup_reset_clear_s": 3.0,
             "emergency_turn_speed_radps": 0.6,
             "emergency_forward_speed_mps": 0.12,
+            "emergency_translation_clearance_m": 0.36,
             "human_radius_m": 0.35,
             "robot_radius_m": 0.36,
             "maximum_human_speed_mps": 2.0,
@@ -656,6 +658,23 @@ class RecoveryManagerNode(Node):
         closest_index = int(valid_indices[np.argmin(values[valid])])
         return float(self._scan.angle_min) + closest_index * float(self._scan.angle_increment)
 
+    def _forward_escape_clearance(self) -> float:
+        """Return forward clearance only when the footprint corridor is free."""
+        assert self._scan is not None
+        travel = (
+            self._float("emergency_forward_speed_mps") * self._float("emergency_backup_duration_s")
+            + 0.10
+        )
+        if not scan_segment_is_free(
+            self._scan.ranges,
+            angle_min=float(self._scan.angle_min),
+            angle_increment=float(self._scan.angle_increment),
+            target=(travel, 0.0),
+            clearance_m=self._float("emergency_translation_clearance_m"),
+        ):
+            return 0.0
+        return self._laser_clearance(0.0)
+
     def _footprint_stop_distance(self, linear_velocity: float) -> float:
         margin = self._float("footprint_stop_clearance_m")
         if self._failure.collision_risk >= self._float("bc_rejoin_block_threshold"):
@@ -923,7 +942,7 @@ class RecoveryManagerNode(Node):
             backup_permitted=self._footprint_backup_permitted(footprint_hazard),
             obstacle_angle_rad=nearest_angle,
             obstacle_clearance_m=self._nearest_clearance(),
-            forward_clearance_m=self._laser_clearance(0.0),
+            forward_clearance_m=self._forward_escape_clearance(),
             rear_observed=rear_clearance is not None,
         )
         self._emergency_escape_active = self._emergency_escape_mode is EmergencyEscapeMode.BACKUP
@@ -1047,7 +1066,7 @@ class RecoveryManagerNode(Node):
             and self._emergency_escape_mode is EmergencyEscapeMode.FORWARD
         ):
             command = Twist()
-            if self._laser_clearance(0.0) >= self._float("emergency_backup_clearance_m"):
+            if self._forward_escape_clearance() >= self._float("emergency_backup_clearance_m"):
                 command.linear.x = self._float("emergency_forward_speed_mps")
         elif (
             self._machine.state is RecoveryState.EMERGENCY_STOP
