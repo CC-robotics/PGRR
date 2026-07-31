@@ -134,3 +134,7 @@ A footprint capsule is correct for an ordinary candidate action but cannot repre
 ## D-033: A failed rejoin must try a different executable option
 
 The state-machine transition `rejoin_failure_retry` is direct evidence that CONTINUE failed to produce progress for the configured five-second window. During that transition only, CONTINUE is removed from the BC action mask if at least one already-mask-valid locomotion alternative exists. The learner then chooses among its remaining ranked actions; no action is hard-coded and WAIT remains available. If no subgoal, BACKUP, or REPLAN is safe, CONTINUE is retained rather than creating an empty or WAIT-only mask. This is a temporal action constraint analogous to the bounded WAIT and REPLAN budgets, not a model retraining change.
+
+## D-034: Release collision safety only after measured clearance recovery
+
+Collision prediction is an anticipatory trigger, not a reliable release signal during rapid in-place rotation. Once its 0.65 threshold is crossed, the 0.85 m footprint and emergency-translation clearances remain latched until the nearest observed return exceeds 0.90 m. Emergency entry thresholds do not change, and a 0.05 m release hysteresis prevents threshold chatter from resetting the escape controller. A bounded translation may still begin inside the conservative capsule only when it strictly separates from every overlapping return. This composes prediction, measured geometry, and hysteresis without exposing privileged state or weakening the collision boundary.

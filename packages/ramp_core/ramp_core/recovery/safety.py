@@ -7,6 +7,60 @@ from dataclasses import dataclass
 from enum import Enum
 
 
+def emergency_hazard_with_hysteresis(
+    *,
+    emergency_active: bool,
+    motion_clearance_m: float,
+    motion_stop_distance_m: float,
+    footprint_clearance_m: float,
+    footprint_stop_distance_m: float,
+    release_hysteresis_m: float,
+) -> bool:
+    """Latch a geometric hazard until both clearances exceed release margins."""
+    values = (
+        motion_clearance_m,
+        motion_stop_distance_m,
+        footprint_clearance_m,
+        footprint_stop_distance_m,
+        release_hysteresis_m,
+    )
+    if any(not math.isfinite(value) for value in values):
+        raise ValueError("emergency clearances and thresholds must be finite")
+    if min(values) < 0.0:
+        raise ValueError("emergency clearances and thresholds must be non-negative")
+    hysteresis = release_hysteresis_m if emergency_active else 0.0
+    return bool(
+        motion_clearance_m < motion_stop_distance_m + hysteresis
+        or footprint_clearance_m < footprint_stop_distance_m + hysteresis
+    )
+
+
+def update_collision_safety_latch(
+    *,
+    latched: bool,
+    collision_risk: float,
+    trigger_threshold: float,
+    footprint_clearance_m: float,
+    release_clearance_m: float,
+) -> bool:
+    """Retain collision-specific margins until measured clearance is restored."""
+    values = (
+        collision_risk,
+        trigger_threshold,
+        footprint_clearance_m,
+        release_clearance_m,
+    )
+    if any(not math.isfinite(value) for value in values):
+        raise ValueError("collision latch inputs must be finite")
+    if not 0.0 <= collision_risk <= 1.0 or not 0.0 <= trigger_threshold <= 1.0:
+        raise ValueError("collision probabilities and thresholds must lie in [0, 1]")
+    if footprint_clearance_m < 0.0 or release_clearance_m < 0.0:
+        raise ValueError("collision clearances must be non-negative")
+    if collision_risk >= trigger_threshold:
+        return True
+    return bool(latched and footprint_clearance_m < release_clearance_m)
+
+
 def backup_increases_obstacle_clearance(
     obstacle_angle_rad: float,
     *,

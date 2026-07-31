@@ -105,6 +105,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"emergency_backup_reset_clear_s": 3.0' in manager
     assert "apply_observable_scan_mask(" in manager
     assert manager.count("_forward_escape_clearance()") >= 2
+    assert 'translation_clearance = self._float("emergency_translation_clearance_m")' in manager
+    assert 'self._float("collision_latched_stop_clearance_m")' in manager
     detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()
     assert "RecoveryDecision.EMERGENCY_STOP" in detector
     assert "timestamp <= self._last_timestamp" in detector

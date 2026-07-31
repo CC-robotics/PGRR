@@ -7,6 +7,8 @@ from ramp_core.recovery.safety import (
     EmergencyEscapeController,
     EmergencyEscapeMode,
     backup_increases_obstacle_clearance,
+    emergency_hazard_with_hysteresis,
+    update_collision_safety_latch,
 )
 
 
@@ -16,6 +18,56 @@ def _controller() -> EmergencyEscapeController:
         backup_duration_s=0.8,
         backup_clearance_m=0.7,
         release_speed_mps=0.03,
+    )
+
+
+def test_emergency_hazard_uses_a_stricter_release_clearance() -> None:
+    values = {
+        "motion_clearance_m": 2.0,
+        "motion_stop_distance_m": 0.45,
+        "footprint_clearance_m": 0.87,
+        "footprint_stop_distance_m": 0.85,
+        "release_hysteresis_m": 0.05,
+    }
+    assert not emergency_hazard_with_hysteresis(emergency_active=False, **values)
+    assert emergency_hazard_with_hysteresis(emergency_active=True, **values)
+    values["footprint_clearance_m"] = 0.91
+    assert not emergency_hazard_with_hysteresis(emergency_active=True, **values)
+
+
+def test_emergency_hazard_rejects_negative_hysteresis() -> None:
+    with pytest.raises(ValueError, match="non-negative"):
+        emergency_hazard_with_hysteresis(
+            emergency_active=True,
+            motion_clearance_m=1.0,
+            motion_stop_distance_m=0.5,
+            footprint_clearance_m=1.0,
+            footprint_stop_distance_m=0.5,
+            release_hysteresis_m=-0.1,
+        )
+
+
+def test_collision_margin_latch_survives_a_single_cleared_prediction() -> None:
+    assert update_collision_safety_latch(
+        latched=False,
+        collision_risk=0.75,
+        trigger_threshold=0.65,
+        footprint_clearance_m=0.60,
+        release_clearance_m=0.90,
+    )
+    assert update_collision_safety_latch(
+        latched=True,
+        collision_risk=0.0,
+        trigger_threshold=0.65,
+        footprint_clearance_m=0.89,
+        release_clearance_m=0.90,
+    )
+    assert not update_collision_safety_latch(
+        latched=True,
+        collision_risk=0.0,
+        trigger_threshold=0.65,
+        footprint_clearance_m=0.91,
+        release_clearance_m=0.90,
     )
 
 

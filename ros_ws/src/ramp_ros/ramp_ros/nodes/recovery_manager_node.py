@@ -57,6 +57,8 @@ from ramp_core.recovery.safety import (
     EmergencyEscapeController,
     EmergencyEscapeMode,
     backup_increases_obstacle_clearance,
+    emergency_hazard_with_hysteresis,
+    update_collision_safety_latch,
 )
 from ramp_core.state_machine import (
     RecoveryState,
@@ -220,6 +222,7 @@ class RecoveryManagerNode(Node):
         self._goal_preempted = False
         self._action_started_s = float("-inf")
         self._emergency = False
+        self._collision_safety_latched = False
         self._emergency_escape_active = False
         self._emergency_escape_mode = EmergencyEscapeMode.STOP
         self._published_emergency_escape = False
@@ -332,6 +335,7 @@ class RecoveryManagerNode(Node):
             "emergency_backup_duration_s": 0.8,
             "emergency_backup_clearance_m": 0.70,
             "emergency_release_speed_mps": 0.03,
+            "emergency_release_hysteresis_m": 0.05,
             # Jackal's measured half width is smaller than its 0.36 m
             # circumscribed collision radius. This threshold preserves a
             # positive lateral margin while permitting in-place narrow-door
@@ -672,12 +676,18 @@ class RecoveryManagerNode(Node):
             self._float("emergency_forward_speed_mps") * self._float("emergency_backup_duration_s")
             + 0.10
         )
+        translation_clearance = self._float("emergency_translation_clearance_m")
+        if self._collision_safety_latched:
+            translation_clearance = max(
+                translation_clearance,
+                self._float("collision_latched_stop_clearance_m"),
+            )
         if not scan_segment_is_free(
             self._scan.ranges,
             angle_min=float(self._scan.angle_min),
             angle_increment=float(self._scan.angle_increment),
             target=(travel, 0.0),
-            clearance_m=self._float("emergency_translation_clearance_m"),
+            clearance_m=translation_clearance,
             allow_initial_overlap_when_separating=True,
         ):
             return 0.0
@@ -685,7 +695,7 @@ class RecoveryManagerNode(Node):
 
     def _footprint_stop_distance(self, linear_velocity: float) -> float:
         margin = self._float("footprint_stop_clearance_m")
-        if self._failure.collision_risk >= self._float("bc_rejoin_block_threshold"):
+        if self._collision_safety_latched:
             margin = max(margin, self._float("collision_latched_stop_clearance_m"))
         return stopping_distance(
             abs(linear_velocity),
@@ -960,10 +970,27 @@ class RecoveryManagerNode(Node):
             self._float("stopping_margin_m"),
         )
         motion_clearance = self._motion_clearance(float(self._odom.twist.twist.linear.x))
-        footprint_hazard = self._nearest_clearance() < self._footprint_stop_distance(
-            float(self._odom.twist.twist.linear.x)
+        nearest_clearance = self._nearest_clearance()
+        self._collision_safety_latched = update_collision_safety_latch(
+            latched=self._collision_safety_latched,
+            collision_risk=failure.collision_risk,
+            trigger_threshold=self._float("bc_rejoin_block_threshold"),
+            footprint_clearance_m=nearest_clearance,
+            release_clearance_m=(
+                self._float("collision_latched_stop_clearance_m")
+                + self._float("emergency_release_hysteresis_m")
+            ),
         )
-        raw_emergency = motion_clearance < stop or footprint_hazard
+        footprint_stop = self._footprint_stop_distance(float(self._odom.twist.twist.linear.x))
+        footprint_hazard = nearest_clearance < footprint_stop
+        raw_emergency = emergency_hazard_with_hysteresis(
+            emergency_active=self._emergency,
+            motion_clearance_m=motion_clearance,
+            motion_stop_distance_m=stop,
+            footprint_clearance_m=nearest_clearance,
+            footprint_stop_distance_m=footprint_stop,
+            release_hysteresis_m=self._float("emergency_release_hysteresis_m"),
+        )
         rear_clearance = self._observed_laser_clearance(math.pi)
         nearest_angle = self._nearest_obstacle_angle()
         self._emergency, self._emergency_escape_mode = self._emergency_escape.update(
@@ -973,7 +1000,7 @@ class RecoveryManagerNode(Node):
             rear_clearance_m=0.0 if rear_clearance is None else rear_clearance,
             backup_permitted=self._footprint_backup_permitted(footprint_hazard),
             obstacle_angle_rad=nearest_angle,
-            obstacle_clearance_m=self._nearest_clearance(),
+            obstacle_clearance_m=nearest_clearance,
             forward_clearance_m=self._forward_escape_clearance(),
             rear_observed=rear_clearance is not None,
         )
@@ -1005,10 +1032,20 @@ class RecoveryManagerNode(Node):
             transition.changed or persistent_failure_followup
         ):
             observation = self._observation(failure)
+            decision_failure = failure
+            if self._collision_safety_latched and failure.collision_risk < self._float(
+                "bc_rejoin_block_threshold"
+            ):
+                decision_failure = FailurePrediction(
+                    collision_risk=self._float("bc_rejoin_block_threshold"),
+                    freeze=failure.freeze,
+                    oscillation=failure.oscillation,
+                    deadlock=failure.deadlock,
+                )
             decision = self._select_decision(
                 observation,
                 pose,
-                failure,
+                decision_failure,
                 stalled_rejoin=transition.reason == "rejoin_failure_retry",
             )
             temporary = self._execute(decision.action_id, now_s)

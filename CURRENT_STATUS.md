@@ -220,3 +220,14 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Validation: `make test` passes 190 tests and the Humble overlay builds all three packages.
 - Evidence: `outputs/pilot/crossing_flow_high_validation_rejoin_regression.csv` with raw SHA256 values.
 - Next: repeat the corrected high-density configuration and construct validation-only seed variants before any statistical claim.
+
+## 2026-08-01 — Collision-safety release and multi-obstacle escape aligned
+
+- A locked-code high-density repeat produced a retained timeout at the collision-latched 0.85 m boundary. LiDAR jitter repeatedly reset the emergency hold, so the escape option could not complete.
+- Release hysteresis alone escaped the early interaction but exposed an unsafe rejoin: collision prediction cleared for one turning frame, generic 0.48 m clearance resumed, and the episode collided at 0.697 m human-center distance.
+- Latching the stop margin removed that release path, but the emergency forward capsule still used 0.36 m and moved away from one obstacle while approaching another, colliding at 0.709 m.
+- The selected safety composition keeps the 0.85 m stop and multi-obstacle translation capsule active until observed clearance exceeds 0.90 m. A translation from overlap remains legal only if it increases distance from every overlapping return.
+- Fresh online replay reached the goal in 113.986 s with 1.161 m minimum human-center distance, 0.640 m minimum LiDAR distance, and 262 recovery samples.
+- Validation: `make test` passes 193 tests and the Humble overlay builds all three packages.
+- Evidence: all timeout/collision/success rows and raw hashes are retained in `outputs/pilot/crossing_flow_high_validation_safety_iteration.csv`.
+- Next: freeze this code and collect repeated high-density outcomes before updating aggregate claims.

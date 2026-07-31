@@ -300,3 +300,22 @@ conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
   --prefix data/raw/crossing_flow_high_validation_s02220_rejoin_escape_bc_v2_dwb \
   --output outputs/pilot/crossing_flow_high_validation_rejoin_regression.csv
 ```
+
+Collision-safety release diagnostic chain:
+
+```bash
+RAMP_SOURCE_POLICY=bc RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=crossing_flow_high_validation_s02220_latched_capsule_bc_v7_dwb \
+ROS_DOMAIN_ID=185 GZ_PARTITION=ramp_high_capsule_v7 \
+IGN_PARTITION=ramp_high_capsule_v7 \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/crossing_flow_high_validation_s02220_rejoin_escape_bc_v4_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02220_hysteresis_bc_v5_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02220_latched_hysteresis_bc_v6_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02220_latched_capsule_bc_v7_dwb \
+  --output outputs/pilot/crossing_flow_high_validation_safety_iteration.csv
+```

@@ -72,6 +72,8 @@ A separate retained medium-density counterexample exposed a safety-controller li
 
 A high-density replay exposed a second temporal loop after safe escape: every failed rejoin selected CONTINUE and resubmitted the unchanged task goal. Masking CONTINUE only on a failed-rejoin retry with a valid locomotion alternative produced a fresh 107.4 s goal reach. Residual same-seed scheduling variability prevents treating this replay as a controlled ablation; both outcomes remain in the artifact set.
 
+Further stress replay showed that prediction must not also serve as the release condition: a one-frame cleared prediction prematurely restored the generic footprint margin, while a single-nearest-obstacle escape could approach a second person. The selected implementation retains collision-specific stop and multi-obstacle translation clearances until measured clearance recovery. The timeout and two intermediate collisions are retained as development counterexamples; only the final composition produced a safe goal reach in its initial replay.
+
 Offline scenario-disjoint validation of the selected checkpoint gives 90.98\% top-1, 98.50\% top-3, 95.49\% near-optimal actions, zero invalid selections, and zero catastrophic selections under the expert cost. These metrics validate deployment alignment but cannot replace closed-loop navigation outcomes.
 
 \section{Limitations}

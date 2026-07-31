@@ -198,3 +198,11 @@ The selected policy initially timed out on Base-solvable medium-density validati
 ## KI-050: Rejoin retries could select CONTINUE indefinitely
 
 A high-density replay escaped the immediate interaction but stopped at `(17.01, 14.47)` with a valid path and 0.97 m LiDAR clearance. Nav2 repeatedly reported `Failed to make progress`; after each five-second rejoin timeout the state machine entered `RECOVERY`, but the policy saw a cleared failure vector and selected CONTINUE with greater than 0.97 confidence. Re-submitting the unchanged task goal cannot resolve a failed rejoin. The deployment mask now disables CONTINUE for that retry only when a planning-valid subgoal, BACKUP, or REPLAN exists. The failed replay remains `PLANNER_FAILURE`; a fresh synchronized replay reached the goal in 107.426 s with 1.136 m minimum human distance. Same-seed Gazebo nondeterminism means this is a regression check, not a paired significance result.
+
+## KI-051: Emergency threshold chatter reset the escape hold
+
+One locked high-density repeat timed out beside two yielding pedestrians while LiDAR clearance oscillated around the 0.85 m collision-latched stop threshold. Alternating clear/hazard samples reset the 0.5 s emergency hold before the geometric escape could complete. An active emergency now requires 0.05 m additional motion and footprint clearance before release. Entry thresholds are unchanged. The timeout remains in `outputs/pilot/crossing_flow_high_validation_safety_iteration.csv`.
+
+## KI-052: Collision prediction cleared before the safety margin was restored
+
+Release hysteresis alone exposed two unsafe transitions. In the first, a turning observation temporarily cleared collision prediction at 0.825 m human-center distance, immediately reducing footprint margin from 0.85 m to 0.48 m; Nav2 rejoin then collided at 0.697 m. Retaining the margin until measured clearance exceeded 0.90 m fixed that transition, but the emergency forward capsule still used the generic 0.36 m clearance and selected motion away from one obstacle while approaching a second, colliding at 0.709 m. The final implementation latches both the 0.85 m stop margin and the emergency translation capsule until clearance release. Its fresh replay reached the goal with 1.161 m minimum human distance. Both collisions are retained and no formal safety guarantee is claimed.
