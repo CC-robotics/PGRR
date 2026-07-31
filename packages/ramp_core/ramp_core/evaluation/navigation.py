@@ -5,6 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+def navigation_status_is_active(
+    statuses: tuple[int, ...],
+    *,
+    accepted: int = 1,
+    executing: int = 2,
+    canceling: int = 3,
+) -> bool:
+    """Return whether a status array contains a live navigation goal."""
+    return any(status in {accepted, executing, canceling} for status in statuses)
+
+
 def timeout_is_invalid_reset(
     *,
     planner_ever_active: bool,
@@ -45,7 +56,12 @@ class PlannerAbortTracker:
     ) -> bool:
         """Return true when an unopposed abort has exceeded ``grace_s``."""
 
-        if any(status in {accepted, executing, canceling} for status in statuses):
+        if navigation_status_is_active(
+            statuses,
+            accepted=accepted,
+            executing=executing,
+            canceling=canceling,
+        ):
             self.abort_since_s = None
             return False
         if aborted not in statuses:

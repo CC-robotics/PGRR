@@ -33,7 +33,7 @@ def test_pending_recovery_is_a_protective_stop() -> None:
     root = Path(__file__).resolve().parents[2]
     mux = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/goal_mux_node.py").read_text()
     assert "pending_stop = self._recovery_state == RecoveryDecision.PENDING_RECOVERY" in mux
-    assert "if terminal_stop or pending_stop:" in mux
+    assert "if not self._episode_started or terminal_stop or pending_stop:" in mux
 
 
 def test_collision_sector_covers_turning_sweep_without_side_wall() -> None:
@@ -54,6 +54,30 @@ def test_runtime_uses_configured_ttc_horizon_without_legacy_override() -> None:
     assert '-p ttc_threshold_s:="${TTC_THRESHOLD_S}"' in runtime
     assert 'RAMP_TTC_THRESHOLD_S="${RAMP_TTC_THRESHOLD_S:-1.5}"' in wrapper
     assert "-p ttc_threshold_s:=3.0" not in runtime
+
+
+def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> None:
+    root = Path(__file__).resolve().parents[2]
+    runtime = (root / "scripts" / "arena" / "run_baseline_episode_inner.sh").read_text()
+    actor = (
+        root / "ros_ws/src/ramp_ros/ramp_ros/nodes/scenario_actor_controller_node.py"
+    ).read_text()
+    logger = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/episode_logger_node.py").read_text()
+    assert runtime.count("-p wait_for_navigation_active:=true") == 2
+    assert '-p nav_status_topic:="${nav_action}/_action/status"' in runtime
+    assert "-p navigation_activation_timeout_s:=20.0" in runtime
+    assert "if self._experiment_started else 0.0" in actor
+    assert "released actor routes" in actor
+    assert "episode handshake complete" in actor
+    assert "and self._logger_ready" in actor
+    assert "self._ready_publisher.publish(ready)" in logger
+    assert "entity_names = (proxy_name,)" in actor
+    assert "pose update rejected" in actor
+    assert "Gazebo rejected a deterministic pedestrian proxy pose update" in logger
+    assert "NavigateToPose did not activate within the startup deadline" in logger
+    assert "episode start handshake did not complete before the wall-clock deadline" in logger
+    assert runtime.count("episode_start_topic:=/ramp/episode_started") == 3
+    assert runtime.count("logger_ready_topic:=/ramp/logger_ready") == 2
 
 
 def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:

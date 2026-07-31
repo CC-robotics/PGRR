@@ -15,7 +15,11 @@ from geometry_msgs.msg import PoseArray, Twist
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMessage
 from ramp_core.data.schema import EpisodeMetadata, EpisodeOutcome, NavigationStep
-from ramp_core.evaluation.navigation import PlannerAbortTracker, timeout_is_invalid_reset
+from ramp_core.evaluation.navigation import (
+    PlannerAbortTracker,
+    navigation_status_is_active,
+    timeout_is_invalid_reset,
+)
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.clock import Clock, ClockType
 from rclpy.executors import ExternalShutdownException
@@ -58,6 +62,9 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("sample_frequency_hz", 10.0)
         self.declare_parameter("episode_timeout_s", 180.0)
         self.declare_parameter("planner_startup_failure_s", 12.0)
+        self.declare_parameter("wait_for_navigation_active", False)
+        self.declare_parameter("navigation_activation_timeout_s", 20.0)
+        self.declare_parameter("navigation_activation_wall_timeout_s", 90.0)
         self.declare_parameter("terminate_on_planner_abort", False)
         self.declare_parameter("planner_abort_grace_s", 5.0)
         self.declare_parameter("goal_x", 0.0)
@@ -77,6 +84,9 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("failure_status_topic", "failure_status")
         self.declare_parameter("recovery_decision_topic", "recovery_decision")
         self.declare_parameter("privileged_humans_topic", "/ramp/privileged/humans")
+        self.declare_parameter("actor_health_topic", "/ramp/actors_healthy")
+        self.declare_parameter("episode_start_topic", "/ramp/episode_started")
+        self.declare_parameter("logger_ready_topic", "/ramp/logger_ready")
         self.declare_parameter("robot_radius_m", 0.36)
         self.declare_parameter("human_radius_m", 0.35)
         self.declare_parameter("lidar_collision_distance_m", 0.12)
@@ -133,6 +143,24 @@ class EpisodeLoggerNode(Node):
         )
         self._timeout = float(self.get_parameter("episode_timeout_s").value)
         self._goal_tolerance = float(self.get_parameter("goal_tolerance_m").value)
+        self._wait_for_navigation_active = bool(
+            self.get_parameter("wait_for_navigation_active").value
+        )
+        self._episode_started = not self._wait_for_navigation_active
+        self._navigation_activation_timeout = float(
+            self.get_parameter("navigation_activation_timeout_s").value
+        )
+        self._navigation_activation_wall_timeout = float(
+            self.get_parameter("navigation_activation_wall_timeout_s").value
+        )
+        if self._navigation_activation_timeout <= 0.0:
+            raise ValueError("navigation_activation_timeout_s must be positive")
+        if self._navigation_activation_wall_timeout <= 0.0:
+            raise ValueError("navigation_activation_wall_timeout_s must be positive")
+        self._activation_wait_start_time: float | None = None
+        self._ready_publisher = self.create_publisher(
+            Bool, self._string_parameter("logger_ready_topic"), 10
+        )
         self._start_time: float | None = None
         self._last_sample_timestamp: float | None = None
         self._initial_robot_position: tuple[float, float] | None = None
@@ -165,6 +193,7 @@ class EpisodeLoggerNode(Node):
         if frequency <= 0.0:
             raise ValueError("sample_frequency_hz must be positive")
         self._wall_clock = Clock(clock_type=ClockType.STEADY_TIME)
+        self._activation_wait_start_wall_s = self._wall_clock.now().nanoseconds * 1.0e-9
         self._sample_timer = self.create_timer(
             1.0 / frequency, self._sample, clock=self._wall_clock
         )
@@ -229,6 +258,18 @@ class EpisodeLoggerNode(Node):
                     self._on_humans,
                     qos_profile_sensor_data,
                 ),
+                self.create_subscription(
+                    Bool,
+                    self._string_parameter("actor_health_topic"),
+                    self._on_actor_health,
+                    10,
+                ),
+                self.create_subscription(
+                    Bool,
+                    self._string_parameter("episode_start_topic"),
+                    self._on_episode_start,
+                    10,
+                ),
             ]
         )
 
@@ -274,12 +315,17 @@ class EpisodeLoggerNode(Node):
             return
         raw_statuses = [int(item.status) for item in message.status_list]
         self._planner_statuses = tuple(raw_statuses)
+        self._planner_ever_active |= navigation_status_is_active(
+            tuple(raw_statuses),
+            accepted=int(GoalStatus.STATUS_ACCEPTED),
+            executing=int(GoalStatus.STATUS_EXECUTING),
+            canceling=int(GoalStatus.STATUS_CANCELING),
+        )
         active = {
-            GoalStatus.STATUS_ACCEPTED,
-            GoalStatus.STATUS_EXECUTING,
-            GoalStatus.STATUS_CANCELING,
+            int(GoalStatus.STATUS_ACCEPTED),
+            int(GoalStatus.STATUS_EXECUTING),
+            int(GoalStatus.STATUS_CANCELING),
         }
-        self._planner_ever_active |= any(item in active for item in raw_statuses)
         status = next((item for item in raw_statuses if item in active), raw_statuses[-1])
         self._planner_status = status
         if status == GoalStatus.STATUS_SUCCEEDED and self._odom is not None:
@@ -321,6 +367,16 @@ class EpisodeLoggerNode(Node):
     def _on_humans(self, message: PoseArray) -> None:
         self._human_positions = tuple((pose.position.x, pose.position.y) for pose in message.poses)
 
+    def _on_actor_health(self, message: Bool) -> None:
+        if not bool(message.data):
+            self._set_outcome(
+                EpisodeOutcome.SIMULATOR_FAILURE,
+                "Gazebo rejected a deterministic pedestrian proxy pose update",
+            )
+
+    def _on_episode_start(self, message: Bool) -> None:
+        self._episode_started |= bool(message.data)
+
     def _set_outcome(self, outcome: EpisodeOutcome, detail: str) -> None:
         if self._outcome is None:
             self._outcome = outcome
@@ -355,6 +411,21 @@ class EpisodeLoggerNode(Node):
     def _sample(self) -> None:
         if self._outcome is not None:
             return
+        ready = Bool()
+        ready.data = True
+        self._ready_publisher.publish(ready)
+        wall_now = self._wall_clock.now().nanoseconds * 1.0e-9
+        if (
+            self._wait_for_navigation_active
+            and not self._episode_started
+            and wall_now - self._activation_wait_start_wall_s
+            >= self._navigation_activation_wall_timeout
+        ):
+            self._set_outcome(
+                EpisodeOutcome.SIMULATOR_FAILURE,
+                "episode start handshake did not complete before the wall-clock deadline",
+            )
+            return
         if self._odom is None or self._lidar is None:
             self._readiness_warning_count += 1
             if self._readiness_warning_count % 50 == 0:
@@ -375,6 +446,15 @@ class EpisodeLoggerNode(Node):
             if now == self._last_sample_timestamp:
                 return
         self._last_sample_timestamp = now
+        if self._activation_wait_start_time is None:
+            self._activation_wait_start_time = now
+        if self._wait_for_navigation_active and not self._episode_started:
+            if now - self._activation_wait_start_time >= self._navigation_activation_timeout:
+                self._set_outcome(
+                    EpisodeOutcome.INVALID_RESET,
+                    "NavigateToPose did not activate within the startup deadline",
+                )
+            return
         if self._start_time is None:
             self._start_time = now
         elapsed = now - self._start_time

@@ -1,7 +1,18 @@
 from __future__ import annotations
 
 import pytest
-from ramp_core.evaluation.navigation import PlannerAbortTracker, timeout_is_invalid_reset
+from ramp_core.evaluation.navigation import (
+    PlannerAbortTracker,
+    navigation_status_is_active,
+    timeout_is_invalid_reset,
+)
+
+
+def test_navigation_activation_ignores_stale_terminal_goals() -> None:
+    assert navigation_status_is_active((6, 2))
+    assert navigation_status_is_active((1,))
+    assert not navigation_status_is_active((4, 6))
+    assert not navigation_status_is_active(())
 
 
 def test_abort_requires_full_grace_without_active_replacement() -> None:

@@ -85,3 +85,9 @@ The medium-density train diagnostic favored Oracle over Heuristic, but the high-
 ## D-021: Trigger on planner-conditioned TTC at 1.5 seconds
 
 The runtime had overridden the configured 1.5 s rule TTC with 3.0 s, and the privileged trigger ignored planner angular commands. Normal validation showed that these choices caused unnecessary recovery in a Base-solvable episode. The trigger now predicts the Jackal's constant-control unicycle trajectory from DWB's current `(v, omega)`, retains a 3.0 s analysis horizon, and intervenes only when predicted TTC is at most 1.5 s. A 1.0 s candidate reduced normal interventions but caused 83 emergency-stop samples on a train collision case; it is rejected as too late. The selected 1.5 s value reduced validation interventions from 197 to 30 while retaining safe recovery on the train failure case. No further threshold tuning is allowed on these episodes.
+
+## D-022: Pair experiments at an explicit navigation/actor/logger start barrier
+
+Arena task reset latency allowed deterministic actor routes to advance before the logger began, producing method-dependent pedestrian phase and robot progress despite identical scenario seeds. Comparative episodes now use a repeated `/ramp/episode_started` handshake: Nav2 must be active, the logger must be discovered, actors are reset to route time zero, and GoalMux remains stopped until the signal arrives. The logger defines episode time zero at this barrier. Only synchronized episodes may support paired claims; earlier dynamic results remain diagnostic provenance.
+
+The kinematic fallback now updates only the spawned `ramp_lidar_proxy_*` models and checks every `SetEntityPose` response. Rejected updates set `SIMULATOR_FAILURE` through an explicit health topic. This makes the privileged trajectory, LiDAR geometry, and action mask auditable against one physical proxy source.

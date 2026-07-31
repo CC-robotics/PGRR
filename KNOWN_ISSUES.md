@@ -135,3 +135,7 @@ The progress-based recurrent-flow filter passes deterministic tests, but reason-
 ## KI-034: Baseline runner overrode the configured TTC with 3.0 seconds
 
 The Arena episode runner passed `ttc_threshold_s:=3.0` even though `configs/failure/rules.yaml` specifies 1.5 s. This produced early recovery triggers in a validation episode that Base solved safely. The runner now propagates a configurable `RAMP_TTC_THRESHOLD_S` defaulting to 1.5 s, with a regression test forbidding the legacy literal. Historical recovery episodes are labeled legacy-trigger results; selected-trigger comparisons use new episode IDs and raw hashes.
+
+## KI-035: Task reset latency changed pedestrian phase across policies
+
+The actor controller previously advanced from node startup while the logger timed from its first odometry sample. Arena startup latency therefore shifted both pedestrian phase and robot progress across runs with the same seed. It also sent unchecked pose requests to absent native `ped_*` names in addition to the spawned LiDAR proxies. The explicit D-022 start barrier and proxy-health path fix both defects. All pre-barrier comparative results are superseded for paired claims. Arena can still intermittently fail before the barrier; these runs are classified separately, and a 90 s wall-clock startup watchdog bounds the loss.

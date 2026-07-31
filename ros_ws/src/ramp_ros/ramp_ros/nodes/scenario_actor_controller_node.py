@@ -9,13 +9,16 @@ from pathlib import Path
 from typing import Any
 
 import rclpy
+from action_msgs.msg import GoalStatus, GoalStatusArray
 from geometry_msgs.msg import Pose, PoseArray, Quaternion
 from nav_msgs.msg import Odometry
+from ramp_core.evaluation.navigation import navigation_status_is_active
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from ros_gz_interfaces.msg import Entity
 from ros_gz_interfaces.srv import SetEntityPose, SpawnEntity
+from std_msgs.msg import Bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,7 +69,13 @@ class ScenarioActorController(Node):
         self.declare_parameter("set_pose_service", "/world/default/set_pose")
         self.declare_parameter("spawn_service", "/world/default/create")
         self.declare_parameter("privileged_humans_topic", "/ramp/privileged/humans")
+        self.declare_parameter("health_topic", "/ramp/actors_healthy")
+        self.declare_parameter("episode_start_topic", "/ramp/episode_started")
+        self.declare_parameter("logger_ready_topic", "/ramp/logger_ready")
         self.declare_parameter("odom_topic", "odom")
+        self.declare_parameter("nav_status_topic", "navigate_to_pose/_action/status")
+        self.declare_parameter("wait_for_navigation_active", False)
+        self.declare_parameter("update_native_actors", False)
         self.declare_parameter("robot_start_x", 0.0)
         self.declare_parameter("robot_start_y", 0.0)
         self.declare_parameter("robot_start_yaw", 0.0)
@@ -85,6 +94,12 @@ class ScenarioActorController(Node):
         self._publisher = self.create_publisher(
             PoseArray, str(self.get_parameter("privileged_humans_topic").value), 10
         )
+        self._health_publisher = self.create_publisher(
+            Bool, str(self.get_parameter("health_topic").value), 10
+        )
+        self._start_publisher = self.create_publisher(
+            Bool, str(self.get_parameter("episode_start_topic").value), 10
+        )
         frequency = float(self.get_parameter("update_frequency_hz").value)
         if frequency <= 0.0:
             raise ValueError("update_frequency_hz must be positive")
@@ -92,16 +107,35 @@ class ScenarioActorController(Node):
             raise ValueError("robot_avoidance_distance_m must exceed combined collision radii")
         self._robot_position: tuple[float, float] | None = None
         self._last_update_s: float | None = None
+        self._wait_for_navigation_active = bool(
+            self.get_parameter("wait_for_navigation_active").value
+        )
+        self._navigation_active = not self._wait_for_navigation_active
+        self._experiment_started = not self._wait_for_navigation_active
+        self._logger_ready = not self._wait_for_navigation_active
         self._route_elapsed = {route.name: 0.0 for route in self._routes}
         self._pending: dict[str, Any] = {}
         self._spawn_pending: dict[str, Any] = {}
         self._spawn_attempted: set[str] = set()
         self._spawn_validated: set[str] = set()
+        self._healthy = True
         self._odom_subscription = self.create_subscription(
             Odometry,
             str(self.get_parameter("odom_topic").value),
             self._on_odom,
             qos_profile_sensor_data,
+        )
+        self._status_subscription = self.create_subscription(
+            GoalStatusArray,
+            str(self.get_parameter("nav_status_topic").value),
+            self._on_status,
+            10,
+        )
+        self._logger_ready_subscription = self.create_subscription(
+            Bool,
+            str(self.get_parameter("logger_ready_topic").value),
+            self._on_logger_ready,
+            10,
         )
         self._update_timer = self.create_timer(1.0 / frequency, self._update)
         self.get_logger().info(
@@ -142,6 +176,24 @@ class ScenarioActorController(Node):
             start_y + math.sin(start_yaw) * local_x + math.cos(start_yaw) * local_y,
         )
 
+    def _on_status(self, message: GoalStatusArray) -> None:
+        if self._navigation_active:
+            return
+        if not navigation_status_is_active(
+            tuple(int(item.status) for item in message.status_list),
+            accepted=int(GoalStatus.STATUS_ACCEPTED),
+            executing=int(GoalStatus.STATUS_EXECUTING),
+            canceling=int(GoalStatus.STATUS_CANCELING),
+        ):
+            return
+        self._navigation_active = True
+        self._route_elapsed = {route.name: 0.0 for route in self._routes}
+        self._last_update_s = self.get_clock().now().nanoseconds * 1.0e-9
+        self.get_logger().info("navigation activated; waiting for episode logger handshake")
+
+    def _on_logger_ready(self, message: Bool) -> None:
+        self._logger_ready |= bool(message.data)
+
     @staticmethod
     def _load_routes(path: Path) -> tuple[ActorRoute, ...]:
         scenario = json.loads(path.read_text(encoding="utf-8"))
@@ -166,9 +218,16 @@ class ScenarioActorController(Node):
             )
             return
         now = self.get_clock().now().nanoseconds * 1.0e-9
+        if self._navigation_active and not self._experiment_started and self._logger_ready:
+            # GoalMux remains stopped until it receives the repeatedly
+            # published start signal, regardless of DDS discovery order.
+            self._experiment_started = True
+            self._route_elapsed = {route.name: 0.0 for route in self._routes}
+            self._last_update_s = now
+            self.get_logger().info("episode handshake complete; released actor routes")
         if self._last_update_s is None:
             self._last_update_s = now
-        step_s = max(0.0, now - self._last_update_s)
+        step_s = max(0.0, now - self._last_update_s) if self._experiment_started else 0.0
         self._last_update_s = now
         avoidance_distance = float(self.get_parameter("robot_avoidance_distance_m").value)
         pose_array = PoseArray()
@@ -211,16 +270,36 @@ class ScenarioActorController(Node):
                     continue
                 self._spawn_validated.add(proxy_name)
                 self.get_logger().info(f"spawned LiDAR-visible proxy {proxy_name}")
-            for entity_name in (route.name, proxy_name):
+            entity_names = (proxy_name,)
+            if bool(self.get_parameter("update_native_actors").value):
+                entity_names = (route.name, proxy_name)
+            for entity_name in entity_names:
                 pending = self._pending.get(entity_name)
-                if pending is not None and not pending.done():
-                    continue
+                if pending is not None:
+                    if not pending.done():
+                        continue
+                    try:
+                        response = pending.result()
+                    except Exception as error:  # pragma: no cover - ROS future boundary
+                        self._healthy = False
+                        self.get_logger().error(f"pose update failed for {entity_name}: {error}")
+                        continue
+                    if response is None or not bool(response.success):
+                        self._healthy = False
+                        self.get_logger().error(f"pose update rejected for {entity_name}")
+                        continue
                 request = SetEntityPose.Request()
                 request.entity.name = entity_name
                 request.entity.type = Entity.MODEL
                 request.pose = pose
                 self._pending[entity_name] = self._client.call_async(request)
         self._publisher.publish(pose_array)
+        health = Bool()
+        health.data = self._healthy
+        self._health_publisher.publish(health)
+        started = Bool()
+        started.data = self._experiment_started
+        self._start_publisher.publish(started)
 
 
 def main(args: list[str] | None = None) -> None:

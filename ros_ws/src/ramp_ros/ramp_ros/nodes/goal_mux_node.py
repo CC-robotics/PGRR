@@ -10,6 +10,7 @@ from ramp_core.action_space import BACKUP_ACTION_ID, WAIT_ACTION_ID
 from ramp_msgs.msg import RecoveryDecision
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from std_msgs.msg import Bool
 
 
 class GoalMuxNode(Node):
@@ -19,6 +20,8 @@ class GoalMuxNode(Node):
         self.declare_parameter("recovery_cmd_vel_topic", "recovery_cmd_vel")
         self.declare_parameter("cmd_vel_topic", "cmd_vel")
         self.declare_parameter("recovery_decision_topic", "recovery_decision")
+        self.declare_parameter("episode_start_topic", "/ramp/episode_started")
+        self.declare_parameter("wait_for_episode_start", False)
         self.declare_parameter("publish_frequency_hz", 20.0)
         self.declare_parameter("command_timeout_s", 0.5)
         frequency = float(self.get_parameter("publish_frequency_hz").value)
@@ -33,6 +36,7 @@ class GoalMuxNode(Node):
         self._recovery_stamp = float("-inf")
         self._recovery_state = RecoveryDecision.NORMAL
         self._recovery_action = -1
+        self._episode_started = not bool(self.get_parameter("wait_for_episode_start").value)
         self._publisher = self.create_publisher(
             Twist, str(self.get_parameter("cmd_vel_topic").value), 10
         )
@@ -55,6 +59,12 @@ class GoalMuxNode(Node):
                 self._on_decision,
                 10,
             ),
+            self.create_subscription(
+                Bool,
+                str(self.get_parameter("episode_start_topic").value),
+                self._on_episode_start,
+                10,
+            ),
         ]
         self._timer = self.create_timer(1.0 / frequency, self._publish)
 
@@ -73,6 +83,9 @@ class GoalMuxNode(Node):
         self._recovery_state = int(message.recovery_state)
         self._recovery_action = int(message.action_id)
 
+    def _on_episode_start(self, message: Bool) -> None:
+        self._episode_started |= bool(message.data)
+
     def _publish(self) -> None:
         now = self._now()
         terminal_stop = self._recovery_state in {
@@ -84,7 +97,7 @@ class GoalMuxNode(Node):
             self._recovery_state == RecoveryDecision.RECOVERY
             and self._recovery_action in {WAIT_ACTION_ID, BACKUP_ACTION_ID}
         )
-        if terminal_stop or pending_stop:
+        if not self._episode_started or terminal_stop or pending_stop:
             output = Twist()
         elif direct_recovery:
             output = self._recovery if now - self._recovery_stamp <= self._timeout else Twist()

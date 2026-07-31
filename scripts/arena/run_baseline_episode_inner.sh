@@ -206,6 +206,8 @@ ramp_ros_prefix="$(ros2 pkg prefix ramp_ros)"
     -p recovery_cmd_vel_topic:=/ramp/recovery_cmd_vel \
     -p cmd_vel_topic:="${mux_cmd_topic}" \
     -p recovery_decision_topic:=/ramp/recovery_decision \
+    -p episode_start_topic:=/ramp/episode_started \
+    -p wait_for_episode_start:=true \
     >>"${RUNTIME_LOG}" 2>&1 &
 mux_pid=$!
 "${ramp_ros_prefix}/lib/ramp_ros/scenario_actor_controller" --ros-args \
@@ -214,7 +216,12 @@ mux_pid=$!
     -p set_pose_service:=/world/default/set_pose \
     -p spawn_service:=/world/default/create \
     -p privileged_humans_topic:=/ramp/privileged/humans \
+    -p health_topic:=/ramp/actors_healthy \
+    -p episode_start_topic:=/ramp/episode_started \
+    -p logger_ready_topic:=/ramp/logger_ready \
     -p odom_topic:="${odom_topic}" \
+    -p nav_status_topic:="${nav_action}/_action/status" \
+    -p wait_for_navigation_active:=true \
     -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
     -p robot_start_yaw:="${start_yaw}" \
     -p update_frequency_hz:="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
@@ -270,6 +277,9 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p project_commit:="${project_commit}" \
     -p output_directory:="${output_directory}" \
     -p episode_timeout_s:="${timeout_value}" \
+    -p wait_for_navigation_active:=true \
+    -p navigation_activation_timeout_s:=20.0 \
+    -p navigation_activation_wall_timeout_s:=90.0 \
     -p terminate_on_planner_abort:="${TERMINATE_ON_PLANNER_ABORT}" \
     -p planner_abort_grace_s:=5.0 \
     -p goal_x:="${goal_x}" -p goal_y:="${goal_y}" -p goal_yaw:="${goal_yaw}" \
@@ -280,6 +290,9 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p global_path_topic:="${path_topic}" \
     -p nav_status_topic:="${nav_action}/_action/status" \
     -p collision_topic:=/__ramp_unused/collision \
+    -p actor_health_topic:=/ramp/actors_healthy \
+    -p episode_start_topic:=/ramp/episode_started \
+    -p logger_ready_topic:=/ramp/logger_ready \
     -p lidar_collision_distance_m:=0.12 \
     -p failure_status_topic:=/ramp/failure_status \
     -p recovery_decision_topic:=/ramp/recovery_decision \
@@ -324,8 +337,8 @@ else
 fi
 monitor_pid=""
 
-if [[ ! -s "${stream_file}" || ! -s "${outcome_file}" ]]; then
-    echo "ERROR: episode logger did not produce non-empty stream and outcome files" >&2
+if [[ ! -e "${stream_file}" || ! -s "${outcome_file}" ]]; then
+    echo "ERROR: episode logger did not produce stream and outcome files" >&2
     tail -120 "${RUNTIME_LOG}" >&2
     exit 1
 fi
@@ -334,6 +347,10 @@ sample_count="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[
 if [[ "${outcome}" == "SIMULATOR_FAILURE" || "${outcome}" == "INVALID_RESET" ]]; then
     echo "ERROR: invalid baseline episode outcome: ${outcome}" >&2
     cat "${outcome_file}" >&2
+    exit 1
+fi
+if [[ ! -s "${stream_file}" ]]; then
+    echo "ERROR: valid episode logger outcome has an empty stream" >&2
     exit 1
 fi
 crash_count="$(grep -Eic 'process has died|segmentation fault|core dumped|Traceback \(most recent call last\)' "${RUNTIME_LOG}" || true)"

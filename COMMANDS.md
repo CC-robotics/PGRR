@@ -182,3 +182,28 @@ PYTHONPATH=packages/ramp_core \
   --prefix data/raw/crossing_flow_medium_validation_s02210_gate3_base_dwb \
   --output outputs/pilot/oracle_trigger_replay.json
 ```
+
+## 2026-07-31 synchronized high-density validation
+
+```bash
+RAMP_SOURCE_POLICY=base RAMP_EPISODE_TIMEOUT_S=120 \
+  RAMP_EPISODE_ID=crossing_flow_high_validation_s02220_sync3_base_dwb \
+  scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json
+
+RAMP_SOURCE_POLICY=heuristic RAMP_EPISODE_TIMEOUT_S=120 \
+  RAMP_EPISODE_ID=crossing_flow_high_validation_s02220_sync3_heuristic_dwb \
+  scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json
+
+RAMP_SOURCE_POLICY=oracle RAMP_EPISODE_TIMEOUT_S=120 \
+  RAMP_EPISODE_ID=crossing_flow_high_validation_s02220_sync3_oracle_retry1_dwb \
+  scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/crossing_flow_high_validation_s02220_sync3_base_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02220_sync3_heuristic_dwb \
+  --prefix data/raw/crossing_flow_high_validation_s02220_sync3_oracle_retry1_dwb \
+  --output outputs/pilot/crossing_flow_high_validation_sync3_methods.csv
+```
