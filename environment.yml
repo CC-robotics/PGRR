@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python=3.10
   - pip
+  - tectonic=0.17
   - pip:
       - numpy>=1.26,<3
       - scipy>=1.11

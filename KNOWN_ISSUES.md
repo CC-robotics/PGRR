@@ -186,3 +186,7 @@ A deploy-aligned crossing-flow replay retained collision risk in an offline reco
 ## KI-047: Ordinary static clearance was too small for collision-latched actions
 
 The observable mask originally used 0.25 m endpoint and 0.48 m swept clearance in every state. Gazebo's LiDAR pedestrian proxy is smaller than the 0.71 m combined robot-human collision radius, so those static clearances admitted a sequence of short goals aimed at a person while collision risk remained high. Collision-latched decisions now use 0.65 m observable endpoint and swept clearance, while the independent stop margin rises to 0.85 m to include braking and callback latency. The same conditional mask is applied during expert labeling; this remains an empirical safety filter rather than a formal guarantee.
+
+## KI-048: The host has no system LaTeX installation
+
+Neither `latexmk` nor `pdflatex` is installed and adding system TeX would require sudo. The isolated offline environment now declares Tectonic 0.17 and caches its TeX bundle in user space. `scripts/paper/build_paper.sh` prefers `latexmk` when available and otherwise uses Tectonic, then rejects unresolved references, citations, overfull boxes, or a missing PDF. This change does not touch the ROS/Arena runtime.

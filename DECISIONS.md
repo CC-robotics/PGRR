@@ -122,3 +122,7 @@ The current coverage model converted three of five repeated crossing-flow Base-f
 ## D-030: Select deploy-aligned safety over a collision-prone equal-success candidate
 
 The earlier coverage checkpoint reached the goal in three of five crossing-flow repeats but collided twice. Offline analysis then exposed two deployment mismatches: collision-risk rejoin actions were not represented in label masks, and ordinary static clearances underestimated the Gazebo fallback's combined robot-human collision radius. After aligning masks and preserving collision history across stale odometry, the safety checkpoint also reached three of five trials but produced zero collisions; the remaining two trials timed out and are retained. This checkpoint is selected for expanded validation because the research question prioritizes recovery without degrading safety. Its longer tail is reported directly, and the 180 s pilot is not mixed with earlier 120 s timeout counts in formal statistics.
+
+## D-031: Use the imitation-only title until PPO earns a closed-loop claim
+
+The repository does not yet contain a validated PPO environment or training result, while the planning-expert, BC, two-round DAgger, deployment mask, and closed-loop policy are implemented and evidenced. The manuscript therefore uses *Planning-Guided Failure-Triggered Recovery via Imitation Learning for Dynamic Social Navigation*. PPO remains optional future work; it may enter the title and contributions only after multiple seeds outperform or complement the selected DAgger policy without reward hacking.

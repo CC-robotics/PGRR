@@ -191,3 +191,13 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - One timeout stopped beside a 0.22 m lateral LiDAR return that matched neither the empty static scenario nor any privileged pedestrian position; it is retained as an algorithm timeout and a Gazebo proxy/self-return failure case, not excluded.
 - Evidence: `outputs/pilot/crossing_flow_safety_aligned_repeat5.csv`, `outputs/pilot/crossing_flow_safety_aligned_repeat5_summary.json`, and `data/manifests/dagger_coverage_safety_aligned_manifest.json`.
 - Next: run scenario/seed-expanded validation with a locked 180 s manifest, preserve the imitation-only method as the minimum paper path, and attempt PPO only after the multi-seed candidate remains collision-safe.
+
+## 2026-08-01 — Compilable imitation-only pilot manuscript
+
+- Created a three-page anonymous IEEEtran pilot manuscript with a verified related-work matrix, method formulation, limitations, and claims restricted to committed artifacts.
+- Generated the system architecture as a white-background, three-color Graphviz vector figure and generated the pilot outcome figure/table from the committed result JSON.
+- Installed user-space Tectonic 0.17 in `ramp-offline`; `make figures`, `make tables`, and `make paper` now complete without sudo or ROS activation.
+- `paper/main.pdf` compiles with BibTeX, no unresolved citations/references, and no overfull boxes. Remaining underfull warnings are non-fatal line-breaking warnings.
+- The title intentionally omits reinforcement learning because PPO has not been implemented or validated. The abstract explicitly labels the 5-repeat result as a non-conclusive pilot.
+- Validation: `make test` passes 186 tests and `make paper` produces a nonempty PDF.
+- Next: expand and lock the multi-scenario evaluation before replacing pilot wording with final claims.
