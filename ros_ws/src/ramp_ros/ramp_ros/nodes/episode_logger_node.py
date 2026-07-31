@@ -11,7 +11,7 @@ from typing import Any
 import numpy as np
 import rclpy
 from action_msgs.msg import GoalStatus, GoalStatusArray
-from geometry_msgs.msg import PoseArray, Twist
+from geometry_msgs.msg import PoseArray, PoseStamped, Twist
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMessage
 from ramp_core.data.schema import EpisodeMetadata, EpisodeOutcome, NavigationStep
@@ -85,6 +85,7 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("failure_status_topic", "failure_status")
         self.declare_parameter("recovery_decision_topic", "recovery_decision")
         self.declare_parameter("privileged_humans_topic", "/ramp/privileged/humans")
+        self.declare_parameter("privileged_robot_pose_topic", "/ramp/privileged/robot_pose")
         self.declare_parameter("actor_health_topic", "/ramp/actors_healthy")
         self.declare_parameter("episode_start_topic", "/ramp/episode_started")
         self.declare_parameter("logger_ready_topic", "/ramp/logger_ready")
@@ -191,6 +192,7 @@ class EpisodeLoggerNode(Node):
         self._recovery_reason = "not_triggered"
         self._collision = False
         self._human_positions: tuple[tuple[float, float], ...] = ()
+        self._privileged_robot_pose: tuple[float, float, float] | None = None
         self._sample_count = 0
         self._readiness_warning_count = 0
         self._subscription_handles: list[Any] = []
@@ -262,6 +264,12 @@ class EpisodeLoggerNode(Node):
                     PoseArray,
                     self._string_parameter("privileged_humans_topic"),
                     self._on_humans,
+                    qos_profile_sensor_data,
+                ),
+                self.create_subscription(
+                    PoseStamped,
+                    self._string_parameter("privileged_robot_pose_topic"),
+                    self._on_privileged_robot_pose,
                     qos_profile_sensor_data,
                 ),
                 self.create_subscription(
@@ -372,6 +380,19 @@ class EpisodeLoggerNode(Node):
 
     def _on_humans(self, message: PoseArray) -> None:
         self._human_positions = tuple((pose.position.x, pose.position.y) for pose in message.poses)
+
+    def _on_privileged_robot_pose(self, message: PoseStamped) -> None:
+        pose = message.pose
+        self._privileged_robot_pose = (
+            float(pose.position.x),
+            float(pose.position.y),
+            _yaw_from_quaternion(
+                pose.orientation.x,
+                pose.orientation.y,
+                pose.orientation.z,
+                pose.orientation.w,
+            ),
+        )
 
     def _on_actor_health(self, message: Bool) -> None:
         if not bool(message.data):
@@ -522,10 +543,10 @@ class EpisodeLoggerNode(Node):
                 "LiDAR obstacle return lies inside the Jackal footprint",
             )
         nearest_human = math.inf
-        if self._human_positions:
+        privileged_robot_pose = self._privileged_robot_pose
+        if self._human_positions and privileged_robot_pose is not None:
             nearest_human = min(
-                math.dist((float(robot_pose[0]), float(robot_pose[1])), human)
-                for human in self._human_positions
+                math.dist(privileged_robot_pose[:2], human) for human in self._human_positions
             )
             collision_distance = float(self.get_parameter("robot_radius_m").value) + float(
                 self.get_parameter("human_radius_m").value
@@ -555,6 +576,7 @@ class EpisodeLoggerNode(Node):
             privileged={
                 "human_positions": self._human_positions,
                 "nearest_human_distance": nearest_human,
+                "robot_pose": privileged_robot_pose,
             },
         )
         self._stream.write(json.dumps(step.as_jsonable(), separators=(",", ":")) + "\n")

@@ -25,6 +25,7 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     assert "/workspace/.venv-inference/bin/python" in runtime
     assert "-m ramp_ros.nodes.recovery_manager_node" in runtime
     assert 'RAMP_BC_MODEL_PATH="${RAMP_BC_MODEL_PATH:-' in wrapper
+    assert "ROS_DOMAIN_ID must be an integer in [0, 232]" in wrapper
     assert 'print(len(scenario.get("obstacles", {}).get("static", [])))' in runtime
     assert 'lidar_static_collision_enabled:="${lidar_static_collision_enabled}"' in runtime
     assert runtime.count('minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}"') == 2
@@ -90,8 +91,13 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "pose update timed out" in actor
     assert "self._pending_target_elapsed" in actor
     assert "Publishing the requested" in actor
+    assert "self._actual_proxy_poses" in actor
+    assert "self._actual_robot_pose" in actor
+    assert "Gazebo actual pedestrian poses are missing or stale" in actor
+    assert "/world/default/dynamic_pose/info@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V" in runtime
+    assert runtime.count("privileged_robot_pose_topic:=/ramp/privileged/robot_pose") == 2
     assert "<static>false</static>" in actor
-    assert "<kinematic>true</kinematic>" in actor
+    assert "<kinematic>false</kinematic>" in actor
     assert "<gravity>false</gravity>" in actor
     assert "<static>true</static>" not in actor
     assert "Gazebo rejected a deterministic pedestrian proxy pose update" in logger

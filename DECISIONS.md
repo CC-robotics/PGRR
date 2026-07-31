@@ -158,3 +158,7 @@ For scenarios with no declared static obstacles, ranges below 0.34 m are exclude
 ## D-039: Admit dynamic evidence only after a kinematic-proxy sensor check
 
 Fallback pedestrian cylinders are non-static links with gravity disabled and kinematic motion enabled. Route time and privileged positions commit only after Gazebo confirms the matching collision-geometry update. For any validation episode that brings a privileged human centre inside 1.3 m, an evaluation-only checker projects that centre into the 360-degree LiDAR and requires at least 90% of five or more exposed samples to contain a surface return within 0.20 m of the expected cylinder range. Privileged positions are used only for this simulator-validity check and outcome evaluation, never by the deployed policy. Pre-confirmed dynamic tables remain available for diagnosis but cannot support manuscript performance claims.
+
+## D-040: Evaluation truth comes from Gazebo dynamic-pose feedback
+
+SetEntityPose success is treated only as command acknowledgement. Fallback pedestrian links are dynamic with gravity disabled, and their physical poses plus the Jackal physical pose are read from `/world/default/dynamic_pose/info` through `ros_gz_bridge`. The actor controller publishes these on evaluation-only privileged topics and fails health on stale feedback. Collision classification and the LiDAR consistency gate use actual-to-actual centre geometry; policy observations continue to use odometry and LiDAR. This decision supersedes D-039's kinematic-link implementation while retaining its sensor gate.

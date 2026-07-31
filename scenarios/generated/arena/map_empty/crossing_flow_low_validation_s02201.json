@@ -1,0 +1,118 @@
+{
+  "obstacles": {
+    "dynamic": [
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 1,
+        "max_vel": 0.6702,
+        "model": "gazebo_actor",
+        "name": "ped_00",
+        "pos": [
+          12.5,
+          18.0,
+          -1.5707963267948966
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 1.3,
+        "type": "adult",
+        "waypoints": [
+          [
+            12.5,
+            18.0,
+            -1.5707963267948966
+          ],
+          [
+            12.5,
+            6.0,
+            -1.5707963267948966
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 2,
+        "max_vel": 0.4926,
+        "model": "gazebo_actor",
+        "name": "ped_01",
+        "pos": [
+          14.1,
+          6.0,
+          1.5707963267948966
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 1.3,
+        "type": "adult",
+        "waypoints": [
+          [
+            14.1,
+            6.0,
+            1.5707963267948966
+          ],
+          [
+            14.1,
+            18.0,
+            1.5707963267948966
+          ]
+        ]
+      }
+    ],
+    "interactive": [],
+    "static": []
+  },
+  "ramp_metadata": {
+    "density": "low",
+    "family": "crossing_flow",
+    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
+    "human_speed_range_mps": [
+      0.45,
+      0.75
+    ],
+    "map_id": "map_empty",
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
+    "scenario_id": "crossing_flow_low_validation_s02201",
+    "schema_version": 1,
+    "seed": 2201,
+    "split": "validation",
+    "variant_source": "crossing_flow_low_validation_s02200"
+  },
+  "robots": [
+    {
+      "goal": [
+        26.0,
+        12.0,
+        0.0
+      ],
+      "start": [
+        5.0,
+        12.0,
+        0.0
+      ]
+    }
+  ]
+}

@@ -20,6 +20,12 @@ if [[ "${relative}" == "${SCENARIO}" ]]; then
     exit 2
 fi
 
+ros_domain_id="${ROS_DOMAIN_ID:-1}"
+if [[ ! "${ros_domain_id}" =~ ^[0-9]+$ ]] || ((ros_domain_id > 232)); then
+    echo "ERROR: ROS_DOMAIN_ID must be an integer in [0, 232]: ${ros_domain_id}" >&2
+    exit 2
+fi
+
 export RAMP_ENABLE_CMD_MUX=1
 export RAMP_DISABLE_AUTO_RESET=1
 exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
@@ -33,7 +39,7 @@ exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     RAMP_BC_MODEL_PATH="${RAMP_BC_MODEL_PATH:-/workspace/checkpoints/bc/uniform_scenario/best.onnx}" \
     RAMP_HOST_UID="$(id -u)" \
     RAMP_HOST_GID="$(id -g)" \
-    ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-1}" \
+    ROS_DOMAIN_ID="${ros_domain_id}" \
     GZ_PARTITION="${GZ_PARTITION:-ramp_default}" \
     IGN_PARTITION="${IGN_PARTITION:-${GZ_PARTITION:-ramp_default}}" \
     RAMP_PROJECT_COMMIT="$(git -C "${PROJECT_ROOT}" rev-parse HEAD)" \

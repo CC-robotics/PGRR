@@ -94,6 +94,7 @@ setsid xvfb-run -a -s '-screen 0 1280x720x24' \
 launch_pid=$!
 logger_pid=""
 actor_pid=""
+pose_bridge_pid=""
 mux_pid=""
 detector_pid=""
 recovery_pid=""
@@ -118,6 +119,10 @@ stop_actor_controller() {
     if [[ -n "${actor_pid}" ]] && kill -0 "${actor_pid}" 2>/dev/null; then
         kill -INT "${actor_pid}" 2>/dev/null || true
         wait "${actor_pid}" 2>/dev/null || true
+    fi
+    if [[ -n "${pose_bridge_pid}" ]] && kill -0 "${pose_bridge_pid}" 2>/dev/null; then
+        kill -INT "${pose_bridge_pid}" 2>/dev/null || true
+        wait "${pose_bridge_pid}" 2>/dev/null || true
     fi
 }
 
@@ -211,6 +216,10 @@ if [[ -z "${map_topic}" ]]; then
 fi
 project_commit="${RAMP_PROJECT_COMMIT:?RAMP_PROJECT_COMMIT is required}"
 ramp_ros_prefix="$(ros2 pkg prefix ramp_ros)"
+ros2 run ros_gz_bridge parameter_bridge \
+    '/world/default/dynamic_pose/info@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V' \
+    >>"${RUNTIME_LOG}" 2>&1 &
+pose_bridge_pid=$!
 "${ramp_ros_prefix}/lib/ramp_ros/goal_mux" --ros-args \
     -p use_sim_time:=true \
     -p base_cmd_vel_topic:="${base_cmd_topic}" \
@@ -227,6 +236,9 @@ mux_pid=$!
     -p set_pose_service:=/world/default/set_pose \
     -p spawn_service:=/world/default/create \
     -p privileged_humans_topic:=/ramp/privileged/humans \
+    -p privileged_robot_pose_topic:=/ramp/privileged/robot_pose \
+    -p actual_pose_topic:=/world/default/dynamic_pose/info \
+    -p actual_pose_timeout_s:=1.0 \
     -p health_topic:=/ramp/actors_healthy \
     -p episode_start_topic:=/ramp/episode_started \
     -p logger_ready_topic:=/ramp/logger_ready \
@@ -317,6 +329,7 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p nav_status_topic:="${nav_action}/_action/status" \
     -p collision_topic:=/__ramp_unused/collision \
     -p actor_health_topic:=/ramp/actors_healthy \
+    -p privileged_robot_pose_topic:=/ramp/privileged/robot_pose \
     -p episode_start_topic:=/ramp/episode_started \
     -p logger_ready_topic:=/ramp/logger_ready \
     -p lidar_collision_distance_m:=0.12 \

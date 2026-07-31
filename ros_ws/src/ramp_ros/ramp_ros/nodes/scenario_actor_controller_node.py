@@ -10,7 +10,7 @@ from typing import Any
 
 import rclpy
 from action_msgs.msg import GoalStatus, GoalStatusArray
-from geometry_msgs.msg import Pose, PoseArray, Quaternion
+from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Quaternion
 from nav_msgs.msg import Odometry
 from ramp_core.evaluation.navigation import navigation_status_is_active
 from rclpy.executors import ExternalShutdownException
@@ -19,6 +19,7 @@ from rclpy.qos import qos_profile_sensor_data
 from ros_gz_interfaces.msg import Entity
 from ros_gz_interfaces.srv import SetEntityPose, SpawnEntity
 from std_msgs.msg import Bool
+from tf2_msgs.msg import TFMessage
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +78,10 @@ class ScenarioActorController(Node):
         self.declare_parameter("set_pose_service", "/world/default/set_pose")
         self.declare_parameter("spawn_service", "/world/default/create")
         self.declare_parameter("privileged_humans_topic", "/ramp/privileged/humans")
+        self.declare_parameter("privileged_robot_pose_topic", "/ramp/privileged/robot_pose")
+        self.declare_parameter("actual_robot_name", "jackal")
+        self.declare_parameter("actual_pose_topic", "/world/default/dynamic_pose/info")
+        self.declare_parameter("actual_pose_timeout_s", 1.0)
         self.declare_parameter("health_topic", "/ramp/actors_healthy")
         self.declare_parameter("episode_start_topic", "/ramp/episode_started")
         self.declare_parameter("logger_ready_topic", "/ramp/logger_ready")
@@ -102,6 +107,9 @@ class ScenarioActorController(Node):
         self._spawn_client = self.create_client(SpawnEntity, spawn_service)
         self._publisher = self.create_publisher(
             PoseArray, str(self.get_parameter("privileged_humans_topic").value), 10
+        )
+        self._robot_pose_publisher = self.create_publisher(
+            PoseStamped, str(self.get_parameter("privileged_robot_pose_topic").value), 10
         )
         self._health_publisher = self.create_publisher(
             Bool, str(self.get_parameter("health_topic").value), 10
@@ -129,6 +137,10 @@ class ScenarioActorController(Node):
         self._spawn_pending: dict[str, Any] = {}
         self._spawn_attempted: set[str] = set()
         self._spawn_validated: set[str] = set()
+        self._actual_proxy_poses: dict[str, Pose] = {}
+        self._actual_robot_pose: Pose | None = None
+        self._actual_pose_received_s: float | None = None
+        self._actual_pose_wait_since_s: float | None = None
         self._healthy = True
         self._odom_subscription = self.create_subscription(
             Odometry,
@@ -148,6 +160,12 @@ class ScenarioActorController(Node):
             self._on_logger_ready,
             10,
         )
+        self._actual_pose_subscription = self.create_subscription(
+            TFMessage,
+            str(self.get_parameter("actual_pose_topic").value),
+            self._on_actual_poses,
+            qos_profile_sensor_data,
+        )
         self._update_timer = self.create_timer(1.0 / frequency, self._update)
         self.get_logger().info(
             f"loaded {len(self._routes)} deterministic actor routes; service={service_name}"
@@ -162,7 +180,7 @@ class ScenarioActorController(Node):
     <link name="body">
       <pose>0 0 0.85 0 0 0</pose>
       <gravity>false</gravity>
-      <kinematic>true</kinematic>
+      <kinematic>false</kinematic>
       <inertial>
         <mass>70.0</mass>
         <inertia>
@@ -213,6 +231,27 @@ class ScenarioActorController(Node):
 
     def _on_logger_ready(self, message: Bool) -> None:
         self._logger_ready |= bool(message.data)
+
+    def _on_actual_poses(self, message: TFMessage) -> None:
+        expected = {self._proxy_name(route.name) for route in self._routes}
+        robot_name = str(self.get_parameter("actual_robot_name").value)
+        received = False
+        for transform in message.transforms:
+            name = transform.child_frame_id
+            if name not in expected and name != robot_name:
+                continue
+            pose = Pose()
+            pose.position.x = transform.transform.translation.x
+            pose.position.y = transform.transform.translation.y
+            pose.position.z = transform.transform.translation.z
+            pose.orientation = transform.transform.rotation
+            if name == robot_name:
+                self._actual_robot_pose = pose
+            else:
+                self._actual_proxy_poses[name] = pose
+            received = True
+        if received:
+            self._actual_pose_received_s = self.get_clock().now().nanoseconds * 1.0e-9
 
     @staticmethod
     def _load_routes(path: Path) -> tuple[ActorRoute, ...]:
@@ -372,7 +411,34 @@ class ScenarioActorController(Node):
                 request.pose = target_pose
                 self._pending[entity_name] = self._client.call_async(request)
                 self._pending_since_s[entity_name] = now
-        self._publisher.publish(pose_array)
+        expected_proxy_names = tuple(self._proxy_name(route.name) for route in self._routes)
+        actual_ready = self._actual_robot_pose is not None and all(
+            name in self._actual_proxy_poses for name in expected_proxy_names
+        )
+        actual_fresh = (
+            self._actual_pose_received_s is not None
+            and now - self._actual_pose_received_s
+            <= float(self.get_parameter("actual_pose_timeout_s").value)
+        )
+        if actual_ready and actual_fresh:
+            pose_array.poses = [self._actual_proxy_poses[name] for name in expected_proxy_names]
+            self._publisher.publish(pose_array)
+            robot_pose = PoseStamped()
+            robot_pose.header = pose_array.header
+            robot_pose.pose = self._actual_robot_pose
+            self._robot_pose_publisher.publish(robot_pose)
+            self._actual_pose_wait_since_s = None
+        elif len(self._spawn_validated) == len(expected_proxy_names):
+            if self._actual_pose_wait_since_s is None:
+                self._actual_pose_wait_since_s = now
+            elif now - self._actual_pose_wait_since_s > float(
+                self.get_parameter("actual_pose_timeout_s").value
+            ):
+                self._healthy = False
+                self.get_logger().error(
+                    "Gazebo actual pedestrian poses are missing or stale",
+                    throttle_duration_sec=5.0,
+                )
         health = Bool()
         health.data = self._healthy
         self._health_publisher.publish(health)

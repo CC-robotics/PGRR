@@ -26,10 +26,12 @@ def main() -> None:
     with args.episode.open(encoding="utf-8") as stream:
         for line in stream:
             row = json.loads(line)
+            privileged = row.get("privileged", {})
+            robot_pose = privileged.get("robot_pose") or row["robot_pose"]
             check = nearest_human_lidar_consistency(
-                row["robot_pose"],
+                robot_pose,
                 np.asarray(row["lidar"], dtype=np.float32),
-                row.get("privileged", {}).get("human_positions", []),
+                privileged.get("human_positions", []),
             )
             if check is None or check.center_distance_m >= args.near_distance:
                 continue
