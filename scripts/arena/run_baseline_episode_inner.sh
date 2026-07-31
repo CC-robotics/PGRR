@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${RAMP_DISABLE_AUTO_RESET:-0}" != "1" ]]; then
+    echo "ERROR: baseline episodes require RAMP_DISABLE_AUTO_RESET=1" >&2
+    exit 2
+fi
+
 SCENARIO="${RAMP_SCENARIO:?RAMP_SCENARIO is required}"
 TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}"
 SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}"

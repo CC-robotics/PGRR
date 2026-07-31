@@ -86,6 +86,7 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("recovery_decision_topic", "recovery_decision")
         self.declare_parameter("privileged_humans_topic", "/ramp/privileged/humans")
         self.declare_parameter("privileged_robot_pose_topic", "/ramp/privileged/robot_pose")
+        self.declare_parameter("maximum_privileged_pose_jump_m", 1.0)
         self.declare_parameter("actor_health_topic", "/ramp/actors_healthy")
         self.declare_parameter("episode_start_topic", "/ramp/episode_started")
         self.declare_parameter("logger_ready_topic", "/ramp/logger_ready")
@@ -383,7 +384,7 @@ class EpisodeLoggerNode(Node):
 
     def _on_privileged_robot_pose(self, message: PoseStamped) -> None:
         pose = message.pose
-        self._privileged_robot_pose = (
+        new_pose = (
             float(pose.position.x),
             float(pose.position.y),
             _yaw_from_quaternion(
@@ -393,6 +394,17 @@ class EpisodeLoggerNode(Node):
                 pose.orientation.w,
             ),
         )
+        if (
+            self._episode_started
+            and self._privileged_robot_pose is not None
+            and math.dist(new_pose[:2], self._privileged_robot_pose[:2])
+            > float(self.get_parameter("maximum_privileged_pose_jump_m").value)
+        ):
+            self._set_outcome(
+                EpisodeOutcome.INVALID_RESET,
+                "Gazebo robot pose jumped during the active episode",
+            )
+        self._privileged_robot_pose = new_pose
 
     def _on_actor_health(self, message: Bool) -> None:
         if not bool(message.data):

@@ -117,6 +117,15 @@ def test_episode_cleanup_is_bounded_for_every_auxiliary_process() -> None:
     assert 'stop_pid_bounded "${recovery_node_pid}" INT 10' in runtime
     assert 'stop_pid_bounded "${actor_pid}" INT 10' in runtime
     assert 'kill -KILL "${pid}"' in runtime
+    assert 'RAMP_DISABLE_AUTO_RESET:-0}" != "1"' in runtime
+
+
+def test_episode_logger_rejects_privileged_robot_pose_jumps() -> None:
+    root = Path(__file__).resolve().parents[2]
+    logger = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/episode_logger_node.py").read_text()
+    assert 'declare_parameter("maximum_privileged_pose_jump_m", 1.0)' in logger
+    assert "Gazebo robot pose jumped during the active episode" in logger
+    assert "math.dist(new_pose[:2], self._privileged_robot_pose[:2])" in logger
 
 
 def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
