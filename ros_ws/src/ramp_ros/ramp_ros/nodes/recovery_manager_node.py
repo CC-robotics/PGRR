@@ -63,6 +63,7 @@ from ramp_core.recovery.safety import (
     backup_increases_obstacle_clearance,
     emergency_hazard_with_hysteresis,
     emergency_mode_reason,
+    footprint_hazard_distance,
     update_collision_safety_latch,
 )
 from ramp_core.state_machine import (
@@ -753,14 +754,16 @@ class RecoveryManagerNode(Node):
 
     def _footprint_stop_distance(self, linear_velocity: float) -> float:
         margin = self._float("footprint_stop_clearance_m")
+        nearest_is_known_static = self._nearest_obstacle_is_known_static()
         if self._collision_safety_latched:
             collision_stop_clearance, _ = self._collision_latched_clearances()
             margin = max(margin, collision_stop_clearance)
-        return stopping_distance(
-            abs(linear_velocity),
+        return footprint_hazard_distance(
+            linear_velocity,
             self._float("braking_acceleration_mps2"),
             self._float("control_latency_s"),
             margin,
+            nearest_is_known_static=nearest_is_known_static,
         )
 
     def _footprint_backup_permitted(self, footprint_hazard: bool) -> bool:

@@ -9,6 +9,7 @@ from ramp_core.recovery.safety import (
     backup_increases_obstacle_clearance,
     emergency_hazard_with_hysteresis,
     emergency_mode_reason,
+    footprint_hazard_distance,
     update_collision_safety_latch,
 )
 
@@ -60,6 +61,23 @@ def test_emergency_hazard_rejects_negative_hysteresis() -> None:
             footprint_stop_distance_m=0.5,
             release_hysteresis_m=-0.1,
         )
+
+
+def test_known_static_footprint_does_not_add_tangential_braking_distance() -> None:
+    assert footprint_hazard_distance(
+        0.4,
+        0.8,
+        0.15,
+        0.50,
+        nearest_is_known_static=True,
+    ) == pytest.approx(0.50)
+    assert footprint_hazard_distance(
+        0.4,
+        0.8,
+        0.15,
+        0.50,
+        nearest_is_known_static=False,
+    ) == pytest.approx(0.66)
 
 
 def test_collision_margin_latch_survives_a_single_cleared_prediction() -> None:

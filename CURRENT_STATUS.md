@@ -370,3 +370,11 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Added a pure observable nearest-return classifier against exact oriented shelf boxes shared with the evaluator. Known-static returns retain 0.50 m braking/footprint margin and 0.36 m action clearance; unknown/dynamic returns retain the existing 0.85/0.65 m margins.
 - Added four unit tests for shelf parsing, rotation-aware matching, and dynamic-return rejection. `make test` passes 238 tests and the Humble overlay builds all three packages.
 - Next: run the candidate on the same train scenario under a new immutable episode ID; keep or revert it based on collision-free completion and task time.
+
+## 2026-08-01 — Static radial braking refinement
+
+- The first static-aware train replay remained collision-free and improved terminal physical goal distance from 5.088 m to 1.007 m, but still timed out at 180 s and therefore failed the completion gate.
+- It reduced emergency samples from 694 to 591 and BACKUP samples from 166 to 85. At 138 s it had 4.90 m remaining versus roughly 12.3 m before classification, then preserved a 1.194 m minimum human-centre distance during a later dynamic interaction.
+- Found a second conservative duplication: the controller checked forward braking clearance and also added forward braking distance to the radial nearest-wall footprint threshold, even during tangential wall following.
+- Added a pure helper so a matched known-static nearest return uses the fixed 0.50 m radial footprint margin; unknown/dynamic returns retain the full stopping-distance term. The independent directional braking and swept-capsule checks are unchanged.
+- Validation: 239 tests pass and all three ROS packages build. Next: run a second immutable train replay; require physical goal completion before considering held-out validation.

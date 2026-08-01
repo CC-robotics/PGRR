@@ -6,6 +6,34 @@ import math
 from dataclasses import dataclass
 from enum import Enum
 
+from ramp_core.kinematics import stopping_distance
+
+
+def footprint_hazard_distance(
+    linear_speed_mps: float,
+    braking_acceleration_mps2: float,
+    control_latency_s: float,
+    footprint_margin_m: float,
+    *,
+    nearest_is_known_static: bool,
+) -> float:
+    """Avoid counting tangential braking twice for a known static surface.
+
+    Directional motion clearance is checked independently. A known static
+    surface therefore needs the fixed radial footprint margin here; an
+    unknown or dynamic return retains the conservative stopping-distance term.
+    """
+    if nearest_is_known_static:
+        if not math.isfinite(footprint_margin_m) or footprint_margin_m < 0.0:
+            raise ValueError("footprint margin must be finite and non-negative")
+        return footprint_margin_m
+    return stopping_distance(
+        abs(linear_speed_mps),
+        braking_acceleration_mps2,
+        control_latency_s,
+        footprint_margin_m,
+    )
+
 
 def emergency_hazard_with_hysteresis(
     *,
