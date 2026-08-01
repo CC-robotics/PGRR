@@ -394,3 +394,10 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - The result does not justify further validation tuning. The static-aware change is retained as a principled train-completing correction and negative held-out ablation, while blind corner remains an unresolved method limitation.
 - Evidence: `outputs/pilot/blind_corner_high_s02320_8c92b00_pair.csv`, two consistency manifests, and immutable raw hashes embedded in the CSV.
 - Next: regenerate the manuscript table/figure from this latest same-commit pair and preserve the timeout conclusion.
+
+## 2026-08-01 — Unsafe static radial refinement rejected
+
+- Cross-scenario safety replay exposed a physical static collision: at 72.494 s the refined hierarchy hit a temporary-blockage door frame while executing `emergency_turn_right`; minimum LiDAR range fell from 0.46 m to 0.33 m as skid-steer rotation translated the physical centre into the wall.
+- Base independently collided with the blocking human at 38.0 s. Both raw outcomes and hashes are retained; the learned collision is not excluded or relabeled.
+- The train goal reach and improved blind-corner progress do not override this safety regression. Removed the no-braking radial helper and restored the full stopping-distance term for static footprint hazards.
+- The earlier static endpoint classifier remains a candidate. Next: run the same temporary-blockage safety check with the restored braking term; revert the classifier too if static collision persists.
