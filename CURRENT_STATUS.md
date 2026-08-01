@@ -378,3 +378,10 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Found a second conservative duplication: the controller checked forward braking clearance and also added forward braking distance to the radial nearest-wall footprint threshold, even during tangential wall following.
 - Added a pure helper so a matched known-static nearest return uses the fixed 0.50 m radial footprint margin; unknown/dynamic returns retain the full stopping-distance term. The independent directional braking and swept-capsule checks are unchanged.
 - Validation: 239 tests pass and all three ROS packages build. Next: run a second immutable train replay; require physical goal completion before considering held-out validation.
+
+## 2026-08-01 — Static-aware candidate passes train gate
+
+- The refined candidate physically reached the train goal in 173.893 s with 0.195 m terminal error, versus 5.088 m remaining for the original hierarchy and 1.007 m for the first static-aware candidate.
+- It remained free of physical static/human collision, maintained 1.285 m minimum human-centre distance, and reduced emergency samples from 694 to 500 and BACKUP from 166 to 44 relative to the original train run.
+- `outputs/pilot/blind_corner_train_static_margin_iteration.csv` retains all three outcomes and raw SHA256 values. The first two timeouts remain in the artifact.
+- This passes the train completion gate but has only 6.11 s timeout margin. Next: run one held-out blind-corner validation replay under commit `d5102f9`; do not modify parameters from its result.
