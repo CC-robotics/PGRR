@@ -21,6 +21,7 @@ from ramp_core.evaluation.navigation import (
     navigation_status_is_active,
     timeout_is_invalid_reset,
 )
+from ramp_core.geometry import point_to_oriented_box_distance
 from ramp_core.planning.online import sanitize_near_field_returns
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.clock import Clock, ClockType
@@ -52,6 +53,26 @@ def _resample_lidar(
     source = np.clip(source, 0.0, maximum)
     coordinates = np.linspace(0.0, source.size - 1.0, beam_count)
     return np.interp(coordinates, np.arange(source.size), source).astype(np.float32)
+
+
+def _parse_shelf_boxes(payload: str) -> tuple[tuple[float, float, float, float, float], ...]:
+    """Parse scenario shelf poses into exact 2-D bounding boxes."""
+    obstacles = json.loads(payload)
+    if not isinstance(obstacles, list):
+        raise ValueError("static_obstacles_json must contain a list")
+    boxes: list[tuple[float, float, float, float, float]] = []
+    for obstacle in obstacles:
+        if not isinstance(obstacle, dict) or obstacle.get("model") != "shelf":
+            raise ValueError("physical static collision currently supports only shelf models")
+        position = obstacle.get("pos")
+        if not isinstance(position, list) or len(position) < 2:
+            raise ValueError("static shelf requires a position")
+        yaw = float(position[2]) if len(position) > 2 else 0.0
+        # shelf_static.sdf spans x +/-0.45 and local y [-0.395, 0.005].
+        center_x = float(position[0]) + 0.195 * math.sin(yaw)
+        center_y = float(position[1]) - 0.195 * math.cos(yaw)
+        boxes.append((center_x, center_y, 0.45, 0.20, yaw))
+    return tuple(boxes)
 
 
 class EpisodeLoggerNode(Node):
@@ -106,6 +127,8 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("lidar_collision_confirmation_frames", 3)
         self.declare_parameter("lidar_static_collision_enabled", True)
         self.declare_parameter("bilateral_edge_self_return_max_m", 0.34)
+        self.declare_parameter("physical_static_collision_enabled", False)
+        self.declare_parameter("static_obstacles_json", "[]")
 
         episode_id = self._string_parameter("episode_id")
         scenario_id = self._string_parameter("scenario_id")
@@ -113,6 +136,9 @@ class EpisodeLoggerNode(Node):
             raise ValueError("episode_id and scenario_id parameters are required")
         output_directory = Path(self._string_parameter("output_directory")).expanduser()
         output_directory.mkdir(parents=True, exist_ok=True)
+        self._static_boxes = _parse_shelf_boxes(
+            str(self.get_parameter("static_obstacles_json").value)
+        )
         self._stream_path = output_directory / f"{episode_id}.jsonl"
         self._metadata_path = output_directory / f"{episode_id}.metadata.json"
         self._outcome_path = output_directory / f"{episode_id}.outcome.json"
@@ -587,6 +613,7 @@ class EpisodeLoggerNode(Node):
             )
         distance = float(np.linalg.norm(self._goal[:2] - robot_pose[:2]))
         nearest_obstacle = float(np.min(self._lidar))
+        privileged_robot_pose = self._privileged_robot_pose
         lidar_static_collision = bool(
             self.get_parameter("lidar_static_collision_enabled").value
         ) and nearest_obstacle <= float(self.get_parameter("lidar_collision_distance_m").value)
@@ -596,8 +623,27 @@ class EpisodeLoggerNode(Node):
                 EpisodeOutcome.COLLISION,
                 "LiDAR obstacle return lies inside the Jackal footprint",
             )
+        if (
+            bool(self.get_parameter("physical_static_collision_enabled").value)
+            and privileged_robot_pose is not None
+            and self._static_boxes
+        ):
+            static_clearance = min(
+                point_to_oriented_box_distance(
+                    privileged_robot_pose[:2],
+                    (box[0], box[1]),
+                    (box[2], box[3]),
+                    box[4],
+                )
+                for box in self._static_boxes
+            )
+            if static_clearance <= float(self.get_parameter("robot_radius_m").value):
+                self._collision = True
+                self._set_outcome(
+                    EpisodeOutcome.COLLISION,
+                    "physical robot footprint intersects known static scenario geometry",
+                )
         nearest_human = math.inf
-        privileged_robot_pose = self._privileged_robot_pose
         if self._human_positions and privileged_robot_pose is not None:
             nearest_human = min(
                 math.dist(privileged_robot_pose[:2], human) for human in self._human_positions

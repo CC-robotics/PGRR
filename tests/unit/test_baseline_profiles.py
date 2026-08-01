@@ -26,11 +26,13 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     assert "-m ramp_ros.nodes.recovery_manager_node" in runtime
     assert 'RAMP_BC_MODEL_PATH="${RAMP_BC_MODEL_PATH:-' in wrapper
     assert "ROS_DOMAIN_ID must be an integer in [0, 232]" in wrapper
-    assert 'print(len(scenario.get("obstacles", {}).get("static", [])))' in runtime
+    assert "print(len(static_obstacles))" in runtime
     assert 'lidar_static_collision_enabled:="${lidar_static_collision_enabled}"' in runtime
     assert runtime.count('minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}"') == 2
     assert "minimum_valid_lidar_range_m=0.34" in runtime
     assert "RAMP_LIDAR_COLLISION_CONFIRMATION_FRAMES:-3" in runtime
+    assert 'physical_static_collision_enabled:="${physical_static_collision_enabled}"' in runtime
+    assert "static_obstacles_json" in runtime
     assert "collision_omnidirectional_absolute_distance_m=0.70" in runtime
     assert (
         runtime.count(

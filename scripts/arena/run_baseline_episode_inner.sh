@@ -47,7 +47,10 @@ print(robot["goal"][2] if len(robot["goal"]) > 2 else 0.0)
 print(robot["start"][0])
 print(robot["start"][1])
 print(robot["start"][2] if len(robot["start"]) > 2 else 0.0)
-print(len(scenario.get("obstacles", {}).get("static", [])))
+static_obstacles = scenario.get("obstacles", {}).get("static", [])
+print(len(static_obstacles))
+print(json.dumps(static_obstacles, separators=(",", ":")))
+print(str(all(obstacle.get("model") == "shelf" for obstacle in static_obstacles)).lower())
 PY
 )
 scenario_id="${scenario_values[0]}"
@@ -61,7 +64,10 @@ start_x="${scenario_values[7]}"
 start_y="${scenario_values[8]}"
 start_yaw="${scenario_values[9]}"
 static_obstacle_count="${scenario_values[10]}"
+static_obstacles_json="${scenario_values[11]}"
+static_geometry_supported="${scenario_values[12]}"
 lidar_static_collision_enabled=true
+physical_static_collision_enabled=false
 minimum_valid_lidar_range_m=0.0
 collision_omnidirectional_absolute_distance_m=0.0
 if [[ "${static_obstacle_count}" -eq 0 ]]; then
@@ -71,6 +77,9 @@ if [[ "${static_obstacle_count}" -eq 0 ]]; then
     # reaches the physical collision boundary at approximately 0.36 m.
     minimum_valid_lidar_range_m=0.34
     collision_omnidirectional_absolute_distance_m=0.70
+elif [[ "${static_geometry_supported}" == "true" ]]; then
+    lidar_static_collision_enabled=false
+    physical_static_collision_enabled=true
 fi
 if [[ -z "${scenario_id}" || -z "${seed}" || -z "${split}" || -z "${map_id}" ]]; then
     echo "ERROR: scenario is missing required ramp_metadata" >&2
@@ -348,6 +357,8 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p lidar_collision_distance_m:=0.12 \
     -p lidar_collision_confirmation_frames:="${RAMP_LIDAR_COLLISION_CONFIRMATION_FRAMES:-3}" \
     -p lidar_static_collision_enabled:="${lidar_static_collision_enabled}" \
+    -p physical_static_collision_enabled:="${physical_static_collision_enabled}" \
+    -p static_obstacles_json:="'${static_obstacles_json}'" \
     -p failure_status_topic:=/ramp/failure_status \
     -p recovery_decision_topic:=/ramp/recovery_decision \
     >>"${RUNTIME_LOG}" 2>&1 &

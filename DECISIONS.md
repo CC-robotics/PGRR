@@ -209,4 +209,8 @@ Emergency turn direction is geometric supervisory state, not a new learned actio
 
 ## D-052: Require 0.3 s of continuous LiDAR evidence for static contact
 
-The 10 Hz evaluator now requires three consecutive footprint-penetrating LiDAR samples before declaring a static collision. This is long enough to reject the audited one/two-frame Gazebo GPU-LiDAR artifacts while remaining short relative to the safety supervisor's 0.5 s hold and the robot's bounded speed. Human contact uses actual evaluation-only centre geometry and remains independent of this debounce.
+The 10 Hz evaluator requires three consecutive footprint-penetrating LiDAR samples before declaring a static collision only when scenario geometry is unavailable. A later train run proved that the GPU artifact can persist longer, so generated shelf scenarios no longer rely on this debounce. Human contact uses actual evaluation-only centre geometry and remains independent.
+
+## D-053: Evaluate supported generated shelves with physical scenario geometry
+
+For scenarios whose static models are all the pinned `shelf_static.sdf`, the logger reconstructs each oriented 0.9 by 0.4 m footprint from the scenario manifest and checks it against the actual Gazebo robot centre plus a 0.36 m radius. This replaces unreliable near-range LiDAR termination only for supported models. The same privileged pose is already evaluation-only for human collision and physical goal confirmation and is never published to the policy observation.

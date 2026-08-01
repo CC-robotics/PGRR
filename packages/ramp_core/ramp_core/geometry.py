@@ -33,6 +33,29 @@ def world_to_robot(point: tuple[float, float], robot: Pose2D) -> tuple[float, fl
     return cosine * dx + sine * dy, -sine * dx + cosine * dy
 
 
+def point_to_oriented_box_distance(
+    point: tuple[float, float],
+    center: tuple[float, float],
+    half_extents: tuple[float, float],
+    yaw: float = 0.0,
+) -> float:
+    """Return Euclidean surface distance to a filled 2-D oriented box."""
+    values = (*point, *center, *half_extents, yaw)
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("box geometry must be finite")
+    if half_extents[0] < 0.0 or half_extents[1] < 0.0:
+        raise ValueError("box half extents must be non-negative")
+    dx = point[0] - center[0]
+    dy = point[1] - center[1]
+    cosine = math.cos(yaw)
+    sine = math.sin(yaw)
+    local_x = cosine * dx + sine * dy
+    local_y = -sine * dx + cosine * dy
+    outside_x = max(abs(local_x) - half_extents[0], 0.0)
+    outside_y = max(abs(local_y) - half_extents[1], 0.0)
+    return math.hypot(outside_x, outside_y)
+
+
 def point_to_polyline_distance(
     point: tuple[float, float],
     polyline: Sequence[tuple[float, float]],

@@ -1,7 +1,12 @@
 import math
 
 import pytest
-from ramp_core.geometry import normalize_angle, robot_to_world, world_to_robot
+from ramp_core.geometry import (
+    normalize_angle,
+    point_to_oriented_box_distance,
+    robot_to_world,
+    world_to_robot,
+)
 from ramp_core.types import Pose2D
 
 
@@ -15,3 +20,16 @@ def test_coordinate_transforms_round_trip() -> None:
 def test_normalize_angle_half_open_interval() -> None:
     assert normalize_angle(math.pi) == pytest.approx(-math.pi)
     assert normalize_angle(3.0 * math.pi) == pytest.approx(-math.pi)
+
+
+def test_point_to_oriented_box_distance_handles_inside_edge_and_rotation() -> None:
+    assert point_to_oriented_box_distance((0.0, 0.0), (0.0, 0.0), (1.0, 0.5)) == 0.0
+    assert point_to_oriented_box_distance((1.3, 0.0), (0.0, 0.0), (1.0, 0.5)) == pytest.approx(0.3)
+    assert point_to_oriented_box_distance(
+        (0.0, 1.3), (0.0, 0.0), (1.0, 0.5), math.pi / 2.0
+    ) == pytest.approx(0.3)
+
+
+def test_point_to_oriented_box_distance_rejects_negative_extent() -> None:
+    with pytest.raises(ValueError, match="non-negative"):
+        point_to_oriented_box_distance((0.0, 0.0), (0.0, 0.0), (-1.0, 0.5))

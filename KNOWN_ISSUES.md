@@ -50,7 +50,11 @@ After correcting KI-072, iteration-4 remained collision-free but timed out after
 
 ## KI-074: Two-frame LiDAR contact debounce still admits transient self-returns
 
-The first turn-memory replay terminated at 8.89 s after two sub-0.12 m scan frames even though the nearest human was 4.168 m away and the robot was about 1.36 m from each corridor wall. Across all 14 retained `LiDAR obstacle return lies inside the Jackal footprint` outcomes, the maximum consecutive evidence length is two frames; most also have human clearance above 1 m. Static-contact confirmation now requires three 10 Hz frames. This does not disable LiDAR collision detection, and the independent physical robot--human collision criterion is unchanged. Historical outcomes remain immutable diagnostics.
+The first turn-memory replay terminated at 8.89 s after two sub-0.12 m scan frames even though the nearest human was 4.168 m away and the robot was about 1.36 m from each corridor wall. Across the 14 outcomes available at that point, the maximum consecutive evidence length was two frames, so confirmation was raised to three 10 Hz frames. A subsequent run exposed a longer artifact at 100.30 s with 8.080 m human clearance and 0.90 m or more wall-surface clearance. Debounce alone is therefore not a reliable static-contact classifier. Historical outcomes remain immutable diagnostics.
+
+## KI-075: Generated shelf walls are absent from the navigation occupancy map
+
+The generated corridor shelves have exact poses in the scenario but remain absent from Arena's `map_empty` occupancy map, so raw LiDAR cannot distinguish a wall contact from the intermittent Jackal GPU-LiDAR artifact. Evaluation now parses supported `shelf` poses and checks the actual Gazebo robot centre against the exact 0.9 by 0.4 m oriented shelf footprint plus the 0.36 m robot radius. Raw LiDAR termination remains enabled for unsupported static models; open scenes use neither static classifier. This evaluation-only pose never enters the detector or learned policy. A future scenario-map compiler should still rasterize these walls for the planner.
 
 ## KI-001: Default interactive shell selects ROS Iron
 
