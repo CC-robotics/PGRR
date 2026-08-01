@@ -117,6 +117,33 @@ recovery_pid=""
 monitor_pid=""
 cleanup_started=0
 
+record_startup_failure() {
+    local detail="${1:?startup failure detail is required}"
+    [[ -e "${outcome_file}" ]] && return 0
+    python3 - "${outcome_file}" "${episode_id}" "${detail}" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+path.write_text(
+    json.dumps(
+        {
+            "detail": sys.argv[3],
+            "episode_id": sys.argv[2],
+            "outcome": "SIMULATOR_FAILURE",
+            "outcome_id": 4,
+            "sample_count": 0,
+        },
+        indent=2,
+        sort_keys=True,
+    )
+    + "\n",
+    encoding="utf-8",
+)
+PY
+}
+
 stop_pid_bounded() {
     local pid="${1:-}"
     local signal="${2:-INT}"
@@ -205,6 +232,7 @@ map_topic=""
 while (( SECONDS < deadline )); do
     if ! kill -0 "${launch_pid}" 2>/dev/null; then
         echo "ERROR: Arena exited before baseline topics became ready" >&2
+        record_startup_failure "Arena exited before baseline topics became ready"
         tail -120 "${RUNTIME_LOG}" >&2
         exit 1
     fi
@@ -221,6 +249,7 @@ while (( SECONDS < deadline )); do
 done
 if [[ -z "${nav_action}" || -z "${odom_topic}" || -z "${scan_topic}" || -z "${cmd_topic}" ]]; then
     echo "ERROR: timed out waiting for required baseline topics" >&2
+    record_startup_failure "timed out waiting for required baseline topics"
     ros2 topic list -t >&2 || true
     exit 1
 fi

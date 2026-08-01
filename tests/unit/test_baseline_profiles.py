@@ -33,6 +33,8 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     assert "RAMP_LIDAR_COLLISION_CONFIRMATION_FRAMES:-3" in runtime
     assert 'physical_static_collision_enabled:="${physical_static_collision_enabled}"' in runtime
     assert "static_obstacles_json" in runtime
+    assert '"outcome": "SIMULATOR_FAILURE"' in runtime
+    assert '"sample_count": 0' in runtime
     assert "collision_omnidirectional_absolute_distance_m=0.70" in runtime
     assert (
         runtime.count(

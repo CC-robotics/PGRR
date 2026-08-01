@@ -60,6 +60,10 @@ The generated corridor shelves have exact poses in the scenario but remain absen
 
 The initial opposite-stream shard labeled each sampled state independently, although online Oracle and BC deployment disable WAIT after a three-decision no-progress budget when a safe escape exists. WAIT therefore occupied 227/342 sequence-relabelled states and short-horizon `predicted_success` overstated recurrent-flow recovery. Offline labeling now carries expert side/WAIT history and applies the same bounded-WAIT mask. Observable freeze or deadlock exhausts the budget immediately but cannot remove WAIT when no planning-safe alternative exists. On the retained train trajectory WAIT decreases to 209/342, predicted-success labels to 276/342, and illegal actions remain zero. Closed-loop benefit is not yet established.
 
+## KI-077: A Nav2 lifecycle startup timeout preceded iteration-5 evaluation
+
+The first iteration-5 closed-loop attempt never exposed a `NavigateToPose` action although Gazebo topics were present; Nav2's lifecycle manager logged service timeouts. No episode logger had started, so the original wrapper produced no outcome artifact. The event is now explicitly recorded as `SIMULATOR_FAILURE` with zero samples, and future pre-logger launch/topic failures atomically create the same outcome class before cleanup. The algorithm run is retried under a new episode ID and the failed attempt is excluded only from algorithm metrics.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.
