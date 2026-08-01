@@ -131,6 +131,7 @@ def cross_family_pilot() -> None:
     sources = [
         ROOT / "outputs/pilot/temporary_blockage_high_s02720_0205d6e_pair.csv",
         ROOT / "outputs/pilot/group_blocking_high_s02420_926cc95_pair.csv",
+        ROOT / "outputs/pilot/overtaking_high_s02520_324fcdf_pair.csv",
     ]
     pairs: list[list[dict[str, str]]] = []
     for source in sources:
@@ -142,7 +143,7 @@ def cross_family_pilot() -> None:
             raise RuntimeError(f"pair must come from one project commit: {source}")
         pairs.append(rows)
 
-    scenarios = ["Temp.", "Group"]
+    scenarios = ["TB", "GB", "OT"]
     methods = ["DWB", "Full hierarchy"]
     colors = ["#466B9F", "#16836B"]
     hatches = ["//", ""]
@@ -186,6 +187,7 @@ def cross_family_pilot() -> None:
     axes[1].set_ylabel("Minimum human distance [m]")
     for axis in axes:
         axis.set_xticks(x, scenarios)
+        axis.tick_params(axis="x", labelsize=6.5)
         axis.grid(axis="y", color="#D5DBDB", linewidth=0.6)
         axis.set_axisbelow(True)
     figure.savefig(

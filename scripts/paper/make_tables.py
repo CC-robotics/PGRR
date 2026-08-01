@@ -129,6 +129,10 @@ def cross_family_pilot() -> None:
             "Group blocking",
             ROOT / "outputs/pilot/group_blocking_high_s02420_926cc95_pair.csv",
         ),
+        (
+            "Overtaking",
+            ROOT / "outputs/pilot/overtaking_high_s02520_324fcdf_pair.csv",
+        ),
     ]
     rows: list[str] = []
     for scenario, source in sources:
@@ -152,7 +156,7 @@ def cross_family_pilot() -> None:
         "internally same-commit pair; values are descriptive and are not pooled for inference."
     )
     table = (
-        """% Generated from the temporary- and group-blocking pair CSV files
+        """% Generated from the temporary-blockage, group-blocking, and overtaking pair CSV files
 \\begin{table}[t]
 \\caption{__CAPTION__}
 \\label{tab:cross-family-pilot}
