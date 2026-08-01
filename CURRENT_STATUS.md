@@ -401,3 +401,11 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Base independently collided with the blocking human at 38.0 s. Both raw outcomes and hashes are retained; the learned collision is not excluded or relabeled.
 - The train goal reach and improved blind-corner progress do not override this safety regression. Removed the no-braking radial helper and restored the full stopping-distance term for static footprint hazards.
 - The earlier static endpoint classifier remains a candidate. Next: run the same temporary-blockage safety check with the restored braking term; revert the classifier too if static collision persists.
+
+## 2026-08-01 — Static endpoint classifier fully rejected
+
+- With radial braking restored but endpoint classification still active, the temporary-blockage replay collided with the blocking human at 40.526 s and 0.705 m centre distance.
+- The human LiDAR surface lay close to the doorway shelf footprint, so a single endpoint-to-map tolerance cannot distinguish a person beside a wall from the wall itself. Lowering the margin on that basis is unsafe.
+- Removed the entire classifier, all static-specific control thresholds, and the scenario-geometry parameter from the recovery node. The original uniform 0.85 m collision-latched stop and 0.65 m action margins are restored.
+- Retained the geometry parser refactor only for the evaluation logger; it does not influence policy or control.
+- Evidence: `outputs/pilot/temporary_blockage_static_classifier_regression.csv` preserves the earlier goal reach and both classifier collisions with raw hashes. Next: rerun the selected pre-candidate behavior only after offline tests/build pass; the manuscript must not present rejected classifier runs as the selected method.

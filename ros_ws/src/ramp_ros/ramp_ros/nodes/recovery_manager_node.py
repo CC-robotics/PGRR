@@ -27,7 +27,6 @@ from ramp_core.action_space import (
     WAIT_ACTION_ID,
     RecoveryActionKind,
 )
-from ramp_core.geometry import parse_shelf_boxes
 from ramp_core.kinematics import stopping_distance
 from ramp_core.observations import (
     HumanState,
@@ -42,7 +41,6 @@ from ramp_core.planning.online import (
     augment_grid_with_scan,
     directional_scan_clearance,
     estimate_human_states,
-    nearest_scan_return_matches_static_geometry,
     privileged_time_to_collision,
     sanitize_near_field_returns,
     scan_segment_is_free,
@@ -127,9 +125,6 @@ class RecoveryManagerNode(Node):
             self._float("robot_start_x"),
             self._float("robot_start_y"),
             self._float("robot_start_yaw"),
-        )
-        self._static_boxes = parse_shelf_boxes(
-            str(self.get_parameter("static_obstacles_json").value)
         )
         state_config = RecoveryStateMachineConfig(
             tau_on=self._float("tau_on"),
@@ -277,7 +272,6 @@ class RecoveryManagerNode(Node):
             "privileged_humans_topic": "/ramp/privileged/humans",
             "model_path": "",
             "onnx_execution_provider": "CPUExecutionProvider",
-            "static_obstacles_json": "[]",
         }
         for name, value in string_defaults.items():
             self.declare_parameter(name, value)
@@ -343,9 +337,6 @@ class RecoveryManagerNode(Node):
             "footprint_stop_clearance_m": 0.48,
             "collision_latched_stop_clearance_m": 0.85,
             "collision_latched_action_clearance_m": 0.65,
-            "static_collision_latched_stop_clearance_m": 0.50,
-            "static_collision_latched_action_clearance_m": 0.36,
-            "static_return_match_tolerance_m": 0.10,
             "footprint_backup_forward_angle_degrees": 80.0,
             "emergency_hold_s": 0.5,
             "emergency_backup_duration_s": 0.8,
@@ -702,30 +693,6 @@ class RecoveryManagerNode(Node):
         closest_index = int(valid_indices[np.argmin(values[valid])])
         return float(self._scan.angle_min) + closest_index * float(self._scan.angle_increment)
 
-    def _nearest_obstacle_is_known_static(self) -> bool:
-        if self._scan is None or self._odom is None or not self._static_boxes:
-            return False
-        return nearest_scan_return_matches_static_geometry(
-            self._scan.ranges,
-            angle_min=float(self._scan.angle_min),
-            angle_increment=float(self._scan.angle_increment),
-            robot=self._world_pose(),
-            boxes=self._static_boxes,
-            tolerance_m=self._float("static_return_match_tolerance_m"),
-        )
-
-    def _collision_latched_clearances(self) -> tuple[float, float]:
-        """Return stop/action margins for the currently closest observable surface."""
-        if self._nearest_obstacle_is_known_static():
-            return (
-                self._float("static_collision_latched_stop_clearance_m"),
-                self._float("static_collision_latched_action_clearance_m"),
-            )
-        return (
-            self._float("collision_latched_stop_clearance_m"),
-            self._float("collision_latched_action_clearance_m"),
-        )
-
     def _forward_escape_clearance(self) -> float:
         """Return forward clearance only when the footprint corridor is free."""
         assert self._scan is not None
@@ -735,10 +702,9 @@ class RecoveryManagerNode(Node):
         )
         translation_clearance = self._float("emergency_translation_clearance_m")
         if self._collision_safety_latched:
-            collision_stop_clearance, _ = self._collision_latched_clearances()
             translation_clearance = max(
                 translation_clearance,
-                collision_stop_clearance,
+                self._float("collision_latched_stop_clearance_m"),
             )
         if not scan_segment_is_free(
             self._scan.ranges,
@@ -754,8 +720,7 @@ class RecoveryManagerNode(Node):
     def _footprint_stop_distance(self, linear_velocity: float) -> float:
         margin = self._float("footprint_stop_clearance_m")
         if self._collision_safety_latched:
-            collision_stop_clearance, _ = self._collision_latched_clearances()
-            margin = max(margin, collision_stop_clearance)
+            margin = max(margin, self._float("collision_latched_stop_clearance_m"))
         return stopping_distance(
             abs(linear_velocity),
             self._float("braking_acceleration_mps2"),
@@ -791,10 +756,9 @@ class RecoveryManagerNode(Node):
         action_clearance = self._float("robot_clearance_m")
         swept_clearance = self._float("footprint_stop_clearance_m")
         if collision_risk >= self._float("bc_rejoin_block_threshold"):
-            _, collision_action_clearance = self._collision_latched_clearances()
             action_clearance = max(
                 action_clearance,
-                collision_action_clearance,
+                self._float("collision_latched_action_clearance_m"),
             )
             swept_clearance = max(swept_clearance, action_clearance)
         mask = apply_observable_scan_mask(
@@ -1030,14 +994,14 @@ class RecoveryManagerNode(Node):
         )
         motion_clearance = self._motion_clearance(float(self._odom.twist.twist.linear.x))
         nearest_clearance = self._nearest_clearance()
-        collision_stop_clearance, _ = self._collision_latched_clearances()
         self._collision_safety_latched = update_collision_safety_latch(
             latched=self._collision_safety_latched,
             collision_risk=failure.collision_risk,
             trigger_threshold=self._float("bc_rejoin_block_threshold"),
             footprint_clearance_m=nearest_clearance,
             release_clearance_m=(
-                collision_stop_clearance + self._float("emergency_release_hysteresis_m")
+                self._float("collision_latched_stop_clearance_m")
+                + self._float("emergency_release_hysteresis_m")
             ),
         )
         footprint_stop = self._footprint_stop_distance(float(self._odom.twist.twist.linear.x))

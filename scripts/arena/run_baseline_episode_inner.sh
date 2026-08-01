@@ -346,7 +346,6 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOUR
         -p recovery_decision_topic:=/ramp/recovery_decision \
         -p policy_type:="${recovery_policy_type}" \
         -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
-        -p static_obstacles_json:="'${static_obstacles_json}'" \
         -p model_path:="${RAMP_BC_MODEL_PATH:-}" \
         -p privileged_humans_topic:=/ramp/privileged/humans \
         >>"${RUNTIME_LOG}" 2>&1 &

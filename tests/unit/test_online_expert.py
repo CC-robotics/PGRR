@@ -12,7 +12,6 @@ from ramp_core.planning.online import (
     augment_grid_with_scan,
     directional_scan_clearance,
     estimate_human_states,
-    nearest_scan_return_matches_static_geometry,
     privileged_collision_risk,
     privileged_time_to_collision,
     sanitize_near_field_returns,
@@ -91,27 +90,6 @@ def test_directional_clearance_reads_observed_front_sector() -> None:
         half_width_rad=math.radians(2.0),
     )
     assert clearance == pytest.approx(0.7)
-
-
-def test_nearest_scan_return_matches_rotated_static_box() -> None:
-    ranges = np.asarray([2.0, 1.0, 2.0])
-    assert nearest_scan_return_matches_static_geometry(
-        ranges,
-        angle_min=-0.1,
-        angle_increment=0.1,
-        robot=Pose2D(1.0, 2.0, math.pi / 2.0),
-        boxes=((1.0, 3.0, 0.45, 0.20, math.pi / 2.0),),
-    )
-
-
-def test_nearest_scan_return_rejects_dynamic_endpoint_away_from_boxes() -> None:
-    assert not nearest_scan_return_matches_static_geometry(
-        [0.7],
-        angle_min=0.0,
-        angle_increment=0.1,
-        robot=Pose2D(0.0, 0.0, 0.0),
-        boxes=((2.0, 0.0, 0.45, 0.20, 0.0),),
-    )
 
 
 def test_open_map_near_field_sanitizer_removes_only_impossible_returns() -> None:

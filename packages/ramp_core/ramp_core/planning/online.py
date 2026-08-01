@@ -8,46 +8,9 @@ from collections.abc import Sequence
 import numpy as np
 import numpy.typing as npt
 
-from ramp_core.geometry import OrientedBox2D, point_to_oriented_box_distance, robot_to_world
 from ramp_core.observations import HumanState
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.types import Pose2D, Velocity2D
-
-
-def nearest_scan_return_matches_static_geometry(
-    ranges: npt.ArrayLike,
-    *,
-    angle_min: float,
-    angle_increment: float,
-    robot: Pose2D,
-    boxes: Sequence[OrientedBox2D],
-    tolerance_m: float = 0.10,
-) -> bool:
-    """Return whether the closest observable endpoint belongs to known static geometry."""
-    if angle_increment <= 0.0:
-        raise ValueError("scan angle increment must be positive")
-    if not math.isfinite(tolerance_m) or tolerance_m < 0.0:
-        raise ValueError("static return tolerance must be finite and non-negative")
-    values = np.asarray(ranges, dtype=np.float64)
-    if values.ndim != 1:
-        raise ValueError("ranges must be one-dimensional")
-    valid_indices = np.flatnonzero(np.isfinite(values) & (values >= 0.0))
-    if valid_indices.size == 0 or not boxes:
-        return False
-    index = int(valid_indices[np.argmin(values[valid_indices])])
-    distance = float(values[index])
-    angle = angle_min + index * angle_increment
-    endpoint = robot_to_world((distance * math.cos(angle), distance * math.sin(angle)), robot)
-    return any(
-        point_to_oriented_box_distance(
-            endpoint,
-            (box[0], box[1]),
-            (box[2], box[3]),
-            box[4],
-        )
-        <= tolerance_m
-        for box in boxes
-    )
 
 
 def sanitize_near_field_returns(
