@@ -32,6 +32,10 @@ The successful `0205d6e` temporary-blockage recovery contains 132 samples report
 
 The logger now publishes every emergency-mode transition with a stable reason string while preserving the fixed action IDs. Historical rows are not rewritten. The `0205d6e` outcome remains valid performance evidence, but it is excluded from reason-based action-distribution figures; fresh runs are required for those analyses.
 
+## KI-070: Opposite-stream recovery remains in a safe start-region live-lock
+
+On untouched high-density validation seed 2620, Base collided after 3.497 s. The selected DAgger hierarchy kept 0.838 m minimum human-centre distance and remained collision-free for the full 180 s, but ended only 0.200 m closer to the goal after 1,633 recovery samples. It spent 1,075 samples in emergency state, repeatedly alternating bounded STOP, BACKUP, TURN, FORWARD, and learned subgoal options; progress over the final 60 s was negative. The scenario starts one same-direction pedestrian 0.838 m from the robot inside a narrow recurrent two-way stream, which is absent from the selected checkpoint's policy-visited train coverage. The outcome is a timeout, not a safety success. Validation frames must not be added to training; fresh train-split opposite-stream episodes and privileged expert labels are required before re-evaluation.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.
