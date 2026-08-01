@@ -30,6 +30,8 @@ The `e923536` temporary-blockage replay correctly left the open-map absolute gua
 
 The successful `0205d6e` temporary-blockage recovery contains 132 samples reported as action 21 with reason `emergency_stop`. The actual command stream shows an initial turn followed by repeated bounded 0.12 m/s forward pulses before clearance release and goal rejoin. Only the BACKUP/non-BACKUP boolean currently triggers decision publication, so TURN_LEFT, TURN_RIGHT, FORWARD, and stationary STOP share the last WAIT message. Outcome and safety metrics remain valid, but per-action interpretation is ambiguous. Future evaluation runs must publish the exact emergency mode before action-distribution or interpretability claims are generated; this episode is described only at the command-trace level.
 
+The logger now publishes every emergency-mode transition with a stable reason string while preserving the fixed action IDs. Historical rows are not rewritten. The `0205d6e` outcome remains valid performance evidence, but it is excluded from reason-based action-distribution figures; fresh runs are required for those analyses.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.

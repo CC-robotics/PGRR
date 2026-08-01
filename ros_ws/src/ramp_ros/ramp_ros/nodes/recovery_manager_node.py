@@ -59,6 +59,7 @@ from ramp_core.recovery.safety import (
     EmergencyEscapeMode,
     backup_increases_obstacle_clearance,
     emergency_hazard_with_hysteresis,
+    emergency_mode_reason,
     update_collision_safety_latch,
 )
 from ramp_core.state_machine import (
@@ -226,7 +227,7 @@ class RecoveryManagerNode(Node):
         self._collision_safety_latched = False
         self._emergency_escape_active = False
         self._emergency_escape_mode = EmergencyEscapeMode.STOP
-        self._published_emergency_escape = False
+        self._published_emergency_mode: EmergencyEscapeMode | None = None
         self._emergency_escape = EmergencyEscapeController(
             hold_s=self._float("emergency_hold_s"),
             backup_duration_s=self._float("emergency_backup_duration_s"),
@@ -1085,28 +1086,28 @@ class RecoveryManagerNode(Node):
                 BACKUP_ACTION_ID if self._emergency_escape_active else WAIT_ACTION_ID
             )
             self._action_started_s = now_s
-            self._published_emergency_escape = self._emergency_escape_active
+            self._published_emergency_mode = self._emergency_escape_mode
             self._publish_decision(
                 self._active_action,
                 1.0,
-                ("emergency_safe_backup" if self._emergency_escape_active else "emergency_stop"),
+                emergency_mode_reason(self._emergency_escape_mode),
             )
         elif (
             transition.current is RecoveryState.EMERGENCY_STOP
-            and self._emergency_escape_active != self._published_emergency_escape
+            and self._emergency_escape_mode is not self._published_emergency_mode
         ):
             self._active_action = (
                 BACKUP_ACTION_ID if self._emergency_escape_active else WAIT_ACTION_ID
             )
             self._action_started_s = now_s
-            self._published_emergency_escape = self._emergency_escape_active
+            self._published_emergency_mode = self._emergency_escape_mode
             self._publish_decision(
                 self._active_action,
                 1.0,
-                ("emergency_safe_backup" if self._emergency_escape_active else "emergency_stop"),
+                emergency_mode_reason(self._emergency_escape_mode),
             )
         elif transition.previous is RecoveryState.EMERGENCY_STOP and transition.changed:
-            self._published_emergency_escape = False
+            self._published_emergency_mode = None
             self._publish_decision(
                 CONTINUE_ACTION_ID, failure.score, "emergency_clear_continue_goal"
             )

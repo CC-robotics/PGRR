@@ -190,3 +190,7 @@ When the compiled scenario and known map declare zero static obstacles, every va
 ## D-047: Judge bounded-backup improvement by the observed pulse peak
 
 A reverse command ends before skid-steer velocity returns to zero. In dynamic traffic, clearance gained during the command can shrink again while the robot decelerates, even though the commanded motion was demonstrably separating. The emergency executor therefore records the maximum nearest-LiDAR clearance observed from pulse start through pulse expiry and compares that peak with the start value after full stop. Another pulse still requires at least 0.05 m gain, observed rear clearance, a separating obstacle bearing, a free swept footprint, and remaining capacity under the eight-pulse cap. This preserves boundedness without discarding evidence solely because of actuator settling latency.
+
+## D-048: Preserve the 25-action contract and expose safety submodes in reasons
+
+Emergency turns and bounded forward escapes are safety-supervisor commands rather than policy choices, so adding them as learned action IDs would silently change the fixed 25-action model interface and invalidate existing checkpoints. They continue to publish WAIT action ID 21, BACKUP continues to publish ID 22, and every safety transition now carries one of five exact `emergency_*` reason labels. Metrics can therefore separate policy actions from safety interventions without retraining or misrepresenting the action space.

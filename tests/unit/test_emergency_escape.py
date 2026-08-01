@@ -8,6 +8,7 @@ from ramp_core.recovery.safety import (
     EmergencyEscapeMode,
     backup_increases_obstacle_clearance,
     emergency_hazard_with_hysteresis,
+    emergency_mode_reason,
     update_collision_safety_latch,
 )
 
@@ -19,6 +20,20 @@ def _controller() -> EmergencyEscapeController:
         backup_clearance_m=0.7,
         release_speed_mps=0.03,
     )
+
+
+@pytest.mark.parametrize(
+    ("mode", "reason"),
+    [
+        (EmergencyEscapeMode.STOP, "emergency_stop"),
+        (EmergencyEscapeMode.BACKUP, "emergency_backup"),
+        (EmergencyEscapeMode.TURN_LEFT, "emergency_turn_left"),
+        (EmergencyEscapeMode.TURN_RIGHT, "emergency_turn_right"),
+        (EmergencyEscapeMode.FORWARD, "emergency_forward"),
+    ],
+)
+def test_emergency_mode_has_stable_telemetry(mode: EmergencyEscapeMode, reason: str) -> None:
+    assert emergency_mode_reason(mode) == reason
 
 
 def test_emergency_hazard_uses_a_stricter_release_clearance() -> None:

@@ -81,6 +81,11 @@ class EmergencyEscapeMode(str, Enum):
     FORWARD = "FORWARD"
 
 
+def emergency_mode_reason(mode: EmergencyEscapeMode) -> str:
+    """Return the stable telemetry label for an emergency escape mode."""
+    return f"emergency_{mode.value.lower()}"
+
+
 @dataclass
 class EmergencyEscapeController:
     """Hold a stop, then choose a bounded observable geometric escape."""
