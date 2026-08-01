@@ -30,6 +30,7 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     assert 'lidar_static_collision_enabled:="${lidar_static_collision_enabled}"' in runtime
     assert runtime.count('minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}"') == 2
     assert "minimum_valid_lidar_range_m=0.34" in runtime
+    assert "RAMP_LIDAR_COLLISION_CONFIRMATION_FRAMES:-3" in runtime
     assert "collision_omnidirectional_absolute_distance_m=0.70" in runtime
     assert (
         runtime.count(

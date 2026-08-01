@@ -103,7 +103,7 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("robot_radius_m", 0.36)
         self.declare_parameter("human_radius_m", 0.35)
         self.declare_parameter("lidar_collision_distance_m", 0.12)
-        self.declare_parameter("lidar_collision_confirmation_frames", 2)
+        self.declare_parameter("lidar_collision_confirmation_frames", 3)
         self.declare_parameter("lidar_static_collision_enabled", True)
         self.declare_parameter("bilateral_edge_self_return_max_m", 0.34)
 

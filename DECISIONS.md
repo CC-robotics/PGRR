@@ -206,3 +206,7 @@ Globally discarding every return below 0.34 m in a static scene would hide real 
 ## D-051: Keep emergency turn preference across brief clear gaps
 
 Emergency turn direction is geometric supervisory state, not a new learned action. Once chosen, it remains preferred across hazard interruptions shorter than 5.0 s so alternating nearest-obstacle identities cannot immediately reverse rotation. Five seconds of continuous clearance clears the preference and permits a new side. The value is configured separately from the backup-reset interval and is evaluated first on the train split.
+
+## D-052: Require 0.3 s of continuous LiDAR evidence for static contact
+
+The 10 Hz evaluator now requires three consecutive footprint-penetrating LiDAR samples before declaring a static collision. This is long enough to reject the audited one/two-frame Gazebo GPU-LiDAR artifacts while remaining short relative to the safety supervisor's 0.5 s hold and the robot's bounded speed. Human contact uses actual evaluation-only centre geometry and remains independent of this debounce.

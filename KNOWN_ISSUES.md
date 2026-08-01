@@ -48,6 +48,10 @@ The first iteration-4 train replay was labeled `COLLISION` at 37.73 s even thoug
 
 After correcting KI-072, iteration-4 remained collision-free but timed out after 180 s with 2.378 m progress. Emergency turning occupied 695 samples and changed side nine times; five reversals occurred after only 0.6--3.0 s without a turn command. The controller preserved direction while one hazard stayed latched but forgot it on every brief clear callback, so alternating nearby pedestrians could recreate a left/right limit cycle. Turn preference now survives clear gaps shorter than a configurable 5.0 s and resets only after sustained clearance. This is a train-split method candidate pending fresh closed-loop evidence.
 
+## KI-074: Two-frame LiDAR contact debounce still admits transient self-returns
+
+The first turn-memory replay terminated at 8.89 s after two sub-0.12 m scan frames even though the nearest human was 4.168 m away and the robot was about 1.36 m from each corridor wall. Across all 14 retained `LiDAR obstacle return lies inside the Jackal footprint` outcomes, the maximum consecutive evidence length is two frames; most also have human clearance above 1 m. Static-contact confirmation now requires three 10 Hz frames. This does not disable LiDAR collision detection, and the independent physical robot--human collision criterion is unchanged. Historical outcomes remain immutable diagnostics.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.

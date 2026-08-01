@@ -346,6 +346,7 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p episode_start_topic:=/ramp/episode_started \
     -p logger_ready_topic:=/ramp/logger_ready \
     -p lidar_collision_distance_m:=0.12 \
+    -p lidar_collision_confirmation_frames:="${RAMP_LIDAR_COLLISION_CONFIRMATION_FRAMES:-3}" \
     -p lidar_static_collision_enabled:="${lidar_static_collision_enabled}" \
     -p failure_status_topic:=/ramp/failure_status \
     -p recovery_decision_topic:=/ramp/recovery_decision \
