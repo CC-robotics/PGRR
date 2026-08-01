@@ -217,4 +217,4 @@ For scenarios whose static models are all the pinned `shelf_static.sdf`, the log
 
 ## D-054: Make bounded WAIT part of both labels and deployment masks
 
-WAIT remains legal for collision risk because yielding can be optimal, but it is disabled after three consecutive no-progress choices whenever a masked-safe subgoal, BACKUP, or REPLAN exists. An observable freeze/deadlock score above the state-machine trigger consumes this budget immediately. The same pure helper is used by offline expert labeling, online Oracle, and BC deployment; it never unmasks an unsafe action and leaves WAIT available when it is the only safe fallback.
+WAIT remains legal for collision risk because yielding can be optimal, but it is disabled after three consecutive no-progress choices whenever a masked-safe subgoal, BACKUP, or REPLAN exists. Offline expert labeling now carries the same sequence state as online Oracle and BC deployment. Immediately exhausting the budget on any freeze/deadlock score was tested and rejected: it increased active escapes without producing global progress. No rule ever unmasks an unsafe action, and WAIT remains available when it is the only safe fallback.

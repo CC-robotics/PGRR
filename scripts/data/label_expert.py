@@ -28,7 +28,6 @@ from ramp_core.planning.online import sanitize_near_field_returns
 from ramp_core.recovery.options import (
     constrain_rejoin_actions,
     constrain_stalled_wait,
-    failure_conditioned_wait_count,
 )
 from ramp_core.types import Pose2D, Velocity2D
 
@@ -259,17 +258,9 @@ def main() -> None:
             collision_risk=collision_risk,
             release_threshold=args.rejoin_release_threshold,
         )
-        failure_prediction = rows[index]["failure_prediction"]
-        effective_waits = failure_conditioned_wait_count(
-            repeated_waits,
-            wait_budget=args.wait_budget_decisions,
-            freeze_score=float(failure_prediction[1]),
-            deadlock_score=float(failure_prediction[3]),
-            trigger_threshold=float(args.failure_threshold),
-        )
         mask = constrain_stalled_wait(
             mask,
-            consecutive_waits=effective_waits,
+            consecutive_waits=repeated_waits,
             wait_budget=args.wait_budget_decisions,
         )
         label = PlanningRecoveryExpert(grid).label(

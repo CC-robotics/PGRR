@@ -53,7 +53,6 @@ from ramp_core.recovery.options import (
     constrain_repeated_replan,
     constrain_stalled_rejoin,
     constrain_stalled_wait,
-    failure_conditioned_wait_count,
     should_continue_recovery_option,
 )
 from ramp_core.recovery.safety import (
@@ -819,16 +818,9 @@ class RecoveryManagerNode(Node):
             release_threshold=self._float("expert_rejoin_block_threshold"),
         )
         expert_wait_budget = self._integer("expert_wait_budget_decisions")
-        expert_wait_count = failure_conditioned_wait_count(
-            self._expert_repeated_waits,
-            wait_budget=expert_wait_budget,
-            freeze_score=failure.freeze,
-            deadlock_score=failure.deadlock,
-            trigger_threshold=self._machine.config.tau_on,
-        )
         mask = constrain_stalled_wait(
             mask,
-            consecutive_waits=expert_wait_count,
+            consecutive_waits=self._expert_repeated_waits,
             wait_budget=expert_wait_budget,
         )
         mask = constrain_recurrent_yield_escape(
@@ -907,16 +899,9 @@ class RecoveryManagerNode(Node):
             )
             mask = constrain_stalled_rejoin(mask, escape_required=stalled_rejoin)
             bc_wait_budget = self._integer("bc_wait_budget_decisions")
-            bc_wait_count = failure_conditioned_wait_count(
-                self._bc_waits_without_progress,
-                wait_budget=bc_wait_budget,
-                freeze_score=failure.freeze,
-                deadlock_score=failure.deadlock,
-                trigger_threshold=self._machine.config.tau_on,
-            )
             mask = constrain_stalled_wait(
                 mask,
-                consecutive_waits=bc_wait_count,
+                consecutive_waits=self._bc_waits_without_progress,
                 wait_budget=bc_wait_budget,
             )
             mask = constrain_repeated_replan(

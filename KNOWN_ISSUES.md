@@ -58,7 +58,7 @@ The generated corridor shelves have exact poses in the scenario but remain absen
 
 ## KI-076: Independent expert labels omitted deployment's bounded-WAIT mask
 
-The initial opposite-stream shard labeled each sampled state independently, although online Oracle and BC deployment disable WAIT after a three-decision no-progress budget when a safe escape exists. WAIT therefore occupied 227/342 sequence-relabelled states and short-horizon `predicted_success` overstated recurrent-flow recovery. Offline labeling now carries expert side/WAIT history and applies the same bounded-WAIT mask. Observable freeze or deadlock exhausts the budget immediately but cannot remove WAIT when no planning-safe alternative exists. On the retained train trajectory WAIT decreases to 209/342, predicted-success labels to 276/342, and illegal actions remain zero. Closed-loop benefit is not yet established.
+The initial opposite-stream shard labeled each sampled state independently, although online Oracle and BC deployment disable WAIT after a three-decision no-progress budget when a safe escape exists. WAIT therefore occupied 227/342 sequence-relabelled states and short-horizon `predicted_success` overstated recurrent-flow recovery. Offline labeling now carries expert side/WAIT history and applies the same bounded-WAIT mask. An additional candidate exhausted the budget immediately on observable freeze/deadlock, reducing WAIT to 209/342, but its iteration-5 closed loop timed out with only 0.196 m progress. That immediate rule is removed; the original consecutive-WAIT budget remains.
 
 ## KI-077: A Nav2 lifecycle startup timeout preceded iteration-5 evaluation
 
