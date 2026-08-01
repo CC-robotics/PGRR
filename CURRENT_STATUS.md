@@ -353,3 +353,12 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Both evaluation-only LiDAR consistency gates passed 100% of near-human samples: 251/251 for Base and 360/360 for recovery. Raw streams remain immutable; the comparison CSV records both SHA256 values.
 - Interpretation: this is one additional cross-family recovery success, but its 1.61 s timeout margin and 63.5% intervention ratio expose substantial conservatism. No significance or generalization claim is authorized.
 - Next: add this pair to the generated TeX/figure pipeline, then expand another fixed validation seed without modifying the method.
+
+## 2026-08-01 — Blind-corner collision-to-timeout counterexample
+
+- Kept the selected checkpoint frozen and ran the held-out high-density blind-corner pair at commit `fafcddd`.
+- Classical DWB physically intersected declared static shelf geometry at 49.484 s, with 11.900 m remaining physical goal distance and 2.710 m minimum human distance.
+- Triggered DAgger avoided static and human collision for 180 s and progressed 13.472 m, but timed out 8.162 m from the physical goal. It used 1,088 non-CONTINUE samples, including 672 WAIT and 262 BACKUP samples.
+- This is not a recovery success: the hierarchy traded collision for incomplete navigation. It did eventually leave the first corner stall, but too late to finish.
+- No pedestrian came within the LiDAR audit tool's 1.3 m radius in either run, so both consistency reports correctly record zero near samples and `passed: false`; they are retained as insufficient evidence rather than silently omitted.
+- Next: include this counterexample in the generated cross-family result table/figure, then keep the method frozen for additional evaluation.
