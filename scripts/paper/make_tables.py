@@ -225,11 +225,49 @@ Method & Outcome & Time [s] & $d_{\\min}$ [m] & Recovery \\\\
     (ROOT / "paper/generated/group_blocking_methods.tex").write_text(table, encoding="utf-8")
 
 
+def opposite_streams_ablation() -> None:
+    source = ROOT / "outputs/pilot/opposite_streams_train_ablation.csv"
+    with source.open(encoding="utf-8", newline="") as stream:
+        payload = list(csv.DictReader(stream))
+    if [row["method"] for row in payload] != ["Iteration 4", "Turn memory", "Iteration 5"]:
+        raise RuntimeError("unexpected opposite-stream ablation rows")
+    rows = [
+        f"{result['method']} & {float(result['net_progress_m']):.2f} & "
+        f"{float(result['last_60s_progress_m']):.2f} & "
+        f"{100.0 * int(result['emergency_samples']) / int(result['samples']):.1f} & "
+        f"{int(result['backup_id_samples'])} & {int(result['temporary_subgoal_samples'])} \\\\"
+        for result in payload
+    ]
+    table = (
+        """% Generated from outputs/pilot/opposite_streams_train_ablation.csv
+\\begin{table}[t]
+\\caption{Retained opposite-stream train failures. Revisions are diagnostic and not paired.}
+\\label{tab:opposite-streams-ablation}
+\\centering
+\\small
+\\resizebox{\\columnwidth}{!}{%
+\\begin{tabular}{lrrrrr}
+\\hline
+Variant & Progress [m] & Final 60 s [m] & Safety [\\%] & Backup & Subgoal \\\\
+\\hline
+"""
+        + "\n".join(rows)
+        + """
+\\hline
+\\end{tabular}
+}
+\\end{table}
+"""
+    )
+    (ROOT / "paper/generated/opposite_streams_ablation.tex").write_text(table, encoding="utf-8")
+
+
 def main() -> None:
     verified_actual_pose_pair()
     high_density_pilot()
     cross_family_pilot()
     group_blocking_methods()
+    opposite_streams_ablation()
 
 
 if __name__ == "__main__":

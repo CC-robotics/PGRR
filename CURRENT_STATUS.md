@@ -336,3 +336,11 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Neither run placed a human centre inside the sensor checker's 1.3 m audit radius, so their per-episode proxy reports correctly state insufficient evidence. The selected platform's close-range validity remains established by the seed-2201 26/26 and 30/30 checks.
 - The first BC attempt on this seed remains an unchanged `SIMULATOR_FAILURE` because the old logger compared asynchronous localized/physical frames immediately. The fixed one-second confirmation window produced the fresh valid pair; no outcome was rewritten.
 - Evidence: `outputs/pilot/crossing_flow_medium_s02202_a856923_pair.csv` with raw SHA256 values. This is a nominal non-degradation check, not a recovery improvement claim.
+
+## 2026-08-01 — Opposite-stream failure analysis compiled
+
+- Added a provenance-preserving summary of the three separately versioned train-split opposite-stream timeouts. The CSV embeds every source raw-log SHA256 and keeps safety, policy-recovery, and nominal control occupancy mutually exclusive.
+- Iteration 4 made 2.378 m net progress; five-second turn commitment removed all side switches but regressed to -0.146 m; sequence-aware Iteration 5 increased BACKUP/subgoal activity but progressed only 0.196 m. Both revisions remain rejected.
+- Generated Table V and a two-panel vector figure directly from the CSV. The manuscript now reports the untouched validation failure and the failed train corrections as a limitation rather than a recovery success.
+- Validation: 234 tests pass; figures, tables, and the five-page IEEEtran PDF regenerate successfully with no unresolved references, citations, or overfull boxes.
+- Next: retain the selected safety-aligned checkpoint and expand same-commit paired evaluation to an untouched scenario family.

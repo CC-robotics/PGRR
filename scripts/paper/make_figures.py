@@ -195,12 +195,70 @@ def cross_family_pilot() -> None:
     plt.close(figure)
 
 
+def opposite_streams_ablation() -> None:
+    source = ROOT / "outputs/pilot/opposite_streams_train_ablation.csv"
+    with source.open(encoding="utf-8", newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    if [row["method"] for row in rows] != ["Iteration 4", "Turn memory", "Iteration 5"]:
+        raise RuntimeError("unexpected opposite-stream ablation rows")
+    if any(row["outcome"] != "TIMEOUT" for row in rows):
+        raise RuntimeError("the retained failure analysis must contain all timeouts")
+
+    labels = ["Iter. 4", "Turn\nmemory", "Iter. 5"]
+    x = np.arange(len(rows), dtype=float)
+    progress = np.asarray([float(row["net_progress_m"]) for row in rows])
+    final_progress = np.asarray([float(row["last_60s_progress_m"]) for row in rows])
+    samples = np.asarray([float(row["samples"]) for row in rows])
+    emergency = np.asarray([float(row["emergency_samples"]) for row in rows]) / samples
+    recovery = np.asarray([float(row["policy_recovery_samples"]) for row in rows]) / samples
+    nominal = np.asarray([float(row["nominal_or_continue_samples"]) for row in rows]) / samples
+
+    plt.rcParams.update({"font.size": 8, "font.family": "DejaVu Sans"})
+    figure, axes = plt.subplots(1, 2, figsize=(3.45, 2.15), constrained_layout=True)
+    colors = ["#16836B" if value >= 0.0 else "#D97706" for value in progress]
+    axes[0].bar(x, progress, color=colors)
+    axes[0].scatter(x, final_progress, marker="D", s=15, color="#202124", label="Final 60 s")
+    axes[0].axhline(0.0, color="#555555", linewidth=0.7)
+    axes[0].set_ylabel("Goal progress [m]")
+    axes[0].legend(frameon=False, fontsize=6.5, loc="upper right")
+
+    axes[1].bar(x, emergency, color="#D97706", label="Safety")
+    axes[1].bar(x, recovery, bottom=emergency, color="#466B9F", label="Recovery")
+    axes[1].bar(
+        x,
+        nominal,
+        bottom=emergency + recovery,
+        color="#D5DBDB",
+        label="Continue/nominal",
+    )
+    axes[1].set_ylabel("Fraction of samples")
+    axes[1].set_ylim(0.0, 1.0)
+    axes[1].legend(
+        frameon=False,
+        fontsize=6.2,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.01),
+        ncol=2,
+        borderaxespad=0.0,
+    )
+    for axis in axes:
+        axis.set_xticks(x, labels)
+        axis.grid(axis="y", color="#E0E0E0", linewidth=0.6)
+        axis.set_axisbelow(True)
+    figure.savefig(
+        ROOT / "paper/figures/opposite_streams_ablation.pdf",
+        metadata={"CreationDate": None, "ModDate": None},
+    )
+    plt.close(figure)
+
+
 def main() -> None:
     (ROOT / "paper/figures").mkdir(parents=True, exist_ok=True)
     architecture()
     verified_actual_pose_pair()
     high_density_pilot()
     cross_family_pilot()
+    opposite_streams_ablation()
 
 
 if __name__ == "__main__":
