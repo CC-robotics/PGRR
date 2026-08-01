@@ -26,6 +26,10 @@ The corrected online replay still collided at 40.493 s and recorded no early col
 
 The `e923536` temporary-blockage replay correctly left the open-map absolute guard disabled because the scenario contains 20 doorway wall objects. The independent safety layer stopped at 35.498 s and executed one 0.8 s BACKUP. Nearest observed clearance increased from 0.453 m at backup entry to 0.522 m at its end, exceeding the configured 0.05 m repeat criterion. However, the controller required the robot to finish decelerating before deciding on another pulse and compared only the later instantaneous 0.481 m clearance with the original value. It therefore forgot the valid peak and rotated in place while the pedestrian continued closing, ending in collision at 39.993 s. The raw outcome, pair summary, and passing sensor gate are retained. The fix must preserve the maximum clearance observed during each bounded pulse while keeping the existing hard repeat limit and rear-clearance checks.
 
+## KI-069: Emergency mode telemetry collapses turns and forward escape into WAIT
+
+The successful `0205d6e` temporary-blockage recovery contains 132 samples reported as action 21 with reason `emergency_stop`. The actual command stream shows an initial turn followed by repeated bounded 0.12 m/s forward pulses before clearance release and goal rejoin. Only the BACKUP/non-BACKUP boolean currently triggers decision publication, so TURN_LEFT, TURN_RIGHT, FORWARD, and stationary STOP share the last WAIT message. Outcome and safety metrics remain valid, but per-action interpretation is ambiguous. Future evaluation runs must publish the exact emergency mode before action-distribution or interpretability claims are generated; this episode is described only at the command-trace level.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.
