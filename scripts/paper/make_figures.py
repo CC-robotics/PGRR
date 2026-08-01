@@ -132,7 +132,7 @@ def cross_family_pilot() -> None:
         ROOT / "outputs/pilot/temporary_blockage_high_s02720_0205d6e_pair.csv",
         ROOT / "outputs/pilot/group_blocking_high_s02420_926cc95_pair.csv",
         ROOT / "outputs/pilot/overtaking_high_s02520_324fcdf_pair.csv",
-        ROOT / "outputs/pilot/blind_corner_high_s02320_fafcddd_pair.csv",
+        ROOT / "outputs/pilot/blind_corner_high_s02320_8c92b00_pair.csv",
     ]
     pairs: list[list[dict[str, str]]] = []
     for source in sources:
