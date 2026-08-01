@@ -32,6 +32,7 @@ from ramp_core.observations import (
     HumanState,
     PrivilegedState,
     RecoveryObservation,
+    navigation_path_or_goal,
     select_local_path_waypoints,
 )
 from ramp_core.occupancy import OccupancyGrid
@@ -624,7 +625,7 @@ class RecoveryManagerNode(Node):
         distance = math.dist((pose.x, pose.y), (self._goal.x, self._goal.y))
         bearing = math.atan2(self._goal.y - pose.y, self._goal.x - pose.x) - pose.yaw
         bearing = math.atan2(math.sin(bearing), math.cos(bearing))
-        points = self._path if self._path else ((self._goal.x, self._goal.y),)
+        points = navigation_path_or_goal(self._path, (self._goal.x, self._goal.y))
         waypoints = select_local_path_waypoints(points, pose)
         lidar = list(self._lidar_stack)
         lidar = [lidar[0]] * (5 - len(lidar)) + lidar

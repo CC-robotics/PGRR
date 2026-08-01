@@ -3,12 +3,27 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
 
 from ramp_core.types import FailurePrediction, PlannerStatus, Pose2D, Velocity2D
+
+
+def navigation_path_or_goal(
+    path: Iterable[tuple[float, float]],
+    goal: tuple[float, float],
+) -> tuple[tuple[float, float], ...]:
+    """Return a non-empty task path, falling back to the original goal."""
+    points = tuple((float(x), float(y)) for x, y in path)
+    if points:
+        return points
+    goal_x, goal_y = map(float, goal)
+    if not math.isfinite(goal_x) or not math.isfinite(goal_y):
+        raise ValueError("goal must contain finite coordinates")
+    return ((goal_x, goal_y),)
 
 
 def _finite_array(

@@ -16,7 +16,12 @@ from ramp_core.action_mask import (
     apply_path_corridor_mask,
     compute_action_mask,
 )
-from ramp_core.observations import HumanState, PrivilegedState, select_local_path_waypoints
+from ramp_core.observations import (
+    HumanState,
+    PrivilegedState,
+    navigation_path_or_goal,
+    select_local_path_waypoints,
+)
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.planning.expert import PlanningRecoveryExpert
 from ramp_core.recovery.options import constrain_rejoin_actions
@@ -73,7 +78,10 @@ def _human_states(rows: list[dict[str, Any]], index: int) -> tuple[HumanState, .
 def _local_grid(row: dict[str, Any], resolution: float = 0.1) -> OccupancyGrid:
     pose = row["robot_pose"]
     goal = row["goal"]
-    path = row["global_path"]
+    path = navigation_path_or_goal(
+        ((float(point[0]), float(point[1])) for point in row["global_path"]),
+        (float(goal[0]), float(goal[1])),
+    )
     x_values = [float(pose[0]), float(goal[0]), *(float(point[0]) for point in path)]
     y_values = [float(pose[1]), float(goal[1]), *(float(point[1]) for point in path)]
     origin_x = math.floor((min(x_values) - 2.0) / resolution) * resolution
@@ -102,11 +110,15 @@ def _privileged_state(
     row = rows[index]
     pose = Pose2D(*map(float, row["robot_pose"]))
     goal = Pose2D(*map(float, row["goal"]))
+    path = navigation_path_or_goal(
+        ((float(point[0]), float(point[1])) for point in row["global_path"]),
+        (goal.x, goal.y),
+    )
     state = PrivilegedState(
         robot_pose=pose,
         robot_velocity=Velocity2D(*map(float, row["robot_velocity"])),
         original_goal=goal,
-        global_path=tuple((float(point[0]), float(point[1])) for point in row["global_path"]),
+        global_path=path,
         humans=_human_states(rows, index),
         time_step=0.1,
     )
@@ -139,7 +151,10 @@ def _observable_arrays(rows: list[dict[str, Any]]) -> dict[str, np.ndarray]:
         local_x = math.cos(pose.yaw) * dx + math.sin(pose.yaw) * dy
         local_y = -math.sin(pose.yaw) * dx + math.cos(pose.yaw) * dy
         goal_polar.append((math.hypot(dx, dy), math.atan2(local_y, local_x)))
-        path = tuple((float(point[0]), float(point[1])) for point in row["global_path"])
+        path = navigation_path_or_goal(
+            ((float(point[0]), float(point[1])) for point in row["global_path"]),
+            (float(goal[0]), float(goal[1])),
+        )
         waypoints.append(select_local_path_waypoints(path, pose))
         start = max(0, index - 9)
         distance_window = [distances[start]] * (10 - (index - start + 1)) + distances[

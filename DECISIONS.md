@@ -194,3 +194,7 @@ A reverse command ends before skid-steer velocity returns to zero. In dynamic tr
 ## D-048: Preserve the 25-action contract and expose safety submodes in reasons
 
 Emergency turns and bounded forward escapes are safety-supervisor commands rather than policy choices, so adding them as learned action IDs would silently change the fixed 25-action model interface and invalidate existing checkpoints. They continue to publish WAIT action ID 21, BACKUP continues to publish ID 22, and every safety transition now carries one of five exact `emergency_*` reason labels. Metrics can therefore separate policy actions from safety interventions without retraining or misrepresenting the action space.
+
+## D-049: Add opposite-stream coverage only from the train split
+
+The held-out validation timeout is evidence of missing recurrent-flow coverage, not a threshold-tuning target. The selected policy is therefore run on `opposite_streams_high_train_s01620`; only that policy-visited trajectory is labeled and aggregated. Validation seed 2620 remains evaluation-only, and the new checkpoint can replace the current one only after scenario-disjoint offline validation and fresh closed-loop checks.
