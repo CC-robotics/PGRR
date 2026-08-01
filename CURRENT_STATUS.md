@@ -385,3 +385,12 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - It remained free of physical static/human collision, maintained 1.285 m minimum human-centre distance, and reduced emergency samples from 694 to 500 and BACKUP from 166 to 44 relative to the original train run.
 - `outputs/pilot/blind_corner_train_static_margin_iteration.csv` retains all three outcomes and raw SHA256 values. The first two timeouts remain in the artifact.
 - This passes the train completion gate but has only 6.11 s timeout margin. Next: run one held-out blind-corner validation replay under commit `d5102f9`; do not modify parameters from its result.
+
+## 2026-08-01 — Static-aware held-out blind-corner result
+
+- Reran both methods at commit `8c92b00`. DWB physically intersected static geometry at 45.987 s with 12.735 m remaining.
+- The static-aware hierarchy remained collision-free for 180 s and reduced the physical remaining distance to 5.385 m, versus 8.162 m under the pre-fix hierarchy, but still timed out. It used 1,118 recovery samples and maintained 1.161 m minimum human-centre distance.
+- The learned run's pedestrian sensor gate passed 196/196 near-human frames. Base had zero near-human frames and is correctly marked insufficient rather than passed.
+- The result does not justify further validation tuning. The static-aware change is retained as a principled train-completing correction and negative held-out ablation, while blind corner remains an unresolved method limitation.
+- Evidence: `outputs/pilot/blind_corner_high_s02320_8c92b00_pair.csv`, two consistency manifests, and immutable raw hashes embedded in the CSV.
+- Next: regenerate the manuscript table/figure from this latest same-commit pair and preserve the timeout conclusion.
