@@ -119,9 +119,66 @@ Method & Goal & Collision & Time [s] & $d_{\\min}$ [m] & Recovery \\\\
     (ROOT / "paper/generated/high_density_pilot.tex").write_text(table, encoding="utf-8")
 
 
+def cross_family_pilot() -> None:
+    sources = [
+        (
+            "Temporary blockage",
+            ROOT / "outputs/pilot/temporary_blockage_high_s02720_0205d6e_pair.csv",
+        ),
+        (
+            "Group blocking",
+            ROOT / "outputs/pilot/group_blocking_high_s02420_dcd9bfe_pair.csv",
+        ),
+    ]
+    rows: list[str] = []
+    for scenario, source in sources:
+        with source.open(encoding="utf-8", newline="") as stream:
+            payload = list(csv.DictReader(stream))
+        if [row["source_policy"] for row in payload] != ["base", "bc"]:
+            raise RuntimeError(f"expected an ordered Base/BC pair in {source}")
+        if len({row["project_commit"] for row in payload}) != 1:
+            raise RuntimeError(f"pair must come from one project commit: {source}")
+        base, recovery = payload
+        rows.append(
+            f"{scenario} & {base['outcome'].replace('_', ' ')} & "
+            f"{recovery['outcome'].replace('_', ' ')} & "
+            f"{float(base['sim_duration_s']):.1f}/{float(recovery['sim_duration_s']):.1f} & "
+            f"{float(base['min_human_distance_m']):.3f}/"
+            f"{float(recovery['min_human_distance_m']):.3f} & "
+            f"{int(recovery['recovery_actions'])} \\\\"
+        )
+    caption = (
+        "Cross-family high-density validation examples (DWB/full hierarchy). Each row is one "
+        "internally same-commit pair; values are descriptive and are not pooled for inference."
+    )
+    table = (
+        """% Generated from the temporary- and group-blocking pair CSV files
+\\begin{table}[t]
+\\caption{__CAPTION__}
+\\label{tab:cross-family-pilot}
+\\centering
+\\small
+\\resizebox{\\columnwidth}{!}{%
+\\begin{tabular}{lllrrr}
+\\hline
+Scenario & DWB & Hierarchy & Time [s] & $d_{\\min}$ [m] & Recovery \\\\
+\\hline
+"""
+        + "\n".join(rows)
+        + """
+\\hline
+\\end{tabular}
+}
+\\end{table}
+"""
+    ).replace("__CAPTION__", caption)
+    (ROOT / "paper/generated/cross_family_pilot.tex").write_text(table, encoding="utf-8")
+
+
 def main() -> None:
     verified_actual_pose_pair()
     high_density_pilot()
+    cross_family_pilot()
 
 
 if __name__ == "__main__":

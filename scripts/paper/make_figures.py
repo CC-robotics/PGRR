@@ -127,11 +127,80 @@ def high_density_pilot() -> None:
     plt.close(figure)
 
 
+def cross_family_pilot() -> None:
+    sources = [
+        ROOT / "outputs/pilot/temporary_blockage_high_s02720_0205d6e_pair.csv",
+        ROOT / "outputs/pilot/group_blocking_high_s02420_dcd9bfe_pair.csv",
+    ]
+    pairs: list[list[dict[str, str]]] = []
+    for source in sources:
+        with source.open(encoding="utf-8", newline="") as stream:
+            rows = list(csv.DictReader(stream))
+        if [row["source_policy"] for row in rows] != ["base", "bc"]:
+            raise RuntimeError(f"expected an ordered Base/BC pair in {source}")
+        if len({row["project_commit"] for row in rows}) != 1:
+            raise RuntimeError(f"pair must come from one project commit: {source}")
+        pairs.append(rows)
+
+    scenarios = ["Temp.", "Group"]
+    methods = ["DWB", "Full hierarchy"]
+    colors = ["#466B9F", "#16836B"]
+    hatches = ["//", ""]
+    # Use a short visible bar for the lower categorical outcome so the DWB
+    # collision observations remain visible in print rather than collapsing
+    # onto the axis baseline.
+    outcome_score = {"COLLISION": 0.08, "GOAL_REACHED": 1.0}
+    x = np.arange(len(scenarios), dtype=float)
+    width = 0.34
+    plt.rcParams.update({"font.size": 8, "font.family": "DejaVu Sans"})
+    figure, axes = plt.subplots(1, 2, figsize=(3.45, 2.1), constrained_layout=True)
+    for method_index, method in enumerate(methods):
+        offset = (method_index - 0.5) * width
+        selected = [pair[method_index] for pair in pairs]
+        axes[0].bar(
+            x + offset,
+            [outcome_score[row["outcome"]] for row in selected],
+            width=width,
+            color=colors[method_index],
+            hatch=hatches[method_index],
+            label=method,
+        )
+        axes[1].bar(
+            x + offset,
+            [float(row["min_human_distance_m"]) for row in selected],
+            width=width,
+            color=colors[method_index],
+            hatch=hatches[method_index],
+        )
+    axes[0].set_ylabel("Terminal outcome")
+    axes[0].set_yticks([0.08, 1.0], ["Collision", "Goal"])
+    axes[0].legend(
+        frameon=False,
+        fontsize=7,
+        loc="lower center",
+        ncol=2,
+        bbox_to_anchor=(0.5, 1.01),
+        borderaxespad=0.0,
+    )
+    axes[1].axhline(0.71, color="#D97706", linestyle="--", linewidth=0.8)
+    axes[1].set_ylabel("Minimum human distance [m]")
+    for axis in axes:
+        axis.set_xticks(x, scenarios)
+        axis.grid(axis="y", color="#D5DBDB", linewidth=0.6)
+        axis.set_axisbelow(True)
+    figure.savefig(
+        ROOT / "paper/figures/cross_family_pilot.pdf",
+        metadata={"CreationDate": None, "ModDate": None},
+    )
+    plt.close(figure)
+
+
 def main() -> None:
     (ROOT / "paper/figures").mkdir(parents=True, exist_ok=True)
     architecture()
     verified_actual_pose_pair()
     high_density_pilot()
+    cross_family_pilot()
 
 
 if __name__ == "__main__":
