@@ -135,7 +135,7 @@ def cross_family_pilot() -> None:
         ),
         (
             "Blind corner",
-            ROOT / "outputs/pilot/blind_corner_high_s02320_8c92b00_pair.csv",
+            ROOT / "outputs/pilot/blind_corner_high_s02320_fafcddd_pair.csv",
         ),
     ]
     rows: list[str] = []
