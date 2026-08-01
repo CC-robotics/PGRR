@@ -515,3 +515,27 @@ make figures
 make tables
 make paper
 ```
+
+Verified-pose high-density overtaking pair at commit `324fcdf`:
+
+```bash
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+RAMP_SOURCE_POLICY=base RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_EPISODE_ID=overtaking_high_validation_s02520_324fcdf_base_r1_dwb \
+ROS_DOMAIN_ID=151 GZ_PARTITION=ramp_324fcdf_overtake_base \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/overtaking_high_validation_s02520.json
+
+env -u CONDA_PREFIX -u VIRTUAL_ENV \
+RAMP_SOURCE_POLICY=bc RAMP_EPISODE_TIMEOUT_S=180 \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=overtaking_high_validation_s02520_324fcdf_bc_r1_dwb \
+ROS_DOMAIN_ID=152 GZ_PARTITION=ramp_324fcdf_overtake_bc \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/overtaking_high_validation_s02520.json
+
+conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/overtaking_high_validation_s02520_324fcdf_base_r1_dwb \
+  --prefix data/raw/overtaking_high_validation_s02520_324fcdf_bc_r1_dwb \
+  --output outputs/pilot/overtaking_high_s02520_324fcdf_pair.csv
+```

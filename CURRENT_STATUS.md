@@ -344,3 +344,12 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Generated Table V and a two-panel vector figure directly from the CSV. The manuscript now reports the untouched validation failure and the failed train corrections as a limitation rather than a recovery success.
 - Validation: 234 tests pass; figures, tables, and the five-page IEEEtran PDF regenerate successfully with no unresolved references, citations, or overfull boxes.
 - Next: retain the selected safety-aligned checkpoint and expand same-commit paired evaluation to an untouched scenario family.
+
+## 2026-08-01 — Verified overtaking validation pair
+
+- Froze commit `324fcdf` and the selected `coverage_safety_aligned` checkpoint for a same-scenario, same-seed high-density overtaking pair; the validation trajectory was not used for training or tuning.
+- Classical DWB collided after 82.018 s with 0.685 m minimum physical human-centre distance and 2.134 m remaining physical goal distance.
+- Triggered DAgger physically reached the goal after 178.388 s with 0.224 m terminal error and 1.156 m minimum human distance. It used 1,133 non-CONTINUE samples, including temporary subgoals, WAIT, and BACKUP.
+- Both evaluation-only LiDAR consistency gates passed 100% of near-human samples: 251/251 for Base and 360/360 for recovery. Raw streams remain immutable; the comparison CSV records both SHA256 values.
+- Interpretation: this is one additional cross-family recovery success, but its 1.61 s timeout margin and 63.5% intervention ratio expose substantial conservatism. No significance or generalization claim is authorized.
+- Next: add this pair to the generated TeX/figure pipeline, then expand another fixed validation seed without modifying the method.
