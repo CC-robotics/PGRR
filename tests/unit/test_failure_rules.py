@@ -181,6 +181,27 @@ def test_fixed_side_wall_is_not_immediate_collision_risk() -> None:
     assert prediction.collision_risk == 0.0
 
 
+def test_open_map_omnidirectional_clearance_triggers_dynamic_risk() -> None:
+    detector = RuleFailureDetector(
+        RuleFailureConfig(collision_omnidirectional_absolute_distance_m=0.70)
+    )
+    prediction = detector.update(
+        _sample(
+            0.0,
+            lidar=0.69,
+            forward_lidar=3.0,
+            collision_lidar=3.0,
+            linear=0.0,
+        )
+    )
+    assert prediction.collision_risk == 1.0
+
+
+def test_open_map_omnidirectional_clearance_rejects_negative_threshold() -> None:
+    with pytest.raises(ValueError, match="non-negative"):
+        RuleFailureConfig(collision_omnidirectional_absolute_distance_m=-0.1)
+
+
 def test_forward_near_field_risk_triggers_immediately() -> None:
     prediction = RuleFailureDetector().update(
         _sample(0.0, lidar=0.8, forward_lidar=0.8, linear=0.0, angular=0.0)

@@ -6,6 +6,7 @@ collision_front_sector_degrees: 30.0
 collision_trend_sector_degrees: 90.0
 collision_absolute_distance_m: 0.9
 collision_wide_absolute_distance_m: 0.85
+collision_omnidirectional_absolute_distance_m: 0.0
 collision_release_distance_m: 1.2
 collision_hold_s: 2.0
 collision_proximity_m: 1.50

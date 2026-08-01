@@ -21,6 +21,7 @@ class RuleFailureConfig:
     ttc_threshold_s: float = 1.5
     collision_absolute_distance_m: float = 0.9
     collision_wide_absolute_distance_m: float = 0.85
+    collision_omnidirectional_absolute_distance_m: float = 0.0
     collision_release_distance_m: float = 1.2
     collision_hold_s: float = 2.0
     collision_proximity_m: float = 1.50
@@ -66,6 +67,7 @@ class RuleFailureConfig:
             self.collision_hold_s,
             self.collision_closing_speed_mps,
             self.collision_radial_excess_closing_speed_mps,
+            self.collision_omnidirectional_absolute_distance_m,
             self.collision_max_angular_speed_radps,
             self.freeze_displacement_m,
             self.requested_motion_speed_mps,
@@ -214,6 +216,12 @@ class RuleFailureDetector:
         # in the robot's swept near field. Use a smaller absolute threshold in
         # the wider collision sector to cover that observable case.
         if collision_clearance <= self.config.collision_wide_absolute_distance_m:
+            collision = 1.0
+        if (
+            self.config.collision_omnidirectional_absolute_distance_m > 0.0
+            and sample.nearest_lidar_distance
+            <= self.config.collision_omnidirectional_absolute_distance_m
+        ):
             collision = 1.0
         forward_speed = max(0.0, sample.linear_velocity)
         if forward_speed > 1.0e-3:

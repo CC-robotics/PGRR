@@ -182,3 +182,7 @@ Periodic JSONL samples are not guaranteed to include the asynchronous pose callb
 ## D-045: Detect off-axis closing without subtracting longitudinal robot speed
 
 For the nearest LiDAR return outside the $\pm45^\circ$ collision sector, longitudinal robot speed does not explain a lateral range decrease. The radial trend therefore triggers at the existing `collision_closing_speed_mps` threshold when angular speed is below the configured turning guard. Returns inside the collision sector retain the original robot-speed-plus-excess test, and fixed or slowly jittering side ranges remain negative. The change uses only LiDAR and odometry; no human truth enters deployment. Validation determines whether the added warning duration is acceptably conservative.
+
+## D-046: Use known absence of static geometry for an omnidirectional dynamic guard
+
+When the compiled scenario and known map declare zero static obstacles, every valid exteroceptive return after the documented 0.34 m self-return filter is dynamic. In that profile, any return within 0.70 m triggers collision risk regardless of bearing. Scenarios containing walls, shelves, or door frames set this threshold to zero and retain sector/trend logic, preventing a close mapped side wall from becoming a permanent trigger. This is a map-conditioned observable safety heuristic, not privileged human classification or a formal guarantee.

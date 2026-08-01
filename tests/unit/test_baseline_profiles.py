@@ -30,6 +30,13 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     assert 'lidar_static_collision_enabled:="${lidar_static_collision_enabled}"' in runtime
     assert runtime.count('minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}"') == 2
     assert "minimum_valid_lidar_range_m=0.34" in runtime
+    assert "collision_omnidirectional_absolute_distance_m=0.70" in runtime
+    assert (
+        runtime.count(
+            'collision_omnidirectional_absolute_distance_m:="${collision_omnidirectional_absolute_distance_m}"'
+        )
+        == 1
+    )
     assert "awk '/\\[RAMP_BASELINE\\] cleanup_started/ {exit} {print}'" in runtime
     assert "maximum_improving_backups=self._integer(" in manager
     assert "self._int(" not in manager

@@ -63,12 +63,14 @@ start_yaw="${scenario_values[9]}"
 static_obstacle_count="${scenario_values[10]}"
 lidar_static_collision_enabled=true
 minimum_valid_lidar_range_m=0.0
+collision_omnidirectional_absolute_distance_m=0.0
 if [[ "${static_obstacle_count}" -eq 0 ]]; then
     lidar_static_collision_enabled=false
     # The Jackal body can appear below 0.34 m in the Gazebo GPU scan. Open-map
     # scenarios contain no static contact at that range, while a human proxy
     # reaches the physical collision boundary at approximately 0.36 m.
     minimum_valid_lidar_range_m=0.34
+    collision_omnidirectional_absolute_distance_m=0.70
 fi
 if [[ -z "${scenario_id}" || -z "${seed}" || -z "${split}" || -z "${map_id}" ]]; then
     echo "ERROR: scenario is missing required ramp_metadata" >&2
@@ -274,6 +276,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOUR
         -p base_cmd_vel_topic:="${base_cmd_topic}" \
         -p ttc_threshold_s:="${TTC_THRESHOLD_S}" \
         -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
+        -p collision_omnidirectional_absolute_distance_m:="${collision_omnidirectional_absolute_distance_m}" \
         -p nav_status_topic:="${nav_action}/_action/status" \
         -p failure_status_topic:=/ramp/failure_status \
         -p recovery_decision_topic:=/ramp/recovery_decision \
