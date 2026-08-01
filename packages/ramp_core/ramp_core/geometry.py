@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Sequence
 from itertools import pairwise
 
 from ramp_core.types import Pose2D
+
+OrientedBox2D = tuple[float, float, float, float, float]
 
 
 def normalize_angle(angle: float) -> float:
@@ -54,6 +57,26 @@ def point_to_oriented_box_distance(
     outside_x = max(abs(local_x) - half_extents[0], 0.0)
     outside_y = max(abs(local_y) - half_extents[1], 0.0)
     return math.hypot(outside_x, outside_y)
+
+
+def parse_shelf_boxes(payload: str) -> tuple[OrientedBox2D, ...]:
+    """Parse Arena shelf poses into the exact 2-D collision boxes used at runtime."""
+    obstacles = json.loads(payload)
+    if not isinstance(obstacles, list):
+        raise ValueError("static_obstacles_json must contain a list")
+    boxes: list[OrientedBox2D] = []
+    for obstacle in obstacles:
+        if not isinstance(obstacle, dict) or obstacle.get("model") != "shelf":
+            raise ValueError("physical static geometry currently supports only shelf models")
+        position = obstacle.get("pos")
+        if not isinstance(position, list) or len(position) < 2:
+            raise ValueError("static shelf requires a position")
+        yaw = float(position[2]) if len(position) > 2 else 0.0
+        # shelf_static.sdf spans x +/-0.45 and local y [-0.395, 0.005].
+        center_x = float(position[0]) + 0.195 * math.sin(yaw)
+        center_y = float(position[1]) - 0.195 * math.cos(yaw)
+        boxes.append((center_x, center_y, 0.45, 0.20, yaw))
+    return tuple(boxes)
 
 
 def point_to_polyline_distance(

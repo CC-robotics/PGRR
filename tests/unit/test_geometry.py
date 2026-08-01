@@ -3,6 +3,7 @@ import math
 import pytest
 from ramp_core.geometry import (
     normalize_angle,
+    parse_shelf_boxes,
     point_to_oriented_box_distance,
     robot_to_world,
     world_to_robot,
@@ -33,3 +34,14 @@ def test_point_to_oriented_box_distance_handles_inside_edge_and_rotation() -> No
 def test_point_to_oriented_box_distance_rejects_negative_extent() -> None:
     with pytest.raises(ValueError, match="non-negative"):
         point_to_oriented_box_distance((0.0, 0.0), (0.0, 0.0), (-1.0, 0.5))
+
+
+def test_parse_shelf_boxes_applies_model_local_offset() -> None:
+    boxes = parse_shelf_boxes('[{"model":"shelf","pos":[2.0,3.0,0.0]}]')
+    assert len(boxes) == 1
+    assert boxes[0] == pytest.approx((2.0, 2.805, 0.45, 0.20, 0.0))
+
+
+def test_parse_shelf_boxes_rejects_unsupported_geometry() -> None:
+    with pytest.raises(ValueError, match="only shelf"):
+        parse_shelf_boxes('[{"model":"unknown","pos":[0.0,0.0,0.0]}]')

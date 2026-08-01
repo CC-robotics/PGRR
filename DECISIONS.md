@@ -218,3 +218,7 @@ For scenarios whose static models are all the pinned `shelf_static.sdf`, the log
 ## D-054: Make bounded WAIT part of both labels and deployment masks
 
 WAIT remains legal for collision risk because yielding can be optimal, but it is disabled after three consecutive no-progress choices whenever a masked-safe subgoal, BACKUP, or REPLAN exists. Offline expert labeling now carries the same sequence state as online Oracle and BC deployment. Immediately exhausting the budget on any freeze/deadlock score was tested and rejected: it increased active escapes without producing global progress. No rule ever unmasks an unsafe action, and WAIT remains available when it is the only safe fallback.
+
+## D-055: Condition collision-latched margins on known static geometry
+
+The deployed policy may use the known static scenario geometry but not privileged pedestrian positions. The recovery manager therefore projects the closest observable LiDAR endpoint into the exact oriented shelf footprints already used by the physical evaluator. A match within 0.10 m selects a 0.50 m static stop margin and 0.36 m action clearance; otherwise the existing 0.85 m stop and 0.65 m action margins remain active for unknown or dynamic returns. The classifier never changes terminal labels, never exposes pedestrian truth, and never bypasses the swept-footprint check. This candidate is trained/evaluated first on the train-split blind-corner recurrence before any held-out replay.

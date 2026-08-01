@@ -21,7 +21,7 @@ from ramp_core.evaluation.navigation import (
     navigation_status_is_active,
     timeout_is_invalid_reset,
 )
-from ramp_core.geometry import point_to_oriented_box_distance
+from ramp_core.geometry import parse_shelf_boxes, point_to_oriented_box_distance
 from ramp_core.planning.online import sanitize_near_field_returns
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.clock import Clock, ClockType
@@ -53,26 +53,6 @@ def _resample_lidar(
     source = np.clip(source, 0.0, maximum)
     coordinates = np.linspace(0.0, source.size - 1.0, beam_count)
     return np.interp(coordinates, np.arange(source.size), source).astype(np.float32)
-
-
-def _parse_shelf_boxes(payload: str) -> tuple[tuple[float, float, float, float, float], ...]:
-    """Parse scenario shelf poses into exact 2-D bounding boxes."""
-    obstacles = json.loads(payload)
-    if not isinstance(obstacles, list):
-        raise ValueError("static_obstacles_json must contain a list")
-    boxes: list[tuple[float, float, float, float, float]] = []
-    for obstacle in obstacles:
-        if not isinstance(obstacle, dict) or obstacle.get("model") != "shelf":
-            raise ValueError("physical static collision currently supports only shelf models")
-        position = obstacle.get("pos")
-        if not isinstance(position, list) or len(position) < 2:
-            raise ValueError("static shelf requires a position")
-        yaw = float(position[2]) if len(position) > 2 else 0.0
-        # shelf_static.sdf spans x +/-0.45 and local y [-0.395, 0.005].
-        center_x = float(position[0]) + 0.195 * math.sin(yaw)
-        center_y = float(position[1]) - 0.195 * math.cos(yaw)
-        boxes.append((center_x, center_y, 0.45, 0.20, yaw))
-    return tuple(boxes)
 
 
 class EpisodeLoggerNode(Node):
@@ -136,7 +116,7 @@ class EpisodeLoggerNode(Node):
             raise ValueError("episode_id and scenario_id parameters are required")
         output_directory = Path(self._string_parameter("output_directory")).expanduser()
         output_directory.mkdir(parents=True, exist_ok=True)
-        self._static_boxes = _parse_shelf_boxes(
+        self._static_boxes = parse_shelf_boxes(
             str(self.get_parameter("static_obstacles_json").value)
         )
         self._stream_path = output_directory / f"{episode_id}.jsonl"

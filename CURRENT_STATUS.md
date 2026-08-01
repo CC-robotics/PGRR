@@ -362,3 +362,11 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - This is not a recovery success: the hierarchy traded collision for incomplete navigation. It did eventually leave the first corner stall, but too late to finish.
 - No pedestrian came within the LiDAR audit tool's 1.3 m radius in either run, so both consistency reports correctly record zero near samples and `passed: false`; they are retained as insufficient evidence rather than silently omitted.
 - Next: include this counterexample in the generated cross-family result table/figure, then keep the method frozen for additional evaluation.
+
+## 2026-08-01 — Static-aware emergency-margin candidate
+
+- Reproduced the blind-corner limit cycle on independent train seed 1320: the selected hierarchy remained collision-free but timed out 5.088 m from the physical goal after 1,801 samples.
+- Trace segmentation showed repeated emergency entry while the nearest shelf return remained approximately 0.67--0.97 m away. The 0.85 m dynamic-person margin, plus release hysteresis, was being applied to known static geometry.
+- Added a pure observable nearest-return classifier against exact oriented shelf boxes shared with the evaluator. Known-static returns retain 0.50 m braking/footprint margin and 0.36 m action clearance; unknown/dynamic returns retain the existing 0.85/0.65 m margins.
+- Added four unit tests for shelf parsing, rotation-aware matching, and dynamic-return rejection. `make test` passes 238 tests and the Humble overlay builds all three packages.
+- Next: run the candidate on the same train scenario under a new immutable episode ID; keep or revert it based on collision-free completion and task time.
