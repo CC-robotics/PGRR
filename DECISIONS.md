@@ -186,3 +186,7 @@ For the nearest LiDAR return outside the $\pm45^\circ$ collision sector, longitu
 ## D-046: Use known absence of static geometry for an omnidirectional dynamic guard
 
 When the compiled scenario and known map declare zero static obstacles, every valid exteroceptive return after the documented 0.34 m self-return filter is dynamic. In that profile, any return within 0.70 m triggers collision risk regardless of bearing. Scenarios containing walls, shelves, or door frames set this threshold to zero and retain sector/trend logic, preventing a close mapped side wall from becoming a permanent trigger. This is a map-conditioned observable safety heuristic, not privileged human classification or a formal guarantee.
+
+## D-047: Judge bounded-backup improvement by the observed pulse peak
+
+A reverse command ends before skid-steer velocity returns to zero. In dynamic traffic, clearance gained during the command can shrink again while the robot decelerates, even though the commanded motion was demonstrably separating. The emergency executor therefore records the maximum nearest-LiDAR clearance observed from pulse start through pulse expiry and compares that peak with the start value after full stop. Another pulse still requires at least 0.05 m gain, observed rear clearance, a separating obstacle bearing, a free swept footprint, and remaining capacity under the eight-pulse cap. This preserves boundedness without discarding evidence solely because of actuator settling latency.

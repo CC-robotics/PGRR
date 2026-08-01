@@ -102,6 +102,7 @@ class EmergencyEscapeController:
     backup_used_in_hazard: bool = False
     backup_count: int = 0
     backup_start_clearance_m: float | None = None
+    backup_peak_clearance_m: float | None = None
 
     def __post_init__(self) -> None:
         values = (
@@ -132,6 +133,22 @@ class EmergencyEscapeController:
     ) -> tuple[bool, EmergencyEscapeMode]:
         """Return emergency state and a safety-directed maneuver mode."""
 
+        # The robot still has to decelerate after a bounded reverse command
+        # expires.  Preserve the best clearance actually observed during the
+        # pulse; comparing only after stopping can erase a real improvement if
+        # a dynamic obstacle keeps approaching during that deceleration.
+        if (
+            self.mode is EmergencyEscapeMode.BACKUP
+            and self.backup_start_clearance_m is not None
+            and math.isfinite(obstacle_clearance_m)
+        ):
+            self.backup_peak_clearance_m = max(
+                self.backup_start_clearance_m,
+                obstacle_clearance_m,
+                self.backup_peak_clearance_m
+                if self.backup_peak_clearance_m is not None
+                else self.backup_start_clearance_m,
+            )
         if now_s < self.escape_until_s:
             if self.mode is not EmergencyEscapeMode.BACKUP or backup_permitted:
                 return True, self.mode
@@ -146,6 +163,7 @@ class EmergencyEscapeController:
                 self.backup_used_in_hazard = False
                 self.backup_count = 0
                 self.backup_start_clearance_m = None
+                self.backup_peak_clearance_m = None
             return False, self.mode
         self.hazard_clear_since_s = None
         if self.hazard_since_s is None or now_s < self.hazard_since_s:
@@ -158,8 +176,9 @@ class EmergencyEscapeController:
         rear_safe = rear_observed and rear_clearance_m >= self.backup_clearance_m
         improving_repeat = (
             self.backup_start_clearance_m is not None
-            and math.isfinite(obstacle_clearance_m)
-            and obstacle_clearance_m >= self.backup_start_clearance_m + self.backup_progress_m
+            and self.backup_peak_clearance_m is not None
+            and self.backup_peak_clearance_m
+            >= self.backup_start_clearance_m + self.backup_progress_m
             and self.backup_count < self.maximum_improving_backups
         )
         # A single reverse pulse is always bounded. Further pulses are allowed
@@ -172,6 +191,7 @@ class EmergencyEscapeController:
             self.backup_used_in_hazard = True
             self.backup_count += 1
             self.backup_start_clearance_m = obstacle_clearance_m
+            self.backup_peak_clearance_m = obstacle_clearance_m
             return True, self.mode
         wrapped = math.atan2(math.sin(obstacle_angle_rad), math.cos(obstacle_angle_rad))
         obstacle_is_rear = abs(wrapped) >= self.rear_obstacle_angle_rad

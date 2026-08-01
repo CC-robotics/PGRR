@@ -316,6 +316,49 @@ def test_continuous_hazard_can_repeat_only_when_backup_improves_clearance() -> N
     ) == (True, EmergencyEscapeMode.BACKUP)
 
 
+def test_backup_peak_survives_deceleration_before_repeat_decision() -> None:
+    controller = _controller()
+    controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.45,
+    )
+    assert controller.update(
+        now_s=0.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.45,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+    assert controller.update(
+        now_s=1.2,
+        hazard=True,
+        linear_speed_mps=-0.15,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.52,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+    # The command has expired, but the robot has not stopped.  A closing
+    # obstacle reduces instantaneous clearance during deceleration.
+    assert controller.update(
+        now_s=1.4,
+        hazard=True,
+        linear_speed_mps=-0.10,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.48,
+    ) == (True, EmergencyEscapeMode.STOP)
+    # Once stopped, the controller uses the measured pulse peak (0.52 m), not
+    # the later 0.48 m value, to authorize one more bounded reverse pulse.
+    assert controller.update(
+        now_s=1.6,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.47,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+
+
 def test_improving_backup_sequence_has_a_hard_limit() -> None:
     controller = EmergencyEscapeController(
         hold_s=0.0,
