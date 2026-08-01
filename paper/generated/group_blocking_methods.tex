@@ -1,0 +1,19 @@
+% Generated from outputs/pilot/group_blocking_high_s02420_926cc95_methods.csv
+\begin{table}[t]
+\caption{Same-commit group-blocking mechanism check on one validation seed. Results are descriptive; the comparison is not a statistical ablation.}
+\label{tab:group-blocking-methods}
+\centering
+\small
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrr}
+\hline
+Method & Outcome & Time [s] & $d_{\min}$ [m] & Recovery \\
+\hline
+Classical DWB & COLLISION & 46.0 & 0.689 & 0 \\
+Standard recovery & COLLISION & 45.0 & 0.695 & 0 \\
+Heuristic hierarchy & GOAL REACHED & 152.4 & 0.841 & 606 \\
+Triggered DAgger & GOAL REACHED & 128.9 & 1.019 & 395 \\
+\hline
+\end{tabular}
+}
+\end{table}

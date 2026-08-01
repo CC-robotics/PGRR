@@ -127,7 +127,7 @@ def cross_family_pilot() -> None:
         ),
         (
             "Group blocking",
-            ROOT / "outputs/pilot/group_blocking_high_s02420_dcd9bfe_pair.csv",
+            ROOT / "outputs/pilot/group_blocking_high_s02420_926cc95_pair.csv",
         ),
     ]
     rows: list[str] = []
@@ -175,10 +175,61 @@ Scenario & DWB & Hierarchy & Time [s] & $d_{\\min}$ [m] & Recovery \\\\
     (ROOT / "paper/generated/cross_family_pilot.tex").write_text(table, encoding="utf-8")
 
 
+def group_blocking_methods() -> None:
+    source = ROOT / "outputs/pilot/group_blocking_high_s02420_926cc95_methods.csv"
+    with source.open(encoding="utf-8", newline="") as stream:
+        payload = list(csv.DictReader(stream))
+    expected = ["base", "standard", "heuristic", "bc"]
+    if [row["source_policy"] for row in payload] != expected:
+        raise RuntimeError("expected Base/Standard/Heuristic/BC group-blocking rows")
+    if len({row["project_commit"] for row in payload}) != 1:
+        raise RuntimeError("group-blocking methods must come from one project commit")
+    names = {
+        "base": "Classical DWB",
+        "standard": "Standard recovery",
+        "heuristic": "Heuristic hierarchy",
+        "bc": "Triggered DAgger",
+    }
+    rows = [
+        f"{names[result['source_policy']]} & {result['outcome'].replace('_', ' ')} & "
+        f"{float(result['sim_duration_s']):.1f} & "
+        f"{float(result['min_human_distance_m']):.3f} & "
+        f"{int(result['recovery_actions'])} \\\\"
+        for result in payload
+    ]
+    caption = (
+        "Same-commit group-blocking mechanism check on one validation seed. Results are "
+        "descriptive; the comparison is not a statistical ablation."
+    )
+    table = (
+        """% Generated from outputs/pilot/group_blocking_high_s02420_926cc95_methods.csv
+\\begin{table}[t]
+\\caption{__CAPTION__}
+\\label{tab:group-blocking-methods}
+\\centering
+\\small
+\\resizebox{\\columnwidth}{!}{%
+\\begin{tabular}{lrrrr}
+\\hline
+Method & Outcome & Time [s] & $d_{\\min}$ [m] & Recovery \\\\
+\\hline
+"""
+        + "\n".join(rows)
+        + """
+\\hline
+\\end{tabular}
+}
+\\end{table}
+"""
+    ).replace("__CAPTION__", caption)
+    (ROOT / "paper/generated/group_blocking_methods.tex").write_text(table, encoding="utf-8")
+
+
 def main() -> None:
     verified_actual_pose_pair()
     high_density_pilot()
     cross_family_pilot()
+    group_blocking_methods()
 
 
 if __name__ == "__main__":
