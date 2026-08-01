@@ -22,6 +22,10 @@ On `temporary_blockage_high_validation_s02720`, Base collided at 37.995 s and DA
 
 The corrected online replay still collided at 40.493 s and recorded no early collision-risk score, despite an offline reconstruction predicting earlier trend activation. This shows that a minimum-of-scan temporal trend is sensitive to callback sampling and nearest-return identity in dense multi-person flow. The branch remains as an additional cue but is not treated as a sufficient fix.
 
+## KI-068: Emergency backup improvement was lost during deceleration
+
+The `e923536` temporary-blockage replay correctly left the open-map absolute guard disabled because the scenario contains 20 doorway wall objects. The independent safety layer stopped at 35.498 s and executed one 0.8 s BACKUP. Nearest observed clearance increased from 0.453 m at backup entry to 0.522 m at its end, exceeding the configured 0.05 m repeat criterion. However, the controller required the robot to finish decelerating before deciding on another pulse and compared only the later instantaneous 0.481 m clearance with the original value. It therefore forgot the valid peak and rotated in place while the pedestrian continued closing, ending in collision at 39.993 s. The raw outcome, pair summary, and passing sensor gate are retained. The fix must preserve the maximum clearance observed during each bounded pulse while keeping the existing hard repeat limit and rear-clearance checks.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.

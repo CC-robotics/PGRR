@@ -1,0 +1,11 @@
+{
+  "episode": "data/raw/temporary_blockage_high_validation_s02720_e923536_base_r1_dwb.jsonl",
+  "maximum_surface_range_error_m": -0.005065398211351879,
+  "minimum_center_distance_m": 0.7006701483632096,
+  "near_distance_m": 1.3,
+  "near_sample_count": 26,
+  "passed": true,
+  "tolerance_m": 0.2,
+  "visible_ratio": 1.0,
+  "visible_sample_count": 26
+}
