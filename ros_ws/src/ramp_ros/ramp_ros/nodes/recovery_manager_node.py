@@ -237,6 +237,7 @@ class RecoveryManagerNode(Node):
             rotation_clearance_m=self._float("emergency_rotation_clearance_m"),
             forward_entry_clearance_m=self._float("emergency_forward_entry_clearance_m"),
             backup_reset_clear_s=self._float("emergency_backup_reset_clear_s"),
+            turn_reset_clear_s=self._float("emergency_turn_reset_clear_s"),
             maximum_improving_backups=self._integer("emergency_maximum_improving_backups"),
             backup_progress_m=self._float("emergency_backup_progress_m"),
         )
@@ -350,6 +351,7 @@ class RecoveryManagerNode(Node):
             "emergency_rotation_clearance_m": 0.24,
             "emergency_forward_entry_clearance_m": 0.85,
             "emergency_backup_reset_clear_s": 3.0,
+            "emergency_turn_reset_clear_s": 5.0,
             "emergency_turn_speed_radps": 0.6,
             "emergency_forward_speed_mps": 0.12,
             "emergency_translation_clearance_m": 0.36,

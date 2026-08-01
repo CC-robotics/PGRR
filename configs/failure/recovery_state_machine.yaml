@@ -39,6 +39,7 @@ emergency_release_hysteresis_m: 0.05
 emergency_rotation_clearance_m: 0.24
 emergency_forward_entry_clearance_m: 0.85
 emergency_backup_reset_clear_s: 3.0
+emergency_turn_reset_clear_s: 5.0
 emergency_maximum_improving_backups: 8
 emergency_backup_progress_m: 0.05
 emergency_turn_speed_radps: 0.6

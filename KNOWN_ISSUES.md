@@ -44,6 +44,10 @@ The first opposite-stream DAgger labeling attempt failed because valid recovery 
 
 The first iteration-4 train replay was labeled `COLLISION` at 37.73 s even though the nearest human was 1.592 m away and the physical robot remained near the corridor center. Its final two scans contained broad 0.10--0.22 m clusters at both ends of the 270-degree scan and no interior return below 0.36 m. This is the previously observed Jackal rear-body GPU-LiDAR signature; the old filter applied only when a scenario declared no static objects. Preprocessing now suppresses near returns only when both edge sectors contain the broad signature. A unilateral close wall and every interior contact remain intact. The original outcome is immutable and remains a simulator-sensor false-positive diagnostic.
 
+## KI-073: Brief hazard-clear gaps erase the emergency turn commitment
+
+After correcting KI-072, iteration-4 remained collision-free but timed out after 180 s with 2.378 m progress. Emergency turning occupied 695 samples and changed side nine times; five reversals occurred after only 0.6--3.0 s without a turn command. The controller preserved direction while one hazard stayed latched but forgot it on every brief clear callback, so alternating nearby pedestrians could recreate a left/right limit cycle. Turn preference now survives clear gaps shorter than a configurable 5.0 s and resets only after sustained clearance. This is a train-split method candidate pending fresh closed-loop evidence.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.
