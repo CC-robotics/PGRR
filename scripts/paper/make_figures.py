@@ -132,6 +132,7 @@ def cross_family_pilot() -> None:
         ROOT / "outputs/pilot/temporary_blockage_high_s02720_0205d6e_pair.csv",
         ROOT / "outputs/pilot/group_blocking_high_s02420_926cc95_pair.csv",
         ROOT / "outputs/pilot/overtaking_high_s02520_324fcdf_pair.csv",
+        ROOT / "outputs/pilot/blind_corner_high_s02320_fafcddd_pair.csv",
     ]
     pairs: list[list[dict[str, str]]] = []
     for source in sources:
@@ -143,14 +144,14 @@ def cross_family_pilot() -> None:
             raise RuntimeError(f"pair must come from one project commit: {source}")
         pairs.append(rows)
 
-    scenarios = ["TB", "GB", "OT"]
+    scenarios = ["TB", "GB", "OT", "BL"]
     methods = ["DWB", "Full hierarchy"]
     colors = ["#466B9F", "#16836B"]
     hatches = ["//", ""]
     # Use a short visible bar for the lower categorical outcome so the DWB
     # collision observations remain visible in print rather than collapsing
     # onto the axis baseline.
-    outcome_score = {"COLLISION": 0.08, "GOAL_REACHED": 1.0}
+    outcome_score = {"COLLISION": 0.08, "TIMEOUT": 0.52, "GOAL_REACHED": 1.0}
     x = np.arange(len(scenarios), dtype=float)
     width = 0.34
     plt.rcParams.update({"font.size": 8, "font.family": "DejaVu Sans"})
@@ -174,7 +175,7 @@ def cross_family_pilot() -> None:
             hatch=hatches[method_index],
         )
     axes[0].set_ylabel("Terminal outcome")
-    axes[0].set_yticks([0.08, 1.0], ["Collision", "Goal"])
+    axes[0].set_yticks([0.08, 0.52, 1.0], ["Collision", "Timeout", "Goal"])
     axes[0].legend(
         frameon=False,
         fontsize=7,
