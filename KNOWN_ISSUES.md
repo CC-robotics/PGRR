@@ -46,7 +46,7 @@ The first iteration-4 train replay was labeled `COLLISION` at 37.73 s even thoug
 
 ## KI-073: Brief hazard-clear gaps erase the emergency turn commitment
 
-After correcting KI-072, iteration-4 remained collision-free but timed out after 180 s with 2.378 m progress. Emergency turning occupied 695 samples and changed side nine times; five reversals occurred after only 0.6--3.0 s without a turn command. The controller preserved direction while one hazard stayed latched but forgot it on every brief clear callback, so alternating nearby pedestrians could recreate a left/right limit cycle. Turn preference now survives clear gaps shorter than a configurable 5.0 s and resets only after sustained clearance. This is a train-split method candidate pending fresh closed-loop evidence.
+After correcting KI-072, iteration-4 remained collision-free but timed out after 180 s with 2.378 m progress. Emergency turning occupied 695 samples and changed side nine times; five reversals occurred after only 0.6--3.0 s without a turn command. A train-only candidate preserved turn preference across five seconds of clear time. With physical collision evaluation, it eliminated all turn-side switches but timed out with -0.146 m net progress, versus +2.378 m without the memory. The candidate is removed as a negative ablation: suppressing switches alone can commit to the wrong escape side.
 
 ## KI-074: Two-frame LiDAR contact debounce still admits transient self-returns
 

@@ -117,53 +117,6 @@ def test_emergency_uses_rotation_instead_of_backing_when_rear_is_unsafe() -> Non
     ) == (True, EmergencyEscapeMode.TURN_RIGHT)
 
 
-def test_emergency_keeps_turn_side_across_brief_clear_gap() -> None:
-    controller = _controller()
-    controller.update(now_s=0.0, hazard=True, linear_speed_mps=0.0, rear_clearance_m=0.4)
-    assert controller.update(
-        now_s=0.5,
-        hazard=True,
-        linear_speed_mps=0.0,
-        rear_clearance_m=0.4,
-        obstacle_angle_rad=0.4,
-        obstacle_clearance_m=0.4,
-    ) == (True, EmergencyEscapeMode.TURN_RIGHT)
-    controller.update(now_s=1.0, hazard=False, linear_speed_mps=0.0, rear_clearance_m=0.4)
-    controller.update(now_s=2.0, hazard=True, linear_speed_mps=0.0, rear_clearance_m=0.4)
-    assert controller.update(
-        now_s=2.5,
-        hazard=True,
-        linear_speed_mps=0.0,
-        rear_clearance_m=0.4,
-        obstacle_angle_rad=-0.4,
-        obstacle_clearance_m=0.4,
-    ) == (True, EmergencyEscapeMode.TURN_RIGHT)
-
-
-def test_emergency_may_choose_new_turn_side_after_sustained_clearance() -> None:
-    controller = _controller()
-    controller.update(now_s=0.0, hazard=True, linear_speed_mps=0.0, rear_clearance_m=0.4)
-    controller.update(
-        now_s=0.5,
-        hazard=True,
-        linear_speed_mps=0.0,
-        rear_clearance_m=0.4,
-        obstacle_angle_rad=0.4,
-        obstacle_clearance_m=0.4,
-    )
-    controller.update(now_s=1.0, hazard=False, linear_speed_mps=0.0, rear_clearance_m=0.4)
-    controller.update(now_s=6.0, hazard=False, linear_speed_mps=0.0, rear_clearance_m=0.4)
-    controller.update(now_s=7.0, hazard=True, linear_speed_mps=0.0, rear_clearance_m=0.4)
-    assert controller.update(
-        now_s=7.5,
-        hazard=True,
-        linear_speed_mps=0.0,
-        rear_clearance_m=0.4,
-        obstacle_angle_rad=-0.4,
-        obstacle_clearance_m=0.4,
-    ) == (True, EmergencyEscapeMode.TURN_LEFT)
-
-
 def test_footprint_hazard_cancels_active_backup() -> None:
     controller = _controller()
     controller.update(

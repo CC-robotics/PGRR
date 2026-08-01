@@ -98,7 +98,6 @@ class EmergencyEscapeController:
     rear_obstacle_angle_rad: float = math.radians(100.0)
     forward_entry_clearance_m: float = 0.85
     backup_reset_clear_s: float = 3.0
-    turn_reset_clear_s: float = 5.0
     maximum_improving_backups: int = 8
     backup_progress_m: float = 0.05
     hazard_since_s: float | None = None
@@ -109,7 +108,6 @@ class EmergencyEscapeController:
     backup_count: int = 0
     backup_start_clearance_m: float | None = None
     backup_peak_clearance_m: float | None = None
-    preferred_turn_mode: EmergencyEscapeMode | None = None
 
     def __post_init__(self) -> None:
         values = (
@@ -120,7 +118,6 @@ class EmergencyEscapeController:
             self.rotation_clearance_m,
             self.forward_entry_clearance_m,
             self.backup_reset_clear_s,
-            self.turn_reset_clear_s,
             self.backup_progress_m,
         )
         if any(value < 0.0 for value in values) or self.maximum_improving_backups <= 0:
@@ -172,8 +169,6 @@ class EmergencyEscapeController:
                 self.backup_count = 0
                 self.backup_start_clearance_m = None
                 self.backup_peak_clearance_m = None
-            if now_s - self.hazard_clear_since_s >= self.turn_reset_clear_s:
-                self.preferred_turn_mode = None
             return False, self.mode
         self.hazard_clear_since_s = None
         if self.hazard_since_s is None or now_s < self.hazard_since_s:
@@ -219,13 +214,9 @@ class EmergencyEscapeController:
                 EmergencyEscapeMode.TURN_RIGHT,
             }:
                 return True, self.mode
-            if self.preferred_turn_mode is None:
-                self.preferred_turn_mode = (
-                    EmergencyEscapeMode.TURN_RIGHT
-                    if wrapped >= 0.0
-                    else EmergencyEscapeMode.TURN_LEFT
-                )
-            self.mode = self.preferred_turn_mode
+            self.mode = (
+                EmergencyEscapeMode.TURN_RIGHT if wrapped >= 0.0 else EmergencyEscapeMode.TURN_LEFT
+            )
             return True, self.mode
         self.mode = EmergencyEscapeMode.STOP
         return True, self.mode

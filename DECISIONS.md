@@ -203,9 +203,9 @@ The held-out validation timeout is evidence of missing recurrent-flow coverage, 
 
 Globally discarding every return below 0.34 m in a static scene would hide real wall contact. The platform-specific correction instead requires at least 30% of both outer scan ninths to contain sub-0.34 m returns and removes only those edge returns. A unilateral edge cluster is preserved, as is any close return in the scan interior. Detector, recovery policy, logger, and offline expert labeling share this configurable threshold.
 
-## D-051: Keep emergency turn preference across brief clear gaps
+## D-051: Reject cross-hazard emergency turn preference
 
-Emergency turn direction is geometric supervisory state, not a new learned action. Once chosen, it remains preferred across hazard interruptions shorter than 5.0 s so alternating nearest-obstacle identities cannot immediately reverse rotation. Five seconds of continuous clearance clears the preference and permits a new side. The value is configured separately from the backup-reset interval and is evaluated first on the train split.
+The five-second train-only candidate eliminated all turn-side switches but changed net progress from +2.378 m to -0.146 m and still timed out. It is therefore removed. Emergency direction remains persistent only within one continuously latched hazard; a future correction needs progress/path-conditioned escape selection rather than unconditional side commitment.
 
 ## D-052: Require 0.3 s of continuous LiDAR evidence for static contact
 
