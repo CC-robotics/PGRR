@@ -17,15 +17,37 @@ def sanitize_near_field_returns(
     ranges: npt.ArrayLike,
     *,
     minimum_valid_range_m: float,
+    bilateral_edge_self_return_max_m: float = 0.0,
 ) -> npt.NDArray[np.float64]:
-    """Replace geometrically impossible near-field returns with infinity."""
+    """Replace impossible near-field returns and the Jackal edge signature."""
     if not math.isfinite(minimum_valid_range_m) or minimum_valid_range_m < 0.0:
         raise ValueError("minimum valid LiDAR range must be finite and non-negative")
+    if (
+        not math.isfinite(bilateral_edge_self_return_max_m)
+        or bilateral_edge_self_return_max_m < 0.0
+    ):
+        raise ValueError("bilateral edge self-return range must be finite and non-negative")
     values = np.asarray(ranges, dtype=np.float64).copy()
     if values.ndim != 1:
         raise ValueError("ranges must be one-dimensional")
     self_returns = np.isfinite(values) & (values >= 0.0) & (values < minimum_valid_range_m)
     values[self_returns] = math.inf
+    if bilateral_edge_self_return_max_m > 0.0 and values.size >= 18:
+        edge_count = max(3, math.ceil(values.size / 9.0))
+        minimum_hits = max(2, math.ceil(edge_count * 0.3))
+        low = np.isfinite(values) & (values >= 0.0) & (values < bilateral_edge_self_return_max_m)
+        # Gazebo's Jackal GPU scan occasionally sees the rear body as broad
+        # simultaneous clusters at both ends of the 270-degree scan. A real
+        # unilateral wall/contact is deliberately preserved. Any close return
+        # in the scan interior also remains observable.
+        if (
+            int(np.count_nonzero(low[:edge_count])) >= minimum_hits
+            and int(np.count_nonzero(low[-edge_count:])) >= minimum_hits
+        ):
+            edge_mask = np.zeros(values.size, dtype=np.bool_)
+            edge_mask[:edge_count] = True
+            edge_mask[-edge_count:] = True
+            values[low & edge_mask] = math.inf
     return values
 
 

@@ -21,6 +21,7 @@ from ramp_core.evaluation.navigation import (
     navigation_status_is_active,
     timeout_is_invalid_reset,
 )
+from ramp_core.planning.online import sanitize_near_field_returns
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from rclpy.clock import Clock, ClockType
 from rclpy.executors import ExternalShutdownException
@@ -35,9 +36,15 @@ def _yaw_from_quaternion(x: float, y: float, z: float, w: float) -> float:
 
 
 def _resample_lidar(
-    message: LaserScan, beam_count: int = 180
+    message: LaserScan,
+    beam_count: int = 180,
+    bilateral_edge_self_return_max_m: float = 0.0,
 ) -> np.ndarray[Any, np.dtype[np.float32]]:
-    source = np.asarray(message.ranges, dtype=np.float32)
+    source = sanitize_near_field_returns(
+        message.ranges,
+        minimum_valid_range_m=0.0,
+        bilateral_edge_self_return_max_m=bilateral_edge_self_return_max_m,
+    ).astype(np.float32)
     if source.size == 0:
         raise ValueError("received an empty LaserScan")
     maximum = float(message.range_max) if message.range_max > 0.0 else 30.0
@@ -98,6 +105,7 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("lidar_collision_distance_m", 0.12)
         self.declare_parameter("lidar_collision_confirmation_frames", 2)
         self.declare_parameter("lidar_static_collision_enabled", True)
+        self.declare_parameter("bilateral_edge_self_return_max_m", 0.34)
 
         episode_id = self._string_parameter("episode_id")
         scenario_id = self._string_parameter("scenario_id")
@@ -298,7 +306,12 @@ class EpisodeLoggerNode(Node):
 
     def _on_scan(self, message: LaserScan) -> None:
         try:
-            self._lidar = _resample_lidar(message)
+            self._lidar = _resample_lidar(
+                message,
+                bilateral_edge_self_return_max_m=float(
+                    self.get_parameter("bilateral_edge_self_return_max_m").value
+                ),
+            )
         except ValueError as error:
             self.get_logger().warning(str(error))
 

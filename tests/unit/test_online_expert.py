@@ -107,6 +107,32 @@ def test_near_field_sanitizer_rejects_negative_threshold() -> None:
         sanitize_near_field_returns((1.0,), minimum_valid_range_m=-0.1)
 
 
+def test_near_field_sanitizer_removes_only_bilateral_edge_signature() -> None:
+    ranges = np.full(180, 2.0)
+    ranges[:7] = 0.2
+    ranges[-7:] = 0.2
+    ranges[90] = 0.1
+    filtered = sanitize_near_field_returns(
+        ranges,
+        minimum_valid_range_m=0.0,
+        bilateral_edge_self_return_max_m=0.34,
+    )
+    assert np.all(np.isinf(filtered[:7]))
+    assert np.all(np.isinf(filtered[-7:]))
+    assert filtered[90] == pytest.approx(0.1)
+
+
+def test_near_field_sanitizer_preserves_unilateral_contact() -> None:
+    ranges = np.full(180, 2.0)
+    ranges[:12] = 0.1
+    filtered = sanitize_near_field_returns(
+        ranges,
+        minimum_valid_range_m=0.0,
+        bilateral_edge_self_return_max_m=0.34,
+    )
+    assert np.allclose(filtered[:12], 0.1)
+
+
 def test_swept_scan_mask_rejects_off_axis_footprint_collision() -> None:
     ranges = np.full(271, np.inf, dtype=np.float32)
     obstacle_angle = math.radians(37.0)

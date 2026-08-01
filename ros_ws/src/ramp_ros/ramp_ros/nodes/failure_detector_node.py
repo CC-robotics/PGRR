@@ -52,6 +52,7 @@ class FailureDetectorNode(Node):
         self.declare_parameter("collision_front_sector_degrees", 30.0)
         self.declare_parameter("collision_trend_sector_degrees", 90.0)
         self.declare_parameter("minimum_valid_lidar_range_m", 0.0)
+        self.declare_parameter("bilateral_edge_self_return_max_m", 0.34)
         defaults = RuleFailureConfig()
         for name in defaults.__dataclass_fields__:
             self.declare_parameter(name, getattr(defaults, name))
@@ -119,6 +120,9 @@ class FailureDetectorNode(Node):
         ranges = sanitize_near_field_returns(
             message.ranges,
             minimum_valid_range_m=float(self.get_parameter("minimum_valid_lidar_range_m").value),
+            bilateral_edge_self_return_max_m=float(
+                self.get_parameter("bilateral_edge_self_return_max_m").value
+            ),
         )
         angles = float(message.angle_min) + np.arange(ranges.size) * float(message.angle_increment)
         half_width = math.radians(

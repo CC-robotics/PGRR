@@ -24,11 +24,22 @@ from ramp_core.observations import (
 )
 from ramp_core.occupancy import OccupancyGrid
 from ramp_core.planning.expert import PlanningRecoveryExpert
+from ramp_core.planning.online import sanitize_near_field_returns
 from ramp_core.recovery.options import constrain_rejoin_actions
 from ramp_core.types import Pose2D, Velocity2D
 
 ROOT = Path(__file__).resolve().parents[2]
 LIDAR_FOV_RADIANS = math.radians(270.0)
+JACKAL_EDGE_SELF_RETURN_MAX_M = 0.34
+
+
+def _observable_lidar(row: dict[str, Any]) -> np.ndarray:
+    values = sanitize_near_field_returns(
+        row["lidar"],
+        minimum_valid_range_m=0.0,
+        bilateral_edge_self_return_max_m=JACKAL_EDGE_SELF_RETURN_MAX_M,
+    )
+    return np.nan_to_num(values, nan=12.0, posinf=12.0, neginf=0.0).astype(np.float32)
 
 
 def _load(path: Path) -> list[dict[str, Any]]:
@@ -89,7 +100,7 @@ def _local_grid(row: dict[str, Any], resolution: float = 0.1) -> OccupancyGrid:
     width = max(20, math.ceil((max(x_values) + 2.0 - origin_x) / resolution))
     height = max(20, math.ceil((max(y_values) + 2.0 - origin_y) / resolution))
     occupied = np.zeros((height, width), dtype=np.bool_)
-    scan = np.asarray(row["lidar"], dtype=np.float64)
+    scan = _observable_lidar(row).astype(np.float64)
     angles = np.linspace(-LIDAR_FOV_RADIANS / 2.0, LIDAR_FOV_RADIANS / 2.0, scan.size)
     yaw = float(pose[2])
     for distance, angle in zip(scan, angles, strict=True):
@@ -137,7 +148,7 @@ def _selected_indices(rows: list[dict[str, Any]], stride: int, threshold: float)
 
 
 def _observable_arrays(rows: list[dict[str, Any]]) -> dict[str, np.ndarray]:
-    lidar = np.asarray([row["lidar"] for row in rows], dtype=np.float32)
+    lidar = np.stack([_observable_lidar(row) for row in rows])
     goal_polar: list[tuple[float, float]] = []
     waypoints: list[np.ndarray] = []
     progress_history: list[np.ndarray] = []
@@ -212,7 +223,7 @@ def main() -> None:
             grid,
             replan_available=True,
         )
-        scan = np.asarray(rows[index]["lidar"], dtype=np.float64)
+        scan = _observable_lidar(rows[index]).astype(np.float64)
         collision_risk = float(rows[index]["failure_prediction"][0])
         collision_latched = collision_risk >= args.rejoin_release_threshold
         mask = apply_observable_scan_mask(

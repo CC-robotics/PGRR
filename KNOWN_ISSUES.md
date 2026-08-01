@@ -40,6 +40,10 @@ On untouched high-density validation seed 2620, Base collided after 3.497 s. The
 
 The first opposite-stream DAgger labeling attempt failed because valid recovery rows include planner intervals with an empty `global_path`. Online deployment already fell back to the preserved original goal, while the offline labeler passed the empty path to the corridor mask. A shared `navigation_path_or_goal` helper now gives deployment and labeling identical behavior and rejects non-finite fallback goals. The regenerated train-only shard contains 273 labels, zero illegal expert actions, and 266 expert-predicted successes; no validation row enters the shard.
 
+## KI-072: Static-scene collision logic exposed an intermittent Jackal self-return
+
+The first iteration-4 train replay was labeled `COLLISION` at 37.73 s even though the nearest human was 1.592 m away and the physical robot remained near the corridor center. Its final two scans contained broad 0.10--0.22 m clusters at both ends of the 270-degree scan and no interior return below 0.36 m. This is the previously observed Jackal rear-body GPU-LiDAR signature; the old filter applied only when a scenario declared no static objects. Preprocessing now suppresses near returns only when both edge sectors contain the broad signature. A unilateral close wall and every interior contact remain intact. The original outcome is immutable and remains a simulator-sensor false-positive diagnostic.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.

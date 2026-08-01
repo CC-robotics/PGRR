@@ -356,6 +356,7 @@ class RecoveryManagerNode(Node):
             "emergency_maximum_improving_backups": 8,
             "emergency_backup_progress_m": 0.05,
             "minimum_valid_lidar_range_m": 0.0,
+            "bilateral_edge_self_return_max_m": 0.34,
             "human_radius_m": 0.35,
             "robot_radius_m": 0.36,
             "maximum_human_speed_mps": 2.0,
@@ -474,6 +475,7 @@ class RecoveryManagerNode(Node):
         source = sanitize_near_field_returns(
             message.ranges,
             minimum_valid_range_m=self._float("minimum_valid_lidar_range_m"),
+            bilateral_edge_self_return_max_m=self._float("bilateral_edge_self_return_max_m"),
         ).astype(np.float32)
         if source.size == 0:
             return

@@ -198,3 +198,7 @@ Emergency turns and bounded forward escapes are safety-supervisor commands rathe
 ## D-049: Add opposite-stream coverage only from the train split
 
 The held-out validation timeout is evidence of missing recurrent-flow coverage, not a threshold-tuning target. The selected policy is therefore run on `opposite_streams_high_train_s01620`; only that policy-visited trajectory is labeled and aggregated. Validation seed 2620 remains evaluation-only, and the new checkpoint can replace the current one only after scenario-disjoint offline validation and fresh closed-loop checks.
+
+## D-050: Identify the Jackal self-return by bilateral scan geometry
+
+Globally discarding every return below 0.34 m in a static scene would hide real wall contact. The platform-specific correction instead requires at least 30% of both outer scan ninths to contain sub-0.34 m returns and removes only those edge returns. A unilateral edge cluster is preserved, as is any close return in the scan interior. Detector, recovery policy, logger, and offline expert labeling share this configurable threshold.
