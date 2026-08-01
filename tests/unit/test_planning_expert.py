@@ -13,7 +13,7 @@ from ramp_core.action_space import (
 )
 from ramp_core.observations import HumanState, PrivilegedState
 from ramp_core.occupancy import OccupancyGrid
-from ramp_core.planning.expert import PlanningRecoveryExpert
+from ramp_core.planning.expert import PlanningRecoveryExpert, update_expert_history
 from ramp_core.planning.rollout import rollout_action
 from ramp_core.types import Pose2D, Velocity2D
 
@@ -86,6 +86,17 @@ def test_repeated_wait_cost_forces_deadlock_escalation() -> None:
     assert escalated.action_costs[WAIT_ACTION_ID] == pytest.approx(
         initial.action_costs[WAIT_ACTION_ID] + 2.0
     )
+
+
+def test_expert_history_tracks_waits_and_selected_subgoal_side() -> None:
+    side, waits = update_expert_history(WAIT_ACTION_ID, previous_side=0, repeated_waits=0)
+    assert (side, waits) == (0, 1)
+    side, waits = update_expert_history(0, previous_side=side, repeated_waits=waits)
+    assert (side, waits) == (-1, 0)
+    side, waits = update_expert_history(
+        CONTINUE_ACTION_ID, previous_side=side, repeated_waits=waits
+    )
+    assert (side, waits) == (-1, 0)
 
 
 def test_human_approaching_from_left_does_not_choose_left_subgoal() -> None:

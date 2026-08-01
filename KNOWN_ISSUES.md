@@ -56,6 +56,10 @@ The first turn-memory replay terminated at 8.89 s after two sub-0.12 m scan fram
 
 The generated corridor shelves have exact poses in the scenario but remain absent from Arena's `map_empty` occupancy map, so raw LiDAR cannot distinguish a wall contact from the intermittent Jackal GPU-LiDAR artifact. Evaluation now parses supported `shelf` poses and checks the actual Gazebo robot centre against the exact 0.9 by 0.4 m oriented shelf footprint plus the 0.36 m robot radius. Raw LiDAR termination remains enabled for unsupported static models; open scenes use neither static classifier. This evaluation-only pose never enters the detector or learned policy. A future scenario-map compiler should still rasterize these walls for the planner.
 
+## KI-076: Independent expert labels omitted deployment's bounded-WAIT mask
+
+The initial opposite-stream shard labeled each sampled state independently, although online Oracle and BC deployment disable WAIT after a three-decision no-progress budget when a safe escape exists. WAIT therefore occupied 227/342 sequence-relabelled states and short-horizon `predicted_success` overstated recurrent-flow recovery. Offline labeling now carries expert side/WAIT history and applies the same bounded-WAIT mask. Observable freeze or deadlock exhausts the budget immediately but cannot remove WAIT when no planning-safe alternative exists. On the retained train trajectory WAIT decreases to 209/342, predicted-success labels to 276/342, and illegal actions remain zero. Closed-loop benefit is not yet established.
+
 ## KI-001: Default interactive shell selects ROS Iron
 
 The machine contains Humble and Iron, and the initial shell reported `ROS_DISTRO=iron`. Arena runtime scripts explicitly unset inherited ROS setup variables where practical and source `/opt/ros/humble/setup.bash`. Do not run Arena from Conda base.

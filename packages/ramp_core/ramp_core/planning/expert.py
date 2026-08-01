@@ -38,6 +38,26 @@ class ExpertLabel:
         object.__setattr__(self, "valid_mask", mask)
 
 
+def update_expert_history(
+    action_id: int,
+    *,
+    previous_side: int,
+    repeated_waits: int,
+) -> tuple[int, int]:
+    """Advance the sequence state shared by online and offline experts."""
+    if not 0 <= action_id < ACTION_COUNT:
+        raise ValueError("action_id is outside the fixed action space")
+    if previous_side not in {-1, 0, 1} or repeated_waits < 0:
+        raise ValueError("expert history is invalid")
+    action = ACTIONS[action_id]
+    next_side = previous_side
+    if action.kind is RecoveryActionKind.SUBGOAL:
+        assert action.angle_degrees is not None
+        next_side = (action.angle_degrees > 0) - (action.angle_degrees < 0)
+    next_waits = repeated_waits + 1 if action.kind is RecoveryActionKind.WAIT else 0
+    return next_side, next_waits
+
+
 class PlanningRecoveryExpert:
     def __init__(
         self,

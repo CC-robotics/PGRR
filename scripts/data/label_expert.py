@@ -23,9 +23,13 @@ from ramp_core.observations import (
     select_local_path_waypoints,
 )
 from ramp_core.occupancy import OccupancyGrid
-from ramp_core.planning.expert import PlanningRecoveryExpert
+from ramp_core.planning.expert import PlanningRecoveryExpert, update_expert_history
 from ramp_core.planning.online import sanitize_near_field_returns
-from ramp_core.recovery.options import constrain_rejoin_actions
+from ramp_core.recovery.options import (
+    constrain_rejoin_actions,
+    constrain_stalled_wait,
+    failure_conditioned_wait_count,
+)
 from ramp_core.types import Pose2D, Velocity2D
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -206,6 +210,7 @@ def main() -> None:
     parser.add_argument("--failure-threshold", type=float, default=0.65)
     parser.add_argument("--rejoin-release-threshold", type=float, default=0.65)
     parser.add_argument("--collision-latched-action-clearance", type=float, default=0.65)
+    parser.add_argument("--wait-budget-decisions", type=int, default=3)
     args = parser.parse_args()
     rows = _load(args.raw_jsonl)
     indices = _selected_indices(rows, args.stride, args.failure_threshold)
@@ -216,7 +221,16 @@ def main() -> None:
     masks: list[np.ndarray] = []
     margins: list[float] = []
     successes: list[bool] = []
+    previous_side = 0
+    repeated_waits = 0
+    previous_index: int | None = None
     for index in indices:
+        if (
+            previous_index is None
+            or float(rows[index]["timestamp"]) - float(rows[previous_index]["timestamp"]) > 1.0
+        ):
+            previous_side = 0
+            repeated_waits = 0
         state, grid = _privileged_state(rows, index)
         mask = compute_action_mask(
             state.robot_pose,
@@ -245,12 +259,36 @@ def main() -> None:
             collision_risk=collision_risk,
             release_threshold=args.rejoin_release_threshold,
         )
-        label = PlanningRecoveryExpert(grid).label(state, mask)
+        failure_prediction = rows[index]["failure_prediction"]
+        effective_waits = failure_conditioned_wait_count(
+            repeated_waits,
+            wait_budget=args.wait_budget_decisions,
+            freeze_score=float(failure_prediction[1]),
+            deadlock_score=float(failure_prediction[3]),
+            trigger_threshold=float(args.failure_threshold),
+        )
+        mask = constrain_stalled_wait(
+            mask,
+            consecutive_waits=effective_waits,
+            wait_budget=args.wait_budget_decisions,
+        )
+        label = PlanningRecoveryExpert(grid).label(
+            state,
+            mask,
+            previous_side=previous_side,
+            repeated_waits=repeated_waits,
+        )
         actions.append(label.action_id)
         costs.append(label.action_costs)
         masks.append(label.valid_mask)
         margins.append(label.margin)
         successes.append(label.predicted_success)
+        previous_side, repeated_waits = update_expert_history(
+            label.action_id,
+            previous_side=previous_side,
+            repeated_waits=repeated_waits,
+        )
+        previous_index = index
     observable = _observable_arrays(rows)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with h5py.File(args.output, "w") as handle:
@@ -280,6 +318,7 @@ def main() -> None:
         "predicted_success_count": int(sum(successes)),
         "rejoin_release_threshold": args.rejoin_release_threshold,
         "collision_latched_action_clearance": args.collision_latched_action_clearance,
+        "wait_budget_decisions": args.wait_budget_decisions,
         "finite_selected_cost_count": int(
             sum(
                 math.isfinite(float(cost[action]))

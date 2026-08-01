@@ -253,6 +253,24 @@ def constrain_stalled_wait(
     return constrained
 
 
+def failure_conditioned_wait_count(
+    consecutive_waits: int,
+    *,
+    wait_budget: int,
+    freeze_score: float,
+    deadlock_score: float,
+    trigger_threshold: float,
+) -> int:
+    """Exhaust the WAIT budget when observable freeze/deadlock is active."""
+    if consecutive_waits < 0 or wait_budget <= 0:
+        raise ValueError("wait counters must be non-negative and budget positive")
+    if not all(0.0 <= value <= 1.0 for value in (freeze_score, deadlock_score, trigger_threshold)):
+        raise ValueError("failure scores and threshold must lie in [0, 1]")
+    if max(freeze_score, deadlock_score) > trigger_threshold:
+        return max(consecutive_waits, wait_budget)
+    return consecutive_waits
+
+
 def constrain_repeated_replan(
     mask: npt.NDArray[np.bool_],
     *,

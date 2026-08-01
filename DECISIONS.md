@@ -214,3 +214,7 @@ The 10 Hz evaluator requires three consecutive footprint-penetrating LiDAR sampl
 ## D-053: Evaluate supported generated shelves with physical scenario geometry
 
 For scenarios whose static models are all the pinned `shelf_static.sdf`, the logger reconstructs each oriented 0.9 by 0.4 m footprint from the scenario manifest and checks it against the actual Gazebo robot centre plus a 0.36 m radius. This replaces unreliable near-range LiDAR termination only for supported models. The same privileged pose is already evaluation-only for human collision and physical goal confirmation and is never published to the policy observation.
+
+## D-054: Make bounded WAIT part of both labels and deployment masks
+
+WAIT remains legal for collision risk because yielding can be optimal, but it is disabled after three consecutive no-progress choices whenever a masked-safe subgoal, BACKUP, or REPLAN exists. An observable freeze/deadlock score above the state-machine trigger consumes this budget immediately. The same pure helper is used by offline expert labeling, online Oracle, and BC deployment; it never unmasks an unsafe action and leaves WAIT available when it is the only safe fallback.

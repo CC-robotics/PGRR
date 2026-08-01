@@ -36,7 +36,7 @@ from ramp_core.observations import (
     select_local_path_waypoints,
 )
 from ramp_core.occupancy import OccupancyGrid
-from ramp_core.planning.expert import PlanningRecoveryExpert
+from ramp_core.planning.expert import PlanningRecoveryExpert, update_expert_history
 from ramp_core.planning.online import (
     augment_grid_with_scan,
     directional_scan_clearance,
@@ -53,6 +53,7 @@ from ramp_core.recovery.options import (
     constrain_repeated_replan,
     constrain_stalled_rejoin,
     constrain_stalled_wait,
+    failure_conditioned_wait_count,
     should_continue_recovery_option,
 )
 from ramp_core.recovery.safety import (
@@ -817,10 +818,18 @@ class RecoveryManagerNode(Node):
             collision_risk=failure.collision_risk,
             release_threshold=self._float("expert_rejoin_block_threshold"),
         )
+        expert_wait_budget = self._integer("expert_wait_budget_decisions")
+        expert_wait_count = failure_conditioned_wait_count(
+            self._expert_repeated_waits,
+            wait_budget=expert_wait_budget,
+            freeze_score=failure.freeze,
+            deadlock_score=failure.deadlock,
+            trigger_threshold=self._machine.config.tau_on,
+        )
         mask = constrain_stalled_wait(
             mask,
-            consecutive_waits=self._expert_repeated_waits,
-            wait_budget=self._integer("expert_wait_budget_decisions"),
+            consecutive_waits=expert_wait_count,
+            wait_budget=expert_wait_budget,
         )
         mask = constrain_recurrent_yield_escape(
             mask,
@@ -852,14 +861,11 @@ class RecoveryManagerNode(Node):
             previous_side=self._expert_previous_side,
             repeated_waits=self._expert_repeated_waits,
         )
-        action = ACTIONS[label.action_id]
-        if action.kind is RecoveryActionKind.SUBGOAL:
-            assert action.angle_degrees is not None
-            self._expert_previous_side = (action.angle_degrees > 0) - (action.angle_degrees < 0)
-        if label.action_id == WAIT_ACTION_ID:
-            self._expert_repeated_waits += 1
-        else:
-            self._expert_repeated_waits = 0
+        self._expert_previous_side, self._expert_repeated_waits = update_expert_history(
+            label.action_id,
+            previous_side=self._expert_previous_side,
+            repeated_waits=self._expert_repeated_waits,
+        )
         confidence = min(1.0, label.margin / (1.0 + abs(label.best_cost)))
         return CoreRecoveryDecision(
             label.action_id,
@@ -900,10 +906,18 @@ class RecoveryManagerNode(Node):
                 release_threshold=self._float("bc_rejoin_block_threshold"),
             )
             mask = constrain_stalled_rejoin(mask, escape_required=stalled_rejoin)
+            bc_wait_budget = self._integer("bc_wait_budget_decisions")
+            bc_wait_count = failure_conditioned_wait_count(
+                self._bc_waits_without_progress,
+                wait_budget=bc_wait_budget,
+                freeze_score=failure.freeze,
+                deadlock_score=failure.deadlock,
+                trigger_threshold=self._machine.config.tau_on,
+            )
             mask = constrain_stalled_wait(
                 mask,
-                consecutive_waits=self._bc_waits_without_progress,
-                wait_budget=self._integer("bc_wait_budget_decisions"),
+                consecutive_waits=bc_wait_count,
+                wait_budget=bc_wait_budget,
             )
             mask = constrain_repeated_replan(
                 mask,

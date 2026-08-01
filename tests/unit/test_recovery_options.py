@@ -19,6 +19,7 @@ from ramp_core.recovery.options import (
     constrain_repeated_replan,
     constrain_stalled_rejoin,
     constrain_stalled_wait,
+    failure_conditioned_wait_count,
     should_continue_recovery_option,
 )
 from ramp_core.types import Pose2D
@@ -146,6 +147,29 @@ def test_wait_remains_valid_when_no_escape_is_safe() -> None:
     mask[CONTINUE_ACTION_ID] = True
     constrained = constrain_stalled_wait(mask, consecutive_waits=3, wait_budget=3)
     assert constrained[WAIT_ACTION_ID]
+
+
+def test_freeze_or_deadlock_exhausts_wait_budget() -> None:
+    assert (
+        failure_conditioned_wait_count(
+            0,
+            wait_budget=3,
+            freeze_score=0.8,
+            deadlock_score=0.0,
+            trigger_threshold=0.65,
+        )
+        == 3
+    )
+    assert (
+        failure_conditioned_wait_count(
+            1,
+            wait_budget=3,
+            freeze_score=0.2,
+            deadlock_score=0.3,
+            trigger_threshold=0.65,
+        )
+        == 1
+    )
 
 
 def test_privileged_yield_commits_until_threat_passes_longitudinally() -> None:
