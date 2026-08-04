@@ -318,6 +318,8 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOUR
         -p nav_status_topic:="${nav_action}/_action/status" \
         -p failure_status_topic:=/ramp/failure_status \
         -p recovery_decision_topic:=/ramp/recovery_decision \
+        -p episode_start_topic:=/ramp/episode_started \
+        -p wait_for_episode_start:=true \
         >>"${RUNTIME_LOG}" 2>&1 &
     detector_pid=$!
     recovery_command=("${ramp_ros_prefix}/lib/ramp_ros/recovery_manager")

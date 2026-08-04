@@ -19,6 +19,7 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan
+from std_msgs.msg import Bool
 
 
 def _planner_status(status: int) -> PlannerStatus:
@@ -41,6 +42,8 @@ class FailureDetectorNode(Node):
         self.declare_parameter("nav_status_topic", "navigate_to_pose/_action/status")
         self.declare_parameter("failure_status_topic", "failure_status")
         self.declare_parameter("recovery_decision_topic", "recovery_decision")
+        self.declare_parameter("episode_start_topic", "/ramp/episode_started")
+        self.declare_parameter("wait_for_episode_start", False)
         self.declare_parameter("goal_x", 0.0)
         self.declare_parameter("goal_y", 0.0)
         self.declare_parameter("goal_tolerance_m", 0.25)
@@ -80,6 +83,7 @@ class FailureDetectorNode(Node):
         self._planner_status = PlannerStatus.UNKNOWN
         self._last_timestamp: float | None = None
         self._motion_rules_enabled = True
+        self._episode_started = not bool(self.get_parameter("wait_for_episode_start").value)
         self._publisher = self.create_publisher(
             FailureStatus, str(self.get_parameter("failure_status_topic").value), 10
         )
@@ -114,7 +118,25 @@ class FailureDetectorNode(Node):
                 self._on_recovery_decision,
                 10,
             ),
+            self.create_subscription(
+                Bool,
+                str(self.get_parameter("episode_start_topic").value),
+                self._on_episode_start,
+                10,
+            ),
         ]
+
+    def _on_episode_start(self, message: Bool) -> None:
+        if not bool(message.data) or self._episode_started:
+            return
+        # Gazebo publishes scans while Nav2 and the episode logger are still
+        # starting. Spawn/reset motion in that interval can create a latched
+        # closing trend that is unrelated to the evaluated episode. Start the
+        # detector history at the same explicit handshake used by actors,
+        # command mux, and the logger.
+        self._detector.reset()
+        self._last_timestamp = None
+        self._episode_started = True
 
     def _on_scan(self, message: LaserScan) -> None:
         ranges = sanitize_near_field_returns(
@@ -163,6 +185,8 @@ class FailureDetectorNode(Node):
         }
 
     def _on_odom(self, message: Odometry) -> None:
+        if not self._episode_started:
+            return
         if (
             self._scan_minimum is None
             or self._front_scan_minimum is None

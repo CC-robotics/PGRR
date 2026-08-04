@@ -118,7 +118,7 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "Gazebo rejected a deterministic pedestrian proxy pose update" in logger
     assert "NavigateToPose did not activate within the startup deadline" in logger
     assert "episode start handshake did not complete before the wall-clock deadline" in logger
-    assert runtime.count("episode_start_topic:=/ramp/episode_started") == 3
+    assert runtime.count("episode_start_topic:=/ramp/episode_started") == 4
     assert runtime.count("logger_ready_topic:=/ramp/logger_ready") == 2
     assert runtime.count("odometry_is_world_frame:=true") == 3
 
@@ -174,7 +174,10 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()
     assert "RecoveryDecision.EMERGENCY_STOP" in detector
     assert "timestamp <= self._last_timestamp" in detector
-    assert "self._detector.reset()" not in detector
+    assert detector.count("self._detector.reset()") == 1
+    assert 'self.declare_parameter("wait_for_episode_start", False)' in detector
+    assert "def _on_episode_start(self, message: Bool)" in detector
+    assert "if not self._episode_started:" in detector
 
 
 def test_oracle_rejoin_distinguishes_hard_risk_from_soft_latch() -> None:
