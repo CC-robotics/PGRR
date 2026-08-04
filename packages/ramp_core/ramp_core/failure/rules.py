@@ -271,7 +271,10 @@ class RuleFailureDetector:
         # omnidirectional hazards are handled by their closing trend below.
         if forward_clearance <= self.config.collision_absolute_distance_m and (
             sample.linear_velocity >= self.config.collision_immediate_forward_speed_mps
-            or stationary_forward_hazard
+            or (
+                sample.base_linear_command >= self.config.collision_immediate_forward_speed_mps
+                and stationary_forward_hazard
+            )
         ):
             collision = 1.0
         # The narrow forward sector avoids classifying corridor side walls as

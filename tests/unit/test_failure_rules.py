@@ -297,6 +297,24 @@ def test_stationary_sustained_absolute_hazard_is_confirmed() -> None:
     assert prediction.collision_risk == 1.0
 
 
+def test_stationary_confirmed_clearance_without_motion_request_is_not_collision() -> None:
+    detector = RuleFailureDetector()
+    prediction = None
+    for index in range(6):
+        prediction = detector.update(
+            _sample(
+                index * 0.1,
+                lidar=1.0,
+                forward_lidar=0.89,
+                collision_lidar=1.0,
+                linear=0.0,
+                base_linear=0.0,
+            )
+        )
+    assert prediction is not None
+    assert prediction.collision_risk == 0.0
+
+
 def test_wide_near_field_risk_catches_obstacle_outside_narrow_front_sector() -> None:
     prediction = RuleFailureDetector().update(
         _sample(
