@@ -95,10 +95,11 @@ ablation, failure report, generated figures/tables/video, and the compiled eight
 `paper/main.pdf`. It does **not** satisfy the originally proposed 360-episode-per-method
 Flatland tier and does not include a selected PPO policy, learned detector, second
 planner, real robot, or formal safety guarantee. Those omissions are scope limits, not
-silent successes. A checksummed release manifest, the `submission-v1` tag, and the
-`student/reproduce` branch already exist. The subsequent publication-style revision
-keeps all locked outcome data unchanged while improving the manuscript narrative,
-figures, tables, and their automated regression checks.
+silent successes. A checksummed release manifest and the `student/reproduce` branch
+exist. The publication-style revision is released as `submission-v2`; the earlier
+`submission-v1` tag is retained as historical provenance. Both releases use the same
+locked outcomes, while v2 improves the narrative, figures, tables, and their automated
+regression checks.
 
 All sections below are retained as historical development evidence and may describe
 pilots or candidates that the locked final test supersedes.

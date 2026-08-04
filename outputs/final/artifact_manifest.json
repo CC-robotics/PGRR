@@ -64,8 +64,8 @@
     {
       "category": "paper_source",
       "path": "paper/main.tex",
-      "sha256": "0f0e66626feda506a8e1274cfe705416976eeb7017170e612052bbe24be54ab3",
-      "size_bytes": 3455
+      "sha256": "c29de489f8b0d6d2f731d22578dd040d596b961003f6d1fb93763bbab96e2b93",
+      "size_bytes": 3652
     },
     {
       "category": "paper_source",
@@ -130,80 +130,80 @@
     {
       "category": "paper",
       "path": "paper/main.pdf",
-      "sha256": "f9aa6d179f49fe239adbac2aa1985b7a69b26b84fdcdba878752e253e050a15f",
-      "size_bytes": 248262
+      "sha256": "0ae06a1b801dc23c4ed9ca59467004e93741bb2122c8fe628ae31109d2f382bb",
+      "size_bytes": 274155
     },
     {
       "category": "figure",
       "path": "paper/figures/system_architecture.pdf",
-      "sha256": "0650525f5fd34beb61a9279c9b426d25e72741b31c503f2615d353d276260c47",
-      "size_bytes": 16264
+      "sha256": "157bb8f64480061e7c23aa4d276e59c862bdddbb715c0612aa4fa2ca7848db5b",
+      "size_bytes": 23979
     },
     {
       "category": "figure",
       "path": "paper/figures/action_space_expert.pdf",
-      "sha256": "0f3281fa004528c09ba8720bfb93c9bc3d63ad6231328d8cddd7d233af914007",
-      "size_bytes": 37527
+      "sha256": "c70a7d2bdff56efd70861e643544fccc3f7ed3740ecd5e656f803658b3dd8be7",
+      "size_bytes": 43445
     },
     {
       "category": "figure",
       "path": "paper/figures/final_scenario_montage.pdf",
-      "sha256": "fff05ae1aa3477796ed2e80ae48ceef209a23e844a7a39f92cb05b76d4094925",
-      "size_bytes": 20878
+      "sha256": "c164dcfd9494e50c85d02c89014b1149ef7869bbc3d79dfd092dd7d8d74efde1",
+      "size_bytes": 22161
     },
     {
       "category": "figure",
       "path": "paper/figures/final_outcomes_by_density.pdf",
-      "sha256": "6a474d606cbf32bb6be9420e4a133483333986b05a3868b21d3e2213e66398cb",
-      "size_bytes": 25315
+      "sha256": "b3b82aee643e5e198dc69dc9e100e0b228164cb1f5fe12a3567f0b010cd4ba6a",
+      "size_bytes": 26052
     },
     {
       "category": "figure",
       "path": "paper/figures/final_safety_efficiency.pdf",
-      "sha256": "1ff8007f3718ba240a22ad7e8a80b132453a40b38b7c22f27b1e08d8c6bc5cee",
-      "size_bytes": 15532
+      "sha256": "119fd754a89273ef362db34358e94b790bd9f7c5c89b1d9dc970e10fc89c845e",
+      "size_bytes": 22751
     },
     {
       "category": "figure",
       "path": "paper/figures/final_recovery_timeline.pdf",
-      "sha256": "646e3c49cc3701529cfc149f2d538a68eedf0000e6c414d4491bfdb648835c6e",
-      "size_bytes": 24373
+      "sha256": "1305d59da6900ac627e504cf5777879354fce54456e5b4fd959b54d8dcb37305",
+      "size_bytes": 27871
     },
     {
       "category": "figure",
       "path": "paper/figures/runtime_sequence.pdf",
-      "sha256": "c5989c00e39676ea9da9a25ee0dd64a99ee8b96452b88de5ac469a185953e4c0",
-      "size_bytes": 36211
+      "sha256": "67367799461b7acee69ee97a138131030349fdeabf2d60c4369fd1b6bcf3a58b",
+      "size_bytes": 37298
     },
     {
       "category": "table",
       "path": "paper/generated/main_results.tex",
-      "sha256": "5897258a1a911b052a3e6d0e55a5294be6e8cd9eb0d6f511d2a1ac22d424a60b",
-      "size_bytes": 1244
+      "sha256": "5d410ef44354be42f2a3ef102a3cd3504d5999e19f4801e8f4c5c2c9c9cc74ab",
+      "size_bytes": 1573
     },
     {
       "category": "table",
       "path": "paper/generated/density_results.tex",
-      "sha256": "8007cfe6c81317a729b04f45fed28c3ac69001670a71fe6cb1769c6716de419f",
-      "size_bytes": 963
+      "sha256": "ec5b785dbf88e869c778729402827510e8bee3450bc7d428e1fe5d462c5c44f2",
+      "size_bytes": 1125
     },
     {
       "category": "table",
       "path": "paper/generated/recovery_metrics.tex",
-      "sha256": "c67a9be338b22b3efb678f8684be51f4227fabc0364d79cb84c8d9e09cf5a639",
-      "size_bytes": 1038
+      "sha256": "7c2425eff702be7f6998ccac17e8b8a47fde27acd07fbd847d0a536542c73645",
+      "size_bytes": 1330
     },
     {
       "category": "table",
       "path": "paper/generated/statistical_results.tex",
-      "sha256": "9360128dcc4fa806de5901e43cd1ad21893c0e362961ae70abc914b0880ca500",
-      "size_bytes": 2086
+      "sha256": "4a01b9bcc97980e9805f5cd1fd35f590ff8f419aeeb05fbf877c739e163e2b32",
+      "size_bytes": 2721
     },
     {
       "category": "table",
       "path": "paper/generated/offline_ablation.tex",
-      "sha256": "eadcf024d32e646a6d398d3a95add27118929594aac25b9cd95fa253adb249d9",
-      "size_bytes": 1258
+      "sha256": "e0df5c30dc547bd4960d0cb0b3eabe7370026033d532d3663b3db00a37d095aa",
+      "size_bytes": 1518
     },
     {
       "category": "table",
@@ -214,116 +214,116 @@
     {
       "category": "paper_source",
       "path": "paper/sections/conclusion.tex",
-      "sha256": "0dab3e6b0b2d65773ad476cf57584306548d18ad18e7e8b25572225d9209944a",
-      "size_bytes": 788
+      "sha256": "19bc08f3d7d21e82a8cb7f8dd14b366fb6cecf835c76b659571feea987324a20",
+      "size_bytes": 767
     },
     {
       "category": "paper_source",
       "path": "paper/sections/experimental_setup.tex",
-      "sha256": "6ec65bf8b1ad19b3946aeef0e404091d9bd8aa5466675c2b72bec2f40c25ba4a",
-      "size_bytes": 5063
+      "sha256": "97ff57b4619b061bea57e033bf7e488e17c815adf7e751c84bd87f85d6a8d92f",
+      "size_bytes": 4865
     },
     {
       "category": "paper_source",
       "path": "paper/sections/introduction.tex",
-      "sha256": "7a00e0e5b99247e3b0c94f63c63ec3a52fa8140b91c8e8e2a59112d3de077d06",
-      "size_bytes": 2552
+      "sha256": "f8fac5a6d318447766ea4174b29bd94fad25dfc5c74c28aefb1f3831ea28dbac",
+      "size_bytes": 2606
     },
     {
       "category": "paper_source",
       "path": "paper/sections/limitations.tex",
-      "sha256": "00d34cdebe46b221165fba12ed3bd757caddd9f02e246939a82ffe05b7cee5b7",
-      "size_bytes": 1768
+      "sha256": "9d739ad511c991d1d87b50ec6666a235759659f1d8e532f9b2a03771b39d8689",
+      "size_bytes": 1710
     },
     {
       "category": "paper_source",
       "path": "paper/sections/method.tex",
-      "sha256": "ddf9b9e3d08dac70c9875a629e7cb24dd4f6349c9d1f0438e18eba7d5144bedf",
-      "size_bytes": 5496
+      "sha256": "9cddf12aef98b433c70635db375e1024ae2936ddd698c136990b53552ef1c641",
+      "size_bytes": 5429
     },
     {
       "category": "paper_source",
       "path": "paper/sections/related_work.tex",
-      "sha256": "52a600495a98ca0014b064c4a1ae98e7098b885a2ec8f6f62ac75c861dd70f16",
-      "size_bytes": 2567
+      "sha256": "566599b1e1cafc5fac74fa37cd6b82782b318f52e279ef81214e3af00ece8281",
+      "size_bytes": 2510
     },
     {
       "category": "paper_source",
       "path": "paper/sections/results.tex",
-      "sha256": "0ad2a2df5bca0c4288fc331af9cd42c7c8cb8df5696a52d66d9b994180723d1c",
-      "size_bytes": 6447
+      "sha256": "168fbba49e24de20fbae298a716a4737b1d81c1eb33385f47d7ad9d2e938eaae",
+      "size_bytes": 6071
     },
     {
       "category": "published_figure",
       "path": "outputs/figures/system_architecture.pdf",
-      "sha256": "0650525f5fd34beb61a9279c9b426d25e72741b31c503f2615d353d276260c47",
-      "size_bytes": 16264
+      "sha256": "157bb8f64480061e7c23aa4d276e59c862bdddbb715c0612aa4fa2ca7848db5b",
+      "size_bytes": 23979
     },
     {
       "category": "published_figure",
       "path": "outputs/figures/action_space_expert.pdf",
-      "sha256": "0f3281fa004528c09ba8720bfb93c9bc3d63ad6231328d8cddd7d233af914007",
-      "size_bytes": 37527
+      "sha256": "c70a7d2bdff56efd70861e643544fccc3f7ed3740ecd5e656f803658b3dd8be7",
+      "size_bytes": 43445
     },
     {
       "category": "published_figure",
       "path": "outputs/figures/final_scenario_montage.pdf",
-      "sha256": "fff05ae1aa3477796ed2e80ae48ceef209a23e844a7a39f92cb05b76d4094925",
-      "size_bytes": 20878
+      "sha256": "c164dcfd9494e50c85d02c89014b1149ef7869bbc3d79dfd092dd7d8d74efde1",
+      "size_bytes": 22161
     },
     {
       "category": "published_figure",
       "path": "outputs/figures/final_outcomes_by_density.pdf",
-      "sha256": "6a474d606cbf32bb6be9420e4a133483333986b05a3868b21d3e2213e66398cb",
-      "size_bytes": 25315
+      "sha256": "af12e754059f0bede968e62b6984d28e5fbba326712359543ac739e695ab1296",
+      "size_bytes": 26169
     },
     {
       "category": "published_figure",
       "path": "outputs/figures/final_safety_efficiency.pdf",
-      "sha256": "1ff8007f3718ba240a22ad7e8a80b132453a40b38b7c22f27b1e08d8c6bc5cee",
-      "size_bytes": 15532
+      "sha256": "119fd754a89273ef362db34358e94b790bd9f7c5c89b1d9dc970e10fc89c845e",
+      "size_bytes": 22751
     },
     {
       "category": "published_figure",
       "path": "outputs/figures/final_recovery_timeline.pdf",
-      "sha256": "646e3c49cc3701529cfc149f2d538a68eedf0000e6c414d4491bfdb648835c6e",
-      "size_bytes": 24373
+      "sha256": "1305d59da6900ac627e504cf5777879354fce54456e5b4fd959b54d8dcb37305",
+      "size_bytes": 27871
     },
     {
       "category": "published_figure",
       "path": "outputs/figures/runtime_sequence.pdf",
-      "sha256": "c5989c00e39676ea9da9a25ee0dd64a99ee8b96452b88de5ac469a185953e4c0",
-      "size_bytes": 36211
+      "sha256": "67367799461b7acee69ee97a138131030349fdeabf2d60c4369fd1b6bcf3a58b",
+      "size_bytes": 37298
     },
     {
       "category": "published_table",
       "path": "outputs/tables/main_results.tex",
-      "sha256": "5897258a1a911b052a3e6d0e55a5294be6e8cd9eb0d6f511d2a1ac22d424a60b",
-      "size_bytes": 1244
+      "sha256": "5d410ef44354be42f2a3ef102a3cd3504d5999e19f4801e8f4c5c2c9c9cc74ab",
+      "size_bytes": 1573
     },
     {
       "category": "published_table",
       "path": "outputs/tables/density_results.tex",
-      "sha256": "8007cfe6c81317a729b04f45fed28c3ac69001670a71fe6cb1769c6716de419f",
-      "size_bytes": 963
+      "sha256": "ec5b785dbf88e869c778729402827510e8bee3450bc7d428e1fe5d462c5c44f2",
+      "size_bytes": 1125
     },
     {
       "category": "published_table",
       "path": "outputs/tables/recovery_metrics.tex",
-      "sha256": "c67a9be338b22b3efb678f8684be51f4227fabc0364d79cb84c8d9e09cf5a639",
-      "size_bytes": 1038
+      "sha256": "7c2425eff702be7f6998ccac17e8b8a47fde27acd07fbd847d0a536542c73645",
+      "size_bytes": 1330
     },
     {
       "category": "published_table",
       "path": "outputs/tables/statistical_results.tex",
-      "sha256": "9360128dcc4fa806de5901e43cd1ad21893c0e362961ae70abc914b0880ca500",
-      "size_bytes": 2086
+      "sha256": "4a01b9bcc97980e9805f5cd1fd35f590ff8f419aeeb05fbf877c739e163e2b32",
+      "size_bytes": 2721
     },
     {
       "category": "published_table",
       "path": "outputs/tables/offline_ablation.tex",
-      "sha256": "eadcf024d32e646a6d398d3a95add27118929594aac25b9cd95fa253adb249d9",
-      "size_bytes": 1258
+      "sha256": "e0df5c30dc547bd4960d0cb0b3eabe7370026033d532d3663b3db00a37d095aa",
+      "size_bytes": 1518
     },
     {
       "category": "published_table",
@@ -373,9 +373,9 @@
     "table": 6,
     "video": 1
   },
-  "generated_at": "2026-08-04T10:22:20.314747+00:00",
+  "generated_at": "2026-08-04T10:55:16.735537+00:00",
   "generation_command": "scripts/reproduce_paper.sh",
   "git_worktree_dirty": false,
-  "project_commit": "7ac9ac22f4ecdeaa74e1a68370cfe9b17c8404c7",
+  "project_commit": "c29e18a7e27a3ea9c0236dc3c6bdaf3d6240f20b",
   "schema_version": 1
 }
