@@ -1,0 +1,76 @@
+schema_version: 1
+experiment_id: ei_gazebo_test_v1
+purpose: locked_ei_conference_test
+
+runtime:
+  arena_profile: arena_humble_docker
+  simulator: gazebo
+  robot: jackal
+  classical_planner: dwb
+  split: test
+  split_manifest: scenarios/splits/test.yaml
+  split_manifest_sha256: 86de855d53f6e20a6907b39efcb4b571f3df150b8c8547ddaa5ede63c01d7372
+  episode_timeout_s: 180.0
+  parallel_jobs: 4
+  headless: true
+  retry_simulator_failures_once: true
+
+primary_comparison:
+  methods: [base, bc]
+  families:
+    - head_on_corridor
+    - doorway_bottleneck
+    - crossing_flow
+    - blind_corner
+    - group_blocking
+    - overtaking
+    - opposite_streams
+    - temporary_blockage
+  densities: [low, medium, high]
+  expected_episodes: 48
+
+high_density_mechanism_comparison:
+  methods: [standard, heuristic]
+  families:
+    - head_on_corridor
+    - doorway_bottleneck
+    - crossing_flow
+    - blind_corner
+    - group_blocking
+    - overtaking
+    - opposite_streams
+    - temporary_blockage
+  densities: [high]
+  expected_episodes: 16
+
+learned_method:
+  deployed_name: Triggered-DAgger
+  source_policy: bc
+  checkpoint: checkpoints/dagger/coverage_safety_aligned/best.onnx
+  checkpoint_sha256: 78807ce56f575943ca3f965be9b71c0d83c0ca3f2a23f267fe04fd6a00c119d2
+  training: uniform_behavior_cloning_plus_dagger
+  margin_weighting_enabled: false
+  ppo_enabled: false
+
+analysis:
+  bootstrap_samples: 10000
+  bootstrap_seed: 20260804
+  confidence_level: 0.95
+  personal_space_distance_m: 1.2
+  discomfort_distance_m: 1.0
+  recovery_protection_window_s: 2.0
+  multiple_comparison_correction: holm
+  exclusions: [SIMULATOR_FAILURE, INVALID_RESET]
+  retained_algorithm_outcomes:
+    - GOAL_REACHED
+    - COLLISION
+    - TIMEOUT
+    - PLANNER_FAILURE
+
+frozen_inputs:
+  arena_profile_sha256: 5de5609e0e4e1f1487a6707ea5f4cd4c11438e367cd454e84cd3956ba8e83b71
+  planner_profiles_sha256: dab29995462f69ea9f2172787f727ef13089427689d111ca0fa831127d4a4ced
+  failure_rules_sha256: b2457f694ae4210a4ed2b725b6914745887b00ab9f57f0273d160e7ac0255396
+  state_machine_sha256: a3746a24318869e4341a8774908ae2e018c1649b07207f42838779ca030efb7b
+  recovery_actions_sha256: 3fe9873b0142957c7a1fa918152371ec1b1339e8298d567b92b8b3c8e3c50029
+  project_commit: resolved_and_recorded_by_runner

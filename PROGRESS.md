@@ -93,3 +93,7 @@
 - Rejected the radial no-braking refinement after it physically hit a temporary-blockage door frame at 72.49 s during an emergency turn. Restored the full stopping-distance term despite its train success; the unsafe raw outcome remains immutable. The first-stage static endpoint classifier now faces an independent safety replay.
 - Rejected and removed the remaining static endpoint classifier after its restored-braking replay misclassified a pedestrian beside the doorway and collided at 0.705 m centre distance. The regression CSV retains the historical goal and both unsafe candidates. Recovery control is back to uniform dynamic-safe margins; shelf geometry remains evaluation-only.
 - Repeated temporary blockage under the restored selected controller and obtained a same-commit negative pair: Base collided at 37.995 s and DAgger at 40.027 s. A two-centimetre backup-gain candidate avoided collision but timed out, and it also regressed the frozen overtaking success to timeout. The candidate is removed, both raw hashes are retained, and the paper no longer treats the historical temporary-blockage success as repeatable evidence.
+- 2026-08-04: Replaced the missing final-evaluation entry point with a tested
+  four-worker runner. Locked a 64-episode test: Base/Triggered-DAgger on all 24 test
+  scenarios plus Standard/Heuristic on the eight high-density cases. The selected
+  checkpoint is explicitly recorded as uniform BC + DAgger, not MWBC or PPO.

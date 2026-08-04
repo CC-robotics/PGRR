@@ -39,6 +39,21 @@ make tables
 make paper
 ```
 
+Locked EI test (64 algorithm episodes, four isolated workers):
+
+```bash
+python3 scripts/evaluate/run_experiment.py \
+  --split test \
+  --methods base bc \
+  --high-density-methods standard heuristic \
+  --jobs 4 \
+  --timeout 180 \
+  --checkpoint checkpoints/dagger/coverage_safety_aligned/best.onnx \
+  --output-dir outputs/final
+```
+
+Add `--resume` after an interrupted run. Existing raw attempts are never overwritten.
+
 Current terminal-evidence pilot (commit `8577ff1`) uses the same commands with
 episode IDs and partitions suffixed by `8577ff1`, ROS domains 65--70, and all
 three scenarios `s02201`, `s02202`, and `s02220`. Generate the accepted pair

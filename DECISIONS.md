@@ -226,3 +226,24 @@ The nearest-endpoint static classifier is rejected in full. A LiDAR return from 
 ## D-056: Keep the five-centimetre bounded-backup progress gate
 
 The two-centimetre validation candidate prevents one immediate temporary-blockage collision, but it turns repeated marginal clearance changes into long reverse/rejoin cycles and regresses the retained overtaking goal reach to timeout. The selected executor therefore keeps the 0.05 m gain requirement and eight-pulse hard cap. A future improvement must condition escape on route progress and moving-return tracks rather than globally lowering a scalar threshold.
+
+## D-057: Freeze an all-family 64-episode EI test
+
+The development evidence is too small and spans multiple revisions, so it cannot serve
+as the main paper experiment. The final test uses the current algorithm without further
+parameter tuning: Base and Triggered-DAgger run on all eight test families at low,
+medium, and high density (48 episodes), while Standard and Heuristic recovery run on
+the eight high-density cases (16 episodes). This preserves broad family coverage within
+the available same-day compute budget and avoids selecting only favorable families.
+The 24 Base/Triggered-DAgger conditions form the primary paired analysis; the
+high-density four-method rows are a mechanism comparison. One fixed scenario seed per
+family-density cell is an explicit sample-size limitation and must not be described as
+the original 20-seed benchmark protocol.
+
+## D-058: Name the selected learner Uniform BC + DAgger
+
+The deployed `coverage_safety_aligned` checkpoint has `margin_lambda: 0.0`. Therefore,
+margin-weighted behavior cloning is not part of the selected method, regardless of the
+repository's earlier research objective. PPO is also absent from the selected runtime.
+The EI paper may discuss both as unselected or future extensions, but its contribution
+and result labels must use Uniform BC + DAgger.

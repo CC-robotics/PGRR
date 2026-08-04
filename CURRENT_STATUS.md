@@ -412,3 +412,20 @@ Freeze the selected 1.5 s TTC trigger and D-023 geometry. Expand synchronized Or
 - Removed the entire classifier, all static-specific control thresholds, and the scenario-geometry parameter from the recovery node. The original uniform 0.85 m collision-latched stop and 0.65 m action margins are restored.
 - Retained the geometry parser refactor only for the evaluation logger; it does not influence policy or control.
 - Evidence: `outputs/pilot/temporary_blockage_static_classifier_regression.csv` preserves the earlier goal reach and both classifier collisions with raw hashes. Next: rerun the selected pre-candidate behavior only after offline tests/build pass; the manuscript must not present rejected classifier runs as the selected method.
+
+## 2026-08-04 — EI test protocol frozen
+
+- Froze the deployable method as DWB plus observable failure triggering, the shared
+  25-action planning mask, the `coverage_safety_aligned` uniform-BC/DAgger checkpoint,
+  and the independent safety supervisor. Margin weighting and PPO are not enabled and
+  will not be claimed as evaluated contributions.
+- Added an immutable parallel runner and a checked final configuration. The primary
+  test contains all 24 untouched test scenarios (eight families by three densities)
+  for Base and Triggered-DAgger. Standard and Heuristic recovery are added for all
+  eight high-density scenarios: 64 new algorithm episodes in total.
+- The run preserves every physical attempt, retries only `SIMULATOR_FAILURE` or
+  `INVALID_RESET` once, and requires exactly one algorithm outcome per manifest row.
+- Validation: eight runner/config unit tests and targeted Ruff checks pass.
+- Next: tag `pre-final-eval`, execute four isolated Arena/Gazebo workers, then generate
+  results, paired statistics, figures, tables, and the final IEEE manuscript only from
+  the locked test artifacts.
