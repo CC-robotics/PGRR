@@ -129,7 +129,7 @@ def high_density_pilot() -> None:
 
 def cross_family_pilot() -> None:
     sources = [
-        ROOT / "outputs/pilot/temporary_blockage_high_s02720_0205d6e_pair.csv",
+        ROOT / "outputs/pilot/temporary_blockage_high_s02720_d9b5ef8_pair.csv",
         ROOT / "outputs/pilot/group_blocking_high_s02420_926cc95_pair.csv",
         ROOT / "outputs/pilot/overtaking_high_s02520_324fcdf_pair.csv",
         ROOT / "outputs/pilot/blind_corner_high_s02320_fafcddd_pair.csv",

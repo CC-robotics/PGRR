@@ -2,6 +2,9 @@
 
 ## 2026-08-01 — verified-pose DAgger pilot (active)
 
+- A current selected-control repeat invalidates the historical temporary-blockage success as robust evidence. Under commit `d9b5ef8`, Base collided at 37.995 s and DAgger collided at 40.027 s after 65 recovery samples. The manuscript now uses this same-commit negative pair.
+- Lowering bounded-backup progress from 0.05 m to 0.02 m prevented that collision but produced a 180 s timeout, then regressed the frozen overtaking success to a 200 s timeout. The candidate is removed; raw hashes are retained in `outputs/pilot/emergency_backup_progress_iteration.csv`.
+
 - The selected safety-aligned DAgger checkpoint has three current-version high-density validation goal reaches under frozen commit `8577ff1`. DWB reached 2/3 goals and collided once; DAgger reached 3/3 goals with no collision.
 - Learned terminal physical goal errors are 0.215, 0.287, and 0.260 m. Median minimum robot--human centre distance changes from 0.927 m for DWB to 1.027 m for DAgger.
 - All six evaluation-only LiDAR consistency gates pass; five are 100% visible and the remaining gate passes 77/80 near-human samples. Maximum pose-derived localization disagreement is below 0.142 m.

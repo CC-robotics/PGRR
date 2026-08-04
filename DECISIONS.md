@@ -222,3 +222,7 @@ WAIT remains legal for collision risk because yielding can be optimal, but it is
 ## D-055: Condition collision-latched margins on known static geometry
 
 The nearest-endpoint static classifier is rejected in full. A LiDAR return from a pedestrian beside a doorway can lie within 0.10 m of the known shelf footprint, so endpoint proximity cannot safely decide whether to lower a dynamic-person margin. With braking restored, this ambiguity produced a 0.705 m robot--human collision; without radial braking, skid-steer rotation produced a static door-frame collision. Recovery control therefore returns to the uniform 0.85 m collision-latched stop and 0.65 m action margins. Exact shelf geometry remains shared only by evaluation and terminal labeling, where actual robot pose makes the classification unambiguous.
+
+## D-056: Keep the five-centimetre bounded-backup progress gate
+
+The two-centimetre validation candidate prevents one immediate temporary-blockage collision, but it turns repeated marginal clearance changes into long reverse/rejoin cycles and regresses the retained overtaking goal reach to timeout. The selected executor therefore keeps the 0.05 m gain requirement and eight-pulse hard cap. A future improvement must condition escape on route progress and moving-return tracks rather than globally lowering a scalar threshold.

@@ -563,3 +563,28 @@ conda run -n ramp-offline python scripts/evaluate/summarize_episode_pair.py \
   --prefix data/raw/blind_corner_high_validation_s02320_fafcddd_bc_r1_dwb \
   --output outputs/pilot/blind_corner_high_s02320_fafcddd_pair.csv
 ```
+
+Temporary-blockage repeat and rejected bounded-backup candidate:
+
+```bash
+RAMP_SOURCE_POLICY=bc \
+RAMP_BC_MODEL_PATH=/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx \
+RAMP_EPISODE_ID=temporary_blockage_high_validation_s02720_d9b5ef8_bc_r1_dwb \
+ROS_DOMAIN_ID=82 GZ_PARTITION=ramp_temp_selected_bc \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/temporary_blockage_high_validation_s02720.json
+
+RAMP_SOURCE_POLICY=base \
+RAMP_EPISODE_ID=temporary_blockage_high_validation_s02720_d9b5ef8_base_r1_dwb \
+ROS_DOMAIN_ID=85 GZ_PARTITION=ramp_temp_selected_base \
+scripts/arena/run_baseline_episode.sh \
+  scenarios/generated/arena/map_empty/temporary_blockage_high_validation_s02720.json
+
+python3 scripts/evaluate/summarize_episode_pair.py \
+  --prefix data/raw/temporary_blockage_high_validation_s02720_d9b5ef8_base_r1_dwb \
+  --prefix data/raw/temporary_blockage_high_validation_s02720_d9b5ef8_bc_r1_dwb \
+  --output outputs/pilot/temporary_blockage_high_s02720_d9b5ef8_pair.csv
+
+make test
+make paper
+```

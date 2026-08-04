@@ -123,7 +123,7 @@ def cross_family_pilot() -> None:
     sources = [
         (
             "Temporary blockage",
-            ROOT / "outputs/pilot/temporary_blockage_high_s02720_0205d6e_pair.csv",
+            ROOT / "outputs/pilot/temporary_blockage_high_s02720_d9b5ef8_pair.csv",
         ),
         (
             "Group blocking",
