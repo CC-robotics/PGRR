@@ -104,6 +104,34 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "released actor routes" in actor
     assert "episode handshake complete" in actor
     assert "and self._logger_ready" in actor
+    assert "and startup_gate_ready" in actor
+    assert "from nav2_msgs.srv import ClearEntireCostmap" in actor
+    assert 'declare_parameter("robot_reset_position_tolerance_m", 0.10)' in actor
+    assert 'declare_parameter("startup_gate_timeout_s", 45.0)' in actor
+    assert 'request.entity.name = str(self.get_parameter("actual_robot_name").value)' in actor
+    assert "self._robot_reset_pending = self._client.call_async(request)" in actor
+    assert "if self._experiment_started:" in actor
+    assert "refused robot teleport after experiment_started" in actor
+    assert "client.call_async(ClearEntireCostmap.Request())" in actor
+    assert "startup gate cleared local and global Nav2 costmaps" in actor
+    assert "startup gate failed; actors_healthy=false" in actor
+    assert actor.index("if not self._advance_robot_reset") < actor.index(
+        "if not self._advance_costmap_clear"
+    )
+    assert actor.index("if not self._advance_costmap_clear") < actor.index(
+        "self._startup_gate_ready = True"
+    )
+    assert 'robot_nav_namespace="${nav_action%/navigate_to_pose}"' in runtime
+    assert (
+        'local_costmap_clear_service="${robot_nav_namespace}/local_costmap/'
+        'clear_entirely_local_costmap"' in runtime
+    )
+    assert (
+        'global_costmap_clear_service="${robot_nav_namespace}/global_costmap/'
+        'clear_entirely_global_costmap"' in runtime
+    )
+    assert '-p local_costmap_clear_service:="${local_costmap_clear_service}"' in runtime
+    assert '-p global_costmap_clear_service:="${global_costmap_clear_service}"' in runtime
     assert "self._ready_publisher.publish(ready)" in logger
     assert "request.entity.name = proxy_name" in actor
     assert "pose update rejected" in actor

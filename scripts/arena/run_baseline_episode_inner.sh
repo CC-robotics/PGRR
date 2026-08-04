@@ -253,6 +253,14 @@ if [[ -z "${nav_action}" || -z "${odom_topic}" || -z "${scan_topic}" || -z "${cm
     ros2 topic list -t >&2 || true
     exit 1
 fi
+if [[ "${nav_action}" != */navigate_to_pose ]]; then
+    echo "ERROR: cannot derive Nav2 namespace from action: ${nav_action}" >&2
+    record_startup_failure "cannot derive Nav2 namespace from navigate_to_pose action"
+    exit 1
+fi
+robot_nav_namespace="${nav_action%/navigate_to_pose}"
+local_costmap_clear_service="${robot_nav_namespace}/local_costmap/clear_entirely_local_costmap"
+global_costmap_clear_service="${robot_nav_namespace}/global_costmap/clear_entirely_global_costmap"
 base_cmd_topic="${cmd_topic}"
 mux_cmd_topic="${cmd_topic%cmd_vel}mux_cmd_vel"
 if [[ -z "${path_topic}" ]]; then
@@ -282,6 +290,8 @@ mux_pid=$!
     -p scenario_file:="${SCENARIO}" \
     -p set_pose_service:=/world/default/set_pose \
     -p spawn_service:=/world/default/create \
+    -p local_costmap_clear_service:="${local_costmap_clear_service}" \
+    -p global_costmap_clear_service:="${global_costmap_clear_service}" \
     -p privileged_humans_topic:=/ramp/privileged/humans \
     -p privileged_robot_pose_topic:=/ramp/privileged/robot_pose \
     -p actual_pose_topic:=/world/default/dynamic_pose/info \
