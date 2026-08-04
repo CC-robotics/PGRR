@@ -1,0 +1,381 @@
+{
+  "artifact_count": 58,
+  "artifacts": [
+    {
+      "category": "final_config",
+      "path": "configs/final/ei_gazebo.yaml",
+      "sha256": "478730a91fa1a4d2de15ea6e9c14a059d8824c1c257c6ffed6d18543e7ba275c",
+      "size_bytes": 2250
+    },
+    {
+      "category": "checkpoint",
+      "path": "checkpoints/dagger/coverage_safety_aligned/best.onnx",
+      "sha256": "78807ce56f575943ca3f965be9b71c0d83c0ca3f2a23f267fe04fd6a00c119d2",
+      "size_bytes": 240281
+    },
+    {
+      "category": "episode_manifest",
+      "path": "outputs/final/episode_manifest.parquet",
+      "sha256": "6cb28c0307d1364fb311cae40e4b14e5046808486183dc5e3e880bb1438394b9",
+      "size_bytes": 24347
+    },
+    {
+      "category": "run_manifest",
+      "path": "outputs/final/run_manifest.json",
+      "sha256": "b945e85c7de239cee33465a7c47015ef79211e52e7fa34e4a3cf1dfcf0d735bb",
+      "size_bytes": 57012
+    },
+    {
+      "category": "results",
+      "path": "outputs/final/results.parquet",
+      "sha256": "b8a60bf442ab7add77d7565bdfb0c1fecb3904070dab82f6350d2c5aa30362fc",
+      "size_bytes": 680403
+    },
+    {
+      "category": "summary",
+      "path": "outputs/final/summary.csv",
+      "sha256": "205c67902d588dbceb74d69b5748ddb8618b7f6f450be23b2ae37f4f5489671c",
+      "size_bytes": 7780
+    },
+    {
+      "category": "statistics",
+      "path": "outputs/final/statistics.json",
+      "sha256": "b05d618d21ca61d500bdefe529b247b74cca098bb5b125f28cfd92153c78c828",
+      "size_bytes": 10968
+    },
+    {
+      "category": "failure_analysis",
+      "path": "outputs/final/failure_analysis.md",
+      "sha256": "74cf0fa5196964462f46437ab95e3a6156abcc2eed9de5ae9ca2b7cd4ec36173",
+      "size_bytes": 11068
+    },
+    {
+      "category": "offline_ablation",
+      "path": "outputs/final/offline_policy_ablation.csv",
+      "sha256": "3ee95443bb269d493ef721ee43adb40e951660c2cc492468e11e1f67cd0ff999",
+      "size_bytes": 2338
+    },
+    {
+      "category": "offline_ablation",
+      "path": "outputs/final/offline_policy_ablation.json",
+      "sha256": "ef7f73d8a4b490b2c79c0cf58141d8641b10b190dbd2902ff874b89d5d0aa56f",
+      "size_bytes": 612
+    },
+    {
+      "category": "paper_source",
+      "path": "paper/main.tex",
+      "sha256": "0f0e66626feda506a8e1274cfe705416976eeb7017170e612052bbe24be54ab3",
+      "size_bytes": 3455
+    },
+    {
+      "category": "paper_source",
+      "path": "paper/references.bib",
+      "sha256": "ee3a2038a2a756a19ae049e010cb77aaf835dcfc0ea2e16b823b984beac8d0da",
+      "size_bytes": 9361
+    },
+    {
+      "category": "claim_evidence",
+      "path": "paper/claim_evidence_matrix.md",
+      "sha256": "d8bc7d20af2c7fad0732616874896dbeb1fbbc4f51e7c0c8e6a8f5cd5e51f431",
+      "size_bytes": 6067
+    },
+    {
+      "category": "environment_lock",
+      "path": "environment.lock.yml",
+      "sha256": "817774a6cc456ef2b2b4f6697f63ce9d3e452a152892c01287f4e0ad8abb2e24",
+      "size_bytes": 6605
+    },
+    {
+      "category": "environment_lock",
+      "path": "requirements-offline.lock.txt",
+      "sha256": "b673a23e43a1bf053c82f041cd43e1ba54eaaf5e18d69dfe0c9c49c5e5aed296",
+      "size_bytes": 3922
+    },
+    {
+      "category": "runtime_lock",
+      "path": "third_party/arena_commits.lock",
+      "sha256": "2b597f561d29c8c982142b6d653c947af48d831509b0c2c39239d6aeb04485cc",
+      "size_bytes": 2841
+    },
+    {
+      "category": "runtime_lock",
+      "path": "third_party/dependency_manifest.md",
+      "sha256": "a2996e9a0512edb2126a7169bf40b44b74debcadba7dd04e21017d539ea1a51a",
+      "size_bytes": 2197
+    },
+    {
+      "category": "frozen_input",
+      "path": "scenarios/splits/test.yaml",
+      "sha256": "86de855d53f6e20a6907b39efcb4b571f3df150b8c8547ddaa5ede63c01d7372",
+      "size_bytes": 6278
+    },
+    {
+      "category": "frozen_input",
+      "path": "configs/failure/rules.yaml",
+      "sha256": "b2457f694ae4210a4ed2b725b6914745887b00ab9f57f0273d160e7ac0255396",
+      "size_bytes": 1034
+    },
+    {
+      "category": "frozen_input",
+      "path": "configs/failure/recovery_state_machine.yaml",
+      "sha256": "a3746a24318869e4341a8774908ae2e018c1649b07207f42838779ca030efb7b",
+      "size_bytes": 1378
+    },
+    {
+      "category": "frozen_input",
+      "path": "configs/planner/recovery_actions.yaml",
+      "sha256": "3fe9873b0142957c7a1fa918152371ec1b1339e8298d567b92b8b3c8e3c50029",
+      "size_bytes": 205
+    },
+    {
+      "category": "paper",
+      "path": "paper/main.pdf",
+      "sha256": "f9aa6d179f49fe239adbac2aa1985b7a69b26b84fdcdba878752e253e050a15f",
+      "size_bytes": 248262
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/system_architecture.pdf",
+      "sha256": "0650525f5fd34beb61a9279c9b426d25e72741b31c503f2615d353d276260c47",
+      "size_bytes": 16264
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/action_space_expert.pdf",
+      "sha256": "0f3281fa004528c09ba8720bfb93c9bc3d63ad6231328d8cddd7d233af914007",
+      "size_bytes": 37527
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/final_scenario_montage.pdf",
+      "sha256": "fff05ae1aa3477796ed2e80ae48ceef209a23e844a7a39f92cb05b76d4094925",
+      "size_bytes": 20878
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/final_outcomes_by_density.pdf",
+      "sha256": "6a474d606cbf32bb6be9420e4a133483333986b05a3868b21d3e2213e66398cb",
+      "size_bytes": 25315
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/final_safety_efficiency.pdf",
+      "sha256": "1ff8007f3718ba240a22ad7e8a80b132453a40b38b7c22f27b1e08d8c6bc5cee",
+      "size_bytes": 15532
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/final_recovery_timeline.pdf",
+      "sha256": "646e3c49cc3701529cfc149f2d538a68eedf0000e6c414d4491bfdb648835c6e",
+      "size_bytes": 24373
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/runtime_sequence.pdf",
+      "sha256": "c5989c00e39676ea9da9a25ee0dd64a99ee8b96452b88de5ac469a185953e4c0",
+      "size_bytes": 36211
+    },
+    {
+      "category": "table",
+      "path": "paper/generated/main_results.tex",
+      "sha256": "5897258a1a911b052a3e6d0e55a5294be6e8cd9eb0d6f511d2a1ac22d424a60b",
+      "size_bytes": 1244
+    },
+    {
+      "category": "table",
+      "path": "paper/generated/density_results.tex",
+      "sha256": "8007cfe6c81317a729b04f45fed28c3ac69001670a71fe6cb1769c6716de419f",
+      "size_bytes": 963
+    },
+    {
+      "category": "table",
+      "path": "paper/generated/recovery_metrics.tex",
+      "sha256": "c67a9be338b22b3efb678f8684be51f4227fabc0364d79cb84c8d9e09cf5a639",
+      "size_bytes": 1038
+    },
+    {
+      "category": "table",
+      "path": "paper/generated/statistical_results.tex",
+      "sha256": "9360128dcc4fa806de5901e43cd1ad21893c0e362961ae70abc914b0880ca500",
+      "size_bytes": 2086
+    },
+    {
+      "category": "table",
+      "path": "paper/generated/offline_ablation.tex",
+      "sha256": "eadcf024d32e646a6d398d3a95add27118929594aac25b9cd95fa253adb249d9",
+      "size_bytes": 1258
+    },
+    {
+      "category": "table",
+      "path": "paper/generated/result_macros.tex",
+      "sha256": "67027f735eef9a418f8d57e60da8de47f3674566a6198864f884fb07d62a9881",
+      "size_bytes": 2370
+    },
+    {
+      "category": "paper_source",
+      "path": "paper/sections/conclusion.tex",
+      "sha256": "0dab3e6b0b2d65773ad476cf57584306548d18ad18e7e8b25572225d9209944a",
+      "size_bytes": 788
+    },
+    {
+      "category": "paper_source",
+      "path": "paper/sections/experimental_setup.tex",
+      "sha256": "6ec65bf8b1ad19b3946aeef0e404091d9bd8aa5466675c2b72bec2f40c25ba4a",
+      "size_bytes": 5063
+    },
+    {
+      "category": "paper_source",
+      "path": "paper/sections/introduction.tex",
+      "sha256": "7a00e0e5b99247e3b0c94f63c63ec3a52fa8140b91c8e8e2a59112d3de077d06",
+      "size_bytes": 2552
+    },
+    {
+      "category": "paper_source",
+      "path": "paper/sections/limitations.tex",
+      "sha256": "00d34cdebe46b221165fba12ed3bd757caddd9f02e246939a82ffe05b7cee5b7",
+      "size_bytes": 1768
+    },
+    {
+      "category": "paper_source",
+      "path": "paper/sections/method.tex",
+      "sha256": "ddf9b9e3d08dac70c9875a629e7cb24dd4f6349c9d1f0438e18eba7d5144bedf",
+      "size_bytes": 5496
+    },
+    {
+      "category": "paper_source",
+      "path": "paper/sections/related_work.tex",
+      "sha256": "52a600495a98ca0014b064c4a1ae98e7098b885a2ec8f6f62ac75c861dd70f16",
+      "size_bytes": 2567
+    },
+    {
+      "category": "paper_source",
+      "path": "paper/sections/results.tex",
+      "sha256": "0ad2a2df5bca0c4288fc331af9cd42c7c8cb8df5696a52d66d9b994180723d1c",
+      "size_bytes": 6447
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/system_architecture.pdf",
+      "sha256": "0650525f5fd34beb61a9279c9b426d25e72741b31c503f2615d353d276260c47",
+      "size_bytes": 16264
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/action_space_expert.pdf",
+      "sha256": "0f3281fa004528c09ba8720bfb93c9bc3d63ad6231328d8cddd7d233af914007",
+      "size_bytes": 37527
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/final_scenario_montage.pdf",
+      "sha256": "fff05ae1aa3477796ed2e80ae48ceef209a23e844a7a39f92cb05b76d4094925",
+      "size_bytes": 20878
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/final_outcomes_by_density.pdf",
+      "sha256": "6a474d606cbf32bb6be9420e4a133483333986b05a3868b21d3e2213e66398cb",
+      "size_bytes": 25315
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/final_safety_efficiency.pdf",
+      "sha256": "1ff8007f3718ba240a22ad7e8a80b132453a40b38b7c22f27b1e08d8c6bc5cee",
+      "size_bytes": 15532
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/final_recovery_timeline.pdf",
+      "sha256": "646e3c49cc3701529cfc149f2d538a68eedf0000e6c414d4491bfdb648835c6e",
+      "size_bytes": 24373
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/runtime_sequence.pdf",
+      "sha256": "c5989c00e39676ea9da9a25ee0dd64a99ee8b96452b88de5ac469a185953e4c0",
+      "size_bytes": 36211
+    },
+    {
+      "category": "published_table",
+      "path": "outputs/tables/main_results.tex",
+      "sha256": "5897258a1a911b052a3e6d0e55a5294be6e8cd9eb0d6f511d2a1ac22d424a60b",
+      "size_bytes": 1244
+    },
+    {
+      "category": "published_table",
+      "path": "outputs/tables/density_results.tex",
+      "sha256": "8007cfe6c81317a729b04f45fed28c3ac69001670a71fe6cb1769c6716de419f",
+      "size_bytes": 963
+    },
+    {
+      "category": "published_table",
+      "path": "outputs/tables/recovery_metrics.tex",
+      "sha256": "c67a9be338b22b3efb678f8684be51f4227fabc0364d79cb84c8d9e09cf5a639",
+      "size_bytes": 1038
+    },
+    {
+      "category": "published_table",
+      "path": "outputs/tables/statistical_results.tex",
+      "sha256": "9360128dcc4fa806de5901e43cd1ad21893c0e362961ae70abc914b0880ca500",
+      "size_bytes": 2086
+    },
+    {
+      "category": "published_table",
+      "path": "outputs/tables/offline_ablation.tex",
+      "sha256": "eadcf024d32e646a6d398d3a95add27118929594aac25b9cd95fa253adb249d9",
+      "size_bytes": 1258
+    },
+    {
+      "category": "published_table",
+      "path": "outputs/tables/result_macros.tex",
+      "sha256": "67027f735eef9a418f8d57e60da8de47f3674566a6198864f884fb07d62a9881",
+      "size_bytes": 2370
+    },
+    {
+      "category": "video",
+      "path": "outputs/videos/crossing_flow_high_test_s03220_eval_bc_a0_dwb_telemetry.mp4",
+      "sha256": "049d77ce38c9ea67806b7bd4611645928b63060f7287e3e6c1babfd4132bf30d",
+      "size_bytes": 184531
+    },
+    {
+      "category": "runtime_keyframe",
+      "path": "outputs/figures/crossing_flow_high_test_s03220_eval_bc_a0_dwb_telemetry_keyframes.pdf",
+      "sha256": "65645c2ab6ba641c670fae7b42a213ee934c61978129ffdc550eb0f5f1258cb5",
+      "size_bytes": 32527
+    },
+    {
+      "category": "runtime_keyframe",
+      "path": "outputs/figures/crossing_flow_high_test_s03220_eval_bc_a0_dwb_telemetry_keyframes.png",
+      "sha256": "e9029f4cd782aa5a62747b367e5bf48531bb23ab09d8bc13e0f93670d6dbe815",
+      "size_bytes": 156952
+    }
+  ],
+  "category_counts": {
+    "checkpoint": 1,
+    "claim_evidence": 1,
+    "environment_lock": 2,
+    "episode_manifest": 1,
+    "failure_analysis": 1,
+    "figure": 7,
+    "final_config": 1,
+    "frozen_input": 4,
+    "offline_ablation": 2,
+    "paper": 1,
+    "paper_source": 9,
+    "published_figure": 7,
+    "published_table": 6,
+    "results": 1,
+    "run_manifest": 1,
+    "runtime_keyframe": 2,
+    "runtime_lock": 2,
+    "statistics": 1,
+    "summary": 1,
+    "table": 6,
+    "video": 1
+  },
+  "generated_at": "2026-08-04T10:22:20.314747+00:00",
+  "generation_command": "scripts/reproduce_paper.sh",
+  "git_worktree_dirty": false,
+  "project_commit": "7ac9ac22f4ecdeaa74e1a68370cfe9b17c8404c7",
+  "schema_version": 1
+}
