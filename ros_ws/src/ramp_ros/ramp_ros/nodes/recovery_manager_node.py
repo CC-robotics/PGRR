@@ -357,8 +357,8 @@ class RecoveryManagerNode(Node):
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
             "footprint_stop_clearance_m": 0.48,
-            "collision_latched_stop_clearance_m": 0.85,
-            "collision_latched_action_clearance_m": 0.90,
+            "collision_latched_stop_clearance_m": 0.60,
+            "collision_latched_action_clearance_m": 0.65,
             "footprint_backup_forward_angle_degrees": 80.0,
             "emergency_hold_s": 0.5,
             "emergency_backup_duration_s": 0.8,
@@ -370,7 +370,7 @@ class RecoveryManagerNode(Node):
             # positive lateral margin while permitting in-place narrow-door
             # alignment instead of a permanent conservative stop.
             "emergency_rotation_clearance_m": 0.24,
-            "emergency_forward_entry_clearance_m": 0.85,
+            "emergency_forward_entry_clearance_m": 0.65,
             "emergency_backup_reset_clear_s": 3.0,
             "emergency_minimum_retreat_pulses": 3,
             "emergency_turn_speed_radps": 0.6,

@@ -161,8 +161,15 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert manager.count("_footprint_stop_distance(") >= 3
     config = yaml.safe_load((root / "configs/failure/recovery_state_machine.yaml").read_text())
     assert config["footprint_stop_clearance_m"] == 0.48
-    assert config["collision_latched_stop_clearance_m"] == 0.85
-    assert config["collision_latched_action_clearance_m"] == 0.90
+    assert config["collision_latched_stop_clearance_m"] == 0.60
+    assert config["collision_latched_action_clearance_m"] == 0.65
+    assert config["collision_latched_stop_clearance_m"] > config[
+        "footprint_stop_clearance_m"
+    ]
+    assert config["collision_latched_action_clearance_m"] >= (
+        config["collision_latched_stop_clearance_m"]
+        + config["emergency_release_hysteresis_m"]
+    )
     assert config["maximum_recovery_path_deviation_m"] == 0.9
     assert config["backup_minimum_duration_s"] == 0.8
     assert config["backup_maximum_duration_s"] == 3.0
@@ -173,7 +180,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         <= config["backup_mask_validated_distance_m"]
     )
     assert config["emergency_rotation_clearance_m"] == 0.24
-    assert config["emergency_forward_entry_clearance_m"] == 0.85
+    assert config["emergency_forward_entry_clearance_m"] == 0.65
     assert config["emergency_backup_reset_clear_s"] == 3.0
     assert config["emergency_minimum_retreat_pulses"] == 3
     assert config["emergency_minimum_retreat_pulses"] * config[
@@ -188,6 +195,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_progress_reset_m"] == 0.25
     assert config["bc_rejoin_block_threshold"] == 0.65
     assert '"emergency_rotation_clearance_m": 0.24' in manager
+    assert '"collision_latched_stop_clearance_m": 0.60' in manager
+    assert '"collision_latched_action_clearance_m": 0.65' in manager
     assert '"emergency_backup_reset_clear_s": 3.0' in manager
     assert '"emergency_minimum_retreat_pulses": 3' in manager
     assert '"backup_maximum_duration_s": 3.0' in manager
