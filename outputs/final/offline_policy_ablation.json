@@ -1,0 +1,14 @@
+{
+  "dataset": "data/interim/multiscenario_safety_aligned_validation.h5",
+  "dataset_sha256": "5d446cd01f7219b4adaf58e0661a4a5589077c7b4f8b6b3b21ef33d187331c92",
+  "models": [
+    "checkpoints/bc/uniform_scenario/best.pt",
+    "checkpoints/bc/mwbc_scenario/best.pt",
+    "checkpoints/dagger/coverage_safety_aligned/best.pt"
+  ],
+  "note": "Mask-disabled rows are offline proposals and were never executed on the robot.",
+  "output": "outputs/final/offline_policy_ablation.csv",
+  "output_sha256": "3ee95443bb269d493ef721ee43adb40e951660c2cc492468e11e1f67cd0ff999",
+  "sample_count": 399,
+  "schema_version": 1
+}
