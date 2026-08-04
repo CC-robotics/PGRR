@@ -104,22 +104,22 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "released actor routes" in actor
     assert "episode handshake complete" in actor
     assert "and self._logger_ready" in actor
-    assert "and startup_gate_ready" in actor
+    assert "and self._startup_gate_ready" in actor
     assert "from nav2_msgs.srv import ClearEntireCostmap" in actor
+    assert "from std_srvs.srv import Empty" in actor
     assert 'declare_parameter("robot_reset_position_tolerance_m", 0.10)' in actor
     assert 'declare_parameter("startup_gate_timeout_s", 45.0)' in actor
-    assert 'request.entity.name = str(self.get_parameter("actual_robot_name").value)' in actor
-    assert "self._robot_reset_pending = self._client.call_async(request)" in actor
+    assert 'declare_parameter("task_reset_service", "/task_generator_node/reset_task")' in actor
+    assert 'declare_parameter("task_reset_topic", "/task_generator_node/task_reset")' in actor
+    assert "self._task_reset_client.call_async(Empty.Request())" in actor
     assert "if self._experiment_started:" in actor
-    assert "refused robot teleport after experiment_started" in actor
+    assert "refused task reset after experiment_started" in actor
+    assert "observed authoritative TaskGenerator reset" in actor
+    assert "Clock(clock_type=ClockType.STEADY_TIME)" in actor
+    assert "if not self._task_reset_observed or not self._navigation_active:" in actor
     assert "client.call_async(ClearEntireCostmap.Request())" in actor
     assert "startup gate cleared local and global Nav2 costmaps" in actor
     assert "startup gate failed; actors_healthy=false" in actor
-    assert "if self._navigation_active and not self._experiment_started:" in actor
-    assert actor.index("self._navigation_active = True") < actor.index(
-        "self._startup_gate_started_wall_s = time.monotonic()",
-        actor.index("def _on_status"),
-    )
     assert actor.index("if not self._advance_robot_reset") < actor.index(
         "if not self._advance_costmap_clear"
     )
@@ -137,6 +137,8 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     )
     assert '-p local_costmap_clear_service:="${local_costmap_clear_service}"' in runtime
     assert '-p global_costmap_clear_service:="${global_costmap_clear_service}"' in runtime
+    assert "-p task_reset_service:=/task_generator_node/reset_task" in runtime
+    assert "-p task_reset_topic:=/task_generator_node/task_reset" in runtime
     assert "self._ready_publisher.publish(ready)" in logger
     assert "request.entity.name = proxy_name" in actor
     assert "pose update rejected" in actor
@@ -162,6 +164,23 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert runtime.count("episode_start_topic:=/ramp/episode_started") == 4
     assert runtime.count("logger_ready_topic:=/ramp/logger_ready") == 2
     assert runtime.count("odometry_is_world_frame:=true") == 3
+
+
+def test_known_pose_gazebo_uses_dynamic_odom_base_transform_only() -> None:
+    root = Path(__file__).resolve().parents[2]
+    container = (root / "scripts/bootstrap/arena_container.sh").read_text(encoding="utf-8")
+    patch = (root / "third_party/task_generator_known_pose_gazebo_tf.patch").read_text(
+        encoding="utf-8"
+    )
+    marker = "Known-pose Gazebo publishes the dynamic odom-to-base transform"
+    assert "task_generator_known_pose_gazebo_tf.patch" in container
+    assert f'grep -q "{marker}" "$robot_manager"' in container
+    assert "Arena known-pose Gazebo TF patch is not applied" in container
+    assert marker in patch
+    assert (
+        "+        if self.node.conf.Arena.SIM.value not in (Constants.SimSimulator.GAZEBO,):"
+    ) in patch
+    assert "+            self._odom_base_transform()" in patch
 
 
 def test_episode_cleanup_is_bounded_for_every_auxiliary_process() -> None:

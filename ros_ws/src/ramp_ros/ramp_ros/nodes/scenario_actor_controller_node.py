@@ -16,12 +16,14 @@ from nav2_msgs.srv import ClearEntireCostmap
 from nav_msgs.msg import Odometry
 from ramp_core.evaluation.navigation import navigation_status_is_active
 from ramp_core.planning.rollout import yielding_human_step
+from rclpy.clock import Clock, ClockType
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from ros_gz_interfaces.msg import Entity
 from ros_gz_interfaces.srv import SetEntityPose, SpawnEntity
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Int16
+from std_srvs.srv import Empty
 from tf2_msgs.msg import TFMessage
 
 
@@ -80,6 +82,8 @@ class ScenarioActorController(Node):
         self.declare_parameter("scenario_file", "")
         self.declare_parameter("set_pose_service", "/world/default/set_pose")
         self.declare_parameter("spawn_service", "/world/default/create")
+        self.declare_parameter("task_reset_service", "/task_generator_node/reset_task")
+        self.declare_parameter("task_reset_topic", "/task_generator_node/task_reset")
         self.declare_parameter(
             "local_costmap_clear_service",
             "/local_costmap/clear_entirely_local_costmap",
@@ -105,8 +109,9 @@ class ScenarioActorController(Node):
         self.declare_parameter("robot_start_yaw", 0.0)
         self.declare_parameter("robot_reset_position_tolerance_m", 0.10)
         self.declare_parameter("robot_reset_yaw_tolerance_rad", 0.15)
-        self.declare_parameter("robot_reset_retry_interval_s", 0.50)
-        self.declare_parameter("robot_reset_request_timeout_s", 2.0)
+        self.declare_parameter("robot_reset_retry_interval_s", 1.0)
+        self.declare_parameter("robot_reset_request_timeout_s", 8.0)
+        self.declare_parameter("robot_reset_max_attempts", 3)
         self.declare_parameter("robot_reset_settle_s", 0.50)
         self.declare_parameter("costmap_clear_timeout_s", 5.0)
         self.declare_parameter("startup_gate_timeout_s", 45.0)
@@ -123,6 +128,8 @@ class ScenarioActorController(Node):
         self._client = self.create_client(SetEntityPose, service_name)
         spawn_service = str(self.get_parameter("spawn_service").value)
         self._spawn_client = self.create_client(SpawnEntity, spawn_service)
+        task_reset_service = str(self.get_parameter("task_reset_service").value)
+        self._task_reset_client = self.create_client(Empty, task_reset_service)
         local_clear_service = str(self.get_parameter("local_costmap_clear_service").value)
         global_clear_service = str(self.get_parameter("global_costmap_clear_service").value)
         self._costmap_clear_clients = {
@@ -173,9 +180,13 @@ class ScenarioActorController(Node):
         yaw_tolerance = float(self.get_parameter("robot_reset_yaw_tolerance_rad").value)
         if not math.isfinite(yaw_tolerance) or yaw_tolerance > math.pi:
             raise ValueError("robot_reset_yaw_tolerance_rad must be finite and at most pi")
+        if int(self.get_parameter("robot_reset_max_attempts").value) < 1:
+            raise ValueError("robot_reset_max_attempts must be positive")
         for parameter_name, service in (
             ("set_pose_service", service_name),
             ("spawn_service", spawn_service),
+            ("task_reset_service", task_reset_service),
+            ("task_reset_topic", str(self.get_parameter("task_reset_topic").value)),
             ("local_costmap_clear_service", local_clear_service),
             ("global_costmap_clear_service", global_clear_service),
         ):
@@ -192,6 +203,8 @@ class ScenarioActorController(Node):
         self._startup_gate_ready = not self._wait_for_navigation_active
         self._startup_gate_failed = False
         self._startup_gate_started_wall_s = time.monotonic()
+        self._task_reset_observed = not self._wait_for_navigation_active
+        self._task_reset_generation = 0
         self._robot_at_start_since_wall_s: float | None = None
         self._robot_reset_pending: Any | None = None
         self._robot_reset_pending_since_wall_s: float | None = None
@@ -224,6 +237,12 @@ class ScenarioActorController(Node):
             self._on_status,
             10,
         )
+        self._task_reset_subscription = self.create_subscription(
+            Int16,
+            str(self.get_parameter("task_reset_topic").value),
+            self._on_task_reset,
+            10,
+        )
         self._logger_ready_subscription = self.create_subscription(
             Bool,
             str(self.get_parameter("logger_ready_topic").value),
@@ -237,8 +256,19 @@ class ScenarioActorController(Node):
             qos_profile_sensor_data,
         )
         self._update_timer = self.create_timer(1.0 / frequency, self._update)
+        # Gazebo/TaskGenerator startup can jump or briefly stall /clock.  A
+        # steady-clock gate keeps reset validation alive without advancing
+        # actor routes, whose elapsed time remains derived from simulation time.
+        self._startup_clock = Clock(clock_type=ClockType.STEADY_TIME)
+        self._startup_timer = self.create_timer(
+            0.20,
+            self._update_startup_gate,
+            clock=self._startup_clock,
+        )
         self.get_logger().info(
             f"loaded {len(self._routes)} deterministic actor routes; service={service_name}; "
+            f"task_reset=({task_reset_service}, "
+            f"{self.get_parameter('task_reset_topic').value}); "
             f"startup_costmaps=({local_clear_service}, {global_clear_service})"
         )
 
@@ -321,27 +351,25 @@ class ScenarioActorController(Node):
         self.get_logger().error(f"startup gate failed; actors_healthy=false: {detail}")
 
     def _request_robot_reset(self, now_wall_s: float) -> None:
-        # This guard is the hard no-teleport invariant for active episodes.
+        # TaskGenerator owns the authoritative reset transaction.  Calling its
+        # service preserves the goal, odometry/TF initialization, and costmap
+        # reset ordering that a bare Gazebo teleport would bypass.
         if self._experiment_started:
-            self._fail_startup_gate("refused robot teleport after experiment_started")
+            self._fail_startup_gate("refused task reset after experiment_started")
             return
-        if not self._client.service_is_ready():
+        maximum_attempts = int(self.get_parameter("robot_reset_max_attempts").value)
+        if self._robot_reset_attempts >= maximum_attempts:
+            self._fail_startup_gate(
+                f"robot remained outside configured start after {maximum_attempts} task resets"
+            )
+            return
+        if not self._task_reset_client.service_is_ready():
             self.get_logger().warning(
-                "startup gate waiting for Gazebo robot set_pose service",
+                "startup gate waiting for TaskGenerator reset service",
                 throttle_duration_sec=5.0,
             )
             return
-        if self._actual_robot_pose is None:
-            return
-        request = SetEntityPose.Request()
-        request.entity.name = str(self.get_parameter("actual_robot_name").value)
-        request.entity.type = Entity.MODEL
-        request.pose.position.x = self._robot_start[0]
-        request.pose.position.y = self._robot_start[1]
-        actual_z = float(self._actual_robot_pose.position.z)
-        request.pose.position.z = actual_z if math.isfinite(actual_z) else 0.0
-        request.pose.orientation = _quaternion(self._robot_start[2])
-        self._robot_reset_pending = self._client.call_async(request)
+        self._robot_reset_pending = self._task_reset_client.call_async(Empty.Request())
         self._robot_reset_pending_since_wall_s = now_wall_s
         self._robot_reset_last_attempt_wall_s = now_wall_s
         self._robot_reset_attempts += 1
@@ -350,7 +378,8 @@ class ScenarioActorController(Node):
         if errors is not None:
             error_text = f"position_error={errors[0]:.3f}m yaw_error={errors[1]:.3f}rad"
         self.get_logger().warning(
-            f"startup gate requested robot reset attempt={self._robot_reset_attempts} {error_text}"
+            "startup gate requested authoritative TaskGenerator reset "
+            f"attempt={self._robot_reset_attempts} {error_text}"
         )
 
     def _advance_robot_reset(self, now_s: float, now_wall_s: float) -> bool:
@@ -366,7 +395,7 @@ class ScenarioActorController(Node):
                     self._robot_reset_pending = None
                     self._robot_reset_pending_since_wall_s = None
                     self.get_logger().warning(
-                        "startup gate robot set_pose request timed out; retrying",
+                        "startup gate TaskGenerator reset request timed out; retrying",
                         throttle_duration_sec=2.0,
                     )
                 return False
@@ -374,14 +403,16 @@ class ScenarioActorController(Node):
                 response = pending.result()
             except Exception as error:  # pragma: no cover - ROS future boundary
                 response = None
-                self.get_logger().warning(f"startup gate robot set_pose request failed: {error}")
+                self.get_logger().warning(f"startup gate TaskGenerator reset failed: {error}")
             self._robot_reset_pending = None
             self._robot_reset_pending_since_wall_s = None
-            if response is None or not bool(getattr(response, "success", False)):
-                self.get_logger().warning("startup gate robot set_pose request was rejected")
+            self._robot_reset_last_attempt_wall_s = now_wall_s
+            if response is None:
+                self.get_logger().warning("startup gate TaskGenerator reset returned no response")
             else:
                 self.get_logger().info(
-                    "startup gate robot set_pose accepted; waiting for Gazebo pose confirmation"
+                    "startup gate TaskGenerator reset completed; "
+                    "waiting for Gazebo pose confirmation"
                 )
             return False
 
@@ -467,8 +498,8 @@ class ScenarioActorController(Node):
             return False
         if not self._advance_costmap_clear(now_wall_s):
             return False
-        # Re-check after both asynchronous clear responses.  No teleport can
-        # be outstanding when the episode start signal is released.
+        # Re-check after both asynchronous clear responses. No reset can be
+        # outstanding when the episode start signal is released.
         if not self._robot_is_at_configured_start(now_s):
             self._fail_startup_gate("robot left configured start before startup release")
             return False
@@ -502,14 +533,28 @@ class ScenarioActorController(Node):
         ):
             return
         self._navigation_active = True
-        # TaskGenerator publishes the first active goal only after it has
-        # reset the scenario and constructed the robot's map/odom transforms.
-        # Starting the reset gate any earlier can teleport Gazebo while Nav2
-        # is still sizing its costmaps around the pre-reset staging pose.
-        self._startup_gate_started_wall_s = time.monotonic()
         self._route_elapsed = {route.name: 0.0 for route in self._routes}
         self._last_update_s = self.get_clock().now().nanoseconds * 1.0e-9
         self.get_logger().info("navigation activated; waiting for episode logger handshake")
+
+    def _on_task_reset(self, message: Int16) -> None:
+        if self._experiment_started:
+            self._healthy = False
+            self.get_logger().error("TaskGenerator reset observed after experiment_started")
+            return
+        self._task_reset_observed = True
+        self._task_reset_generation += 1
+        self._startup_gate_started_wall_s = time.monotonic()
+        self._robot_at_start_since_wall_s = None
+        for future in self._costmap_clear_pending.values():
+            if not future.done():
+                future.cancel()
+        self._costmap_clear_pending = {}
+        self._costmap_clear_started_wall_s = None
+        self.get_logger().info(
+            "observed authoritative TaskGenerator reset "
+            f"generation={self._task_reset_generation} value={int(message.data)}"
+        )
 
     def _on_logger_ready(self, message: Bool) -> None:
         self._logger_ready |= bool(message.data)
@@ -537,6 +582,40 @@ class ScenarioActorController(Node):
         if received:
             self._actual_pose_received_s = self.get_clock().now().nanoseconds * 1.0e-9
 
+    def _release_experiment(self, now_s: float) -> None:
+        if self._experiment_started:
+            return
+        self._experiment_started = True
+        self._route_elapsed = {route.name: 0.0 for route in self._routes}
+        self._last_update_s = now_s
+        self.get_logger().info("episode handshake complete; released actor routes")
+
+    def _publish_startup_state(self) -> None:
+        health = Bool()
+        health.data = self._healthy
+        self._health_publisher.publish(health)
+        started = Bool()
+        started.data = self._experiment_started
+        self._start_publisher.publish(started)
+
+    def _update_startup_gate(self) -> None:
+        # This callback deliberately uses a steady-clock timer.  The checked
+        # pose freshness still uses simulation time, so pausing Gazebo cannot
+        # advance or release the experiment.
+        if self._experiment_started or self._startup_gate_failed:
+            self._publish_startup_state()
+            return
+        if not self._task_reset_observed or not self._navigation_active:
+            self._publish_startup_state()
+            return
+        now_s = self.get_clock().now().nanoseconds * 1.0e-9
+        if not self._advance_startup_gate(now_s):
+            self._publish_startup_state()
+            return
+        if self._logger_ready:
+            self._release_experiment(now_s)
+        self._publish_startup_state()
+
     @staticmethod
     def _load_routes(path: Path) -> tuple[ActorRoute, ...]:
         scenario = json.loads(path.read_text(encoding="utf-8"))
@@ -563,21 +642,13 @@ class ScenarioActorController(Node):
             )
             return
         now = self.get_clock().now().nanoseconds * 1.0e-9
-        startup_gate_ready = self._startup_gate_ready
-        if self._navigation_active and not self._experiment_started:
-            startup_gate_ready = self._advance_startup_gate(now)
         if (
             self._navigation_active
             and not self._experiment_started
             and self._logger_ready
-            and startup_gate_ready
+            and self._startup_gate_ready
         ):
-            # GoalMux remains stopped until it receives the repeatedly
-            # published start signal, regardless of DDS discovery order.
-            self._experiment_started = True
-            self._route_elapsed = {route.name: 0.0 for route in self._routes}
-            self._last_update_s = now
-            self.get_logger().info("episode handshake complete; released actor routes")
+            self._release_experiment(now)
         if self._last_update_s is None:
             self._last_update_s = now
         step_s = max(0.0, now - self._last_update_s) if self._experiment_started else 0.0
@@ -735,12 +806,7 @@ class ScenarioActorController(Node):
                     "Gazebo actual pedestrian poses are missing or stale",
                     throttle_duration_sec=5.0,
                 )
-        health = Bool()
-        health.data = self._healthy
-        self._health_publisher.publish(health)
-        started = Bool()
-        started.data = self._experiment_started
-        self._start_publisher.publish(started)
+        self._publish_startup_state()
 
 
 def main(args: list[str] | None = None) -> None:

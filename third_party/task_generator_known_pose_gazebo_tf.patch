@@ -1,0 +1,14 @@
+--- robot_manager.py
++++ robot_manager.py
+@@ -153,7 +153,10 @@
+         )
+ 
+         self._launch_robot()
+-        self._odom_base_transform()
++        # Known-pose Gazebo publishes the dynamic odom-to-base transform from
++        # ground-truth odometry; a competing static identity corrupts Nav2.
++        if self.node.conf.Arena.SIM.value not in (Constants.SimSimulator.GAZEBO,):
++            self._odom_base_transform()
+ 
+         self._robot_radius = self.node.rosparam[float].get(
+             'robot_radius',
