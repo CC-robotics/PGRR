@@ -445,6 +445,10 @@ def test_final_fixture_generates_type42_figures_and_latex(tmp_path: Path) -> Non
         statistics,
     )
     tables = make_tables.generate_tables(results, summary, table_dir, statistics, ablation)
+    for table in tables:
+        payload = table.read_text(encoding="utf-8")
+        assert str(tmp_path) not in payload
+        assert "/home/" not in payload
 
     assert {path.name for path in figures} == {
         "system_architecture.pdf",

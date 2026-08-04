@@ -163,10 +163,22 @@ def _effect_value(row: Any) -> str:
     return rf"$r_{{\mathrm{{rb}}}}={value:+.3f}$"
 
 
+def _portable_project_path(path: Path, project_root: Path = ROOT) -> str:
+    """Render provenance without exposing a local checkout location."""
+
+    resolved = path.expanduser().resolve()
+    root = project_root.expanduser().resolve()
+    try:
+        return resolved.relative_to(root).as_posix()
+    except ValueError:
+        return f"${{PROJECT_ROOT}}/external/{resolved.name}"
+
+
 def _provenance(results_path: Path, summary_path: Path, commit: str) -> str:
     return (
         "% Generated only from "
-        f"{results_path.as_posix()} and {summary_path.as_posix()}; "
+        f"{_portable_project_path(results_path)} and "
+        f"{_portable_project_path(summary_path)}; "
         f"project_commit={commit}\n"
     )
 
@@ -571,7 +583,7 @@ def offline_ablation_table(
         previous_model = str(row.model)
     sample_count = int(sidecar["sample_count"])
     payload = (
-        f"% Generated only from {ablation_path.as_posix()}; "
+        f"% Generated only from {_portable_project_path(ablation_path)}; "
         f"sha256={_sha256(ablation_path)}\n"
         """\\begin{table*}[t]
 \\caption{Offline policy ablation on """

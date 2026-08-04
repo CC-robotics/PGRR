@@ -20,8 +20,12 @@ fi
 
 conda run -n "${CONDA_ENV_NAME}" python -m pip install \
     -e packages/ramp_core -e packages/ramp_ml
-conda env export -n "${CONDA_ENV_NAME}" --no-builds > environment.lock.yml
-conda run -n "${CONDA_ENV_NAME}" python -m pip freeze > requirements-offline.lock.txt
+conda env export -n "${CONDA_ENV_NAME}" --no-builds \
+    | sed -E '/^prefix:[[:space:]]/d' > environment.lock.yml
+conda run -n "${CONDA_ENV_NAME}" python -m pip list \
+    --format=freeze --exclude-editable > requirements-offline.lock.txt
+printf '%s\n' '-e packages/ramp_core' '-e packages/ramp_ml' \
+    >> requirements-offline.lock.txt
 conda run -n "${CONDA_ENV_NAME}" python -c \
     'import sys; assert sys.version_info[:2] == (3, 10), sys.version; import ramp_core, ramp_ml'
 printf 'Offline environment %s is ready.\n' "${CONDA_ENV_NAME}"

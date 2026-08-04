@@ -36,6 +36,17 @@ LIDAR_FOV_RADIANS = math.radians(270.0)
 JACKAL_EDGE_SELF_RETURN_MAX_M = 0.34
 
 
+def _portable_project_path(path: Path, project_root: Path = ROOT) -> str:
+    """Store provenance without embedding a workstation-specific parent path."""
+
+    resolved = path.expanduser().resolve()
+    root = project_root.expanduser().resolve()
+    try:
+        return resolved.relative_to(root).as_posix()
+    except ValueError:
+        return f"${{PROJECT_ROOT}}/external/{resolved.name}"
+
+
 def _observable_lidar(row: dict[str, Any]) -> np.ndarray:
     values = sanitize_near_field_returns(
         row["lidar"],
@@ -281,9 +292,10 @@ def main() -> None:
         )
         previous_index = index
     observable = _observable_arrays(rows)
+    source_jsonl = _portable_project_path(args.raw_jsonl)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with h5py.File(args.output, "w") as handle:
-        handle.attrs["source_jsonl"] = str(args.raw_jsonl)
+        handle.attrs["source_jsonl"] = source_jsonl
         handle.attrs["schema_version"] = 1
         observations = handle.create_group("observations")
         for name, values in observable.items():
@@ -301,7 +313,7 @@ def main() -> None:
         labels.create_dataset("action_mask", data=np.stack(masks), compression="gzip")
         labels.create_dataset("predicted_success", data=np.asarray(successes, dtype=np.bool_))
     summary = {
-        "source_jsonl": str(args.raw_jsonl),
+        "source_jsonl": source_jsonl,
         "sample_count": len(indices),
         "illegal_action_count": int(
             sum(not bool(mask[action]) for mask, action in zip(masks, actions, strict=True))

@@ -1,0 +1,433 @@
+#!/usr/bin/env python3
+"""Fail closed when a release tree contains machine- or user-specific data.
+
+By default a Git worktree audit covers tracked files plus untracked, non-ignored
+files.  A plain directory is scanned recursively.  Ignored build trees and
+virtual environments are deliberately outside the default release surface.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shutil
+import socket
+import subprocess
+import sys
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+HDF5_SUFFIXES = {".h5", ".hdf5"}
+PDF_SUFFIXES = {".pdf"}
+SKIP_DIRECTORY_NAMES = {".git"}
+
+# Compose the legacy identifiers so the auditor does not contain the exact
+# strings that it is required to reject from a release tree.
+LEGACY_HOME = "/" + "home" + "/" + "diy"
+LEGACY_HOSTNAME = "diy" + "01"
+
+ABSOLUTE_HOME_RE = re.compile(
+    r"(?<![A-Za-z0-9_${])/(?:home|Users)/[A-Za-z0-9._-]+",
+    re.IGNORECASE,
+)
+EMAIL_RE = re.compile(
+    r"(?<![A-Za-z0-9._%+-])"
+    r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+)
+HOST_FIELD_RE = re.compile(
+    r"(?im)^\s*(?:host|hostname|machine_name)\s*[:=]\s*"
+    r"(?!<redacted>|anonymous|portable|\$\{)[^\s#]+"
+)
+SECRET_RES = (
+    ("AWS access key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
+    ("GitHub token", re.compile(r"\b(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]{20,}\b")),
+    ("private key", re.compile(r"-----BEGIN (?:RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----")),
+)
+ALLOWED_EMAILS = {
+    "anonymous@arena-rosnav.org",
+    "charles.chen@example.invalid",
+    "pgrr-test@example.invalid",
+}
+ALLOWED_IDENTITY_MARKERS = ("anonymous", "charles chen")
+
+
+@dataclass(frozen=True, order=True)
+class Finding:
+    """A privacy violation without echoing its sensitive value."""
+
+    path: str
+    source: str
+    rule: str
+    line: int | None = None
+
+    def display(self) -> str:
+        location = f"{self.path}:{self.line}" if self.line is not None else self.path
+        return f"{location}: {self.source}: {self.rule}"
+
+
+def _line_number(text: str, offset: int) -> int:
+    return text.count("\n", 0, offset) + 1
+
+
+def _allowed_email(value: str) -> bool:
+    normalized = value.casefold()
+    if normalized in ALLOWED_EMAILS or normalized.endswith("@example.invalid"):
+        return True
+    return normalized.startswith("anonymous@")
+
+
+def _sensitive_literals(extra_forbidden: Iterable[str]) -> tuple[str, ...]:
+    candidates = {LEGACY_HOME, LEGACY_HOSTNAME}
+    current_home = str(Path.home())
+    if current_home not in {"", "/"}:
+        candidates.add(current_home)
+    environment_home = os.environ.get("HOME", "").strip()
+    if environment_home not in {"", "/"}:
+        candidates.add(environment_home)
+    current_hostname = socket.gethostname().strip()
+    if current_hostname:
+        candidates.add(current_hostname)
+    candidates.update(value for value in extra_forbidden if value)
+    return tuple(sorted(candidates, key=lambda value: (-len(value), value.casefold())))
+
+
+def _scan_text(
+    text: str,
+    relative_path: str,
+    source: str,
+    *,
+    extra_forbidden: Iterable[str] = (),
+) -> set[Finding]:
+    findings: set[Finding] = set()
+    lowered = text.casefold()
+    for literal in _sensitive_literals(extra_forbidden):
+        start = lowered.find(literal.casefold())
+        if start >= 0:
+            findings.add(
+                Finding(
+                    relative_path,
+                    source,
+                    "forbidden machine/user identifier",
+                    _line_number(text, start) if source == "text" else None,
+                )
+            )
+    home_match = ABSOLUTE_HOME_RE.search(text)
+    if home_match is not None:
+        findings.add(
+            Finding(
+                relative_path,
+                source,
+                "absolute home-directory path",
+                _line_number(text, home_match.start()) if source == "text" else None,
+            )
+        )
+    host_match = HOST_FIELD_RE.search(text)
+    if host_match is not None:
+        findings.add(
+            Finding(
+                relative_path,
+                source,
+                "unredacted hostname field",
+                _line_number(text, host_match.start()) if source == "text" else None,
+            )
+        )
+    for match in EMAIL_RE.finditer(text):
+        if not _allowed_email(match.group(0)):
+            findings.add(
+                Finding(
+                    relative_path,
+                    source,
+                    "non-allowlisted email address",
+                    _line_number(text, match.start()) if source == "text" else None,
+                )
+            )
+            break
+    for label, pattern in SECRET_RES:
+        match = pattern.search(text)
+        if match is not None:
+            findings.add(
+                Finding(
+                    relative_path,
+                    source,
+                    label,
+                    _line_number(text, match.start()) if source == "text" else None,
+                )
+            )
+    return findings
+
+
+def _printable_strings(payload: bytes, minimum_length: int = 4) -> str:
+    strings = re.findall(rb"[\x20-\x7e]{%d,}" % minimum_length, payload)
+    return "\n".join(value.decode("ascii", errors="ignore") for value in strings)
+
+
+def _attribute_text(value: object) -> str:
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    if hasattr(value, "tolist"):
+        value = value.tolist()
+    if isinstance(value, (dict, list, tuple)):
+        return json.dumps(value, ensure_ascii=False, default=str)
+    return str(value)
+
+
+def _scan_hdf5_attributes(
+    path: Path,
+    relative_path: str,
+    *,
+    extra_forbidden: Iterable[str],
+) -> set[Finding]:
+    try:
+        import h5py  # type: ignore[import-untyped]
+    except ImportError:
+        return {
+            Finding(
+                relative_path,
+                "hdf5-attribute",
+                "h5py unavailable; HDF5 attributes were not auditable",
+            )
+        }
+
+    findings: set[Finding] = set()
+    try:
+        with h5py.File(path, "r") as handle:
+            objects = [("/", handle)]
+
+            def collect(name: str, item: object) -> None:
+                objects.append((f"/{name}", item))
+
+            handle.visititems(collect)
+            for object_name, item in objects:
+                attrs = getattr(item, "attrs", {})
+                for attribute_name, value in attrs.items():
+                    payload = _attribute_text(value)
+                    object_findings = _scan_text(
+                        payload,
+                        relative_path,
+                        "hdf5-attribute",
+                        extra_forbidden=extra_forbidden,
+                    )
+                    if object_findings:
+                        findings.update(object_findings)
+                        findings.add(
+                            Finding(
+                                relative_path,
+                                "hdf5-attribute",
+                                f"sensitive attribute at {object_name}:{attribute_name}",
+                            )
+                        )
+    except OSError:
+        findings.add(Finding(relative_path, "hdf5-attribute", "unreadable HDF5 file"))
+    return findings
+
+
+def _scan_pdf_metadata(
+    path: Path,
+    relative_path: str,
+    *,
+    extra_forbidden: Iterable[str],
+) -> set[Finding]:
+    executable = shutil.which("pdfinfo")
+    if executable is None:
+        return {
+            Finding(
+                relative_path,
+                "pdf-metadata",
+                "pdfinfo unavailable; PDF metadata was not auditable",
+            )
+        }
+    completed = subprocess.run(
+        [executable, str(path)],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if completed.returncode != 0:
+        return {Finding(relative_path, "pdf-metadata", "unreadable PDF metadata")}
+    findings = _scan_text(
+        completed.stdout,
+        relative_path,
+        "pdf-metadata",
+        extra_forbidden=extra_forbidden,
+    )
+    for line in completed.stdout.splitlines():
+        key, separator, value = line.partition(":")
+        if separator and key.strip().casefold() == "author" and value.strip():
+            identity = value.strip().casefold()
+            if not any(marker in identity for marker in ALLOWED_IDENTITY_MARKERS):
+                findings.add(Finding(relative_path, "pdf-metadata", "non-allowlisted PDF author"))
+    return findings
+
+
+def _git_files(root: Path) -> list[Path] | None:
+    completed = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "ls-files",
+            "-z",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+        ],
+        check=False,
+        capture_output=True,
+    )
+    if completed.returncode != 0:
+        return None
+    return [
+        root / value.decode("utf-8", errors="surrogateescape")
+        for value in completed.stdout.split(b"\0")
+        if value
+    ]
+
+
+def _recursive_files(root: Path) -> list[Path]:
+    return [
+        path
+        for path in root.rglob("*")
+        if not any(part in SKIP_DIRECTORY_NAMES for part in path.relative_to(root).parts)
+        and (path.is_file() or path.is_symlink())
+    ]
+
+
+def _candidate_files(root: Path, *, all_files: bool) -> list[Path]:
+    candidates = None if all_files else _git_files(root)
+    if candidates is None:
+        candidates = _recursive_files(root)
+    return sorted(
+        {
+            path
+            for path in candidates
+            if path.exists() or path.is_symlink()
+            if not any(part in SKIP_DIRECTORY_NAMES for part in path.relative_to(root).parts)
+        }
+    )
+
+
+def scan_tree(
+    root: Path,
+    *,
+    all_files: bool = False,
+    extra_forbidden: Iterable[str] = (),
+) -> tuple[list[Finding], int]:
+    """Return sorted findings and the number of audited files."""
+
+    root = root.expanduser().resolve()
+    findings: set[Finding] = set()
+    files = _candidate_files(root, all_files=all_files)
+    for path in files:
+        relative_path = path.relative_to(root).as_posix()
+        findings.update(
+            _scan_text(
+                relative_path,
+                relative_path,
+                "path",
+                extra_forbidden=extra_forbidden,
+            )
+        )
+        if path.is_symlink():
+            findings.update(
+                _scan_text(
+                    os.readlink(path),
+                    relative_path,
+                    "symlink",
+                    extra_forbidden=extra_forbidden,
+                )
+            )
+            continue
+        try:
+            payload = path.read_bytes()
+        except OSError:
+            findings.add(Finding(relative_path, "file", "unreadable file"))
+            continue
+        suffix = path.suffix.casefold()
+        if suffix in HDF5_SUFFIXES:
+            findings.update(
+                _scan_hdf5_attributes(
+                    path,
+                    relative_path,
+                    extra_forbidden=extra_forbidden,
+                )
+            )
+        if suffix in PDF_SUFFIXES:
+            findings.update(
+                _scan_pdf_metadata(
+                    path,
+                    relative_path,
+                    extra_forbidden=extra_forbidden,
+                )
+            )
+        try:
+            decoded = payload.decode("utf-8")
+            is_text = b"\0" not in payload[:8192]
+        except UnicodeDecodeError:
+            decoded = ""
+            is_text = False
+        source = "text" if is_text else "binary-strings"
+        searchable = decoded if is_text else _printable_strings(payload)
+        findings.update(
+            _scan_text(
+                searchable,
+                relative_path,
+                source,
+                extra_forbidden=extra_forbidden,
+            )
+        )
+    return sorted(findings), len(files)
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "root",
+        nargs="?",
+        type=Path,
+        default=ROOT,
+        help="release tree to audit (default: repository root)",
+    )
+    parser.add_argument(
+        "--all-files",
+        action="store_true",
+        help="scan a plain recursive tree instead of the Git release surface",
+    )
+    parser.add_argument(
+        "--forbid",
+        action="append",
+        default=[],
+        help="additional exact private value to reject; may be repeated",
+    )
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    root = args.root.expanduser().resolve()
+    if not root.is_dir():
+        print(f"ERROR: privacy audit root is not a directory: {root}", file=sys.stderr)
+        return 2
+    environment_forbidden = [
+        value for value in os.environ.get("PGRR_PRIVACY_FORBIDDEN", "").split(os.pathsep) if value
+    ]
+    findings, file_count = scan_tree(
+        root,
+        all_files=args.all_files,
+        extra_forbidden=[*args.forbid, *environment_forbidden],
+    )
+    if findings:
+        print(f"Privacy audit FAIL: {len(findings)} finding(s) in {file_count} file(s)")
+        for finding in findings:
+            print(finding.display())
+        return 1
+    print(f"Privacy audit PASS: {file_count} file(s); no private identifiers found")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
