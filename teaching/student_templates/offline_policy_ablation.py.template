@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""Student task: evaluate action-mask and imitation-policy ablations."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+from collections.abc import Sequence
+from pathlib import Path
+
+import numpy as np
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def evaluate_predictions(
+    predictions: np.ndarray,
+    logits: np.ndarray,
+    expert_actions: np.ndarray,
+    original_masks: np.ndarray,
+    expert_costs: np.ndarray,
+) -> dict[str, float]:
+    """Compute the locked offline ablation metrics.
+
+    Validate the fixed [N, 25] shapes and require at least one legal action per
+    sample. Report sample count, top-1/top-3 accuracy, invalid-action rate,
+    non-negative expert-cost regret, near-optimal rate (regret <= 0.1), and
+    catastrophic-action rate. Map non-finite regret to 1e6 consistently with
+    the reference experiment; do not silently drop difficult samples.
+    """
+
+    # TODO(student): implement Assignment 6 without reading test-split labels.
+    _ = predictions, logits, expert_actions, original_masks, expert_costs
+    raise NotImplementedError("complete the offline ablation in Assignment 6")
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--dataset",
+        type=Path,
+        default=ROOT / "data/interim/multiscenario_safety_aligned_validation.h5",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=ROOT / "outputs/student/offline_policy_ablation.csv",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Explain the exercise entry point until its evaluation loop is completed."""
+
+    args = parse_args(argv)
+    raise NotImplementedError(
+        f"complete Assignment 6 before evaluating {args.dataset} into {args.output}"
+    )
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

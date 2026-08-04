@@ -1,0 +1,44 @@
+"""Public contracts for the PGRR student assignments.
+
+These tests are expected to fail immediately after branch generation. Complete
+the assignments in order and use the unchanged teacher tests for regression.
+"""
+
+from __future__ import annotations
+
+import math
+
+import numpy as np
+import pytest
+from ramp_core.action_space import ACTIONS, build_action_space
+from ramp_core.occupancy import OccupancyGrid
+from ramp_core.planning.astar import astar
+from ramp_core.planning.costs import ExpertCostWeights, RolloutCostTerms
+from ramp_core.types import Pose2D
+
+
+def test_student_astar_finds_gap_without_corner_cutting() -> None:
+    occupied = np.zeros((7, 7), dtype=np.bool_)
+    occupied[3, :] = True
+    occupied[3, 5] = False
+    grid = OccupancyGrid(occupied, 1.0)
+    path = astar(grid, (1, 1), (5, 5))
+    assert path[0] == (1, 1)
+    assert path[-1] == (5, 5)
+    assert (3, 5) in path
+
+
+def test_student_action_space_and_world_transform() -> None:
+    actions = build_action_space()
+    assert len(actions) == 25
+    assert [action.action_id for action in actions] == list(range(25))
+    target = ACTIONS[3].target_pose(Pose2D(1.0, 2.0, math.pi / 2.0))
+    assert target is not None
+    assert (target.x, target.y) == pytest.approx((1.0, 2.6))
+
+
+def test_student_progress_and_rejoin_cost_terms() -> None:
+    terms = RolloutCostTerms(0.0, 0.25, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0)
+    weights = ExpertCostWeights(progress=8.0, rejoin=3.0)
+    assert terms.progress_contribution(weights) == pytest.approx(2.0)
+    assert terms.rejoin_contribution(weights) == pytest.approx(1.5)

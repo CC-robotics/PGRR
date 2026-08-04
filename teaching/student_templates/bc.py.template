@@ -1,0 +1,43 @@
+"""Student task: behavior-cloning training and evaluation loop."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import torch
+from ramp_ml.recovery_policy import RecoveryPolicyNetwork
+from torch.utils.data import DataLoader
+
+
+@dataclass(frozen=True)
+class BCMetrics:
+    loss: float
+    top1: float
+    top3: float
+    invalid_rate: float
+    expert_cost_regret: float
+    near_optimal_rate: float
+    catastrophic_action_rate: float
+
+
+def run_epoch(
+    model: RecoveryPolicyNetwork,
+    loader: DataLoader[dict[str, torch.Tensor]],
+    *,
+    device: torch.device,
+    optimizer: torch.optim.Optimizer | None,
+    margin_lambda: float,
+    cost_regret_lambda: float = 0.0,
+) -> BCMetrics:
+    """Run one deterministic train or validation epoch.
+
+    Move every tensor to ``device``; apply the action mask inside the model;
+    choose margin-weighted CE or cost-sensitive BC according to the supplied
+    weights; update only when ``optimizer`` is not ``None``; clip gradient norm
+    to 1.0; and aggregate all seven metrics by sample count. Reject an empty
+    loader. Never choose or count a masked action as valid.
+    """
+
+    # TODO(student): implement Assignment 5 using ramp_ml.losses helpers.
+    _ = model, loader, device, optimizer, margin_lambda, cost_regret_lambda
+    raise NotImplementedError("complete the Behavior Cloning epoch in Assignment 5")

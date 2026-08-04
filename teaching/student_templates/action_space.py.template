@@ -1,0 +1,86 @@
+"""Student task: fixed, documented 25-action recovery space."""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+from enum import Enum
+
+from ramp_core.geometry import robot_to_world
+from ramp_core.types import Pose2D
+
+RADII_METERS = (0.6, 1.0, 1.4)
+ANGLES_DEGREES = (-90, -60, -30, 0, 30, 60, 90)
+WAIT_ACTION_ID = 21
+BACKUP_ACTION_ID = 22
+REPLAN_ACTION_ID = 23
+CONTINUE_ACTION_ID = 24
+ACTION_COUNT = 25
+
+
+class RecoveryActionKind(str, Enum):
+    SUBGOAL = "SUBGOAL"
+    WAIT = "WAIT"
+    BACKUP = "BACKUP"
+    REPLAN = "REPLAN"
+    CONTINUE = "CONTINUE"
+
+
+@dataclass(frozen=True, slots=True)
+class RecoveryAction:
+    action_id: int
+    kind: RecoveryActionKind
+    radius: float | None = None
+    angle_degrees: int | None = None
+
+    def target_pose(self, robot: Pose2D) -> Pose2D | None:
+        """Transform a relative subgoal into the world frame.
+
+        Non-subgoal actions return ``None``. For a subgoal, rotate the polar
+        offset by the robot yaw and set target yaw to the travel direction.
+        """
+
+        # TODO(student): implement the coordinate transform in Assignment 2.
+        _ = robot, math, robot_to_world
+        return None
+
+
+def build_action_space() -> tuple[RecoveryAction, ...]:
+    """Construct 21 radius-angle subgoals followed by four special actions.
+
+    IDs must be contiguous and stable: radius-major then angle-minor for IDs
+    0--20, followed by WAIT=21, BACKUP=22, REPLAN=23, CONTINUE=24.
+    """
+
+    # TODO(student): replace the compatibility registry below in Assignment 2.
+    return _compatibility_registry()
+
+
+def _compatibility_registry() -> tuple[RecoveryAction, ...]:
+    """Keep non-learning baseline imports valid until Assignment 2 is complete."""
+
+    specifications = [
+        (radius, angle) for radius in RADII_METERS for angle in ANGLES_DEGREES
+    ]
+    actions = [
+        RecoveryAction(index, RecoveryActionKind.SUBGOAL, radius, angle)
+        for index, (radius, angle) in enumerate(specifications)
+    ]
+    actions.extend(
+        (
+            RecoveryAction(WAIT_ACTION_ID, RecoveryActionKind.WAIT),
+            RecoveryAction(BACKUP_ACTION_ID, RecoveryActionKind.BACKUP),
+            RecoveryAction(REPLAN_ACTION_ID, RecoveryActionKind.REPLAN),
+            RecoveryAction(CONTINUE_ACTION_ID, RecoveryActionKind.CONTINUE),
+        )
+    )
+    return tuple(actions)
+
+
+ACTIONS = _compatibility_registry()
+
+
+def action_by_id(action_id: int) -> RecoveryAction:
+    if not 0 <= action_id < ACTION_COUNT:
+        raise ValueError(f"action_id must be in [0, {ACTION_COUNT - 1}]")
+    return ACTIONS[action_id]

@@ -1,0 +1,22 @@
+"""Student task: deterministic 8-connected grid A*."""
+
+from __future__ import annotations
+
+from ramp_core.occupancy import GridIndex, OccupancyGrid
+
+
+def astar(grid: OccupancyGrid, start: GridIndex, goal: GridIndex) -> list[GridIndex]:
+    """Return a collision-free grid path from ``start`` to ``goal``.
+
+    Implement 8-connected A* with cardinal cost 1, diagonal cost sqrt(2),
+    an admissible octile heuristic, deterministic tie breaking, and parent
+    reconstruction. Return an empty list when either endpoint is occupied or
+    no path exists. A diagonal move is forbidden if it cuts an occupied corner.
+
+    The classical DWB baseline does not call this helper, so students can run
+    that baseline before completing this planning exercise.
+    """
+
+    # TODO(student): implement Assignment 1 without modifying OccupancyGrid.
+    _ = grid, start, goal
+    return []
