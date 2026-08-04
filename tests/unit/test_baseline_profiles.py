@@ -180,7 +180,9 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert "if not self._episode_started:" in detector
     assert 'self.declare_parameter("maximum_valid_linear_speed_mps", 2.0)' in detector
     assert 'self.declare_parameter("maximum_valid_angular_speed_radps", 4.0)' in detector
+    assert 'self.declare_parameter("motion_rule_startup_grace_s", 4.0)' in detector
     assert "abs(linear_velocity)" in detector
+    assert "timestamp - self._episode_started_at_s" in detector
 
 
 def test_oracle_rejoin_distinguishes_hard_risk_from_soft_latch() -> None:

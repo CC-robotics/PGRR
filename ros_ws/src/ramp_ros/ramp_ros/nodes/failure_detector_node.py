@@ -58,6 +58,7 @@ class FailureDetectorNode(Node):
         self.declare_parameter("bilateral_edge_self_return_max_m", 0.34)
         self.declare_parameter("maximum_valid_linear_speed_mps", 2.0)
         self.declare_parameter("maximum_valid_angular_speed_radps", 4.0)
+        self.declare_parameter("motion_rule_startup_grace_s", 4.0)
         defaults = RuleFailureConfig()
         for name in defaults.__dataclass_fields__:
             self.declare_parameter(name, getattr(defaults, name))
@@ -86,6 +87,7 @@ class FailureDetectorNode(Node):
         self._last_timestamp: float | None = None
         self._motion_rules_enabled = True
         self._episode_started = not bool(self.get_parameter("wait_for_episode_start").value)
+        self._episode_started_at_s: float | None = None
         self._publisher = self.create_publisher(
             FailureStatus, str(self.get_parameter("failure_status_topic").value), 10
         )
@@ -138,6 +140,7 @@ class FailureDetectorNode(Node):
         # command mux, and the logger.
         self._detector.reset()
         self._last_timestamp = None
+        self._episode_started_at_s = None
         self._episode_started = True
 
     def _on_scan(self, message: LaserScan) -> None:
@@ -217,6 +220,8 @@ class FailureDetectorNode(Node):
         ):
             return
         self._last_timestamp = timestamp
+        if self._episode_started_at_s is None:
+            self._episode_started_at_s = timestamp
         local_x = float(message.pose.pose.position.x)
         local_y = float(message.pose.pose.position.y)
         start_x, start_y, start_yaw = self._robot_start
@@ -241,7 +246,11 @@ class FailureDetectorNode(Node):
                 planner_status=self._planner_status,
                 goal_reached=goal_distance <= self._goal_tolerance,
             ),
-            motion_rules_enabled=self._motion_rules_enabled,
+            motion_rules_enabled=(
+                self._motion_rules_enabled
+                and timestamp - self._episode_started_at_s
+                >= float(self.get_parameter("motion_rule_startup_grace_s").value)
+            ),
         )
         probabilities = prediction.as_array()
         output = FailureStatus()
