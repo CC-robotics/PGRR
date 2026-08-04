@@ -1,5 +1,5 @@
-RAMP Arena Gate 0 smoke report
-Generated: 2026-07-29 (Asia/Shanghai project date)
+PGRR Arena Gate 0 smoke report
+Generated: 2026-08-04 (Asia/Shanghai)
 
 Profile: arena_humble_docker
 Image: ramp-arena:humble
@@ -9,7 +9,7 @@ Robot: Jackal
 Local planner: DWB
 
 Command:
-  env -u CONDA_PREFIX -u VIRTUAL_ENV make smoke
+  make smoke SEED=0 HEADLESS=1
 
 Observed endpoints:
   clock=/clock
@@ -31,11 +31,12 @@ Assertions:
   HuNav missing-plugin warnings: 0
 
 The smoke goal later returned ABORTED. Gate 0 tests goal transport and acceptance;
-it does not count this episode as GOAL_REACHED. Static navigation success remains a
-Gate 1 acceptance requirement.
+it does not count this episode as GOAL_REACHED. Static and dynamic algorithm outcomes
+come only from the episode logger. The post-migration run mounts the pinned Jackal
+mapping used by evaluated episodes and requires actual samples, not topic discovery.
 
 Ignored raw evidence at the time of this report:
   outputs/logs/arena_runtime.log
-  SHA256 d847d8edd0aab4fe9c05f1f10a414d3dd29f0aacab8132285570136674e2ca38
+  SHA256 edb3ff28c4087f5f7b0db9dc2558df58e7265a0a9f298cb7373827f448b0b181
   outputs/logs/arena_runtime_goal.log
-  SHA256 d01a2e4d7ac42520a5a08a442e494ba9a5cf5a93257628378486455bd95ab94f
+  SHA256 62ae44672af137d8648020e79d9db596a531f1682dced1f5eb229b74a8b7dc52

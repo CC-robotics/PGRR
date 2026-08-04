@@ -7,5 +7,9 @@ if [[ "${profile}" != "arena_humble_docker" ]]; then
     printf 'ERROR: unsupported or incomplete Arena profile: %s\n' "${profile:-unset}" >&2
     exit 1
 fi
+# The upstream Jackal mapping still points at the removed `/odometry` Gazebo
+# topic. Use the pinned project mapping so the smoke test observes the same
+# ground-truth odometry and planar LiDAR interfaces as evaluated episodes.
+export RAMP_ENABLE_CMD_MUX=1
 exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     bash /workspace/scripts/arena/smoke_runtime_inner.sh

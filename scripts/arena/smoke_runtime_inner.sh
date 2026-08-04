@@ -51,10 +51,10 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 deadline=$((SECONDS + TIMEOUT_S))
-topic_by_type() {
+topics_by_type() {
     local message_type="$1"
     ros2 topic list -t 2>/dev/null | \
-        awk -v expected="[${message_type}]" '$2 == expected {print $1; exit}'
+        awk -v expected="[${message_type}]" '$2 == expected {print $1}'
 }
 
 action_by_type() {
@@ -76,7 +76,7 @@ wait_for_discovery() {
         if [[ "${kind}" == "action" ]]; then
             value="$(action_by_type "${type}")"
         else
-            value="$(topic_by_type "${type}")"
+            value="$(topics_by_type "${type}" | head -n 1)"
         fi
         if [[ -n "${value}" ]]; then
             printf '%s\n' "${value}"
@@ -89,16 +89,38 @@ wait_for_discovery() {
     return 1
 }
 
-clock_topic="$(wait_for_discovery topic rosgraph_msgs/msg/Clock)"
-tf_topic="$(wait_for_discovery topic tf2_msgs/msg/TFMessage)"
-lidar_topic="$(wait_for_discovery topic sensor_msgs/msg/LaserScan)"
-odom_topic="$(wait_for_discovery topic nav_msgs/msg/Odometry)"
-nav_action="$(wait_for_discovery action nav2_msgs/action/NavigateToPose)"
+# A discovered ROS topic is not sufficient evidence that the simulator is
+# publishing. Arena exposes both remapped and raw Gazebo topics, and the first
+# name returned by the graph can be an idle relay (notably for Odometry). Probe
+# every matching topic and return the first one that yields a real sample.
+wait_for_topic_sample() {
+    local type="$1"
+    local candidate=""
+    while (( SECONDS < deadline )); do
+        if ! kill -0 "${launch_pid}" 2>/dev/null; then
+            printf 'ERROR: Arena launch exited before topic data for %s\n' "${type}" >&2
+            tail -100 "${LOG_FILE}" >&2
+            return 1
+        fi
+        while IFS= read -r candidate; do
+            [[ -n "${candidate}" ]] || continue
+            if timeout 4 ros2 topic echo --once "${candidate}" >/dev/null 2>&1; then
+                printf '%s\n' "${candidate}"
+                return 0
+            fi
+        done < <(topics_by_type "${type}")
+        sleep 1
+    done
+    printf 'ERROR: timed out waiting for topic data type %s\n' "${type}" >&2
+    tail -100 "${LOG_FILE}" >&2
+    return 1
+}
 
-timeout 20 ros2 topic echo --once "${clock_topic}" >/dev/null
-timeout 20 ros2 topic echo --once "${tf_topic}" >/dev/null
-timeout 20 ros2 topic echo --once "${lidar_topic}" >/dev/null
-timeout 20 ros2 topic echo --once "${odom_topic}" >/dev/null
+clock_topic="$(wait_for_topic_sample rosgraph_msgs/msg/Clock)"
+tf_topic="$(wait_for_topic_sample tf2_msgs/msg/TFMessage)"
+lidar_topic="$(wait_for_topic_sample sensor_msgs/msg/LaserScan)"
+odom_topic="$(wait_for_topic_sample nav_msgs/msg/Odometry)"
+nav_action="$(wait_for_discovery action nav2_msgs/action/NavigateToPose)"
 
 goal_log="${LOG_FILE%.log}_goal.log"
 set +e
