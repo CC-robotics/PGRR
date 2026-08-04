@@ -346,7 +346,7 @@ class RecoveryManagerNode(Node):
             "deadlock_backup_after_decisions": 2,
             "deadlock_replan_after_decisions": 4,
             "robot_clearance_m": 0.25,
-            "maximum_recovery_path_deviation_m": 0.9,
+            "maximum_recovery_path_deviation_m": 0.6,
             "backup_speed_mps": 0.15,
             "backup_minimum_duration_s": 0.8,
             "backup_maximum_duration_s": 3.0,
@@ -1127,7 +1127,11 @@ class RecoveryManagerNode(Node):
             latched=self._collision_safety_latched,
             collision_risk=failure.collision_risk,
             trigger_threshold=self._float("bc_rejoin_block_threshold"),
-            footprint_clearance_m=nearest_clearance,
+            # Release the dynamic latch from the same commanded-motion sector
+            # that triggered it. A static side wall remains protected by the
+            # independent omnidirectional footprint guard below, but cannot
+            # impersonate an approaching actor after that actor has cleared.
+            footprint_clearance_m=motion_clearance,
             release_clearance_m=(
                 self._float("collision_latched_stop_clearance_m")
                 + self._float("emergency_release_hysteresis_m")
@@ -1145,12 +1149,20 @@ class RecoveryManagerNode(Node):
         )
         rear_clearance = self._observed_laser_clearance(math.pi)
         nearest_angle = self._nearest_obstacle_angle()
+        emergency_backup_permitted = self._footprint_backup_permitted(footprint_hazard)
+        if self._policy_type == "bc":
+            emergency_backup_permitted &= self._bc_retreat_guard.backup_permitted(
+                pose,
+                backup_distance_m=(
+                    self._float("backup_speed_mps") * self._float("emergency_backup_duration_s")
+                ),
+            )
         self._emergency, self._emergency_escape_mode = self._emergency_escape.update(
             now_s=now_s,
             hazard=raw_emergency,
             linear_speed_mps=float(self._odom.twist.twist.linear.x),
             rear_clearance_m=0.0 if rear_clearance is None else rear_clearance,
-            backup_permitted=self._footprint_backup_permitted(footprint_hazard),
+            backup_permitted=emergency_backup_permitted,
             obstacle_angle_rad=nearest_angle,
             obstacle_clearance_m=nearest_clearance,
             forward_clearance_m=self._forward_escape_clearance(),

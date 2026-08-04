@@ -168,7 +168,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["collision_latched_action_clearance_m"] >= (
         config["collision_latched_stop_clearance_m"] + config["emergency_release_hysteresis_m"]
     )
-    assert config["maximum_recovery_path_deviation_m"] == 0.9
+    assert config["maximum_recovery_path_deviation_m"] == 0.6
     assert config["backup_minimum_duration_s"] == 0.8
     assert config["backup_maximum_duration_s"] == 3.0
     assert config["backup_clearance_improvement_m"] == 0.25
@@ -211,6 +211,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert manager.count("collision_latched_motion_clearance(") == 2
     assert "constrain_repeated_backup(" in manager
     assert "constrain_net_retreat(" in manager
+    assert "emergency_backup_permitted &= self._bc_retreat_guard.backup_permitted(" in manager
+    assert "footprint_clearance_m=motion_clearance" in manager
     detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()
     assert "RecoveryDecision.EMERGENCY_STOP" in detector
     assert "timestamp <= self._last_timestamp" in detector

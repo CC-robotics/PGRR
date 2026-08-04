@@ -136,6 +136,35 @@ def test_net_retreat_constraint_only_removes_backup() -> None:
     assert np.array_equal(constrained, expected)
 
 
+def test_net_retreat_constraint_blocks_backward_facing_subgoals() -> None:
+    guard = ObservableNetRetreatGuard(
+        task_heading_rad=0.0,
+        maximum_net_retreat_m=1.4,
+        best_task_coordinate_m=8.0,
+    )
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    constrained = constrain_net_retreat(
+        mask,
+        guard=guard,
+        pose=Pose2D(7.0, 12.0, np.pi),
+        backup_distance_m=0.45,
+    )
+    assert not bool(constrained[3])
+    assert bool(constrained[0])
+    assert bool(constrained[6])
+    assert constrained[WAIT_ACTION_ID]
+
+
+def test_retreat_guard_can_bound_optional_emergency_backup_pulse() -> None:
+    guard = ObservableNetRetreatGuard(
+        task_heading_rad=0.0,
+        maximum_net_retreat_m=1.4,
+        best_task_coordinate_m=8.0,
+    )
+    assert guard.backup_permitted(Pose2D(6.8, 12.0, 0.0), backup_distance_m=0.12)
+    assert not guard.backup_permitted(Pose2D(6.7, 12.0, 0.0), backup_distance_m=0.12)
+
+
 @pytest.mark.parametrize(
     "kwargs",
     [

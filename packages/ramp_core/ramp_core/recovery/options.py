@@ -100,16 +100,12 @@ class ObservableNetRetreatGuard:
     """Bound policy-directed retreat relative to achieved task progress.
 
     The guard projects the robot pose onto the fixed start-to-goal task axis
-    and remembers the furthest coordinate reached.  A BACKUP option is legal
-    only when its complete mask-validated segment would remain inside the
-    configured net-retreat budget.  This uses robot odometry and the task goal
-    only; it neither consumes privileged actor state nor relaxes a planning or
-    LiDAR constraint.
-
-    Emergency safety motion deliberately remains outside this policy guard:
-    an immediate collision-avoidance command must retain priority over task
-    progress.  Those commands are independently bounded and rechecked by the
-    emergency controller.
+    and remembers the furthest coordinate reached.  A policy option is legal
+    only when its endpoint would remain inside the configured net-retreat
+    budget.  This uses robot odometry and the task goal only; it neither
+    consumes privileged actor state nor relaxes a planning or LiDAR constraint.
+    The emergency controller may also consult the guard for its optional
+    BACKUP escape; STOP remains available unconditionally.
     """
 
     task_heading_rad: float
@@ -146,11 +142,19 @@ class ObservableNetRetreatGuard:
 
         if not math.isfinite(backup_distance_m) or backup_distance_m < 0.0:
             raise ValueError("backup distance must be finite and non-negative")
+        endpoint = Pose2D(
+            pose.x - backup_distance_m * math.cos(pose.yaw),
+            pose.y - backup_distance_m * math.sin(pose.yaw),
+            pose.yaw,
+        )
+        return self.endpoint_permitted(pose, endpoint)
+
+    def endpoint_permitted(self, pose: Pose2D, endpoint: Pose2D) -> bool:
+        """Return whether an option endpoint respects achieved task progress."""
+
         self.observe(pose)
         assert self.best_task_coordinate_m is not None
-        reverse_task_delta = -backup_distance_m * math.cos(pose.yaw - self.task_heading_rad)
-        endpoint_coordinate = self.task_coordinate(pose) + reverse_task_delta
-        endpoint_retreat = self.best_task_coordinate_m - endpoint_coordinate
+        endpoint_retreat = self.best_task_coordinate_m - self.task_coordinate(endpoint)
         return endpoint_retreat <= self.maximum_net_retreat_m + 1.0e-9
 
 
@@ -439,11 +443,16 @@ def constrain_net_retreat(
     pose: Pose2D,
     backup_distance_m: float,
 ) -> npt.NDArray[np.bool_]:
-    """Apply a policy BACKUP retreat cap without changing any other action."""
+    """Remove policy actions whose endpoints exceed the net-retreat cap."""
 
     constrained = np.asarray(mask, dtype=np.bool_).copy()
     if constrained.shape != (ACTION_COUNT,):
         raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    for action in ACTIONS[:WAIT_ACTION_ID]:
+        target = action.target_pose(pose)
+        assert target is not None
+        if not guard.endpoint_permitted(pose, target):
+            constrained[action.action_id] = False
     if not guard.backup_permitted(pose, backup_distance_m=backup_distance_m):
         constrained[BACKUP_ACTION_ID] = False
     return constrained
