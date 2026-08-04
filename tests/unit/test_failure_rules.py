@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import pytest
 from ramp_core.failure.metrics import angular_sign_changes
 from ramp_core.failure.rules import RuleFailureConfig, RuleFailureDetector, TimedNavigationSample
@@ -17,6 +19,8 @@ def _sample(
     lidar: float = 3.0,
     forward_lidar: float | None = None,
     collision_lidar: float | None = None,
+    nearest_bearing: float | None = None,
+    collision_bearing: float | None = None,
     status: PlannerStatus = PlannerStatus.ACTIVE,
     goal_reached: bool = False,
 ) -> TimedNavigationSample:
@@ -31,6 +35,8 @@ def _sample(
         nearest_lidar_distance=lidar,
         forward_lidar_distance=forward_lidar,
         collision_lidar_distance=collision_lidar,
+        nearest_lidar_bearing=nearest_bearing,
+        collision_lidar_bearing=collision_bearing,
         planner_status=status,
         goal_reached=goal_reached,
     )
@@ -157,8 +163,24 @@ def test_imminent_collision_uses_speed_dependent_stopping_distance() -> None:
 
 def test_closing_obstacle_inside_proximity_window_triggers_early_warning() -> None:
     detector = RuleFailureDetector()
-    detector.update(_sample(0.0, linear=0.2, lidar=1.30))
-    prediction = detector.update(_sample(0.5, linear=0.2, lidar=1.05))
+    detector.update(
+        _sample(
+            0.0,
+            linear=0.2,
+            lidar=1.30,
+            nearest_bearing=0.0,
+            collision_bearing=0.0,
+        )
+    )
+    prediction = detector.update(
+        _sample(
+            0.5,
+            linear=0.2,
+            lidar=1.05,
+            nearest_bearing=0.0,
+            collision_bearing=0.0,
+        )
+    )
     assert prediction.collision_risk == pytest.approx(0.75)
 
 
@@ -169,8 +191,26 @@ def test_planner_abort_is_not_mislabeled_as_collision_risk() -> None:
 
 def test_wall_range_change_while_spinning_is_not_collision_trend() -> None:
     detector = RuleFailureDetector()
-    detector.update(_sample(0.0, linear=0.2, angular=0.9, lidar=1.40))
-    prediction = detector.update(_sample(0.5, linear=0.2, angular=0.9, lidar=1.20))
+    detector.update(
+        _sample(
+            0.0,
+            linear=0.2,
+            angular=0.9,
+            lidar=1.40,
+            nearest_bearing=0.0,
+            collision_bearing=0.0,
+        )
+    )
+    prediction = detector.update(
+        _sample(
+            0.5,
+            linear=0.2,
+            angular=0.9,
+            lidar=1.20,
+            nearest_bearing=0.0,
+            collision_bearing=0.0,
+        )
+    )
     assert prediction.collision_risk == 0.0
 
 
@@ -300,9 +340,108 @@ def test_collision_release_distance_must_exceed_wide_trigger_distance() -> None:
 
 def test_side_obstacle_closing_on_stationary_robot_triggers_trend() -> None:
     detector = RuleFailureDetector()
-    detector.update(_sample(0.0, lidar=1.05, forward_lidar=3.0, collision_lidar=1.05, linear=0.0))
+    detector.update(
+        _sample(
+            0.0,
+            lidar=3.0,
+            forward_lidar=3.0,
+            collision_lidar=1.30,
+            collision_bearing=0.2,
+            linear=0.0,
+        )
+    )
     prediction = detector.update(
-        _sample(0.5, lidar=0.85, forward_lidar=3.0, collision_lidar=0.85, linear=0.0)
+        _sample(
+            0.5,
+            lidar=3.0,
+            forward_lidar=3.0,
+            collision_lidar=1.00,
+            collision_bearing=0.2,
+            linear=0.0,
+        )
+    )
+    assert prediction.collision_risk == pytest.approx(0.75)
+
+
+def test_collision_trend_rejects_minimum_return_identity_jump() -> None:
+    detector = RuleFailureDetector()
+    detector.update(
+        _sample(
+            0.0,
+            lidar=3.0,
+            forward_lidar=3.0,
+            collision_lidar=1.30,
+            collision_bearing=-0.30,
+        )
+    )
+    prediction = detector.update(
+        _sample(
+            0.5,
+            lidar=3.0,
+            forward_lidar=3.0,
+            collision_lidar=1.00,
+            collision_bearing=0.30,
+        )
+    )
+    assert prediction.collision_risk == 0.0
+
+
+def test_rotation_compensated_wall_return_drift_does_not_trigger_trend() -> None:
+    detector = RuleFailureDetector()
+    detector.update(
+        _sample(
+            0.0,
+            lidar=3.0,
+            forward_lidar=3.0,
+            collision_lidar=1.30,
+            collision_bearing=-0.50,
+            angular=-0.24,
+        )
+    )
+    prediction = detector.update(
+        _sample(
+            0.5,
+            lidar=3.0,
+            forward_lidar=3.0,
+            collision_lidar=1.00,
+            collision_bearing=-0.40,
+            angular=-0.24,
+        )
+    )
+    assert prediction.collision_risk == 0.0
+
+
+def test_bearing_consistency_is_circular_across_pi() -> None:
+    detector = RuleFailureDetector()
+    detector.update(
+        _sample(
+            0.0,
+            lidar=3.0,
+            forward_lidar=3.0,
+            collision_lidar=1.30,
+            collision_bearing=math.pi - 0.02,
+        )
+    )
+    prediction = detector.update(
+        _sample(
+            0.5,
+            lidar=3.0,
+            forward_lidar=3.0,
+            collision_lidar=1.00,
+            collision_bearing=-math.pi + 0.02,
+        )
+    )
+    assert prediction.collision_risk == pytest.approx(0.75)
+
+
+def test_immediate_collision_threshold_does_not_require_bearing_identity() -> None:
+    prediction = RuleFailureDetector().update(
+        _sample(
+            0.0,
+            lidar=3.0,
+            forward_lidar=3.0,
+            collision_lidar=0.84,
+        )
     )
     assert prediction.collision_risk == 1.0
 
@@ -324,6 +463,7 @@ def test_off_axis_obstacle_closing_while_robot_moves_forward_triggers_trend() ->
             lidar=1.60,
             forward_lidar=3.0,
             collision_lidar=3.0,
+            nearest_bearing=1.0,
             linear=0.25,
         )
     )
@@ -333,6 +473,7 @@ def test_off_axis_obstacle_closing_while_robot_moves_forward_triggers_trend() ->
             lidar=1.20,
             forward_lidar=3.0,
             collision_lidar=3.0,
+            nearest_bearing=1.0,
             linear=0.25,
         )
     )

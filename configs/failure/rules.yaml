@@ -14,6 +14,7 @@ collision_closing_speed_mps: 0.10
 collision_radial_excess_closing_speed_mps: 0.25
 collision_proximity_score: 0.75
 collision_trend_window_s: 0.5
+collision_bearing_consistency_rad: 0.08726646259971647
 collision_max_angular_speed_radps: 0.30
 freeze_window_s: 3.0
 freeze_goal_distance_m: 1.0

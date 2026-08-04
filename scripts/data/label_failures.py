@@ -16,9 +16,13 @@ import numpy as np
 import yaml
 from ramp_core.failure.labels import FailureType, generate_failure_labels
 from ramp_core.failure.rules import RuleFailureConfig, TimedNavigationSample
+from ramp_core.geometry import normalize_angle
 from ramp_core.types import PlannerStatus
 
 ROOT = Path(__file__).resolve().parents[2]
+LIDAR_FIELD_OF_VIEW_RAD = np.deg2rad(270.0)
+COLLISION_FRONT_HALF_WIDTH_RAD = np.deg2rad(15.0)
+COLLISION_TREND_HALF_WIDTH_RAD = np.deg2rad(45.0)
 
 
 def _planner_status(value: Any) -> PlannerStatus:
@@ -30,15 +34,23 @@ def _planner_status(value: Any) -> PlannerStatus:
 
 def _sample(row: dict[str, Any]) -> TimedNavigationSample:
     lidar = np.asarray(row["lidar"], dtype=np.float64)
-    trend_half_width = max(1, lidar.size // 12)
-    forward_half_width = max(1, lidar.size // 24)
-    midpoint = lidar.size // 2
-    front_clearance = float(
-        np.min(lidar[midpoint - forward_half_width : midpoint + forward_half_width + 1])
+    angles = np.linspace(
+        -LIDAR_FIELD_OF_VIEW_RAD / 2.0,
+        LIDAR_FIELD_OF_VIEW_RAD / 2.0,
+        lidar.size,
     )
-    collision_clearance = float(
-        np.min(lidar[midpoint - trend_half_width : midpoint + trend_half_width + 1])
-    )
+    valid = np.isfinite(lidar) & (lidar >= 0.0)
+    nearest_indices = np.flatnonzero(valid)
+    front_indices = np.flatnonzero(valid & (np.abs(angles) <= COLLISION_FRONT_HALF_WIDTH_RAD))
+    collision_indices = np.flatnonzero(valid & (np.abs(angles) <= COLLISION_TREND_HALF_WIDTH_RAD))
+    if not nearest_indices.size or not front_indices.size or not collision_indices.size:
+        raise ValueError("logged LiDAR must contain valid nearest, front, and collision returns")
+    nearest_index = int(nearest_indices[int(np.argmin(lidar[nearest_indices]))])
+    front_index = int(front_indices[int(np.argmin(lidar[front_indices]))])
+    collision_index = int(collision_indices[int(np.argmin(lidar[collision_indices]))])
+    robot_yaw = float(row["robot_pose"][2])
+    front_clearance = float(lidar[front_index])
+    collision_clearance = float(lidar[collision_index])
     return TimedNavigationSample(
         timestamp=float(row["timestamp"]),
         position=(float(row["robot_pose"][0]), float(row["robot_pose"][1])),
@@ -50,6 +62,8 @@ def _sample(row: dict[str, Any]) -> TimedNavigationSample:
         nearest_lidar_distance=float(row["nearest_obstacle_distance"]),
         forward_lidar_distance=front_clearance,
         collision_lidar_distance=collision_clearance,
+        nearest_lidar_bearing=normalize_angle(robot_yaw + float(angles[nearest_index])),
+        collision_lidar_bearing=normalize_angle(robot_yaw + float(angles[collision_index])),
         planner_status=_planner_status(row["planner_status"]),
         goal_reached=float(row["distance_to_goal"]) <= 0.25,
     )
@@ -62,7 +76,15 @@ def _config(path: Path) -> tuple[RuleFailureConfig, dict[str, float]]:
         "positive_pre_failure_window_s",
         "positive_post_failure_window_s",
     }
-    rule_values = {key: value for key, value in raw.items() if key not in window_keys}
+    extraction_keys = {
+        "collision_front_sector_degrees",
+        "collision_trend_sector_degrees",
+    }
+    rule_keys = set(RuleFailureConfig.__dataclass_fields__)
+    unknown = set(raw) - window_keys - extraction_keys - rule_keys
+    if unknown:
+        raise ValueError(f"unknown failure-rule keys: {sorted(unknown)}")
+    rule_values = {key: value for key, value in raw.items() if key in rule_keys}
     return RuleFailureConfig(**rule_values), {key: float(raw[key]) for key in window_keys}
 
 

@@ -12,6 +12,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from ramp_core.failure.labels import FailureType
 from ramp_core.failure.rules import RuleFailureConfig, RuleFailureDetector, TimedNavigationSample
+from ramp_core.geometry import normalize_angle
 from ramp_core.planning.online import sanitize_near_field_returns
 from ramp_core.types import PlannerStatus, select_planner_status
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
@@ -31,6 +32,14 @@ def _planner_status(status: int) -> PlannerStatus:
         GoalStatus.STATUS_CANCELED: PlannerStatus.CANCELED,
         GoalStatus.STATUS_CANCELING: PlannerStatus.CANCELED,
     }.get(status, PlannerStatus.UNKNOWN)
+
+
+def _yaw_from_odometry(message: Odometry) -> float:
+    quaternion = message.pose.pose.orientation
+    return math.atan2(
+        2.0 * (quaternion.w * quaternion.z + quaternion.x * quaternion.y),
+        1.0 - 2.0 * (quaternion.y * quaternion.y + quaternion.z * quaternion.z),
+    )
 
 
 class FailureDetectorNode(Node):
@@ -80,8 +89,10 @@ class FailureDetectorNode(Node):
         if not 0.0 <= self._trigger_threshold <= 1.0:
             raise ValueError("trigger_threshold must lie in [0, 1]")
         self._scan_minimum: float | None = None
+        self._scan_minimum_bearing: float | None = None
         self._front_scan_minimum: float | None = None
         self._collision_scan_minimum: float | None = None
+        self._collision_scan_minimum_bearing: float | None = None
         self._base_command = (0.0, 0.0)
         self._planner_status = PlannerStatus.UNKNOWN
         self._last_timestamp: float | None = None
@@ -161,13 +172,18 @@ class FailureDetectorNode(Node):
         front = np.abs(np.arctan2(np.sin(angles), np.cos(angles))) <= half_width
         collision_sector = np.abs(np.arctan2(np.sin(angles), np.cos(angles))) <= trend_half_width
         valid = np.isfinite(ranges) & (ranges >= 0.0)
-        finite = ranges[valid]
-        front_finite = ranges[front & valid]
-        collision_finite = ranges[collision_sector & valid]
-        if finite.size and front_finite.size and collision_finite.size:
-            self._scan_minimum = float(np.min(finite))
-            self._front_scan_minimum = float(np.min(front_finite))
-            self._collision_scan_minimum = float(np.min(collision_finite))
+        valid_indices = np.flatnonzero(valid)
+        front_indices = np.flatnonzero(front & valid)
+        collision_indices = np.flatnonzero(collision_sector & valid)
+        if valid_indices.size and front_indices.size and collision_indices.size:
+            nearest_index = int(valid_indices[int(np.argmin(ranges[valid_indices]))])
+            front_index = int(front_indices[int(np.argmin(ranges[front_indices]))])
+            collision_index = int(collision_indices[int(np.argmin(ranges[collision_indices]))])
+            self._scan_minimum = float(ranges[nearest_index])
+            self._scan_minimum_bearing = float(angles[nearest_index])
+            self._front_scan_minimum = float(ranges[front_index])
+            self._collision_scan_minimum = float(ranges[collision_index])
+            self._collision_scan_minimum_bearing = float(angles[collision_index])
 
     def _on_base_command(self, message: Twist) -> None:
         self._base_command = float(message.linear.x), float(message.angular.z)
@@ -194,8 +210,10 @@ class FailureDetectorNode(Node):
             return
         if (
             self._scan_minimum is None
+            or self._scan_minimum_bearing is None
             or self._front_scan_minimum is None
             or self._collision_scan_minimum is None
+            or self._collision_scan_minimum_bearing is None
         ):
             return
         stamp = message.header.stamp
@@ -225,11 +243,14 @@ class FailureDetectorNode(Node):
         local_x = float(message.pose.pose.position.x)
         local_y = float(message.pose.pose.position.y)
         start_x, start_y, start_yaw = self._robot_start
+        local_yaw = _yaw_from_odometry(message)
         if bool(self.get_parameter("odometry_is_world_frame").value):
             world_x, world_y = local_x, local_y
+            world_yaw = local_yaw
         else:
             world_x = start_x + math.cos(start_yaw) * local_x - math.sin(start_yaw) * local_y
             world_y = start_y + math.sin(start_yaw) * local_x + math.cos(start_yaw) * local_y
+            world_yaw = normalize_angle(start_yaw + local_yaw)
         goal_distance = math.dist((world_x, world_y), self._goal)
         prediction = self._detector.update(
             TimedNavigationSample(
@@ -243,6 +264,10 @@ class FailureDetectorNode(Node):
                 nearest_lidar_distance=self._scan_minimum,
                 forward_lidar_distance=self._front_scan_minimum,
                 collision_lidar_distance=self._collision_scan_minimum,
+                nearest_lidar_bearing=normalize_angle(world_yaw + self._scan_minimum_bearing),
+                collision_lidar_bearing=normalize_angle(
+                    world_yaw + self._collision_scan_minimum_bearing
+                ),
                 planner_status=self._planner_status,
                 goal_reached=goal_distance <= self._goal_tolerance,
             ),

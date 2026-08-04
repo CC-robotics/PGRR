@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ramp_core.failure.metrics import angular_sign_changes, goal_progress, path_displacement
+from ramp_core.geometry import normalize_angle
 from ramp_core.kinematics import stopping_distance
 from ramp_core.types import FailurePrediction, PlannerStatus
 
@@ -29,6 +30,7 @@ class RuleFailureConfig:
     collision_radial_excess_closing_speed_mps: float = 0.25
     collision_proximity_score: float = 0.75
     collision_trend_window_s: float = 0.5
+    collision_bearing_consistency_rad: float = math.radians(5.0)
     collision_max_angular_speed_radps: float = 0.30
     freeze_window_s: float = 3.0
     freeze_goal_distance_m: float = 1.0
@@ -53,6 +55,7 @@ class RuleFailureConfig:
             self.collision_release_distance_m,
             self.collision_proximity_m,
             self.collision_trend_window_s,
+            self.collision_bearing_consistency_rad,
             self.freeze_window_s,
             self.freeze_goal_distance_m,
             self.oscillation_window_s,
@@ -82,6 +85,8 @@ class RuleFailureConfig:
             raise ValueError("oscillation_sign_changes must be positive")
         if not 0.0 <= self.collision_proximity_score <= 1.0:
             raise ValueError("collision_proximity_score must lie in [0, 1]")
+        if self.collision_bearing_consistency_rad > math.pi:
+            raise ValueError("collision_bearing_consistency_rad must not exceed pi")
         if not 0.0 <= self.requested_motion_fraction <= 1.0:
             raise ValueError("requested_motion_fraction must lie in [0, 1]")
         if self.collision_release_distance_m <= self.collision_wide_absolute_distance_m:
@@ -104,6 +109,8 @@ class TimedNavigationSample:
     goal_reached: bool = False
     forward_lidar_distance: float | None = None
     collision_lidar_distance: float | None = None
+    nearest_lidar_bearing: float | None = None
+    collision_lidar_bearing: float | None = None
 
     def __post_init__(self) -> None:
         values = (
@@ -128,6 +135,12 @@ class TimedNavigationSample:
             not math.isfinite(self.collision_lidar_distance) or self.collision_lidar_distance < 0.0
         ):
             raise ValueError("collision_lidar_distance must be finite and non-negative")
+        for name, bearing in (
+            ("nearest_lidar_bearing", self.nearest_lidar_bearing),
+            ("collision_lidar_bearing", self.collision_lidar_bearing),
+        ):
+            if bearing is not None and not math.isfinite(bearing):
+                raise ValueError(f"{name} must be finite")
 
 
 class RuleFailureDetector:
@@ -163,6 +176,22 @@ class RuleFailureDetector:
     @staticmethod
     def _covers(window: list[TimedNavigationSample], duration: float) -> bool:
         return len(window) >= 2 and window[-1].timestamp - window[0].timestamp >= duration * 0.95
+
+    def _bearing_identity_is_consistent(
+        self,
+        window: list[TimedNavigationSample],
+        attribute: str,
+    ) -> bool:
+        """Return whether one rotation-compensated return plausibly spans the window."""
+        bearings = [getattr(sample, attribute) for sample in window]
+        if not bearings or any(bearing is None for bearing in bearings):
+            return False
+        anchor = float(bearings[0])
+        return all(
+            abs(normalize_angle(float(bearing) - anchor))
+            <= self.config.collision_bearing_consistency_rad
+            for bearing in bearings[1:]
+        )
 
     def update(
         self,
@@ -233,6 +262,12 @@ class RuleFailureDetector:
         )
         if self._covers(collision_window, self.config.collision_trend_window_s):
             duration = collision_window[-1].timestamp - collision_window[0].timestamp
+            collision_identity_is_consistent = self._bearing_identity_is_consistent(
+                collision_window, "collision_lidar_bearing"
+            )
+            nearest_identity_is_consistent = self._bearing_identity_is_consistent(
+                collision_window, "nearest_lidar_bearing"
+            )
             first_collision_clearance = (
                 collision_window[0].collision_lidar_distance
                 if collision_window[0].collision_lidar_distance is not None
@@ -260,27 +295,32 @@ class RuleFailureDetector:
             ) / max(duration, 1.0e-6)
             off_axis_nearest = sample.nearest_lidar_distance + 1.0e-3 < collision_clearance
             if (
-                collision_clearance <= self.config.collision_proximity_m
+                collision_identity_is_consistent
+                and collision_clearance <= self.config.collision_proximity_m
                 and closing_speed
                 >= abs(sample.linear_velocity)
                 + self.config.collision_radial_excess_closing_speed_mps
                 and abs(sample.angular_velocity) <= self.config.collision_max_angular_speed_radps
             ):
                 collision = max(collision, self.config.collision_proximity_score)
-            if sample.nearest_lidar_distance <= self.config.collision_proximity_m and (
-                radial_closing_speed
-                >= abs(sample.linear_velocity)
-                + self.config.collision_radial_excess_closing_speed_mps
-                or (
-                    off_axis_nearest
-                    # Compensate for range change explained by the robot's
-                    # own translation.  Without this term, centimetre-scale
-                    # side-wall scan jitter can look like a moving obstacle
-                    # and trigger recovery in an otherwise clear corridor.
-                    and radial_closing_speed
-                    >= abs(sample.linear_velocity) + self.config.collision_closing_speed_mps
-                    and abs(sample.angular_velocity)
-                    <= self.config.collision_max_angular_speed_radps
+            if (
+                nearest_identity_is_consistent
+                and sample.nearest_lidar_distance <= self.config.collision_proximity_m
+                and (
+                    radial_closing_speed
+                    >= abs(sample.linear_velocity)
+                    + self.config.collision_radial_excess_closing_speed_mps
+                    or (
+                        off_axis_nearest
+                        # Compensate for range change explained by the robot's
+                        # own translation.  Without this term, centimetre-scale
+                        # side-wall scan jitter can look like a moving obstacle
+                        # and trigger recovery in an otherwise clear corridor.
+                        and radial_closing_speed
+                        >= abs(sample.linear_velocity) + self.config.collision_closing_speed_mps
+                        and abs(sample.angular_velocity)
+                        <= self.config.collision_max_angular_speed_radps
+                    )
                 )
             ):
                 collision = max(collision, self.config.collision_proximity_score)
