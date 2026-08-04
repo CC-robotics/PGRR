@@ -13,6 +13,7 @@ from ramp_core.action_space import (
 )
 from ramp_core.observations import HumanState
 from ramp_core.recovery.options import (
+    BoundedBackupOption,
     PrivilegedYieldOption,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
@@ -23,6 +24,80 @@ from ramp_core.recovery.options import (
     should_continue_recovery_option,
 )
 from ramp_core.types import Pose2D
+
+
+def test_bounded_backup_holds_then_releases_on_observable_clearance_gain() -> None:
+    option = BoundedBackupOption()
+    assert not option.is_complete(
+        elapsed_s=0.79,
+        start_clearance_m=0.50,
+        current_clearance_m=0.90,
+    )
+    assert option.is_complete(
+        elapsed_s=0.80,
+        start_clearance_m=0.50,
+        current_clearance_m=0.75,
+    )
+
+
+def test_bounded_backup_runs_to_hard_limit_without_clearance_gain() -> None:
+    option = BoundedBackupOption()
+    assert not option.is_complete(
+        elapsed_s=2.99,
+        start_clearance_m=0.50,
+        current_clearance_m=0.74,
+    )
+    assert option.is_complete(
+        elapsed_s=3.0,
+        start_clearance_m=0.50,
+        current_clearance_m=0.50,
+    )
+
+
+def test_bounded_backup_missing_observation_cannot_release_early() -> None:
+    option = BoundedBackupOption()
+    assert not option.is_complete(
+        elapsed_s=2.0,
+        start_clearance_m=0.50,
+        current_clearance_m=None,
+    )
+    assert option.is_complete(
+        elapsed_s=3.0,
+        start_clearance_m=None,
+        current_clearance_m=None,
+    )
+
+
+def test_bounded_backup_maximum_matches_mask_validated_segment() -> None:
+    option = BoundedBackupOption(
+        speed_mps=0.15,
+        maximum_duration_s=3.0,
+        mask_validated_distance_m=0.45,
+    )
+    assert option.maximum_command_distance_m == pytest.approx(0.45)
+
+
+def test_bounded_backup_rejects_motion_beyond_mask_validated_segment() -> None:
+    with pytest.raises(ValueError, match="exceeds the action-mask"):
+        BoundedBackupOption(
+            speed_mps=0.15,
+            maximum_duration_s=3.01,
+            mask_validated_distance_m=0.45,
+        )
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"minimum_duration_s": -0.1},
+        {"minimum_duration_s": 1.0, "maximum_duration_s": 0.9},
+        {"clearance_improvement_m": -0.1},
+        {"speed_mps": float("nan")},
+    ],
+)
+def test_bounded_backup_rejects_invalid_configuration(kwargs: dict[str, float]) -> None:
+    with pytest.raises(ValueError):
+        BoundedBackupOption(**kwargs)
 
 
 def _continue(**overrides: object) -> bool:

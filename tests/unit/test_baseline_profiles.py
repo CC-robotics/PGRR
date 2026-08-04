@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import yaml
 
 
@@ -163,9 +164,21 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["collision_latched_stop_clearance_m"] == 0.85
     assert config["collision_latched_action_clearance_m"] == 0.90
     assert config["maximum_recovery_path_deviation_m"] == 0.9
+    assert config["backup_minimum_duration_s"] == 0.8
+    assert config["backup_maximum_duration_s"] == 3.0
+    assert config["backup_clearance_improvement_m"] == 0.25
+    assert config["backup_mask_validated_distance_m"] == 0.45
+    assert (
+        config["backup_speed_mps"] * config["backup_maximum_duration_s"]
+        <= config["backup_mask_validated_distance_m"]
+    )
     assert config["emergency_rotation_clearance_m"] == 0.24
     assert config["emergency_forward_entry_clearance_m"] == 0.85
     assert config["emergency_backup_reset_clear_s"] == 3.0
+    assert config["emergency_minimum_retreat_pulses"] == 3
+    assert config["emergency_minimum_retreat_pulses"] * config[
+        "emergency_backup_duration_s"
+    ] * config["backup_speed_mps"] == pytest.approx(0.36)
     assert config["emergency_maximum_improving_backups"] == 8
     assert config["emergency_backup_progress_m"] == 0.05
     assert config["emergency_translation_clearance_m"] == 0.36
@@ -176,6 +189,11 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_rejoin_block_threshold"] == 0.65
     assert '"emergency_rotation_clearance_m": 0.24' in manager
     assert '"emergency_backup_reset_clear_s": 3.0' in manager
+    assert '"emergency_minimum_retreat_pulses": 3' in manager
+    assert '"backup_maximum_duration_s": 3.0' in manager
+    assert "BoundedBackupOption(" in manager
+    assert "self._backup_start_clearance_m" in manager
+    assert 'backup_distance_m=self._float("backup_mask_validated_distance_m")' in manager
     assert "apply_observable_scan_mask(" in manager
     assert manager.count("_forward_escape_clearance()") >= 2
     assert 'translation_clearance = self._float("emergency_translation_clearance_m")' in manager

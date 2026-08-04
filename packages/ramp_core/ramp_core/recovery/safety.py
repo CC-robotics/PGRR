@@ -115,6 +115,7 @@ class EmergencyEscapeController:
     rear_obstacle_angle_rad: float = math.radians(100.0)
     forward_entry_clearance_m: float = 0.85
     backup_reset_clear_s: float = 3.0
+    minimum_retreat_pulses: int = 3
     maximum_improving_backups: int = 8
     backup_progress_m: float = 0.05
     hazard_since_s: float | None = None
@@ -137,7 +138,12 @@ class EmergencyEscapeController:
             self.backup_reset_clear_s,
             self.backup_progress_m,
         )
-        if any(value < 0.0 for value in values) or self.maximum_improving_backups <= 0:
+        if (
+            any(value < 0.0 for value in values)
+            or self.minimum_retreat_pulses <= 0
+            or self.maximum_improving_backups <= 0
+            or self.minimum_retreat_pulses > self.maximum_improving_backups
+        ):
             raise ValueError("emergency escape parameters must be non-negative")
 
     def update(
@@ -203,11 +209,18 @@ class EmergencyEscapeController:
             >= self.backup_start_clearance_m + self.backup_progress_m
             and self.backup_count < self.maximum_improving_backups
         )
-        # A single reverse pulse is always bounded. Further pulses are allowed
-        # only while each completed pulse measurably increases the nearest
-        # observable clearance. This permits retreat from a bottleneck but
-        # rejects the unchanged-clearance backup limit cycle.
-        if backup_permitted and rear_safe and (not self.backup_used_in_hazard or improving_repeat):
+        minimum_retreat_incomplete = self.backup_count < self.minimum_retreat_pulses
+        # A short sequence of individually bounded pulses creates enough
+        # separation to break a reciprocal head-on stop.  After that minimum,
+        # every additional pulse requires measured clearance improvement. The
+        # existing global pulse budget, rear observation, and footprint guard
+        # remain authoritative for every pulse.
+        if (
+            backup_permitted
+            and rear_safe
+            and self.backup_count < self.maximum_improving_backups
+            and (minimum_retreat_incomplete or improving_repeat)
+        ):
             self.mode = EmergencyEscapeMode.BACKUP
             self.escape_until_s = now_s + self.backup_duration_s
             self.backup_used_in_hazard = True

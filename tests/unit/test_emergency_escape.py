@@ -27,12 +27,13 @@ def test_collision_latched_motion_cannot_enter_unreleasable_clearance_band() -> 
     ) == pytest.approx(1.0)
 
 
-def _controller() -> EmergencyEscapeController:
+def _controller(*, minimum_retreat_pulses: int = 3) -> EmergencyEscapeController:
     return EmergencyEscapeController(
         hold_s=0.5,
         backup_duration_s=0.8,
         backup_clearance_m=0.7,
         release_speed_mps=0.03,
+        minimum_retreat_pulses=minimum_retreat_pulses,
     )
 
 
@@ -156,7 +157,7 @@ def test_footprint_hazard_cancels_active_backup() -> None:
 
 
 def test_continuous_hazard_cannot_repeat_backup_limit_cycle() -> None:
-    controller = _controller()
+    controller = _controller(minimum_retreat_pulses=1)
     controller.update(
         now_s=0.0,
         hazard=True,
@@ -321,7 +322,7 @@ def test_emergency_turn_direction_persists_across_bearing_sign_change() -> None:
 
 
 def test_continuous_hazard_can_repeat_only_when_backup_improves_clearance() -> None:
-    controller = _controller()
+    controller = _controller(minimum_retreat_pulses=1)
     controller.update(
         now_s=0.0,
         hazard=True,
@@ -345,8 +346,76 @@ def test_continuous_hazard_can_repeat_only_when_backup_improves_clearance() -> N
     ) == (True, EmergencyEscapeMode.BACKUP)
 
 
+def test_minimum_retreat_uses_three_rear_safe_pulses_before_requiring_gain() -> None:
+    controller = _controller(minimum_retreat_pulses=3)
+    common = {
+        "hazard": True,
+        "linear_speed_mps": 0.0,
+        "rear_clearance_m": 2.0,
+        "backup_permitted": True,
+        "obstacle_angle_rad": 0.2,
+        "obstacle_clearance_m": 0.4,
+    }
+    assert controller.update(now_s=0.0, **common) == (True, EmergencyEscapeMode.STOP)
+    assert controller.update(now_s=0.5, **common) == (True, EmergencyEscapeMode.BACKUP)
+    assert controller.update(now_s=1.4, **common) == (True, EmergencyEscapeMode.BACKUP)
+    assert controller.update(now_s=2.3, **common) == (True, EmergencyEscapeMode.BACKUP)
+    assert controller.update(now_s=3.2, **common) == (True, EmergencyEscapeMode.TURN_RIGHT)
+    assert controller.backup_count == 3
+
+
+def test_minimum_retreat_never_bypasses_rear_or_footprint_guards() -> None:
+    controller = _controller(minimum_retreat_pulses=3)
+    controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.4,
+    )
+    assert controller.update(
+        now_s=0.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+    assert controller.update(
+        now_s=1.4,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=0.6,
+        obstacle_angle_rad=0.2,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.TURN_RIGHT)
+
+    controller = _controller(minimum_retreat_pulses=3)
+    controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.4,
+    )
+    assert controller.update(
+        now_s=0.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+    assert controller.update(
+        now_s=1.4,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        backup_permitted=False,
+        obstacle_clearance_m=0.4,
+    ) == (True, EmergencyEscapeMode.TURN_RIGHT)
+
+
 def test_backup_peak_survives_deceleration_before_repeat_decision() -> None:
-    controller = _controller()
+    controller = _controller(minimum_retreat_pulses=1)
     controller.update(
         now_s=0.0,
         hazard=True,
@@ -394,6 +463,7 @@ def test_improving_backup_sequence_has_a_hard_limit() -> None:
         backup_duration_s=0.1,
         backup_clearance_m=0.7,
         release_speed_mps=0.03,
+        minimum_retreat_pulses=1,
         maximum_improving_backups=2,
         backup_progress_m=0.05,
     )

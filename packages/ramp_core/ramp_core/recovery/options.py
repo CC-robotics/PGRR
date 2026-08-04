@@ -20,6 +20,81 @@ from ramp_core.observations import HumanState
 from ramp_core.types import Pose2D
 
 
+@dataclass(frozen=True, slots=True)
+class BoundedBackupOption:
+    """Closed-loop completion rule for one planning-validated retreat.
+
+    The planning mask validates a fixed rear segment before BACKUP is chosen.
+    This option keeps the command active for at least ``minimum_duration_s``,
+    releases it once observable clearance has improved enough, and imposes a
+    hard time bound.  Construction fails when the largest commanded retreat
+    could be longer than the segment validated by the action mask.
+    """
+
+    minimum_duration_s: float = 0.8
+    maximum_duration_s: float = 3.0
+    speed_mps: float = 0.15
+    clearance_improvement_m: float = 0.25
+    mask_validated_distance_m: float = 0.45
+
+    def __post_init__(self) -> None:
+        values = (
+            self.minimum_duration_s,
+            self.maximum_duration_s,
+            self.speed_mps,
+            self.clearance_improvement_m,
+            self.mask_validated_distance_m,
+        )
+        if not all(math.isfinite(value) for value in values):
+            raise ValueError("bounded BACKUP parameters must be finite")
+        if self.minimum_duration_s < 0.0:
+            raise ValueError("minimum BACKUP duration must be non-negative")
+        if self.maximum_duration_s < self.minimum_duration_s:
+            raise ValueError("maximum BACKUP duration must not precede its minimum")
+        if self.speed_mps <= 0.0 or self.mask_validated_distance_m <= 0.0:
+            raise ValueError("BACKUP speed and validated distance must be positive")
+        if self.clearance_improvement_m < 0.0:
+            raise ValueError("BACKUP clearance improvement must be non-negative")
+        if self.maximum_command_distance_m > self.mask_validated_distance_m + 1.0e-9:
+            raise ValueError(
+                "maximum BACKUP command distance exceeds the action-mask validated segment"
+            )
+
+    @property
+    def maximum_command_distance_m(self) -> float:
+        """Largest ideal-kinematic retreat commanded by this option."""
+        return self.speed_mps * self.maximum_duration_s
+
+    def is_complete(
+        self,
+        *,
+        elapsed_s: float,
+        start_clearance_m: float | None,
+        current_clearance_m: float | None,
+    ) -> bool:
+        """Return whether BACKUP should release at the current observation.
+
+        Missing clearance observations cannot trigger an early release; the
+        hard maximum duration still terminates the option.  This helper does
+        not authorize motion, so the online safety stop remains authoritative.
+        """
+        if not math.isfinite(elapsed_s) or elapsed_s < 0.0:
+            raise ValueError("elapsed BACKUP duration must be finite and non-negative")
+        for name, clearance in (
+            ("start", start_clearance_m),
+            ("current", current_clearance_m),
+        ):
+            if clearance is not None and (not math.isfinite(clearance) or clearance < 0.0):
+                raise ValueError(f"{name} BACKUP clearance must be finite and non-negative")
+        if elapsed_s >= self.maximum_duration_s:
+            return True
+        if elapsed_s < self.minimum_duration_s:
+            return False
+        if start_clearance_m is None or current_clearance_m is None:
+            return False
+        return current_clearance_m - start_clearance_m >= self.clearance_improvement_m
+
+
 @dataclass
 class PrivilegedYieldOption:
     """Commit to longitudinal yielding until approaching humans have passed."""

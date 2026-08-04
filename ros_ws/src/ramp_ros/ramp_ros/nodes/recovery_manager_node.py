@@ -14,6 +14,7 @@ from nav_msgs.msg import OccupancyGrid as OccupancyGridMessage
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMessage
 from ramp_core.action_mask import (
+    ActionMaskConfig,
     apply_observable_scan_mask,
     apply_path_corridor_mask,
     compute_action_mask,
@@ -48,6 +49,7 @@ from ramp_core.planning.online import (
 )
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.options import (
+    BoundedBackupOption,
     PrivilegedYieldOption,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
@@ -148,6 +150,13 @@ class RecoveryManagerNode(Node):
         )
         self._machine = RecoveryStateMachine(state_config)
         self._machine.set_original_goal(self._goal)
+        self._backup_option = BoundedBackupOption(
+            minimum_duration_s=self._float("backup_minimum_duration_s"),
+            maximum_duration_s=self._float("backup_maximum_duration_s"),
+            speed_mps=self._float("backup_speed_mps"),
+            clearance_improvement_m=self._float("backup_clearance_improvement_m"),
+            mask_validated_distance_m=self._float("backup_mask_validated_distance_m"),
+        )
         if self._policy_type == "bc":
             self._policy = ONNXRecoveryPolicy(
                 str(self.get_parameter("model_path").value),
@@ -230,6 +239,7 @@ class RecoveryManagerNode(Node):
         self._active_action = CONTINUE_ACTION_ID
         self._goal_preempted = False
         self._action_started_s = float("-inf")
+        self._backup_start_clearance_m: float | None = None
         self._emergency = False
         self._collision_safety_latched = False
         self._emergency_escape_active = False
@@ -243,6 +253,7 @@ class RecoveryManagerNode(Node):
             rotation_clearance_m=self._float("emergency_rotation_clearance_m"),
             forward_entry_clearance_m=self._float("emergency_forward_entry_clearance_m"),
             backup_reset_clear_s=self._float("emergency_backup_reset_clear_s"),
+            minimum_retreat_pulses=self._integer("emergency_minimum_retreat_pulses"),
             maximum_improving_backups=self._integer("emergency_maximum_improving_backups"),
             backup_progress_m=self._float("emergency_backup_progress_m"),
         )
@@ -328,7 +339,10 @@ class RecoveryManagerNode(Node):
             "robot_clearance_m": 0.25,
             "maximum_recovery_path_deviation_m": 0.9,
             "backup_speed_mps": 0.15,
-            "backup_duration_s": 0.8,
+            "backup_minimum_duration_s": 0.8,
+            "backup_maximum_duration_s": 3.0,
+            "backup_clearance_improvement_m": 0.25,
+            "backup_mask_validated_distance_m": 0.45,
             "wait_duration_s": 0.5,
             "subgoal_settle_s": 1.0,
             "expert_replan_interval_s": 0.5,
@@ -358,6 +372,7 @@ class RecoveryManagerNode(Node):
             "emergency_rotation_clearance_m": 0.24,
             "emergency_forward_entry_clearance_m": 0.85,
             "emergency_backup_reset_clear_s": 3.0,
+            "emergency_minimum_retreat_pulses": 3,
             "emergency_turn_speed_radps": 0.6,
             "emergency_forward_speed_mps": 0.12,
             "emergency_translation_clearance_m": 0.36,
@@ -691,11 +706,16 @@ class RecoveryManagerNode(Node):
         """Measure clearance along the direction used by the braking model."""
         return self._laser_clearance(0.0 if linear_velocity >= 0.0 else math.pi)
 
-    def _nearest_clearance(self) -> float:
+    def _observable_nearest_clearance(self) -> float | None:
+        """Return the nearest finite LiDAR clearance, preserving observability."""
         assert self._scan is not None
         values = np.asarray(self._scan.ranges, dtype=np.float64)
         finite = values[np.isfinite(values) & (values >= 0.0)]
-        return float(np.min(finite)) if finite.size else 0.0
+        return float(np.min(finite)) if finite.size else None
+
+    def _nearest_clearance(self) -> float:
+        observed = self._observable_nearest_clearance()
+        return 0.0 if observed is None else observed
 
     def _nearest_obstacle_angle(self) -> float:
         assert self._scan is not None
@@ -781,6 +801,10 @@ class RecoveryManagerNode(Node):
                 planning_grid,
                 human_positions,
                 replan_available=self._adapter.ready,
+                config=ActionMaskConfig(
+                    robot_clearance=self._float("robot_clearance_m"),
+                    backup_distance=self._float("backup_mask_validated_distance_m"),
+                ),
             )
         action_clearance = self._float("robot_clearance_m")
         swept_clearance = self._float("footprint_stop_clearance_m")
@@ -801,6 +825,7 @@ class RecoveryManagerNode(Node):
             angle_increment=float(self._scan.angle_increment),
             swept_clearance_m=swept_clearance,
             target_clearance_m=action_clearance,
+            backup_distance_m=self._float("backup_mask_validated_distance_m"),
             allow_unobserved_backup=(
                 self._policy_type == "expert" and self._received_privileged_humans
             ),
@@ -812,6 +837,7 @@ class RecoveryManagerNode(Node):
                 pose,
                 corridor_path,
                 maximum_deviation_m=self._float("maximum_recovery_path_deviation_m"),
+                backup_distance_m=self._float("backup_mask_validated_distance_m"),
             )
         mask[REPLAN_ACTION_ID] &= self._adapter.ready
         mask[WAIT_ACTION_ID] = True
@@ -963,9 +989,8 @@ class RecoveryManagerNode(Node):
         if self._bc_progress_reference_distance_m is None:
             self._bc_progress_reference_distance_m = distance_to_goal_m
             return
-        if (
-            self._bc_progress_reference_distance_m - distance_to_goal_m
-            < self._float("bc_progress_reset_m")
+        if self._bc_progress_reference_distance_m - distance_to_goal_m < self._float(
+            "bc_progress_reset_m"
         ):
             return
         self._bc_progress_reference_distance_m = distance_to_goal_m
@@ -983,7 +1008,11 @@ class RecoveryManagerNode(Node):
         if self._active_action == WAIT_ACTION_ID:
             return elapsed >= self._float("wait_duration_s")
         if self._active_action == BACKUP_ACTION_ID:
-            return elapsed >= self._float("backup_duration_s")
+            return self._backup_option.is_complete(
+                elapsed_s=elapsed,
+                start_clearance_m=self._backup_start_clearance_m,
+                current_clearance_m=self._observable_nearest_clearance(),
+            )
         if self._active_action in {REPLAN_ACTION_ID, CONTINUE_ACTION_ID}:
             return elapsed >= self._float("minimum_action_hold_s")
         if self._policy_type == "expert":
@@ -995,6 +1024,9 @@ class RecoveryManagerNode(Node):
     def _execute(self, action_id: int, now_s: float) -> Pose2D | None:
         self._active_action = action_id
         self._action_started_s = now_s
+        self._backup_start_clearance_m = (
+            self._observable_nearest_clearance() if action_id == BACKUP_ACTION_ID else None
+        )
         action = ACTIONS[action_id]
         if action.kind is RecoveryActionKind.SUBGOAL:
             temporary = action.target_pose(self._world_pose())
@@ -1107,6 +1139,8 @@ class RecoveryManagerNode(Node):
                 recovery_option_active=self._oracle_yield.active,
             )
         )
+        if transition.current is not RecoveryState.RECOVERY:
+            self._backup_start_clearance_m = None
         if transition.current is RecoveryState.RECOVERY and (
             transition.changed or persistent_failure_followup
         ):
@@ -1255,7 +1289,12 @@ class RecoveryManagerNode(Node):
             and self._active_action == BACKUP_ACTION_ID
         ):
             command = Twist()
-            command.linear.x = -self._float("backup_speed_mps")
+            # Stop issuing the direct command at the same duration used by the
+            # completion rule.  Even if the slower decision timer is delayed,
+            # ideal commanded travel therefore cannot exceed the 0.45 m rear
+            # segment checked by the planning and observable-scan masks.
+            if now_s - self._action_started_s < self._backup_option.maximum_duration_s:
+                command.linear.x = -self._float("backup_speed_mps")
         if command is not None:
             self._override_publisher.publish(command)
 

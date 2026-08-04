@@ -26,8 +26,11 @@ footprint_stop_clearance_m: 0.48
 collision_latched_stop_clearance_m: 0.85
 collision_latched_action_clearance_m: 0.90
 footprint_backup_forward_angle_degrees: 80.0
-backup_duration_s: 0.8
 backup_speed_mps: 0.15
+backup_minimum_duration_s: 0.8
+backup_maximum_duration_s: 3.0
+backup_clearance_improvement_m: 0.25
+backup_mask_validated_distance_m: 0.45
 robot_clearance_m: 0.25
 maximum_recovery_path_deviation_m: 0.9
 braking_acceleration_mps2: 0.8
@@ -41,6 +44,7 @@ emergency_release_hysteresis_m: 0.05
 emergency_rotation_clearance_m: 0.24
 emergency_forward_entry_clearance_m: 0.85
 emergency_backup_reset_clear_s: 3.0
+emergency_minimum_retreat_pulses: 3
 emergency_maximum_improving_backups: 8
 emergency_backup_progress_m: 0.05
 emergency_turn_speed_radps: 0.6
