@@ -334,13 +334,18 @@ class ScenarioActorController(Node):
             <= float(self.get_parameter("actual_pose_timeout_s").value)
         )
 
-    def _robot_is_at_configured_start(self, now_s: float) -> bool:
+    def _robot_pose_is_within_start_tolerance(self) -> bool:
         errors = self._robot_pose_errors()
-        if errors is None or not self._actual_robot_pose_is_fresh(now_s):
+        if errors is None:
             return False
         return bool(
             errors[0] <= float(self.get_parameter("robot_reset_position_tolerance_m").value)
             and errors[1] <= float(self.get_parameter("robot_reset_yaw_tolerance_rad").value)
+        )
+
+    def _robot_is_at_configured_start(self, now_s: float) -> bool:
+        return bool(
+            self._robot_pose_is_within_start_tolerance() and self._actual_robot_pose_is_fresh(now_s)
         )
 
     def _fail_startup_gate(self, detail: str) -> None:
@@ -416,7 +421,18 @@ class ScenarioActorController(Node):
                 )
             return False
 
-        if self._robot_is_at_configured_start(now_s):
+        # A correct geometric pose must never trigger another TaskGenerator
+        # reset merely because the just-reset Gazebo sample has not yet met the
+        # freshness/settling condition.  A redundant reset can invalidate the
+        # freshly initialized odometry/TF chain and leave Nav2 off-grid.
+        if self._robot_pose_is_within_start_tolerance():
+            if not self._actual_robot_pose_is_fresh(now_s):
+                self._robot_at_start_since_wall_s = None
+                self.get_logger().warning(
+                    "startup gate waiting for fresh Gazebo confirmation at configured start",
+                    throttle_duration_sec=5.0,
+                )
+                return False
             if self._robot_at_start_since_wall_s is None:
                 self._robot_at_start_since_wall_s = now_wall_s
             settled_s = now_wall_s - self._robot_at_start_since_wall_s

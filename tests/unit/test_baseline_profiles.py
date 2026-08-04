@@ -117,6 +117,14 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "observed authoritative TaskGenerator reset" in actor
     assert "Clock(clock_type=ClockType.STEADY_TIME)" in actor
     assert "if not self._task_reset_observed or not self._navigation_active:" in actor
+    assert "if self._robot_pose_is_within_start_tolerance():" in actor
+    assert "waiting for fresh Gazebo confirmation at configured start" in actor
+    reset_advance = actor[
+        actor.index("def _advance_robot_reset") : actor.index("def _advance_costmap_clear")
+    ]
+    assert reset_advance.index("if self._robot_pose_is_within_start_tolerance():") < (
+        reset_advance.index("self._request_robot_reset(now_wall_s)")
+    )
     assert "client.call_async(ClearEntireCostmap.Request())" in actor
     assert "startup gate cleared local and global Nav2 costmaps" in actor
     assert "startup gate failed; actors_healthy=false" in actor
