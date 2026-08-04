@@ -25,17 +25,27 @@ import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, Polygon, Rectangle
+from matplotlib.ticker import PercentFormatter
 
 ROOT = Path(__file__).resolve().parents[2]
 
-BLUE = "#466B9F"
-TEAL = "#16836B"
-ORANGE = "#D97706"
-INK = "#202124"
-MID_GREY = "#667079"
-LIGHT_GREY = "#EEF1F3"
-GRID_GREY = "#D5DBDB"
+# Okabe--Ito-derived, color-vision-deficiency-safe functional palette.  Every
+# empirical plot also uses marker shape, line style, hatch, or direct labels so
+# that color is never the sole carrier of meaning.
+BLUE = "#0072B2"
+TEAL = "#009E73"
+ORANGE = "#D55E00"
+INK = "#1B1F23"
+MID_GREY = "#59636B"
+LIGHT_GREY = "#F2F4F5"
+GRID_GREY = "#D7DDE1"
+
+SINGLE_COLUMN_WIDTH_IN = 3.50
+DOUBLE_COLUMN_WIDTH_IN = 7.16
+BASE_FONT_SIZE_PT = 9.0
+MIN_ANNOTATION_SIZE_PT = 7.0
 
 ALGORITHM_FAILURES = {"COLLISION", "TIMEOUT", "PLANNER_FAILURE"}
 EXCLUDED_OUTCOMES = {"SIMULATOR_FAILURE", "INVALID_RESET"}
@@ -118,28 +128,51 @@ STATE_LABELS = {
     6: "SUCCEEDED",
 }
 
+STATE_SHORT_LABELS = {
+    0: "NORMAL",
+    1: "PENDING",
+    2: "RECOVERY",
+    3: "REJOIN",
+    4: "E-STOP",
+    5: "FAILED",
+    6: "SUCCEEDED",
+}
+
 
 class ArtifactError(RuntimeError):
     """Raised when final paper artifacts are absent, stale, or inconsistent."""
 
 
 def _configure_matplotlib() -> None:
-    """Apply a restrained IEEE-compatible vector style."""
+    """Apply a restrained IEEE/CVPR-compatible vector style.
+
+    Figures are authored at their final one- or two-column size; the 9 pt base
+    font therefore remains approximately 9 pt after LaTeX placement rather
+    than being silently halved by down-scaling a two-column canvas.
+    """
 
     plt.rcParams.update(
         {
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
             "font.family": "sans-serif",
-            "font.sans-serif": ["DejaVu Sans"],
-            "font.size": 7.5,
-            "axes.titlesize": 8.5,
-            "axes.labelsize": 8.0,
-            "xtick.labelsize": 7.0,
-            "ytick.labelsize": 7.0,
-            "legend.fontsize": 7.0,
+            "font.sans-serif": ["Arial", "Liberation Sans", "DejaVu Sans"],
+            "font.size": BASE_FONT_SIZE_PT,
+            "axes.titlesize": 9.5,
+            "axes.titleweight": "semibold",
+            "axes.labelsize": 9.0,
+            "xtick.labelsize": 8.0,
+            "ytick.labelsize": 8.0,
+            "legend.fontsize": 8.0,
             "axes.edgecolor": MID_GREY,
-            "axes.linewidth": 0.7,
+            "axes.linewidth": 0.8,
+            "axes.facecolor": "white",
+            "figure.facecolor": "white",
+            "savefig.facecolor": "white",
+            "lines.linewidth": 1.2,
+            "lines.markersize": 5.5,
+            "hatch.linewidth": 0.7,
+            "legend.frameon": False,
         }
     )
 
@@ -608,7 +641,7 @@ def _box(
         label,
         ha="center",
         va="center",
-        fontsize=7.2,
+        fontsize=8.0,
         color=INK,
         zorder=4,
     )
@@ -629,8 +662,8 @@ def _arrow(
         start,
         end,
         arrowstyle="-|>",
-        mutation_scale=8,
-        linewidth=0.9,
+        mutation_scale=9,
+        linewidth=1.0,
         color=color,
         connectionstyle=connectionstyle,
         shrinkA=1.5,
@@ -643,13 +676,16 @@ def _arrow(
             (start[0] + end[0]) / 2.0,
             (start[1] + end[1]) / 2.0 + label_offset_y,
         )
-        axis.text(*midpoint, label, ha="center", va="bottom", fontsize=6.5, color=MID_GREY)
+        axis.text(*midpoint, label, ha="center", va="bottom", fontsize=7.2, color=MID_GREY)
 
 
 def architecture_figure(output: Path) -> None:
     """Draw the embodied closed loop and the privileged training boundary."""
 
-    figure, axis = plt.subplots(figsize=(7.05, 2.55), constrained_layout=True)
+    figure, axis = plt.subplots(
+        figsize=(DOUBLE_COLUMN_WIDTH_IN, 2.72),
+        constrained_layout=True,
+    )
     axis.set_xlim(0.0, 1.0)
     axis.set_ylim(0.0, 1.0)
     axis.axis("off")
@@ -665,7 +701,14 @@ def architecture_figure(output: Path) -> None:
             zorder=0,
         )
     )
-    axis.text(0.025, 0.86, "DEPLOYMENT: OBSERVABLE CLOSED LOOP", fontsize=8.5, color=INK)
+    axis.text(
+        0.025,
+        0.86,
+        "DEPLOYMENT: OBSERVABLE CLOSED LOOP",
+        fontsize=9.2,
+        color=INK,
+        fontweight="semibold",
+    )
     axis.add_patch(
         Rectangle(
             (0.09, 0.04),
@@ -678,7 +721,14 @@ def architecture_figure(output: Path) -> None:
             zorder=0,
         )
     )
-    axis.text(0.105, 0.30, "TRAINING ONLY", fontsize=8.5, color=INK)
+    axis.text(
+        0.105,
+        0.30,
+        "TRAINING ONLY (PRIVILEGED)",
+        fontsize=9.2,
+        color=INK,
+        fontweight="semibold",
+    )
 
     _box(axis, (0.025, 0.61), 0.13, 0.17, "Dynamic world\n+ robot", facecolor="#E8EEF6")
     _box(axis, (0.175, 0.61), 0.14, 0.17, "5-frame LiDAR\npath + goal + state")
@@ -703,7 +753,7 @@ def architecture_figure(output: Path) -> None:
         "Failure\ntrigger?",
         ha="center",
         va="center",
-        fontsize=7.2,
+        fontsize=8.0,
         color=INK,
         zorder=4,
     )
@@ -722,7 +772,14 @@ def architecture_figure(output: Path) -> None:
 
     _arrow(axis, (0.155, 0.695), (0.175, 0.695))
     _arrow(axis, (0.315, 0.695), (0.325, 0.695))
-    _arrow(axis, (0.455, 0.695), (0.49, 0.695))
+    _arrow(
+        axis,
+        (0.455, 0.695),
+        (0.49, 0.695),
+        label="trigger",
+        color=TEAL,
+        label_offset_y=0.018,
+    )
     _arrow(axis, (0.62, 0.695), (0.655, 0.695), color=TEAL)
     _arrow(axis, (0.775, 0.695), (0.81, 0.695))
     _arrow(
@@ -802,8 +859,8 @@ def action_space_expert_figure(output: Path) -> None:
     figure, axes = plt.subplots(
         1,
         2,
-        figsize=(7.05, 2.65),
-        gridspec_kw={"width_ratios": [1.2, 0.8]},
+        figsize=(DOUBLE_COLUMN_WIDTH_IN, 2.92),
+        gridspec_kw={"width_ratios": [1.18, 0.82]},
         constrained_layout=True,
     )
     axis = axes[0]
@@ -814,20 +871,26 @@ def action_space_expert_figure(output: Path) -> None:
                 radius,
                 fill=False,
                 color=GRID_GREY,
-                linewidth=0.7,
+                linewidth=0.8,
                 linestyle="--",
             )
         )
     for action_id, x_value, y_value in candidates:
-        axis.plot([0.0, x_value], [0.0, y_value], color=BLUE, alpha=0.13, linewidth=0.5)
+        axis.plot(
+            [0.0, x_value],
+            [0.0, y_value],
+            color=BLUE,
+            alpha=0.20,
+            linewidth=0.65,
+        )
         if action_id in masked:
             axis.scatter(
                 [x_value],
                 [y_value],
                 marker="x",
                 color=ORANGE,
-                linewidth=1.0,
-                s=24,
+                linewidth=1.2,
+                s=30,
                 zorder=4,
             )
         else:
@@ -836,18 +899,25 @@ def action_space_expert_figure(output: Path) -> None:
                 [y_value],
                 color=TEAL if action_id == selected else BLUE,
                 edgecolor="white",
-                linewidth=0.35,
-                s=32 if action_id == selected else 18,
+                linewidth=0.55,
+                s=44 if action_id == selected else 25,
                 marker="*" if action_id == selected else "o",
                 zorder=4,
             )
-        axis.text(x_value, y_value + 0.055, str(action_id), ha="center", fontsize=5.2, color=INK)
+        axis.text(
+            x_value,
+            y_value + 0.060,
+            str(action_id),
+            ha="center",
+            fontsize=6.6,
+            color=INK,
+        )
     pedestrian_y = np.linspace(-1.25, 1.25, 20)
     axis.plot(
         np.full_like(pedestrian_y, pedestrian_x),
         pedestrian_y,
         color=ORANGE,
-        linewidth=1.1,
+        linewidth=1.25,
         linestyle="--",
     )
     axis.add_patch(
@@ -855,20 +925,37 @@ def action_space_expert_figure(output: Path) -> None:
             (pedestrian_x, -0.95),
             (pedestrian_x, 0.95),
             arrowstyle="-|>",
-            mutation_scale=8,
+            mutation_scale=9,
             color=ORANGE,
-            linewidth=1.0,
+            linewidth=1.15,
         )
     )
-    axis.scatter([pedestrian_x], [-1.05], color=ORANGE, s=28, zorder=5)
-    axis.scatter([0.0], [0.0], marker=">", color=TEAL, s=55, zorder=5)
+    axis.scatter(
+        [pedestrian_x],
+        [-1.05],
+        color=ORANGE,
+        edgecolor="white",
+        linewidth=0.5,
+        s=38,
+        zorder=5,
+    )
+    axis.scatter(
+        [0.0],
+        [0.0],
+        marker=">",
+        color=TEAL,
+        edgecolor="white",
+        linewidth=0.5,
+        s=68,
+        zorder=5,
+    )
     axis.annotate(
         "schematic 3 s\npedestrian prediction",
         (pedestrian_x, 0.82),
         xytext=(1.12, 1.12),
         arrowprops={"arrowstyle": "-", "color": ORANGE, "linewidth": 0.7},
         color=ORANGE,
-        fontsize=6.2,
+        fontsize=7.2,
         ha="left",
     )
     axis.set_aspect("equal")
@@ -877,7 +964,7 @@ def action_space_expert_figure(output: Path) -> None:
     axis.set_xlabel("Robot-frame $x$ [m]")
     axis.set_ylabel("Robot-frame $y$ [m]")
     axis.set_title("(a) Temporary subgoals", loc="left", fontweight="bold")
-    axis.grid(color=GRID_GREY, linewidth=0.45)
+    axis.grid(color=GRID_GREY, linewidth=0.55)
     axis.set_axisbelow(True)
 
     legend_axis = axes[1]
@@ -889,14 +976,14 @@ def action_space_expert_figure(output: Path) -> None:
         0.02,
         0.91,
         "SCHEMATIC — NOT AN EXPERIMENTAL RESULT",
-        fontsize=6.4,
+        fontsize=7.5,
         color=ORANGE,
         fontweight="bold",
     )
     special_actions = ((21, "WAIT"), (22, "BACKUP"), (23, "REPLAN"), (24, "CONTINUE"))
     for index, (action_id, label) in enumerate(special_actions):
         x_value = 0.02 + 0.49 * (index % 2)
-        y_value = 0.73 - 0.17 * (index // 2)
+        y_value = 0.72 - 0.16 * (index // 2)
         _box(
             legend_axis,
             (x_value, y_value),
@@ -912,36 +999,36 @@ def action_space_expert_figure(output: Path) -> None:
         0.47,
         r"$r \in \{0.6,1.0,1.4\}$ m; "
         r"$\theta \in \{-90,-60,\ldots,90\}^{\circ}$",
-        fontsize=6.8,
+        fontsize=7.8,
         color=INK,
         va="top",
     )
     legend_axis.text(
         0.02,
-        0.385,
+        0.38,
         "3.0 s rollout per valid action\nDifferential-drive tracking + predicted pedestrians",
-        fontsize=6.4,
+        fontsize=7.4,
         color=INK,
         va="top",
         linespacing=1.15,
     )
     legend_axis.text(
         0.02,
-        0.27,
+        0.265,
         r"$J = w_cJ_c + w_pJ_p + w_sJ_s + w_rJ_r$"
         "\n+ path length, smoothness, time, and switch costs",
-        fontsize=6.6,
+        fontsize=7.4,
         color=INK,
         va="top",
         linespacing=1.1,
     )
     for y_value, color, marker, label in (
-        (0.115, BLUE, "o", "valid candidate"),
-        (0.062, ORANGE, "x", "masked candidate"),
-        (0.009, TEAL, "*", "minimum-cost valid action"),
+        (0.112, BLUE, "o", "valid candidate"),
+        (0.058, ORANGE, "x", "masked candidate"),
+        (0.004, TEAL, "*", "minimum-cost valid action"),
     ):
-        legend_axis.scatter([0.05], [y_value], color=color, marker=marker, s=22)
-        legend_axis.text(0.10, y_value, label, va="center", fontsize=6.1)
+        legend_axis.scatter([0.05], [y_value], color=color, marker=marker, s=28)
+        legend_axis.text(0.10, y_value, label, va="center", fontsize=7.2)
     _save_pdf(figure, output)
 
 
@@ -959,21 +1046,28 @@ def _flow_arrow(
     *,
     linewidth: float = 1.2,
 ) -> None:
+    is_pedestrian = color == ORANGE
     axis.add_patch(
         FancyArrowPatch(
             start,
             end,
             arrowstyle="-|>",
-            mutation_scale=7,
+            mutation_scale=8,
             color=color,
             linewidth=linewidth,
+            linestyle="--" if is_pedestrian else "-",
         )
     )
 
 
 def _draw_scenario_schematic(axis: Axes, scenario: str) -> None:
     key = scenario.lower().replace("_", " ")
-    wall = {"facecolor": GRID_GREY, "edgecolor": MID_GREY, "linewidth": 0.5}
+    wall = {
+        "facecolor": LIGHT_GREY,
+        "edgecolor": MID_GREY,
+        "linewidth": 0.65,
+        "hatch": "////",
+    }
     if key == "head on corridor":
         axis.add_patch(Rectangle((-1.8, -1.0), 3.6, 0.35, **wall))
         axis.add_patch(Rectangle((-1.8, 0.65), 3.6, 0.35, **wall))
@@ -1007,7 +1101,7 @@ def _draw_scenario_schematic(axis: Axes, scenario: str) -> None:
         _flow_arrow(axis, (-1.55, 0.0), (1.45, 0.0), BLUE)
         for y_value in (-0.32, 0.0, 0.32):
             axis.scatter([0.30], [y_value], color=ORANGE, s=20)
-        axis.text(0.43, 0.50, "temporary stop", color=ORANGE, fontsize=5.7, ha="center")
+        axis.text(0.43, 0.50, "temporary stop", color=ORANGE, fontsize=7.0, ha="center")
     else:
         _flow_arrow(axis, (-1.55, -0.15), (1.45, -0.15), BLUE)
         _flow_arrow(axis, (0.15, -0.90), (0.15, 0.85), ORANGE)
@@ -1016,7 +1110,7 @@ def _draw_scenario_schematic(axis: Axes, scenario: str) -> None:
     axis.set_aspect("equal")
     axis.set_xticks([])
     axis.set_yticks([])
-    axis.set_title(scenario.replace("_", " "), fontsize=7.1, pad=2.0)
+    axis.set_title(scenario.replace("_", " "), fontsize=8.1, pad=2.0)
     for spine in axis.spines.values():
         spine.set_color(GRID_GREY)
         spine.set_linewidth(0.6)
@@ -1043,7 +1137,7 @@ def scenario_montage_figure(results: pd.DataFrame, output: Path) -> None:
     figure, axes = plt.subplots(
         rows,
         columns,
-        figsize=(7.05, 1.55 * rows + 0.35),
+        figsize=(DOUBLE_COLUMN_WIDTH_IN, 1.60 * rows + 0.42),
         constrained_layout=True,
         squeeze=False,
     )
@@ -1051,23 +1145,49 @@ def scenario_montage_figure(results: pd.DataFrame, output: Path) -> None:
         _draw_scenario_schematic(axis, scenario)
     for axis in list(axes.flat)[len(scenarios) :]:
         axis.axis("off")
+    reference, proposed = _select_central_methods(results["method"].unique())
+    main_count = min(
+        int((results["method"] == reference).sum()),
+        int((results["method"] == proposed).sum()),
+    )
     figure.suptitle(
-        "Final scenario families — schematic geometry (not outcome data)",
-        fontsize=8.5,
-        fontweight="bold",
+        "Eight deterministic social-navigation stress families",
+        fontsize=9.5,
+        fontweight="semibold",
     )
     figure.text(
         0.5,
         0.005,
-        "Blue: robot route; orange: pedestrian flow or temporary occupancy; gray: static boundary",
+        "Solid blue: robot route; dashed orange/circles: pedestrians; hatched gray: walls. "
+        f"Three densities; main paired set n={main_count} episodes/method; "
+        "schematics not to scale.",
         ha="center",
-        fontsize=6.4,
+        fontsize=7.3,
         color=MID_GREY,
     )
     _save_pdf(figure, output)
 
 
+def _wilson_interval(successes: int, total: int) -> tuple[float, float, float]:
+    """Return a binomial proportion and two-sided 95% Wilson interval."""
+
+    if total <= 0 or not 0 <= successes <= total:
+        return (np.nan, np.nan, np.nan)
+    proportion = successes / total
+    z_value = 1.959963984540054
+    denominator = 1.0 + z_value**2 / total
+    center = (proportion + z_value**2 / (2.0 * total)) / denominator
+    radius = (
+        z_value
+        * math.sqrt(proportion * (1.0 - proportion) / total + z_value**2 / (4.0 * total**2))
+        / denominator
+    )
+    return (proportion, max(0.0, center - radius), min(1.0, center + radius))
+
+
 def outcome_density_figure(results: pd.DataFrame, output: Path) -> None:
+    """Summarise completion and collision endpoints without hiding sample size."""
+
     valid = _valid_rows(results)
     reference, proposed = _select_central_methods(valid["method"].unique())
     central = valid.loc[valid["method"].isin({reference, proposed})].copy()
@@ -1100,15 +1220,18 @@ def outcome_density_figure(results: pd.DataFrame, output: Path) -> None:
             )
 
     figure, axes = plt.subplots(
+        3,
         1,
-        2,
-        figsize=(7.05, max(2.65, 0.32 * len(scenarios) + 1.25)),
-        gridspec_kw={"width_ratios": [0.9, 1.45]},
+        figsize=(SINGLE_COLUMN_WIDTH_IN, max(5.15, 0.29 * len(scenarios) + 2.85)),
+        gridspec_kw={"height_ratios": [1.45, 1.0, 0.34]},
         constrained_layout=True,
     )
     color_map = LinearSegmentedColormap.from_list("success", [LIGHT_GREY, TEAL])
-    image = axes[0].imshow(matrix, vmin=0.0, vmax=1.0, cmap=color_map, aspect="auto")
-    axes[0].set_title("(a) Success by scenario", loc="left", fontweight="bold")
+    axes[0].imshow(matrix, vmin=0.0, vmax=1.0, cmap=color_map, aspect="auto")
+    axes[0].set_title(
+        "(a) Goal completion by family (three densities)",
+        loc="left",
+    )
     axes[0].set_xticks(np.arange(len(methods)), [display_method(method) for method in methods])
     axes[0].set_yticks(np.arange(len(scenarios)), [item.replace("_", " ") for item in scenarios])
     for row_index in range(len(scenarios)):
@@ -1117,67 +1240,94 @@ def outcome_density_figure(results: pd.DataFrame, output: Path) -> None:
                 axes[0].text(
                     column_index,
                     row_index,
-                    f"{100.0 * matrix[row_index, column_index]:.0f}%\n"
-                    f"({successes[row_index, column_index]}/{counts[row_index, column_index]})",
+                    f"{successes[row_index, column_index]}/{counts[row_index, column_index]}",
                     ha="center",
                     va="center",
                     color="white" if matrix[row_index, column_index] >= 0.60 else INK,
-                    fontsize=6.8,
+                    fontsize=8.2,
+                    fontweight="semibold",
                 )
-    colorbar = figure.colorbar(image, ax=axes[0], fraction=0.055, pad=0.04)
-    colorbar.set_label("Success rate")
-    colorbar.set_ticks([0.0, 0.5, 1.0])
-
+    axes[0].tick_params(length=0)
     densities = _preferred_order(
         central["density"].unique(),
         ("low", "medium", "high"),
     )
-    x_positions = np.arange(len(densities) * len(methods), dtype=float)
-    bar_labels: list[str] = []
-    bottoms = np.zeros_like(x_positions)
-    categories = (
-        ("Goal", "GOAL_REACHED", TEAL),
-        ("Collision", "COLLISION", ORANGE),
-        ("Other failure", "OTHER", BLUE),
+    x_positions = np.arange(len(densities), dtype=float)
+    method_styles = {
+        reference: (ORANGE, "--", -0.035),
+        proposed: (TEAL, "-", 0.035),
+    }
+    endpoints = (
+        ("goal", "GOAL_REACHED", "o", -0.018),
+        ("collision", "COLLISION", "X", 0.018),
     )
-    for category_label, category, color in categories:
-        fractions: list[float] = []
-        for density in densities:
-            for method in methods:
+    point_counts: set[int] = set()
+    for method in methods:
+        color, line_style, method_offset = method_styles[method]
+        for endpoint_label, outcome, marker, endpoint_offset in endpoints:
+            estimates: list[float] = []
+            lower_errors: list[float] = []
+            upper_errors: list[float] = []
+            for density in densities:
                 selected = central.loc[
                     (central["density"] == density) & (central["method"] == method)
                 ]
-                if category == "OTHER":
-                    count = int(selected["outcome"].isin({"TIMEOUT", "PLANNER_FAILURE"}).sum())
-                else:
-                    count = int((selected["outcome"] == category).sum())
-                fractions.append(count / len(selected) if len(selected) else 0.0)
-                if category_label == "Goal":
-                    short_method = display_method(method).replace("Triggered ", "")
-                    bar_labels.append(f"{str(density).title()}\n{short_method}")
-        values = np.asarray(fractions, dtype=float)
-        axes[1].bar(
-            x_positions,
-            values,
-            bottom=bottoms,
-            width=0.74,
-            color=color,
-            edgecolor="white",
-            linewidth=0.5,
-            label=category_label,
-        )
-        bottoms += values
-    axes[1].set_title("(b) Terminal outcomes by density", loc="left", fontweight="bold")
-    axes[1].set_ylabel("Fraction of valid episodes")
-    axes[1].set_ylim(0.0, 1.0)
-    axes[1].set_xticks(x_positions, bar_labels)
-    axes[1].grid(axis="y", color=GRID_GREY, linewidth=0.6)
+                total = len(selected)
+                point_counts.add(total)
+                count = int((selected["outcome"] == outcome).sum())
+                estimate, lower, upper = _wilson_interval(count, total)
+                estimates.append(estimate)
+                lower_errors.append(estimate - lower)
+                upper_errors.append(upper - estimate)
+            shifted_x = x_positions + method_offset + endpoint_offset
+            axes[1].errorbar(
+                shifted_x,
+                estimates,
+                yerr=np.asarray([lower_errors, upper_errors]),
+                color=color,
+                linestyle=line_style,
+                marker=marker,
+                markerfacecolor="white" if method == reference else color,
+                markeredgecolor=color,
+                markeredgewidth=1.0,
+                linewidth=1.25,
+                elinewidth=0.9,
+                capsize=2.5,
+                label=f"{display_method(method)} {endpoint_label}",
+                zorder=3,
+            )
+    if len(point_counts) != 1:
+        raise ArtifactError(f"density endpoints have inconsistent sample sizes: {point_counts}")
+    point_count = next(iter(point_counts))
+    axes[1].set_title("(b) Completion and collision endpoints by density", loc="left")
+    axes[1].set_ylabel("Episode rate")
+    axes[1].set_ylim(-0.03, 1.03)
+    axes[1].set_xticks(x_positions, [str(value).title() for value in densities])
+    axes[1].yaxis.set_major_formatter(PercentFormatter(1.0, decimals=0))
+    axes[1].grid(axis="y", color=GRID_GREY, linewidth=0.65)
     axes[1].set_axisbelow(True)
-    axes[1].legend(
-        frameon=False,
-        ncol=3,
+    legend_handles, legend_labels = axes[1].get_legend_handles_labels()
+    axes[2].axis("off")
+    axes[2].legend(
+        legend_handles,
+        legend_labels,
+        ncol=2,
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.23),
+        fontsize=7.2,
+        handlelength=2.0,
+        columnspacing=1.3,
+        borderaxespad=0.0,
+    )
+    axes[2].text(
+        0.5,
+        0.0,
+        f"Wilson 95% CI; n={point_count}/point\n"
+        "Endpoints shown separately; rates need not sum to 100%.",
+        transform=axes[2].transAxes,
+        ha="center",
+        va="bottom",
+        fontsize=7.0,
+        color=MID_GREY,
     )
     _save_pdf(figure, output)
 
@@ -1197,6 +1347,8 @@ def _bootstrap_median(values: np.ndarray, *, seed: int) -> tuple[float, float, f
 
 
 def safety_efficiency_figure(results: pd.DataFrame, output: Path) -> None:
+    """Plot the paired high-density safety--efficiency slice with uncertainty."""
+
     valid = _valid_rows(results)
     reference, proposed = _select_central_methods(valid["method"].unique())
     methods = _method_order(valid["method"].unique())
@@ -1239,7 +1391,10 @@ def safety_efficiency_figure(results: pd.DataFrame, output: Path) -> None:
         & valid["method"].isin(core_methods)
     ]
     methods = _method_order(valid["method"].unique())
-    figure, axis = plt.subplots(figsize=(3.45, 2.65), constrained_layout=True)
+    figure, axis = plt.subplots(
+        figsize=(SINGLE_COLUMN_WIDTH_IN, 2.85),
+        constrained_layout=True,
+    )
     markers = ("o", "s", "^", "D", "P", "X", "v")
     plotted = 0
     for method_index, method in enumerate(methods):
@@ -1261,50 +1416,61 @@ def safety_efficiency_figure(results: pd.DataFrame, output: Path) -> None:
             color = TEAL
         else:
             color = BLUE
-        success_rate = float((selected["outcome"] == "GOAL_REACHED").mean())
+        success_count = len(successful)
         axis.errorbar(
             time[0],
             clearance[0],
             xerr=np.asarray([[time[0] - time[1]], [time[2] - time[0]]]),
             yerr=np.asarray([[clearance[0] - clearance[1]], [clearance[2] - clearance[0]]]),
             fmt=markers[method_index % len(markers)],
-            markersize=6.5,
-            markerfacecolor=color,
-            markeredgecolor="white",
-            markeredgewidth=0.6,
+            markersize=7.0,
+            markerfacecolor=color if method == proposed else "white",
+            markeredgecolor=color,
+            markeredgewidth=1.1,
             ecolor=color,
-            elinewidth=0.9,
-            capsize=2.0,
+            elinewidth=1.0,
+            capsize=2.5,
             zorder=3,
         )
-        align_right = method_index >= max(1, len(methods) // 2)
-        vertical_offset = -11 if method == proposed else 5
+        display_name = display_method(method)
+        offsets = {
+            "DWB": (5, 7, "left"),
+            "Standard": (5, -12, "left"),
+            "Heuristic": (-5, -13, "right"),
+            "PGRR": (-5, 7, "right"),
+        }
+        horizontal_offset, vertical_offset, alignment = offsets.get(
+            display_name,
+            (5, 5, "left"),
+        )
         axis.annotate(
-            f"{display_method(method)} ({100.0 * success_rate:.0f}%)",
+            f"{display_name}: {success_count}/{len(selected)} goals",
             (time[0], clearance[0]),
-            xytext=(-5 if align_right else 5, vertical_offset),
+            xytext=(horizontal_offset, vertical_offset),
             textcoords="offset points",
-            fontsize=6.8,
+            fontsize=7.4,
             color=INK,
-            ha="right" if align_right else "left",
+            ha=alignment,
         )
         plotted += 1
     if plotted == 0:
         raise ArtifactError("no method has a successful episode for the safety-efficiency plot")
-    axis.set_xlabel("Median time on successful episodes [s]")
+    axis.set_title("High-density safety--efficiency (paired episodes)", loc="left")
+    axis.set_xlabel("Median navigation time on goals [s]")
     axis.set_ylabel("Median minimum human distance [m]")
     axis.margins(x=0.13, y=0.16)
-    axis.grid(color=GRID_GREY, linewidth=0.6)
+    axis.grid(color=GRID_GREY, linewidth=0.65)
     axis.set_axisbelow(True)
     axis.text(
         0.02,
         0.98,
-        f"Same {len(common_pairs)} high-density episodes\n"
-        "Error bars: bootstrap 95% CI; labels: success",
+        f"Same n={len(common_pairs)} episodes/method\n"
+        "x uses successful subset; y uses all episodes\n"
+        "error bars: bootstrap 95% CI",
         ha="left",
         va="top",
         transform=axis.transAxes,
-        fontsize=6.2,
+        fontsize=7.0,
         color=MID_GREY,
     )
     _save_pdf(figure, output)
@@ -1551,7 +1717,16 @@ def runtime_sequence_figure(
     trajectory = np.asarray([record["robot_pose"][:2] for record in records], dtype=float)
     local_half_width = 3.0
 
-    figure, axes = plt.subplots(1, 3, figsize=(7.05, 2.65), constrained_layout=True)
+    figure, axes = plt.subplots(
+        1,
+        3,
+        figsize=(DOUBLE_COLUMN_WIDTH_IN, 2.92),
+        constrained_layout=False,
+    )
+    # Reserve explicit title/footer bands.  ``constrained_layout`` does not
+    # account reliably for figure-level provenance text and previously allowed
+    # that text to overlap the x-axis labels in the compiled manuscript.
+    figure.subplots_adjust(left=0.07, right=0.99, bottom=0.27, top=0.78, wspace=0.27)
     for panel_index, (axis, frame, record_index, label) in enumerate(
         zip(axes, frames, indices, frame_labels, strict=True)
     ):
@@ -1562,14 +1737,14 @@ def runtime_sequence_figure(
                 path[:, 1],
                 color=BLUE,
                 linestyle="--",
-                linewidth=1.0,
+                linewidth=1.15,
                 label="global path" if panel_index == 0 else None,
             )
         axis.plot(
             trajectory[: record_index + 1, 0],
             trajectory[: record_index + 1, 1],
             color=TEAL,
-            linewidth=1.15,
+            linewidth=1.35,
             label="actual trajectory" if panel_index == 0 else None,
         )
         humans = np.asarray(frame["humans"], dtype=float)
@@ -1579,13 +1754,22 @@ def runtime_sequence_figure(
                 humans[:, 1],
                 color=ORANGE,
                 edgecolor="white",
-                linewidth=0.35,
-                s=25,
+                linewidth=0.55,
+                s=34,
                 label="logged humans" if panel_index == 0 else None,
                 zorder=4,
             )
         pose = frame["robot_pose"]
-        axis.scatter([pose[0]], [pose[1]], color=TEAL, s=28, zorder=5)
+        axis.scatter(
+            [pose[0]],
+            [pose[1]],
+            marker=">",
+            color=TEAL,
+            edgecolor="white",
+            linewidth=0.55,
+            s=46,
+            zorder=5,
+        )
         heading_length = 0.30
         _flow_arrow(
             axis,
@@ -1604,7 +1788,7 @@ def runtime_sequence_figure(
                 [goal[1]],
                 marker="*",
                 color=BLUE,
-                s=38,
+                s=52,
                 label="goal" if panel_index == 0 else None,
                 zorder=4,
             )
@@ -1622,18 +1806,18 @@ def runtime_sequence_figure(
             transform=axis.transAxes,
             va="bottom",
             ha="left",
-            fontsize=6.1,
+            fontsize=7.2,
             color=INK,
             bbox={"facecolor": "white", "edgecolor": GRID_GREY, "pad": 2.0, "alpha": 0.9},
         )
         axis.set_xlim(pose[0] - local_half_width, pose[0] + local_half_width)
         axis.set_ylim(pose[1] - local_half_width, pose[1] + local_half_width)
         axis.set_aspect("equal")
-        axis.grid(color=GRID_GREY, linewidth=0.45)
+        axis.grid(color=GRID_GREY, linewidth=0.55)
         axis.set_xlabel("world $x$ [m]")
         if panel_index == 0:
             axis.set_ylabel("world $y$ [m]")
-            axis.legend(frameon=False, loc="upper left", fontsize=5.8)
+            axis.legend(loc="upper left", fontsize=7.0, handlelength=1.8)
     successful = str(selected["outcome"]) == "GOAL_REACHED"
     evidence_note = (
         "successful triggered recovery"
@@ -1643,16 +1827,18 @@ def runtime_sequence_figure(
     figure.suptitle(
         f"Logged PGRR runtime sequence — {selected['scenario']} / {selected['density']} "
         f"({evidence_note})",
-        fontsize=8.2,
-        fontweight="bold",
+        fontsize=9.4,
+        fontweight="semibold",
+        y=0.965,
     )
     figure.text(
         0.5,
-        -0.01,
-        f"Source: {stream_path.name}; each 6 m local view uses recorded timestamps, poses, "
-        "humans, path, state, and action.",
+        0.035,
+        f"Recorded JSONL: {stream_path.stem}; n=1 episode.\n"
+        "Each 6 m square view shows trajectory prefix, logged humans, state, and action.",
         ha="center",
-        fontsize=5.8,
+        va="bottom",
+        fontsize=7.1,
         color=MID_GREY,
     )
     _save_pdf(figure, output)
@@ -1675,35 +1861,110 @@ def recovery_timeline_figure(
     states = np.asarray([int(record["recovery_state"]) for record in records], dtype=float)
     actions = np.asarray([int(record["recovery_action"]) for record in records], dtype=float)
 
-    figure, axes = plt.subplots(3, 1, figsize=(7.05, 3.15), sharex=True, constrained_layout=True)
-    axes[0].plot(time, failure, color=ORANGE, linewidth=1.0)
+    figure, axes = plt.subplots(
+        3,
+        1,
+        figsize=(SINGLE_COLUMN_WIDTH_IN, 3.65),
+        sharex=True,
+        constrained_layout=True,
+        gridspec_kw={"height_ratios": [1.0, 1.0, 1.15]},
+    )
+    mark_every = max(1, len(time) // 18)
+    axes[0].plot(
+        time,
+        failure,
+        color=ORANGE,
+        marker="o",
+        markerfacecolor="white",
+        markeredgewidth=0.8,
+        markevery=mark_every,
+        linewidth=1.2,
+    )
     axes[0].set_ylabel("Failure score")
-    axes[1].plot(time, distance, color=BLUE, linewidth=1.0)
+    axes[1].plot(
+        time,
+        distance,
+        color=BLUE,
+        marker="s",
+        markerfacecolor="white",
+        markeredgewidth=0.8,
+        markevery=mark_every,
+        linewidth=1.2,
+    )
     axes[1].set_ylabel("Goal distance [m]")
-    axes[2].step(time, states, where="post", color=TEAL, linewidth=1.0, label="state")
+    axes[2].step(
+        time,
+        states,
+        where="post",
+        color=TEAL,
+        linewidth=1.25,
+        marker="s",
+        markevery=mark_every,
+        label="state",
+    )
     action_axis = axes[2].twinx()
     action_axis.step(
         time,
         actions,
         where="post",
         color=BLUE,
-        linewidth=0.7,
-        alpha=0.75,
+        linestyle=":",
+        linewidth=1.0,
+        marker="x",
+        markevery=mark_every,
+        alpha=0.90,
         label="action ID",
     )
     present_states = sorted(set(states.astype(int)))
-    axes[2].set_yticks(present_states, [STATE_LABELS[state] for state in present_states])
+    axes[2].set_yticks(present_states, [STATE_SHORT_LABELS[state] for state in present_states])
     axes[2].set_ylabel("Recovery state")
     action_axis.set_ylabel("Action ID", color=BLUE)
     action_axis.tick_params(axis="y", colors=BLUE)
     axes[2].set_xlabel("Simulation time [s]")
+
+    active = np.isin(states.astype(int), [1, 2, 3, 4])
+    starts = np.flatnonzero(active & np.concatenate(([True], ~active[:-1])))
+    ends = np.flatnonzero(active & np.concatenate((~active[1:], [True])))
+    for start, end in zip(starts, ends, strict=True):
+        start_time = time[start]
+        end_time = time[min(end + 1, len(time) - 1)]
+        for axis in axes:
+            axis.axvspan(
+                start_time,
+                end_time,
+                facecolor=TEAL,
+                edgecolor=TEAL,
+                alpha=0.08,
+                hatch="////",
+                linewidth=0.0,
+                zorder=0,
+            )
     for axis in axes:
-        axis.grid(axis="y", color=GRID_GREY, linewidth=0.55)
+        axis.grid(axis="y", color=GRID_GREY, linewidth=0.60)
         axis.set_axisbelow(True)
     axes[0].set_title(
-        f"Logged timeline: {selected['episode_id']} — {display_method(str(selected['method']))}",
+        f"Measured PGRR timeline — {selected['scenario']} / {selected['density']} (n=1)",
         loc="left",
-        fontweight="bold",
+    )
+    axes[0].text(
+        0.99,
+        0.95,
+        f"terminal: {str(selected['outcome']).lower().replace('_', ' ')}",
+        transform=axes[0].transAxes,
+        ha="right",
+        va="top",
+        fontsize=7.2,
+        color=MID_GREY,
+    )
+    axes[2].legend(
+        handles=[
+            Line2D([], [], color=TEAL, marker="s", linewidth=1.25, label="state"),
+            Line2D([], [], color=BLUE, marker="x", linestyle=":", label="action ID"),
+        ],
+        loc="upper left",
+        ncol=2,
+        fontsize=7.2,
+        handlelength=1.6,
     )
     _save_pdf(figure, output)
 

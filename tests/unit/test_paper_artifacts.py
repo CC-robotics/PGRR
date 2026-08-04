@@ -468,6 +468,8 @@ def test_final_fixture_generates_type42_figures_and_latex(tmp_path: Path) -> Non
         assert payload.startswith(b"%PDF")
         assert b"/Subtype /Type3" not in payload
     main_table = (table_dir / "main_results.tex").read_text(encoding="utf-8")
+    density_table = (table_dir / "density_results.tex").read_text(encoding="utf-8")
+    recovery_table = (table_dir / "recovery_metrics.tex").read_text(encoding="utf-8")
     statistics_table = (table_dir / "statistical_results.tex").read_text(encoding="utf-8")
     assert "outputs/pilot" not in main_table
     assert "project_commit=abc123" in main_table
@@ -477,13 +479,39 @@ def test_final_fixture_generates_type42_figures_and_latex(tmp_path: Path) -> Non
     assert "McNemar" in statistics_table
     assert "$<0.001$" in statistics_table
     assert "DWB vs PGRR" in statistics_table
-    assert "Minimum human distance [m]" in statistics_table
+    assert "Min. human distance" in statistics_table
+    assert r"$+50.0\;[+20.0,\,+80.0]\,\mathrm{pp}$" in statistics_table
+    assert r"\mathrm{OR}_H" in statistics_table
+    assert r"r_{\mathrm{rb}}" in statistics_table
+    assert r"p_{\mathrm{raw}}" in statistics_table
+    assert r"p_{\mathrm{Holm}}" in statistics_table
     offline_table = (table_dir / "offline_ablation.tex").read_text(encoding="utf-8")
     macros = (table_dir / "result_macros.tex").read_text(encoding="utf-8")
     assert "never executed" in offline_table
-    assert "399 held-out" in offline_table
+    assert "399 scenario-disjoint" in offline_table
     assert r"\providecommand{\PGRRMainPairCount}{24}" in macros
     assert r"\providecommand{\PGRRSuccessDifference}" in macros
+
+    for table in (
+        main_table,
+        density_table,
+        recovery_table,
+        statistics_table,
+        offline_table,
+    ):
+        # IEEE/CVPR-style tables use booktabs, compact edge spacing, and no
+        # vertical rules or scale-to-fit typography.
+        assert all(rule in table for rule in (r"\toprule", r"\midrule", r"\bottomrule"))
+        tabular_spec = table.split(r"\begin{tabular}{", maxsplit=1)[1].split("}", maxsplit=1)[0]
+        assert "|" not in tabular_spec
+        assert tabular_spec.startswith("@{")
+        assert r"\resizebox" not in table
+        assert r"\setlength{\tabcolsep}" in table
+        assert r"\renewcommand{\arraystretch}" in table
+
+    assert r"\textbf{PGRR}" in main_table
+    assert "Timeout" in main_table and "Timeout" in density_table
+    assert "success-conditional metrics" in statistics_table
 
 
 def test_action_space_expert_explanation_does_not_overlap(

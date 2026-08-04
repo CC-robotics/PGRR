@@ -1,11 +1,10 @@
-PGRR confines learning to a bounded navigation-recovery interface: classical
-DWB controls nominal motion, observable rules trigger intervention, and a
-planning mask restricts a compact DAgger policy to interpretable temporary goals
-and modes.  A privileged short-horizon planner creates labels automatically,
-and planning masks are enforced during labeling and online inference.  The
-locked evaluation and offline ablations distinguish collision
-avoidance from task completion and expose the cost of conservative intervention.
-The resulting evidence supports PGRR as a reproducible recovery architecture,
-not a universal social-navigation solution.  More realistic pedestrians,
-multi-seed replication, longer-horizon expert reasoning, and hardware tests are
-the highest-value next steps.
+We presented PGRR, a recovery interface that retains DWB for nominal control and
+restricts learned intervention to interpretable temporary goals and recovery
+modes.  A privileged rollout planner supplies supervision, DAgger covers
+learner-induced states, and planning masks constrain both labeling and online
+inference.  Across 24 locked Base--PGRR pairs, observed collision terminations
+decrease from 19 to zero while goal completions increase from five to eight; on
+held-out states, DAgger also improves expert agreement and cost regret.  These
+results establish a reproducible foundation for failure-triggered recovery.
+Longer-horizon interaction reasoning, multi-seed replication, richer pedestrian
+models, and hardware validation are the most direct next steps.

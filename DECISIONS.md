@@ -301,3 +301,23 @@ selected PPO, a learned failure detector, a second classical planner, or real-ro
 validation. These remain explicit limitations. Expanding test scale or adding those
 modules requires a newly frozen protocol; it may not be backfilled selectively after
 seeing the current test.
+
+## D-064: Concentrate rather than suppress the completion trade-off
+
+The paper should lead with the validated architectural contribution, the 19-to-zero
+collision-termination change, and the held-out DAgger improvement. It must nevertheless
+retain timeout in the main outcome and paired-statistics tables because removing it would
+change the interpretation of the method. Repetitive timeout/live-lock wording is therefore
+collapsed into one quantitative paragraph in Results and one scoped paragraph in
+Limitations. The primary outcome figure shows goal and collision endpoints separately and
+states that the rates need not sum to one because horizon terminations remain possible.
+
+## D-065: Use publication-scale, accessibility-redundant figures and tables
+
+Paper graphics use the IEEE one- and two-column widths (3.50 and 7.16 inches), vector PDF,
+approximately 9-point base type, an Okabe--Ito-derived three-color palette, and marker or
+line-style redundancy so color is never the only encoding. Binomial endpoint plots show
+Wilson 95% intervals and their per-point sample size. Tables use `booktabs`, no vertical
+rules, explicit units and sample sizes, restrained bolding of only the proposed method
+name, and named effect-size estimators. These choices improve CVPR/IEEE-style readability
+without changing the locked data or selectively marking favorable cells.

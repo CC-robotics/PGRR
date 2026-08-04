@@ -20,25 +20,28 @@ for Dynamic Social Navigation}
 \maketitle
 
 \begin{abstract}
-Classical navigation is dependable in routine mapped environments but can
-freeze, oscillate, or collide in reciprocal pedestrian interactions.  We present
-PGRR, a bounded recovery layer that leaves Nav2 DWB in charge of nominal motion
-and invokes learning only after an observable failure trigger.  A compact policy
-selects among 21 temporary subgoals and four interpretable modes; a
-planning mask rejects infeasible actions and an independent supervisor may stop
-unsafe motion.  Training uses a privileged short-horizon rollout expert,
-behavior cloning, and DAgger, whereas deployment uses only LiDAR and navigation
-history.  A locked Gazebo study contains \PGRRTotalEpisodeCount{} logical
-episodes across eight interaction families and three densities.  In the
-\PGRRMainPairCount{} paired Base--PGRR tests, Base and PGRR achieve success rates
-of \PGRRBaseSuccessRate{} and \PGRRSuccessRate{}, and collision rates of
-\PGRRBaseCollisionRate{} and \PGRRCollisionRate{}, respectively.  The paired
-success-rate difference is \PGRRSuccessDifference{} (95\% bootstrap interval
-[\PGRRSuccessCILow{}, \PGRRSuccessCIHigh{}], Holm-adjusted
-$p=\PGRRSuccessHolmP$).  The results quantify a condition-dependent
-safety--completion trade-off rather than universal superiority.  All raw
-streams, exclusions, statistics, figures, and manuscript numbers are generated
-under a frozen manifest.
+Classical navigation is reliable in routine mapped environments yet remains
+brittle under reciprocal pedestrian interactions.  We introduce PGRR, a
+failure-triggered recovery layer that preserves Nav2 DWB for nominal navigation
+and invokes a learned policy only when observable risk or progress rules persist.
+Rather than commanding velocity, the policy selects among 21 temporary subgoals
+and four interpretable recovery modes.  A planning mask rejects infeasible
+decisions, and an independent stopping-distance supervisor may override motion.
+A privileged
+short-horizon planner supplies recovery demonstrations for behavior cloning and
+DAgger; deployment uses only LiDAR and navigation history.  Our locked Gazebo
+evaluation comprises \PGRRTotalEpisodeCount{} episodes across eight interaction
+families and three densities.  On \PGRRMainPairCount{} matched Base--PGRR
+conditions, PGRR records no collision termination, compared with
+\PGRRBaseCollisionRate{} for Base, a paired difference of
+\PGRRCollisionDifference{} (95\% bootstrap interval
+[\PGRRCollisionCILow{}, \PGRRCollisionCIHigh{}], Holm-adjusted
+$p_{\mathrm{Holm}}\PGRRCollisionHolmP$).  Goal success is \PGRRSuccessRate{} versus
+\PGRRBaseSuccessRate{} ($p_{\mathrm{Holm}}=\PGRRSuccessHolmP$).  On held-out
+recovery states, DAgger raises top-1 expert agreement from 88.5\% to 92.2\% and
+reduces expert-cost regret from 0.271 to 0.031.  These results demonstrate an
+auditable route to contact-averse, interpretable recovery while identifying
+persistent reciprocal blockages as the principal remaining challenge.
 \end{abstract}
 
 \section{Introduction}

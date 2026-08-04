@@ -1,19 +1,27 @@
 % Generated only from /home/diy/bonus_track/PGRR/outputs/final/results.parquet and /home/diy/bonus_track/PGRR/outputs/final/summary.csv; project_commit=35d7e601cd6f5baf168948a7174cd32fa9c37c5b
 \begin{table*}[t]
-\caption{Recovery behavior on valid final episodes. Entries are episode-level mean $\pm$
-standard deviation; undefined recovery rates for methods without a trigger are shown as dashes.}
+\caption{Recovery behavior on valid episodes from the locked manifest.}
 \label{tab:recovery-metrics}
 \centering
-\small
-\begin{tabular}{lrrrrrr}
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lrrrrrr@{}}
 \toprule
-Method & $N$ & Triggers / ep. & Recovery success [\%] & Duration [s] & Intervention [\%]
-& Emergency stops / ep. \\
+Method & $n$ & Triggers (ep.$^{-1}$) & Recovery success (\%)
+& Recovery time (s/ep.) & Intervention (\%) & Emergency stops (ep.$^{-1}$) \\
 \midrule
-DWB & 24 & 0.00 $\pm$ 0.00 & -- & 0.00 $\pm$ 0.00 & 4.0 $\pm$ 3.9 & 0.00 $\pm$ 0.00 \\
-Standard & 8 & 0.00 $\pm$ 0.00 & -- & 0.00 $\pm$ 0.00 & 5.0 $\pm$ 4.0 & 0.00 $\pm$ 0.00 \\
-Heuristic & 8 & 6.12 $\pm$ 4.05 & 62.9 $\pm$ 31.6 & 132.53 $\pm$ 40.62 & 75.7 $\pm$ 19.6 & 14.12 $\pm$ 8.08 \\
-PGRR & 24 & 5.21 $\pm$ 3.45 & 73.6 $\pm$ 15.3 & 105.28 $\pm$ 58.42 & 61.9 $\pm$ 30.0 & 14.33 $\pm$ 8.86 \\
+DWB & 24 & 0.0 $\pm$ 0.0 & -- & 0.0 $\pm$ 0.0 & 4.0 $\pm$ 3.9 & 0.0 $\pm$ 0.0 \\
+Standard & 8 & 0.0 $\pm$ 0.0 & -- & 0.0 $\pm$ 0.0 & 5.0 $\pm$ 4.0 & 0.0 $\pm$ 0.0 \\
+Heuristic & 8 & 6.1 $\pm$ 4.1 & 62.9 $\pm$ 31.6 & 132.5 $\pm$ 40.6 & 75.7 $\pm$ 19.6 & 14.1 $\pm$ 8.1 \\
+\addlinespace[2pt]
+\textbf{PGRR} & 24 & 5.2 $\pm$ 3.5 & 73.6 $\pm$ 15.3 & 105.3 $\pm$ 58.4 & 61.9 $\pm$ 30.0 & 14.3 $\pm$ 8.9 \\
 \bottomrule
 \end{tabular}
+\vspace{2pt}
+
+\parbox{0.98\textwidth}{\footnotesize \emph{Note.} Entries are episode-level mean
+$\pm$ sample SD. Recovery time is the cumulative time spent in recovery per episode. Undefined
+success rates for methods with no recovery trigger are shown as dashes. Bold identifies the
+proposed method.}
 \end{table*}

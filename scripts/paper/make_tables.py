@@ -9,6 +9,7 @@ import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -75,19 +76,38 @@ def _p_value(value: float) -> str:
 
 
 STATISTIC_METRIC_LABELS = {
-    "goal_reached": "Success rate",
-    "collision": "Collision rate",
-    "timeout": "Timeout rate",
-    "successful_episode_duration_s": "Successful time [s]",
-    "successful_path_length_m": "Successful path length [m]",
+    "goal_reached": "Goal reached",
+    "collision": "Collision",
+    "timeout": "Timeout",
+    "successful_episode_duration_s": "Success time",
+    "successful_path_length_m": "Success path",
     "spl": "SPL",
-    "min_human_distance_m": "Minimum human distance [m]",
+    "min_human_distance_m": "Min. human distance",
     "personal_space_violation_ratio": "Personal-space violation",
-    "discomfort_time_s": "Discomfort time [s]",
+    "discomfort_time_s": "Discomfort time",
     "emergency_stop_count": "Emergency stops",
     "recovery_trigger_count": "Recovery triggers",
     "intervention_ratio": "Intervention ratio",
-    "mean_abs_angular_jerk_rad_s3": "Mean angular jerk",
+    "mean_abs_angular_jerk_rad_s3": "Angular jerk",
+}
+
+
+# Scale, decimals, and display unit for PGRR-minus-DWB paired differences.  Rates
+# are rendered as percentage-point differences rather than unitless fractions.
+STATISTIC_FORMATS: dict[str, tuple[float, int, str]] = {
+    "goal_reached": (100.0, 1, r"\,\mathrm{pp}"),
+    "collision": (100.0, 1, r"\,\mathrm{pp}"),
+    "timeout": (100.0, 1, r"\,\mathrm{pp}"),
+    "successful_episode_duration_s": (1.0, 1, r"\,\mathrm{s}"),
+    "successful_path_length_m": (1.0, 2, r"\,\mathrm{m}"),
+    "spl": (1.0, 3, ""),
+    "min_human_distance_m": (1.0, 3, r"\,\mathrm{m}"),
+    "personal_space_violation_ratio": (100.0, 1, r"\,\mathrm{pp}"),
+    "discomfort_time_s": (1.0, 2, r"\,\mathrm{s}"),
+    "emergency_stop_count": (1.0, 2, r"\,\mathrm{ep.}^{-1}"),
+    "recovery_trigger_count": (1.0, 2, r"\,\mathrm{ep.}^{-1}"),
+    "intervention_ratio": (100.0, 1, r"\,\mathrm{pp}"),
+    "mean_abs_angular_jerk_rad_s3": (1.0, 3, r"\,\mathrm{rad}\,\mathrm{s}^{-3}"),
 }
 
 
@@ -110,6 +130,37 @@ def _display_comparison(comparison: object) -> str:
     }:
         return "DWB vs PGRR"
     return str(comparison)
+
+
+def _method_cell(method: object) -> str:
+    """Return a restrained visual cue for the proposed method."""
+
+    label = _latex_escape(display_method(method))
+    return rf"\textbf{{{label}}}" if label == "PGRR" else label
+
+
+def _difference_interval(row: Any) -> str:
+    """Format an estimate and CI with the metric's scientifically meaningful unit."""
+
+    metric = str(row.metric).strip().lower()
+    scale, digits, unit = STATISTIC_FORMATS.get(metric, (1.0, 3, ""))
+    estimate = scale * float(row.estimate)
+    lower = scale * float(row.ci_low)
+    upper = scale * float(row.ci_high)
+    return (
+        rf"${estimate:+.{digits}f}\;"
+        rf"[{lower:+.{digits}f},\,{upper:+.{digits}f}]{unit}$"
+    )
+
+
+def _effect_value(row: Any) -> str:
+    """Name the effect-size estimator instead of presenting an ambiguous number."""
+
+    value = float(row.effect_size)
+    test = str(row.test).strip().lower()
+    if "mcnemar" in test:
+        return rf"$\mathrm{{OR}}_H={value:.3g}$"
+    return rf"$r_{{\mathrm{{rb}}}}={value:+.3f}$"
 
 
 def _provenance(results_path: Path, summary_path: Path, commit: str) -> str:
@@ -265,36 +316,45 @@ def main_results_table(
         successful = selected.loc[selected["outcome"] == "GOAL_REACHED"]
         episode_count = len(selected)
         excluded = excluded_attempts.get(str(method), len(complete) - episode_count)
+        if display_method(method) == "PGRR" and rows:
+            rows.append(r"\addlinespace[2pt]")
         rows.append(
-            f"{_latex_escape(display_method(method))} & {episode_count} & "
+            f"{_method_cell(method)} & {episode_count} & "
             f"{_percentage(int((selected['outcome'] == 'GOAL_REACHED').sum()), episode_count)} & "
             f"{_percentage(int((selected['outcome'] == 'COLLISION').sum()), episode_count)} & "
             f"{_percentage(int((selected['outcome'] == 'TIMEOUT').sum()), episode_count)} & "
             f"{_mean_std(selected['spl'], digits=3)} & "
             f"{_mean_std(successful['navigation_time_s'], digits=1)} & "
-            f"{_mean_std(selected['min_human_distance_m'], digits=3)} & {excluded} \\\\"
+            f"{_mean_std(selected['min_human_distance_m'], digits=2)} & {excluded} \\\\"
         )
     commit = str(results["project_commit"].iloc[0])
     payload = _provenance(results_path, summary_path, commit) + (
         """\\begin{table*}[t]
-\\caption{Locked final evaluation. DWB and PGRR use the full 24-episode manifest; standard and
-heuristic recovery use the paired 8-episode high-density subset. Rates use valid algorithm
-episodes, and navigation time is reported only for successful episodes. Values after $\\pm$ are
-standard deviations. ``Excl.'' counts retained simulator-failure or invalid-reset physical
-attempts that were retried and excluded from algorithm rates.}
+\\caption{Closed-loop navigation outcomes on the locked manifest.}
 \\label{tab:main-results}
 \\centering
-\\small
-\\begin{tabular}{lrrrrrrrr}
+\\footnotesize
+\\setlength{\\tabcolsep}{4.0pt}
+\\renewcommand{\\arraystretch}{1.08}
+\\begin{tabular}{@{}lrrrrrrrr@{}}
 \\toprule
-Method & $N$ & Success [\\%] & Collision [\\%] & Timeout [\\%] & SPL & Time [s]
-& $d_{\\min}$ [m] & Excl. \\\\
+Method & $n$ & Success $\\uparrow$ (\\%) & Collision $\\downarrow$ (\\%)
+& Timeout $\\downarrow$ (\\%) & SPL $\\uparrow$ & Time $\\downarrow$ (s)
+& $d_{\\min}\\uparrow$ (m) & Excl. \\\\
 \\midrule
 """
         + "\n".join(rows)
         + """
 \\bottomrule
 \\end{tabular}
+\\vspace{2pt}
+
+\\parbox{0.98\\textwidth}{\\footnotesize \\emph{Note.} DWB and PGRR use the same
+$n=24$ family--density episodes; Standard and Heuristic use the common high-density subset
+($n=8$). Rates are computed over valid episodes. SPL and $d_{\\min}$ use all valid episodes;
+Time uses successful episodes only. Continuous entries are mean $\\pm$ sample SD when at least
+two observations exist. Excl. counts retained simulator/reset failures that were retried and
+excluded from algorithm rates. Bold identifies the proposed method.}
 \\end{table*}
 """
     )
@@ -315,39 +375,45 @@ def density_results_table(
         key=lambda value: (density_priority.get(value.lower(), 3), value),
     )
     rows: list[str] = []
-    for density in densities:
+    for density_index, density in enumerate(densities):
+        if density_index:
+            rows.append(r"\addlinespace[2pt]")
         for method in _method_order(valid["method"].unique()):
             selected = valid.loc[(valid["density"] == density) & (valid["method"] == method)]
-            successful = selected.loc[selected["outcome"] == "GOAL_REACHED"]
             episode_count = len(selected)
             if episode_count == 0:
                 continue
             successes = int((selected["outcome"] == "GOAL_REACHED").sum())
             rows.append(
-                f"{_latex_escape(density.title())} & {_latex_escape(display_method(method))} & "
+                f"{_latex_escape(density.title())} & {_method_cell(method)} & "
                 f"{episode_count} & "
                 f"{_percentage(successes, episode_count)} & "
                 f"{_percentage(int((selected['outcome'] == 'COLLISION').sum()), episode_count)} & "
-                f"{_percentage(int((selected['outcome'] == 'TIMEOUT').sum()), episode_count)} & "
-                f"{_mean_std(successful['navigation_time_s'], digits=1)} \\\\"
+                f"{_percentage(int((selected['outcome'] == 'TIMEOUT').sum()), episode_count)} \\\\"
             )
     commit = str(results["project_commit"].iloc[0])
     payload = _provenance(results_path, summary_path, commit) + (
         """\\begin{table}[t]
-\\caption{Final outcomes by crowd density. Time is mean $\\pm$ standard deviation over
-successful episodes only.}
+\\caption{Terminal outcomes by crowd density on the locked manifest.}
 \\label{tab:density-results}
 \\centering
 \\footnotesize
-\\begin{tabular}{llrrrrr}
+\\setlength{\\tabcolsep}{3.5pt}
+\\renewcommand{\\arraystretch}{1.08}
+\\begin{tabular}{@{}llrrrr@{}}
 \\toprule
-Density & Method & $N$ & Succ. [\\%] & Coll. [\\%] & TO [\\%] & Time [s] \\\\
+Density & Method & $n$ & Succ. $\\uparrow$ (\\%) & Coll. $\\downarrow$ (\\%)
+& Timeout $\\downarrow$ (\\%) \\\\
 \\midrule
 """
         + "\n".join(rows)
         + """
 \\bottomrule
 \\end{tabular}
+\\vspace{2pt}
+
+\\parbox{0.98\\columnwidth}{\\footnotesize \\emph{Note.} Each rate uses the valid episodes
+shown in $n$. Bold identifies the proposed method.}
 \\end{table}
 """
     )
@@ -365,32 +431,41 @@ def recovery_metrics_table(
     rows: list[str] = []
     for method in _method_order(valid["method"].unique()):
         selected = valid.loc[valid["method"] == method]
+        if display_method(method) == "PGRR" and rows:
+            rows.append(r"\addlinespace[2pt]")
         rows.append(
-            f"{_latex_escape(display_method(method))} & {len(selected)} & "
-            f"{_mean_std(selected['recovery_trigger_count'], digits=2)} & "
+            f"{_method_cell(method)} & {len(selected)} & "
+            f"{_mean_std(selected['recovery_trigger_count'], digits=1)} & "
             f"{_mean_std(100.0 * selected['recovery_success_rate'], digits=1)} & "
-            f"{_mean_std(selected['recovery_duration_s'], digits=2)} & "
+            f"{_mean_std(selected['recovery_duration_s'], digits=1)} & "
             f"{_mean_std(100.0 * selected['intervention_ratio'], digits=1)} & "
-            f"{_mean_std(selected['emergency_stop_count'], digits=2)} \\\\"
+            f"{_mean_std(selected['emergency_stop_count'], digits=1)} \\\\"
         )
     commit = str(results["project_commit"].iloc[0])
     payload = _provenance(results_path, summary_path, commit) + (
         """\\begin{table*}[t]
-\\caption{Recovery behavior on valid final episodes. Entries are episode-level mean $\\pm$
-standard deviation; undefined recovery rates for methods without a trigger are shown as dashes.}
+\\caption{Recovery behavior on valid episodes from the locked manifest.}
 \\label{tab:recovery-metrics}
 \\centering
-\\small
-\\begin{tabular}{lrrrrrr}
+\\footnotesize
+\\setlength{\\tabcolsep}{4.5pt}
+\\renewcommand{\\arraystretch}{1.08}
+\\begin{tabular}{@{}lrrrrrr@{}}
 \\toprule
-Method & $N$ & Triggers / ep. & Recovery success [\\%] & Duration [s] & Intervention [\\%]
-& Emergency stops / ep. \\\\
+Method & $n$ & Triggers (ep.$^{-1}$) & Recovery success (\\%)
+& Recovery time (s/ep.) & Intervention (\\%) & Emergency stops (ep.$^{-1}$) \\\\
 \\midrule
 """
         + "\n".join(rows)
         + """
 \\bottomrule
 \\end{tabular}
+\\vspace{2pt}
+
+\\parbox{0.98\\textwidth}{\\footnotesize \\emph{Note.} Entries are episode-level mean
+$\\pm$ sample SD. Recovery time is the cumulative time spent in recovery per episode. Undefined
+success rates for methods with no recovery trigger are shown as dashes. Bold identifies the
+proposed method.}
 \\end{table*}
 """
     )
@@ -405,33 +480,52 @@ def statistical_results_table(
     summary_path: Path,
     output: Path,
 ) -> None:
-    rows = [
-        f"{_latex_escape(_display_comparison(row.comparison))} & "
-        f"{_latex_escape(_display_statistic_metric(row.metric))} & "
-        f"{_latex_escape(row.test)} & {float(row.estimate):.3f} "
-        f"[{float(row.ci_low):.3f}, {float(row.ci_high):.3f}] & "
-        f"{_p_value(float(row.p_value))} & {_p_value(float(row.p_value_holm))} & "
-        f"{float(row.effect_size):.3f} & {int(row.n_pairs)} \\\\"
-        for row in summary.itertuples(index=False)
-    ]
+    comparisons = list(dict.fromkeys(_display_comparison(value) for value in summary["comparison"]))
+    comparison_text = " / ".join(comparisons)
+    rows: list[str] = []
+    previous_test: str | None = None
+    for row in summary.itertuples(index=False):
+        test_key = "McNemar" if "mcnemar" in str(row.test).lower() else "Wilcoxon"
+        if previous_test is not None and test_key != previous_test:
+            rows.append(r"\addlinespace[2pt]")
+        rows.append(
+            f"{_latex_escape(_display_statistic_metric(row.metric))} & {test_key} & "
+            f"{_difference_interval(row)} & {_p_value(float(row.p_value))} & "
+            f"{_p_value(float(row.p_value_holm))} & {_effect_value(row)} & "
+            f"{int(row.n_pairs)} \\\\"
+        )
+        previous_test = test_key
     commit = str(results["project_commit"].iloc[0])
     payload = _provenance(results_path, summary_path, commit) + (
         """\\begin{table*}[t]
-\\caption{Paired statistical comparisons from the locked final manifest. Confidence intervals
-are 95\\%; $p_{\\mathrm{Holm}}$ denotes multiplicity-corrected values.}
+\\caption{Paired PGRR--DWB comparisons on the locked manifest.}
 \\label{tab:statistical-results}
 \\centering
 \\footnotesize
-\\begin{tabular}{lllrrrrr}
+\\setlength{\\tabcolsep}{4.0pt}
+\\renewcommand{\\arraystretch}{1.08}
+\\begin{tabular}{@{}llrrrrr@{}}
 \\toprule
-Comparison & Metric & Test & Estimate [95\\% CI] & $p$ & $p_{\\mathrm{Holm}}$
-& Effect & $N_{\\mathrm{pairs}}$ \\\\
+Metric & Test & $\\Delta$ [95\\% CI] & $p_{\\mathrm{raw}}$ & $p_{\\mathrm{Holm}}$
+& Effect size & $n_{\\mathrm{pairs}}$ \\\\
 \\midrule
 """
         + "\n".join(rows)
         + """
 \\bottomrule
 \\end{tabular}
+\\vspace{2pt}
+
+\\parbox{0.98\\textwidth}{\\footnotesize \\emph{Note.} All differences are PGRR minus DWB
+and use 95\\% percentile-bootstrap intervals; rate differences are in percentage points (pp).
+Binary endpoints use exact McNemar tests and the Haldane-corrected matched odds ratio
+$\\mathrm{OR}_H$; continuous endpoints use Wilcoxon signed-rank tests and matched
+rank-biserial correlation $r_{\\mathrm{rb}}$. Holm correction covers all endpoints in this
+table. The paired sample size varies for success-conditional metrics. Comparison set:
+"""
+        + _latex_escape(comparison_text)
+        + ".}"
+        + """
 \\end{table*}
 """
     )
@@ -452,46 +546,58 @@ def offline_ablation_table(
         _mask_order=ablation["action_mask"].map(mask_order),
     ).sort_values(["_model_order", "_mask_order"])
     rows: list[str] = []
+    previous_model: str | None = None
     for row in ordered.itertuples(index=False):
         mask_label = "Enabled" if row.action_mask == "enabled" else r"Disabled$^{\dagger}$"
+        if previous_model is not None and row.model != previous_model:
+            rows.append(r"\addlinespace[2pt]")
         regret_value = float(row.expert_cost_regret)
         if regret_value < 10_000.0:
             regret = f"{regret_value:.3f}"
         else:
             coefficient, exponent = f"{regret_value:.2e}".split("e")
             regret = rf"${coefficient}\times 10^{{{int(exponent)}}}$"
+        model_label = _latex_escape(row.model)
+        if row.model == "Triggered DAgger":
+            model_label = rf"\textbf{{{model_label}}}"
         rows.append(
-            f"{_latex_escape(row.model)} & {mask_label} & "
+            f"{model_label} & {mask_label} & "
             f"{100.0 * float(row.top1_accuracy):.1f} & "
             f"{100.0 * float(row.top3_accuracy):.1f} & "
             f"{100.0 * float(row.invalid_action_rate):.1f} & {regret} & "
             f"{100.0 * float(row.near_optimal_rate):.1f} & "
             f"{100.0 * float(row.catastrophic_action_rate):.1f} \\\\"
         )
+        previous_model = str(row.model)
     sample_count = int(sidecar["sample_count"])
     payload = (
         f"% Generated only from {ablation_path.as_posix()}; "
         f"sha256={_sha256(ablation_path)}\n"
         """\\begin{table*}[t]
-\\caption{Offline policy ablation on the same """
+\\caption{Offline policy ablation on """
         + str(sample_count)
-        + """ held-out validation states. Regret uses the
-expert cost, whose hard invalid-action penalty dominates mask-disabled rows. $^{\\dagger}$ Mask
-disabled denotes counterfactual offline proposals only; those actions were never executed by the
-robot or simulator in closed loop.}
+        + """ scenario-disjoint validation states.}
 \\label{tab:offline-ablation}
 \\centering
 \\footnotesize
-\\begin{tabular}{llrrrrrr}
+\\setlength{\\tabcolsep}{4.0pt}
+\\renewcommand{\\arraystretch}{1.08}
+\\begin{tabular}{@{}llrrrrrr@{}}
 \\toprule
-Model & Planning mask & Top-1 [\\%] & Top-3 [\\%] & Invalid [\\%] & Cost regret
-& Near-opt. [\\%] & Catastrophic [\\%] \\\\
+Model & Planning mask & Top-1 (\\%) & Top-3 (\\%) & Invalid (\\%) & Cost regret
+& Near-opt. (\\%) & Catastrophic (\\%) \\\\
 \\midrule
 """
         + "\n".join(rows)
         + """
 \\bottomrule
 \\end{tabular}
+\\vspace{2pt}
+
+\\parbox{0.98\\textwidth}{\\footnotesize \\emph{Note.} Regret is measured in expert-cost
+units; its hard invalid-action penalty dominates mask-disabled rows. $^{\\dagger}$ Disabled-mask
+rows are counterfactual offline proposals and were never executed in closed loop. ``Catastrophic''
+denotes selection of a hard-penalty action. Bold identifies the selected policy.}
 \\end{table*}
 """
     )

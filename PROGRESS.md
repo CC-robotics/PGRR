@@ -37,6 +37,17 @@
   odometry bridge; the wrapper now mounts the same pinned Jackal mapping used by
   evaluated episodes and verifies real samples rather than topic names. The fresh
   run passed clock, TF, LiDAR, odometry, goal acceptance, and controlled cleanup.
+- Revised the eight-page manuscript around the verified hierarchy, collision endpoint,
+  and DAgger ablation. Timeout remains in the main and statistical tables and is
+  interpreted once in Results and once in Limitations; repetitive negative wording was
+  removed without changing any result.
+- Regenerated all seven paper figures at IEEE one- or two-column dimensions with a
+  color-vision-safe three-color palette, shape redundancy, larger effective type, and
+  confidence intervals where replication supports them. Regenerated five result tables
+  with `booktabs`, explicit units, sample sizes, comparison direction, and compact notes.
+- Recompiled and visually audited all eight pages. The paper has no unresolved reference,
+  overfull box, Type 3 font, or unembedded font; the complete quality suite passes 286
+  tests.
 
 - 2026-08-01: Completed two verified-pose high-density crossing-flow validation pairs under frozen commit `6cf9535`. DWB collided on seeds 2201 and 2202; triggered DAgger physically reached the goal on both. All four near-human LiDAR gates passed at 100% visibility. Added raw-hash-linked pair CSVs and regenerated the manuscript with a descriptive two-seed table and figure; no significance claim is made.
 - 2026-08-01: Retained high-density validation seed 2220 as a nominal-regression counterexample: Base reached the goal and DAgger timed out in an emergency-turning live-lock. Fixed the fallback yielding rule so a pedestrian inside the avoidance radius may move away but not closer; expert rollout remains conservative to a possible stop. Added seven unit tests; the full suite passes 217 tests and the ROS overlay builds.

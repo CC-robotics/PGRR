@@ -160,6 +160,11 @@ def install(root: Path) -> None:
         "",
         1,
     )
+    figures = figures.replace(
+        "from matplotlib.ticker import PercentFormatter\n",
+        "",
+        1,
+    )
     figures_path.write_text(figures, encoding="utf-8")
 
 

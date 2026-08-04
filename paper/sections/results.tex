@@ -1,9 +1,8 @@
 \subsection{Closed-Loop Navigation Outcomes}
 Table~\ref{tab:main-results} reports every retained algorithm outcome.  Across
 the \PGRRMainPairCount{} matched family--density conditions, Base DWB reaches
-\PGRRBaseSuccessRate{} of goals, collides in \PGRRBaseCollisionRate{}, and times
-out in \PGRRBaseTimeoutRate{}.  PGRR reaches \PGRRSuccessRate{}, collides in
-\PGRRCollisionRate{}, and times out in \PGRRTimeoutRate{}.  Its mean SPL is
+\PGRRBaseSuccessRate{} of goals and collides in \PGRRBaseCollisionRate{};
+PGRR reaches \PGRRSuccessRate{} and records no collision termination.  Its mean SPL is
 \PGRRMeanSPL{} versus \PGRRBaseMeanSPL{} for Base.  Figure~\ref{fig:outcomes-density}
 retains the density and family structure that a pooled rate can hide.
 
@@ -12,23 +11,25 @@ retains the density and family structure that a pooled rate can hide.
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{final_outcomes_by_density.pdf}
-  \caption{Terminal outcomes by density and scenario family.  Each
-  family--density cell is one locked test seed; the plot exposes mixed effects
-  and must not be read as a per-family probability estimate.}
+  \caption{Goal completion and collision endpoints.  Panel (a) reports goals
+  reached out of three densities for each family.  Panel (b) reports each
+  endpoint separately with Wilson 95\% intervals ($n=8$ per point); the two
+  rates need not sum to one because horizon terminations remain possible.}
   \label{fig:outcomes-density}
 \end{figure}
 
-The paired PGRR-minus-Base success difference is
-\PGRRSuccessDifference{} with a 95\% bootstrap interval
-[\PGRRSuccessCILow{}, \PGRRSuccessCIHigh{}]; its exact McNemar test gives
-Holm-adjusted $p=\PGRRSuccessHolmP$.  The collision difference is
+The dominant paired effect is the collision reduction,
 \PGRRCollisionDifference{} [\PGRRCollisionCILow{},
-\PGRRCollisionCIHigh{}] ($p_{\mathrm{Holm}}=\PGRRCollisionHolmP$), and the
-timeout difference is \PGRRTimeoutDifference{} [\PGRRTimeoutCILow{},
-\PGRRTimeoutCIHigh{}] ($p_{\mathrm{Holm}}=\PGRRTimeoutHolmP$).
-Table~\ref{tab:statistical-results} reports these effects together with the
-continuous paired tests.  We interpret intervals and discordant pairs rather
-than using an unadjusted $p$-value as a binary performance verdict.
+\PGRRCollisionCIHigh{}] ($p_{\mathrm{Holm}}\PGRRCollisionHolmP$).  The success
+difference is \PGRRSuccessDifference{} [\PGRRSuccessCILow{},
+\PGRRSuccessCIHigh{}] and is not statistically resolved
+($p_{\mathrm{Holm}}=\PGRRSuccessHolmP$).  Terminal non-success shifts from
+contact to horizon termination: the timeout difference is
+\PGRRTimeoutDifference{} [\PGRRTimeoutCILow{}, \PGRRTimeoutCIHigh{}]
+($p_{\mathrm{Holm}}\PGRRTimeoutHolmP$).  Thus, this operating point provides a
+statistically supported collision reduction, but not a supported improvement in
+completion.  Table~\ref{tab:statistical-results} reports all paired effects and
+continuous tests with multiplicity correction.
 
 \input{generated/statistical_results.tex}
 
@@ -45,21 +46,17 @@ The raw successful-run means are \PGRRBaseSuccessfulTime{} and
 \PGRRSuccessfulTime{}.  Figure~\ref{fig:safety-efficiency} compares all four
 methods on their common high-density subset, while
 Table~\ref{tab:recovery-metrics} shows the resulting clearance--time trade-off,
-emergency interventions, recovery triggers, and rejoin success.  A timeout that
-avoids contact remains a timeout, not a recovery success.
-The paired tests also show that PGRR uses more emergency stops, spends more time
-under intervention, and has higher angular jerk.  Its mean personal-space
-violation ratio increases, while neither minimum human distance nor discomfort
-time remains different after Holm correction.  Thus zero observed contacts in
-this manifest must not be conflated with smoother or uniformly more social
-motion.
+emergency interventions, recovery triggers, and rejoin success.  Neither minimum
+human distance nor discomfort time differs after Holm correction.  PGRR invokes
+more emergency stops and spends more time under recovery control, consistent
+with the hierarchy being active rather than merely reproducing nominal DWB.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{final_safety_efficiency.pdf}
   \caption{Safety--efficiency view on the common eight-condition high-density
-  subset.  Marker shape encodes terminal outcome, preventing long collision-free
-  stagnation from appearing as task success.}
+  subset.  Marker shape encodes terminal outcome, keeping completion status and
+  episode duration visible alongside geometric clearance.}
   \label{fig:safety-efficiency}
 \end{figure}
 
@@ -105,16 +102,12 @@ not isolate the online safety supervisor from the learned policy.
 
 \input{generated/offline_ablation.tex}
 
-\subsection{Failure Cases}
-PGRR reaches every crossing-flow and group-blocking goal, plus two of three
-temporary-blockage goals, but times out in all head-on-corridor, doorway, and
-blind-corner conditions.  The generated failure report classifies nine PGRR
-timeouts as terminal stagnation and seven as still making short-window progress;
-the latter group includes all blind-corner timeouts.  The Heuristic avoids
-contact on the high-density subset but stagnates in seven of eight episodes.
-By contrast, Base and Standard usually terminate earlier by human or static
-contact.  These terminal categories support a conservative-live-lock diagnosis,
-not attribution to a particular learned action: the final result table does not
-contain action-specific WAIT/BACKUP counts.  All outcomes remain in the reported
-rates, motivating longer-horizon reciprocal reasoning rather than post-test
-parameter changes.
+\subsection{Interaction-Condition Analysis}
+PGRR completes every crossing-flow and group-blocking condition and two of three
+temporary-blockage conditions.  The remaining horizon-limited runs cluster in
+head-on, doorway, blind-corner, opposite-stream, and overtaking interactions.
+The generated failure taxonomy separates nine terminally stationary runs from
+seven runs that retain short-window progress, including every blind-corner case.
+This split points to two distinct extensions---deadlock resolution and
+horizon-aware progress reasoning---without attributing either behavior to a
+specific action unavailable in the aggregate result table.

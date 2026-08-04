@@ -723,3 +723,20 @@ sha256sum \
   outputs/final/offline_policy_ablation.csv \
   paper/main.pdf
 ```
+
+## 2026-08-04 — publication-style manuscript revision
+
+The narrative, figures, and tables were regenerated without changing the locked result
+files:
+
+```bash
+cd /home/diy/bonus_track/PGRR
+make figures
+make tables
+make paper
+make test
+```
+
+The final checks include vector-figure dimensions and typography, color/shape encoding,
+table provenance and units, unresolved-reference and overfull-box scans, PDF font
+embedding, and the complete offline regression suite.

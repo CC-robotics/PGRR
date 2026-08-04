@@ -6,35 +6,37 @@ learning can encode interaction patterns, but replacing the nominal controller
 also changes behavior in routine states where the classical stack is already
 competent.
 
-We study a narrower question: can learning be confined to the short interval in
-which a classical planner is failing?  Our system, PGRR (Planning-Guided Recovery
-and Rejoin), leaves Nav2 DWB in control during normal PointGoal navigation.  An
-observable rule detector and a hysteretic state machine invoke a recovery policy
-only for collision risk, freeze, oscillation, or deadlock.  The policy does not
-command wheel velocity.  It selects one of 21 local temporary goals or WAIT,
-BACKUP, REPLAN, and CONTINUE; the classical stack executes the goal and PGRR then
-reissues the original task goal.  A planning-derived action mask and an
-independent braking supervisor bound every learned decision.
+This work asks whether learning can instead be confined to the short interval in
+which a classical planner is at risk of failure.  PGRR (Planning-Guided
+Failure-Triggered Recovery and Rejoin) leaves Nav2 DWB in control during normal
+PointGoal navigation.  An observable detector and a hysteretic state machine
+invoke recovery only for collision risk, freeze, oscillation, or deadlock.  The
+policy never commands wheel velocity: it selects one of 21 local temporary goals
+or WAIT, BACKUP, REPLAN, and CONTINUE.  Nav2 executes the decision, after which
+PGRR restores the original task goal.  A planning-derived action mask and an
+independent braking supervisor constrain every learned decision.
 
-Training uses information that is deliberately unavailable at test time.  A
-short-horizon expert rolls out each legal recovery action using the map and true
-simulated pedestrian state.  Behavior cloning initializes a compact policy, and
-DAgger relabels states visited by the learned controller.  Deployment receives
-only LiDAR history, the local path and goal, robot and planner commands, progress
-history, planner status, and rule-detector scores.
+Training exploits simulator state without leaking it to deployment.  A
+short-horizon expert rolls out every legal recovery action using the map and
+privileged pedestrian state.  Behavior cloning initializes a compact policy,
+and DAgger relabels states visited by the learned controller.  At test time, PGRR
+receives only LiDAR history, the local path and goal, robot and planner commands,
+progress history, planner status, and rule-detector scores.
 
 The contributions are:
 \begin{itemize}
-  \item a failure-triggered ROS2 hierarchy that preserves the authority of a
-  classical planner outside explicitly detected recovery intervals;
+  \item a failure-triggered ROS2 hierarchy that preserves classical planning
+  authority outside explicitly detected recovery intervals;
   \item a fixed, interpretable recovery action space with planning and sensor
   masks enforced during expert labeling and online policy execution;
-  \item an automatically labeled BC--DAgger pipeline for learner-induced recovery
-  states, together with an offline ablation of DAgger and action masking; and
+  \item an automatically labeled BC--DAgger pipeline that aggregates
+  learner-induced recovery states, with controlled ablations of aggregation and
+  action masking; and
   \item a reproducible evaluation over eight pedestrian-interaction families,
   three densities, four recovery mechanisms, immutable raw streams, and paired
   statistical analysis.
 \end{itemize}
-We claim neither formal collision avoidance nor a general solution to social
-navigation.  The experiments quantify when bounded intervention helps, when its
-conservatism increases travel time, and which failure families remain unresolved.
+Across 24 locked Base--PGRR pairs, PGRR changes the observed collision count from
+19 to zero and the goal-completion count from five to eight.  The evaluation
+separates contact avoidance, task completion, and intervention behavior so that
+these effects are not collapsed into a single score.

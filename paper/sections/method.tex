@@ -28,11 +28,10 @@ are terminal.  Recovery enters above $\tau_{on}=0.65$ and exits after four
 frames below $\tau_{off}=0.35$ plus valid
 goal progress.  Decisions occur at 2 Hz, velocity control at 10 Hz, with a 0.5-s
 minimum hold, 2-s cooldown, an 8-s learned-policy recovery bound, a 5-s rejoin
-bound, and four consecutive recovery attempts.  A 30-s extension exists only
-for the privileged online Oracle's yield option and is not used by PGRR.  The
-original goal is stored before intervention and reissued whenever a bounded
-temporary option hands control to REJOIN; this does not imply that Nav2 reached
-the temporary target.
+bound, and four consecutive recovery attempts.  The original goal is stored
+before intervention and reissued whenever a bounded temporary option hands
+control to REJOIN; this transition does not require Nav2 to have reached the
+temporary target.
 
 \subsection{Recovery Actions, Mask, and Safety Supervisor}
 The 25 actions are 21 robot-relative subgoals
@@ -91,5 +90,5 @@ augmentation yields 2,774 training samples, with 399 states in a
 scenario-disjoint validation set.  Training uses AdamW at $3\times10^{-4}$,
 batch size 128, maximum 30 epochs, gradient norm 1, and early-stopping patience
 6.  The deployment checkpoint is selected by validation loss.  Its configuration
-has zero margin weight and no PPO; accordingly neither MWBC nor reinforcement
-learning is claimed as part of PGRR.
+uses uniform BC and no PPO; throughout the paper, PGRR therefore denotes the
+selected DAgger policy rather than an RL-refined variant.
