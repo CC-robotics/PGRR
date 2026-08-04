@@ -115,6 +115,11 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "client.call_async(ClearEntireCostmap.Request())" in actor
     assert "startup gate cleared local and global Nav2 costmaps" in actor
     assert "startup gate failed; actors_healthy=false" in actor
+    assert "if self._navigation_active and not self._experiment_started:" in actor
+    assert actor.index("self._navigation_active = True") < actor.index(
+        "self._startup_gate_started_wall_s = time.monotonic()",
+        actor.index("def _on_status"),
+    )
     assert actor.index("if not self._advance_robot_reset") < actor.index(
         "if not self._advance_costmap_clear"
     )

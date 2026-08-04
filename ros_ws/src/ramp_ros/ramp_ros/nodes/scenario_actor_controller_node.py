@@ -502,6 +502,11 @@ class ScenarioActorController(Node):
         ):
             return
         self._navigation_active = True
+        # TaskGenerator publishes the first active goal only after it has
+        # reset the scenario and constructed the robot's map/odom transforms.
+        # Starting the reset gate any earlier can teleport Gazebo while Nav2
+        # is still sizing its costmaps around the pre-reset staging pose.
+        self._startup_gate_started_wall_s = time.monotonic()
         self._route_elapsed = {route.name: 0.0 for route in self._routes}
         self._last_update_s = self.get_clock().now().nanoseconds * 1.0e-9
         self.get_logger().info("navigation activated; waiting for episode logger handshake")
@@ -558,9 +563,9 @@ class ScenarioActorController(Node):
             )
             return
         now = self.get_clock().now().nanoseconds * 1.0e-9
-        startup_gate_ready = (
-            self._advance_startup_gate(now) if not self._experiment_started else True
-        )
+        startup_gate_ready = self._startup_gate_ready
+        if self._navigation_active and not self._experiment_started:
+            startup_gate_ready = self._advance_startup_gate(now)
         if (
             self._navigation_active
             and not self._experiment_started
