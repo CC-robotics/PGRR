@@ -1,0 +1,20 @@
+{
+  "benchmark_id": "moderate_social_navigation_v1",
+  "counts_by_split": {
+    "test": 24,
+    "validation": 24
+  },
+  "difficulty": "moderate",
+  "footprint_inflation_m": 0.39999999999999997,
+  "manifest_paths": {
+    "test": "splits/moderate_locked_r0_test.yaml",
+    "validation": "splits/moderate_locked_r0_validation.yaml"
+  },
+  "manifest_suffix": "moderate_locked_r0",
+  "scenario_count": 48,
+  "scenario_ids_sha256": "270863dae8af8fa01ec57af2caec30c64cd6ca48d8da70e04c08b6df7df7aefa",
+  "schema_version": 1,
+  "source_config": "configs/experiments/scenario_catalog_moderate.yaml",
+  "test_seed_base": 61000,
+  "validation_seed_base": 51000
+}
