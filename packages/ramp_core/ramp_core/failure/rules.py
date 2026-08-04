@@ -25,6 +25,9 @@ class RuleFailureConfig:
     collision_omnidirectional_absolute_distance_m: float = 0.0
     collision_release_distance_m: float = 1.2
     collision_hold_s: float = 2.0
+    collision_max_hold_s: float = 3.0
+    collision_stationary_confirmation_s: float = 0.5
+    collision_immediate_forward_speed_mps: float = 0.05
     collision_proximity_m: float = 2.00
     collision_closing_speed_mps: float = 0.10
     collision_radial_excess_closing_speed_mps: float = 0.25
@@ -56,6 +59,7 @@ class RuleFailureConfig:
             self.collision_proximity_m,
             self.collision_trend_window_s,
             self.collision_bearing_consistency_rad,
+            self.collision_stationary_confirmation_s,
             self.freeze_window_s,
             self.freeze_goal_distance_m,
             self.oscillation_window_s,
@@ -68,6 +72,8 @@ class RuleFailureConfig:
             self.control_latency_s,
             self.safety_margin_m,
             self.collision_hold_s,
+            self.collision_max_hold_s,
+            self.collision_immediate_forward_speed_mps,
             self.collision_closing_speed_mps,
             self.collision_radial_excess_closing_speed_mps,
             self.collision_omnidirectional_absolute_distance_m,
@@ -93,6 +99,8 @@ class RuleFailureConfig:
             raise ValueError(
                 "collision_release_distance_m must exceed collision_wide_absolute_distance_m"
             )
+        if self.collision_max_hold_s < self.collision_hold_s:
+            raise ValueError("collision_max_hold_s must be at least collision_hold_s")
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,7 +219,11 @@ class RuleFailureDetector:
         cutoff = sample.timestamp - self._horizon_s - 0.5
         while len(self._history) > 1 and self._history[1].timestamp < cutoff:
             self._history.popleft()
-        collision_cutoff = sample.timestamp - self.config.collision_trend_window_s - 0.5
+        collision_history_horizon = max(
+            self.config.collision_trend_window_s,
+            self.config.collision_stationary_confirmation_s,
+        )
+        collision_cutoff = sample.timestamp - collision_history_horizon - 0.5
         while (
             len(self._collision_history) > 1
             and self._collision_history[1].timestamp < collision_cutoff
@@ -228,6 +240,25 @@ class RuleFailureDetector:
             if sample.collision_lidar_distance is not None
             else forward_clearance
         )
+        stationary_confirmation_window = self._window_from(
+            self._collision_history,
+            self.config.collision_stationary_confirmation_s,
+        )
+        stationary_forward_hazard = bool(
+            self._covers(
+                stationary_confirmation_window,
+                self.config.collision_stationary_confirmation_s,
+            )
+            and np.median(
+                [
+                    item.forward_lidar_distance
+                    if item.forward_lidar_distance is not None
+                    else item.nearest_lidar_distance
+                    for item in stationary_confirmation_window
+                ]
+            )
+            <= self.config.collision_absolute_distance_m
+        )
         stop_distance = stopping_distance(
             sample.linear_velocity,
             self.config.braking_acceleration,
@@ -238,7 +269,10 @@ class RuleFailureDetector:
         # A fixed corridor wall can remain close to the robot's side for an
         # entire episode. Apply the absolute threshold to the forward sector;
         # omnidirectional hazards are handled by their closing trend below.
-        if forward_clearance <= self.config.collision_absolute_distance_m:
+        if forward_clearance <= self.config.collision_absolute_distance_m and (
+            sample.linear_velocity >= self.config.collision_immediate_forward_speed_mps
+            or stationary_forward_hazard
+        ):
             collision = 1.0
         # The narrow forward sector avoids classifying corridor side walls as
         # hazards, but a crossing person can leave that sector while remaining
@@ -333,9 +367,9 @@ class RuleFailureDetector:
             self._last_collision_risk_timestamp = sample.timestamp
         elif self._last_collision_risk_timestamp is not None:
             time_since_risk = sample.timestamp - self._last_collision_risk_timestamp
-            if (
-                time_since_risk <= self.config.collision_hold_s
-                or collision_clearance < self.config.collision_release_distance_m
+            if time_since_risk <= self.config.collision_hold_s or (
+                collision_clearance < self.config.collision_release_distance_m
+                and time_since_risk <= self.config.collision_max_hold_s
             ):
                 collision = max(collision, self.config.collision_proximity_score)
             else:
