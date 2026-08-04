@@ -321,7 +321,7 @@ def test_off_axis_obstacle_closing_while_robot_moves_forward_triggers_trend() ->
     detector.update(
         _sample(
             0.0,
-            lidar=1.20,
+            lidar=1.60,
             forward_lidar=3.0,
             collision_lidar=3.0,
             linear=0.25,
@@ -330,13 +330,36 @@ def test_off_axis_obstacle_closing_while_robot_moves_forward_triggers_trend() ->
     prediction = detector.update(
         _sample(
             0.5,
-            lidar=1.10,
+            lidar=1.20,
             forward_lidar=3.0,
             collision_lidar=3.0,
             linear=0.25,
         )
     )
     assert prediction.collision_risk == pytest.approx(0.75)
+
+
+def test_off_axis_static_wall_change_explained_by_ego_motion_does_not_trigger() -> None:
+    detector = RuleFailureDetector()
+    detector.update(
+        _sample(
+            0.0,
+            lidar=1.71,
+            forward_lidar=6.0,
+            collision_lidar=2.25,
+            linear=0.22,
+        )
+    )
+    prediction = detector.update(
+        _sample(
+            0.5,
+            lidar=1.57,
+            forward_lidar=6.0,
+            collision_lidar=2.17,
+            linear=0.22,
+        )
+    )
+    assert prediction.collision_risk == 0.0
 
 
 def test_off_axis_range_jitter_below_closing_threshold_does_not_trigger() -> None:

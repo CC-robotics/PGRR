@@ -9,7 +9,7 @@ collision_wide_absolute_distance_m: 0.85
 collision_omnidirectional_absolute_distance_m: 0.0
 collision_release_distance_m: 1.2
 collision_hold_s: 2.0
-collision_proximity_m: 1.50
+collision_proximity_m: 2.00
 collision_closing_speed_mps: 0.10
 collision_radial_excess_closing_speed_mps: 0.25
 collision_proximity_score: 0.75

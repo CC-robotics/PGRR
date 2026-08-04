@@ -24,7 +24,7 @@ class RuleFailureConfig:
     collision_omnidirectional_absolute_distance_m: float = 0.0
     collision_release_distance_m: float = 1.2
     collision_hold_s: float = 2.0
-    collision_proximity_m: float = 1.50
+    collision_proximity_m: float = 2.00
     collision_closing_speed_mps: float = 0.10
     collision_radial_excess_closing_speed_mps: float = 0.25
     collision_proximity_score: float = 0.75
@@ -273,7 +273,12 @@ class RuleFailureDetector:
                 + self.config.collision_radial_excess_closing_speed_mps
                 or (
                     off_axis_nearest
-                    and radial_closing_speed >= self.config.collision_closing_speed_mps
+                    # Compensate for range change explained by the robot's
+                    # own translation.  Without this term, centimetre-scale
+                    # side-wall scan jitter can look like a moving obstacle
+                    # and trigger recovery in an otherwise clear corridor.
+                    and radial_closing_speed
+                    >= abs(sample.linear_velocity) + self.config.collision_closing_speed_mps
                     and abs(sample.angular_velocity)
                     <= self.config.collision_max_angular_speed_radps
                 )

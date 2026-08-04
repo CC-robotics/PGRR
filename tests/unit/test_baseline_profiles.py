@@ -74,6 +74,7 @@ def test_collision_sector_covers_turning_sweep_without_side_wall() -> None:
     assert config["collision_front_sector_degrees"] == 30.0
     assert config["collision_trend_sector_degrees"] == 90.0
     assert config["collision_trend_sector_degrees"] < 180.0
+    assert config["collision_proximity_m"] == 2.0
 
 
 def test_runtime_uses_configured_ttc_horizon_without_legacy_override() -> None:
