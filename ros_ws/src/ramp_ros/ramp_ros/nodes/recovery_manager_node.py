@@ -61,6 +61,7 @@ from ramp_core.recovery.options import (
     constrain_stalled_rejoin,
     constrain_stalled_subgoals,
     constrain_stalled_wait,
+    ensure_safe_wait_fallback,
     should_continue_recovery_option,
 )
 from ramp_core.recovery.safety import (
@@ -932,6 +933,7 @@ class RecoveryManagerNode(Node):
             mask,
             escape_required=self._oracle_yield.escape_required,
         )
+        mask = ensure_safe_wait_fallback(mask)
         if self._oracle_yield.active and not self._oracle_yield.escape_required:
             action_id = (
                 BACKUP_ACTION_ID
@@ -1008,12 +1010,6 @@ class RecoveryManagerNode(Node):
                 mask,
                 escape_required=self._bc_subgoal_stall_guard.escape_required,
             )
-            bc_wait_budget = self._integer("bc_wait_budget_decisions")
-            mask = constrain_stalled_wait(
-                mask,
-                consecutive_waits=self._bc_waits_without_progress,
-                wait_budget=bc_wait_budget,
-            )
             mask = constrain_repeated_replan(
                 mask,
                 replan_count=self._bc_replans_without_progress,
@@ -1030,6 +1026,19 @@ class RecoveryManagerNode(Node):
                 pose=pose,
                 backup_distance_m=self._float("backup_mask_validated_distance_m"),
             )
+            # WAIT is budgeted only after every other bound has determined
+            # which escape actions remain genuinely executable.  Otherwise a
+            # later retreat/repetition constraint could remove the apparent
+            # escape and leave the learned policy with an empty mask.
+            bc_wait_budget = self._integer("bc_wait_budget_decisions")
+            mask = constrain_stalled_wait(
+                mask,
+                consecutive_waits=self._bc_waits_without_progress,
+                wait_budget=bc_wait_budget,
+            )
+        # Fail closed after composing all independent restrictions.  WAIT is
+        # the sole fallback; this must never re-authorize translation.
+        mask = ensure_safe_wait_fallback(mask)
         decision = self._policy.select_action(observation, mask)
         if self._policy_type == "bc":
             if decision.action_id == WAIT_ACTION_ID:

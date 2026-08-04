@@ -438,6 +438,25 @@ def constrain_stalled_wait(
     return constrained
 
 
+def ensure_safe_wait_fallback(
+    mask: npt.NDArray[np.bool_],
+) -> npt.NDArray[np.bool_]:
+    """Make an action mask non-empty without authorizing any motion.
+
+    This fail-closed invariant is applied after every optional recovery
+    constraint.  If independently valid restrictions eliminate all actions,
+    only WAIT is restored; subgoals, BACKUP, REPLAN, and CONTINUE remain
+    masked.  A non-empty mask is returned unchanged (apart from a defensive
+    copy), so this helper never weakens a planning or safety decision.
+    """
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if not bool(constrained.any()):
+        constrained[WAIT_ACTION_ID] = True
+    return constrained
+
+
 def constrain_repeated_replan(
     mask: npt.NDArray[np.bool_],
     *,

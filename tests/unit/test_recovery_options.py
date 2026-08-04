@@ -25,6 +25,7 @@ from ramp_core.recovery.options import (
     constrain_stalled_rejoin,
     constrain_stalled_subgoals,
     constrain_stalled_wait,
+    ensure_safe_wait_fallback,
     should_continue_recovery_option,
 )
 from ramp_core.types import Pose2D
@@ -358,6 +359,61 @@ def test_wait_remains_valid_when_no_escape_is_safe() -> None:
     mask[CONTINUE_ACTION_ID] = True
     constrained = constrain_stalled_wait(mask, consecutive_waits=3, wait_budget=3)
     assert constrained[WAIT_ACTION_ID]
+
+
+def test_empty_action_mask_fails_closed_to_wait_only() -> None:
+    constrained = ensure_safe_wait_fallback(np.zeros(ACTION_COUNT, dtype=np.bool_))
+    expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    expected[WAIT_ACTION_ID] = True
+    assert np.array_equal(constrained, expected)
+
+
+def test_safe_wait_fallback_does_not_weaken_nonempty_mask() -> None:
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[REPLAN_ACTION_ID] = True
+    constrained = ensure_safe_wait_fallback(mask)
+    assert np.array_equal(constrained, mask)
+    assert constrained is not mask
+
+
+def test_composed_budgets_preserve_wait_when_later_bounds_remove_escape() -> None:
+    """Regression for the runtime empty-mask failure seen in timeout v10."""
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[3] = True
+    mask[WAIT_ACTION_ID] = True
+    mask[BACKUP_ACTION_ID] = True
+    mask[REPLAN_ACTION_ID] = True
+
+    # Repetition budgets first remove REPLAN and BACKUP because the subgoal
+    # still appears executable.  The net-retreat guard then rejects that last
+    # translational escape.  WAIT must be evaluated only after those bounds.
+    constrained = constrain_repeated_replan(mask, replan_count=1, replan_budget=1)
+    constrained = constrain_repeated_backup(constrained, backup_count=2, backup_budget=2)
+    constrained = constrain_net_retreat(
+        constrained,
+        guard=ObservableNetRetreatGuard(
+            task_heading_rad=0.0,
+            maximum_net_retreat_m=1.4,
+            best_task_coordinate_m=8.0,
+        ),
+        pose=Pose2D(7.0, 12.0, np.pi),
+        backup_distance_m=0.45,
+    )
+    constrained = constrain_stalled_wait(
+        constrained,
+        consecutive_waits=3,
+        wait_budget=3,
+    )
+    constrained = ensure_safe_wait_fallback(constrained)
+
+    expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    expected[WAIT_ACTION_ID] = True
+    assert np.array_equal(constrained, expected)
+
+
+def test_safe_wait_fallback_rejects_wrong_shape() -> None:
+    with pytest.raises(ValueError, match="mask must have shape"):
+        ensure_safe_wait_fallback(np.zeros(ACTION_COUNT - 1, dtype=np.bool_))
 
 
 def test_privileged_yield_commits_until_threat_passes_longitudinally() -> None:

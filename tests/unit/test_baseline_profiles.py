@@ -214,6 +214,16 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert "constrain_repeated_backup(" in manager
     assert "constrain_net_retreat(" in manager
     assert "constrain_stalled_subgoals(" in manager
+    assert "ensure_safe_wait_fallback(mask)" in manager
+    learned_selection = manager.index("def _select_decision(")
+    budget_constraint_order = (
+        manager.index("mask = constrain_repeated_replan(", learned_selection),
+        manager.index("mask = constrain_repeated_backup(", learned_selection),
+        manager.index("mask = constrain_net_retreat(", learned_selection),
+        manager.index("mask = constrain_stalled_wait(", learned_selection),
+        manager.index("mask = ensure_safe_wait_fallback(mask)", learned_selection),
+    )
+    assert budget_constraint_order == tuple(sorted(budget_constraint_order))
     assert "emergency_backup_permitted &= self._bc_retreat_guard.backup_permitted(" in manager
     assert "footprint_clearance_m=motion_clearance" in manager
     detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()
