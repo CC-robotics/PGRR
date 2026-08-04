@@ -110,10 +110,12 @@ def scan_segment_is_free(
     if bool(initially_overlapping.any()):
         if not allow_initial_overlap_when_separating:
             return False
-        # For p relative to the robot and translation e, p.e < 0 means that
-        # ||p - t e|| grows immediately for t > 0.  Do not exempt a lateral or
-        # forward obstacle: those motions can scrape or approach it.
-        if bool(np.any(points[initially_overlapping] @ endpoint >= 0.0)):
+        # For p relative to the robot and translation e, p.e <= 0 means that
+        # ||p - t e|| is non-decreasing for t >= 0.  Equality is a tangential
+        # departure: clearance initially stays constant and then increases.
+        # Positive projection would approach at least one close return and is
+        # therefore never exempted.
+        if bool(np.any(points[initially_overlapping] @ endpoint > 1.0e-9)):
             return False
     length_squared = float(endpoint @ endpoint)
     if length_squared <= 1.0e-12:

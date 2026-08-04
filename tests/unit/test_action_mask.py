@@ -59,6 +59,26 @@ def test_observable_scan_mask_blocks_capsule_and_unobserved_backup() -> None:
     assert not bool(constrained[3])
 
 
+def test_collision_mask_allows_only_nonapproaching_lateral_departure() -> None:
+    mask = np.ones(25, dtype=np.bool_)
+    ranges = np.full(271, 6.0, dtype=np.float64)
+    angle_min = -3.0 * np.pi / 4.0
+    angle_increment = np.deg2rad(1.0)
+    ranges[135] = 0.70  # conservative 0.90 m margin overlaps straight ahead
+    constrained = apply_observable_scan_mask(
+        mask,
+        ranges,
+        angle_min=angle_min,
+        angle_increment=angle_increment,
+        swept_clearance_m=0.90,
+        target_clearance_m=0.25,
+        allow_initial_overlap_when_separating=True,
+    )
+    assert not bool(constrained[3])  # 0-degree subgoal approaches the return
+    assert bool(constrained[0])  # -90-degree subgoal is tangential then separating
+    assert bool(constrained[6])  # +90-degree subgoal is tangential then separating
+
+
 def test_path_corridor_blocks_outward_actions_and_allows_return() -> None:
     mask = np.ones(25, dtype=np.bool_)
     path = ((0.0, 0.0), (10.0, 0.0))

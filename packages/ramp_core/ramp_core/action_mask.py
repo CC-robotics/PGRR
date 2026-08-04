@@ -154,6 +154,7 @@ def apply_observable_scan_mask(
     backup_distance_m: float = 0.45,
     sector_half_width_rad: float = math.radians(12.0),
     allow_unobserved_backup: bool = False,
+    allow_initial_overlap_when_separating: bool = False,
 ) -> npt.NDArray[np.bool_]:
     """Apply the deployable LiDAR capsule and rear-observability constraints.
 
@@ -188,6 +189,7 @@ def apply_observable_scan_mask(
                 action.radius * math.sin(direction),
             ),
             clearance_m=swept_clearance_m,
+            allow_initial_overlap_when_separating=allow_initial_overlap_when_separating,
         )
     rear_clearance = directional_scan_clearance(
         ranges,

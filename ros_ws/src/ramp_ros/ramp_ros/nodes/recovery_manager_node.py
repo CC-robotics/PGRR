@@ -858,6 +858,14 @@ class RecoveryManagerNode(Node):
             allow_unobserved_backup=(
                 self._policy_type == "expert" and self._received_privileged_humans
             ),
+            # A true dynamic-risk trigger can begin inside the deliberately
+            # conservative 0.90 m planning margin.  Preserve that margin while
+            # allowing only motions whose distance from every close return is
+            # non-decreasing; otherwise every lateral yield is masked and the
+            # only remaining learned option is repeated BACKUP.
+            allow_initial_overlap_when_separating=(
+                collision_risk >= self._float("bc_rejoin_block_threshold")
+            ),
         )
         corridor_path = self._task_corridor_path or self._path
         if corridor_path:

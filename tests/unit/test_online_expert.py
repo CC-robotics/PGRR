@@ -191,6 +191,20 @@ def test_emergency_translation_cannot_escape_through_initial_front_overlap() -> 
     )
 
 
+def test_emergency_translation_can_depart_tangentially_from_front_overlap() -> None:
+    ranges = np.full(271, np.inf, dtype=np.float32)
+    ranges[135] = 0.31
+
+    assert scan_segment_is_free(
+        ranges,
+        angle_min=-3.0 * math.pi / 4.0,
+        angle_increment=math.radians(1.0),
+        target=(0.0, 0.20),
+        clearance_m=0.36,
+        allow_initial_overlap_when_separating=True,
+    )
+
+
 def test_swept_scan_mask_validates_inputs() -> None:
     with pytest.raises(ValueError, match="positive"):
         scan_segment_is_free(
