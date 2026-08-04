@@ -1,0 +1,120 @@
+\subsection{Closed-Loop Navigation Outcomes}
+Table~\ref{tab:main-results} reports every retained algorithm outcome.  Across
+the \PGRRMainPairCount{} matched family--density conditions, Base DWB reaches
+\PGRRBaseSuccessRate{} of goals, collides in \PGRRBaseCollisionRate{}, and times
+out in \PGRRBaseTimeoutRate{}.  PGRR reaches \PGRRSuccessRate{}, collides in
+\PGRRCollisionRate{}, and times out in \PGRRTimeoutRate{}.  Its mean SPL is
+\PGRRMeanSPL{} versus \PGRRBaseMeanSPL{} for Base.  Figure~\ref{fig:outcomes-density}
+retains the density and family structure that a pooled rate can hide.
+
+\input{generated/main_results.tex}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{final_outcomes_by_density.pdf}
+  \caption{Terminal outcomes by density and scenario family.  Each
+  family--density cell is one locked test seed; the plot exposes mixed effects
+  and must not be read as a per-family probability estimate.}
+  \label{fig:outcomes-density}
+\end{figure}
+
+The paired PGRR-minus-Base success difference is
+\PGRRSuccessDifference{} with a 95\% bootstrap interval
+[\PGRRSuccessCILow{}, \PGRRSuccessCIHigh{}]; its exact McNemar test gives
+Holm-adjusted $p=\PGRRSuccessHolmP$.  The collision difference is
+\PGRRCollisionDifference{} [\PGRRCollisionCILow{},
+\PGRRCollisionCIHigh{}] ($p_{\mathrm{Holm}}=\PGRRCollisionHolmP$), and the
+timeout difference is \PGRRTimeoutDifference{} [\PGRRTimeoutCILow{},
+\PGRRTimeoutCIHigh{}] ($p_{\mathrm{Holm}}=\PGRRTimeoutHolmP$).
+Table~\ref{tab:statistical-results} reports these effects together with the
+continuous paired tests.  We interpret intervals and discordant pairs rather
+than using an unadjusted $p$-value as a binary performance verdict.
+
+\input{generated/statistical_results.tex}
+
+\subsection{Safety, Efficiency, and Intervention}
+Mean minimum human-centre distance is \PGRRBaseMinHumanDistance{} for Base and
+\PGRRMinHumanDistance{} for PGRR.  Their paired difference is
+\PGRRMinHumanDistanceDifference{} [\PGRRMinHumanDistanceCILow{},
+\PGRRMinHumanDistanceCIHigh{}] with
+$p_{\mathrm{Holm}}=\PGRRMinHumanDistanceHolmP$.  Among episodes where both
+methods reach the goal, the mean PGRR-minus-Base navigation-time difference is
+\PGRRSuccessfulTimeDifference{} [\PGRRSuccessfulTimeCILow{},
+\PGRRSuccessfulTimeCIHigh{}] ($p_{\mathrm{Holm}}=\PGRRSuccessfulTimeHolmP$).
+The raw successful-run means are \PGRRBaseSuccessfulTime{} and
+\PGRRSuccessfulTime{}.  Figure~\ref{fig:safety-efficiency} compares all four
+methods on their common high-density subset, while
+Table~\ref{tab:recovery-metrics} shows the resulting clearance--time trade-off,
+emergency interventions, recovery triggers, and rejoin success.  A timeout that
+avoids contact remains a timeout, not a recovery success.
+The paired tests also show that PGRR uses more emergency stops, spends more time
+under intervention, and has higher angular jerk.  Its mean personal-space
+violation ratio increases, while neither minimum human distance nor discomfort
+time remains different after Holm correction.  Thus zero observed contacts in
+this manifest must not be conflated with smoother or uniformly more social
+motion.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{final_safety_efficiency.pdf}
+  \caption{Safety--efficiency view on the common eight-condition high-density
+  subset.  Marker shape encodes terminal outcome, preventing long collision-free
+  stagnation from appearing as task success.}
+  \label{fig:safety-efficiency}
+\end{figure}
+
+\input{generated/recovery_metrics.tex}
+
+\subsection{Recovery Dynamics and Run Evidence}
+Figure~\ref{fig:recovery-timeline} aligns failure score, goal progress, recovery
+state, and selected actions for a representative final episode chosen by a
+deterministic artifact rule.  Figure~\ref{fig:runtime-sequence} reconstructs
+three instants from that episode's 10-Hz telemetry: robot and pedestrian poses,
+the global path, and recovery state.  It is explicitly a telemetry
+reconstruction rather than a simulator camera image.  Together they verify
+that the policy intervenes transiently and that the original goal is restored;
+they are mechanism evidence, not additional trials.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{final_recovery_timeline.pdf}
+  \caption{Recorded failure score, goal distance, and recovery state for a
+  representative final episode.  All event times come from the raw JSONL stream.}
+  \label{fig:recovery-timeline}
+\end{figure}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.98\textwidth]{runtime_sequence.pdf}
+  \caption{Telemetry reconstruction at episode start, first recovery
+  intervention, and termination.  Circles are recorded physical pedestrian
+  centres; the robot pose, path, action, and state are taken from the same raw
+  stream.}
+  \label{fig:runtime-sequence}
+\end{figure*}
+
+\subsection{Imitation and Mask Ablations}
+Table~\ref{tab:offline-ablation} compares Uniform BC, Margin-Weighted BC, and
+DAgger on the same 399 scenario-disjoint validation states.  In this dataset,
+margin weighting does not change the reported decision metrics and is therefore
+not part of the selected method.  DAgger reduces expert-cost regret and improves
+top-$k$ agreement.  Disabling the mask produces many invalid proposals, so the
+no-mask rows are an offline diagnostic and were never executed on the robot.
+These results support distribution aggregation and mask enforcement, but they do
+not isolate the online safety supervisor from the learned policy.
+
+\input{generated/offline_ablation.tex}
+
+\subsection{Failure Cases}
+PGRR reaches every crossing-flow and group-blocking goal, plus two of three
+temporary-blockage goals, but times out in all head-on-corridor, doorway, and
+blind-corner conditions.  The generated failure report classifies nine PGRR
+timeouts as terminal stagnation and seven as still making short-window progress;
+the latter group includes all blind-corner timeouts.  The Heuristic avoids
+contact on the high-density subset but stagnates in seven of eight episodes.
+By contrast, Base and Standard usually terminate earlier by human or static
+contact.  These terminal categories support a conservative-live-lock diagnosis,
+not attribution to a particular learned action: the final result table does not
+contain action-specific WAIT/BACKUP counts.  All outcomes remain in the reported
+rates, motivating longer-horizon reciprocal reasoning rather than post-test
+parameter changes.

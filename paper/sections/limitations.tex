@@ -1,0 +1,25 @@
+The study has several important limits.  First, the sensing interface is planar
+LiDAR on a known two-dimensional map, and simulation localization is more
+accurate than a deployed AMCL stack.  Second, the Gazebo fallback pedestrians
+follow deterministic routes and use a simple yielding rule; they do not capture
+human intent, group norms, perception uncertainty, or the diversity of real
+crowds.  Minimum distance and discomfort time are therefore geometric proxy
+metrics, not validated human-comfort judgments.
+
+Third, the privileged expert depends on simulator truth and constant-velocity
+prediction.  Its 3-s horizon can miss long reciprocal interactions.  The
+deployed action set is finite, and a conservative mask or emergency latch can
+turn a collision into a timeout rather than a successful recovery.  The safety
+supervisor has no formal invariance or collision-avoidance proof.  The selected
+offline labeler and Heuristic baseline also retain a legacy 270-degree angular
+calibration when interpreting 180 bins that actually span the 360-degree
+sensor.  The online learned-policy mask uses the scan message's angular
+metadata, and the CNN sees the same full-scan resampling in training and test,
+but expert action costs can inherit this angular distortion.  We retain the
+locked results and disclose the mismatch rather than correcting it after
+examining the test set.  Fourth, each
+test family--density cell has one fixed seed; the 24 primary pairs support a
+cross-condition paired analysis but not a low-variance per-scenario success
+estimate.  Finally, there is no real-robot study, photorealistic Arena~5 run,
+learned failure predictor, or PPO refinement in the selected system.  These are
+deliberate claim boundaries rather than omitted positive results.

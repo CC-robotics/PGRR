@@ -1,0 +1,28 @@
+% Generated only from /home/diy/bonus_track/PGRR/outputs/final/results.parquet and /home/diy/bonus_track/PGRR/outputs/final/summary.csv; project_commit=35d7e601cd6f5baf168948a7174cd32fa9c37c5b
+\begin{table*}[t]
+\caption{Paired statistical comparisons from the locked final manifest. Confidence intervals
+are 95\%; $p_{\mathrm{Holm}}$ denotes multiplicity-corrected values.}
+\label{tab:statistical-results}
+\centering
+\footnotesize
+\begin{tabular}{lllrrrrr}
+\toprule
+Comparison & Metric & Test & Estimate [95\% CI] & $p$ & $p_{\mathrm{Holm}}$
+& Effect & $N_{\mathrm{pairs}}$ \\
+\midrule
+DWB vs PGRR & Success rate & McNemar exact & 0.125 [0.000, 0.292] & 0.250 & 0.750 & 7.000 & 24 \\
+DWB vs PGRR & Collision rate & McNemar exact & -0.792 [-0.917, -0.625] & $<0.001$ & $<0.001$ & 0.026 & 24 \\
+DWB vs PGRR & Timeout rate & McNemar exact & 0.667 [0.458, 0.833] & $<0.001$ & $<0.001$ & 33.000 & 24 \\
+DWB vs PGRR & Successful time [s] & Wilcoxon signed-rank & 9.431 [-2.125, 30.776] & 1.000 & 1.000 & 0.067 & 5 \\
+DWB vs PGRR & Successful path length [m] & Wilcoxon signed-rank & 0.633 [-0.439, 2.360] & 1.000 & 1.000 & -0.067 & 5 \\
+DWB vs PGRR & SPL & Wilcoxon signed-rank & 0.098 [-0.004, 0.222] & 0.173 & 0.692 & 0.619 & 24 \\
+DWB vs PGRR & Minimum human distance [m] & Wilcoxon signed-rank & -0.051 [-0.498, 0.251] & 0.037 & 0.257 & 0.487 & 24 \\
+DWB vs PGRR & Personal-space violation & Wilcoxon signed-rank & 0.051 [0.002, 0.102] & 0.058 & 0.349 & 0.509 & 24 \\
+DWB vs PGRR & Discomfort time [s] & Wilcoxon signed-rank & -0.690 [-2.360, 1.131] & 0.135 & 0.677 & -0.412 & 24 \\
+DWB vs PGRR & Emergency stops & Wilcoxon signed-rank & 14.333 [10.792, 17.792] & $<0.001$ & $<0.001$ & 1.000 & 24 \\
+DWB vs PGRR & Recovery triggers & Wilcoxon signed-rank & 5.208 [3.917, 6.583] & $<0.001$ & $<0.001$ & 1.000 & 24 \\
+DWB vs PGRR & Intervention ratio & Wilcoxon signed-rank & 0.580 [0.462, 0.688] & $<0.001$ & $<0.001$ & 0.987 & 24 \\
+DWB vs PGRR & Mean angular jerk & Wilcoxon signed-rank & 0.575 [0.407, 0.748] & $<0.001$ & $<0.001$ & 0.980 & 24 \\
+\bottomrule
+\end{tabular}
+\end{table*}

@@ -1,5 +1,43 @@
 # Progress log
 
+## 2026-08-04 — locked EI result and PGRR relocation
+
+- Completed all 64 logical tasks in the frozen test manifest at commit `35d7e60`: 24
+  paired Base/PGRR conditions and eight high-density Standard/Heuristic conditions.
+  The final runner reports no worker error and the collector retains all 64 algorithm
+  outcomes.
+- Preserved and excluded exactly three technical attempts before retry: one
+  `SIMULATOR_FAILURE` and two `INVALID_RESET` outcomes. The accepted retries were one
+  PGRR timeout, one PGRR goal reach, and one Base collision. No failed algorithm
+  episode was deleted.
+- Recovered from a first four-worker pass in which two launch wrappers produced no
+  outcome artifact. The three-worker resume pass reused completed hash-verified rows,
+  regenerated the missing high-density doorway Base and medium-density group-blocking
+  PGRR work, and completed 64/64.
+- Final Base/PGRR outcomes are 5/19/0 and 8/0/16 for
+  goal/collision/timeout. Collision reduction is significant after Holm correction;
+  goal-reach improvement is not, and the timeout/intervention/jerk increases establish
+  a strong safety--completion trade-off.
+- Final high-density Standard/Heuristic outcomes are 1/7/0 and 1/0/7. These eight
+  single-condition-per-family rows are retained as descriptive mechanism evidence, not
+  a standalone statistical claim.
+- Generated `results.parquet`, `summary.csv`, `statistics.json`, the offline policy
+  ablation, final failure analysis, paper figures/tables, a telemetry reconstruction
+  video, and an eight-page IEEE PDF. Every paper number is generated from final
+  artifacts rather than manually entered.
+- Adopted PGRR as the public name: Planning-Guided Failure-Triggered Recovery and
+  Rejoin. Internal `ramp_*` package names and `method=bc` artifact identifiers remain
+  for compatibility; the selected method is Uniform BC + DAgger, not MWBC or PPO.
+- Atomically relocated the full 9.2 GB working repository to
+  `/home/diy/bonus_track/PGRR`. Archived the host-path ROS caches and old venv without
+  deletion, recreated the venv/editable packages at the new path, and retained the
+  root-owned Docker ROS caches after confirming that they use only `/workspace` and
+  contain no host-path references.
+- Revalidated Gate 0 after relocation. The first smoke exposed an upstream idle
+  odometry bridge; the wrapper now mounts the same pinned Jackal mapping used by
+  evaluated episodes and verifies real samples rather than topic names. The fresh
+  run passed clock, TF, LiDAR, odometry, goal acceptance, and controlled cleanup.
+
 - 2026-08-01: Completed two verified-pose high-density crossing-flow validation pairs under frozen commit `6cf9535`. DWB collided on seeds 2201 and 2202; triggered DAgger physically reached the goal on both. All four near-human LiDAR gates passed at 100% visibility. Added raw-hash-linked pair CSVs and regenerated the manuscript with a descriptive two-seed table and figure; no significance claim is made.
 - 2026-08-01: Retained high-density validation seed 2220 as a nominal-regression counterexample: Base reached the goal and DAgger timed out in an emergency-turning live-lock. Fixed the fallback yielding rule so a pedestrian inside the avoidance radius may move away but not closer; expert rollout remains conservative to a possible stop. Added seven unit tests; the full suite passes 217 tests and the ROS overlay builds.
 - 2026-08-01: Post-fix seed 2220 preserved Base goal reach and allowed DAgger to exit the live-lock, but exposed missing terminal-pose provenance: physical success was confirmed on a 2 Hz pose callback after the final 10 Hz JSONL row. Added explicit localized/physical terminal distances to every new outcome and backward-compatible summary provenance. The pre-field replay remains diagnostic and will not be promoted as verified goal evidence.

@@ -247,3 +247,57 @@ margin-weighted behavior cloning is not part of the selected method, regardless 
 repository's earlier research objective. PPO is also absent from the selected runtime.
 The EI paper may discuss both as unselected or future extensions, but its contribution
 and result labels must use Uniform BC + DAgger.
+
+## D-059: Use PGRR as the public name without renaming internal packages
+
+The public repository and paper name is PGRR, expanded as Planning-Guided
+Failure-Triggered Recovery and Rejoin. `RAMP` remains only historical/internal context
+because that acronym conflicts with prior planning work. Renaming the established
+`ramp_core`, `ramp_ml`, `ramp_ros`, messages, topics, and configuration keys would add
+release risk without changing the method, so those identifiers remain compatibility
+names. Likewise, the final result table's `method=bc` is a legacy runner identifier;
+public result labels must render it as PGRR or Triggered DAgger.
+
+## D-060: Interpret the final result as collision--completion trade-off
+
+The primary 24-pair test reduces collision from 19/24 for Base to 0/24 for PGRR, but
+PGRR times out in 16/24 conditions. The collision reduction and timeout increase remain
+significant after Holm correction; the change from five to eight goal reaches does not.
+PGRR also intervenes much more and has higher angular jerk. Therefore the paper may
+claim a measured collision reduction in this locked sample and analyze recovery
+behavior, but it may not claim higher overall robustness, efficiency, social clearance,
+or general success. Standard versus Heuristic is descriptive because each has only one
+high-density condition per family.
+
+## D-061: Resume missing work without converting infrastructure failures into results
+
+The first four-worker pass stopped two workers after launch wrappers returned with no
+outcome artifact. Such pre-logger events have no algorithm trajectory and are not
+invented as timeouts or simulator outcomes. Resume mode is allowed to preserve verified
+completed artifacts and rerun only missing work. Separately, the three physical
+technical outcomes actually written by the runtime (one simulator failure and two
+invalid resets) remain in the run manifest, are excluded from algorithm metrics, and
+each receives one retry. The final manifest must show 64/64 tasks and no worker errors
+before aggregation is accepted.
+
+## D-062: Preserve path-neutral container caches during the PGRR relocation
+
+The source and destination were on the same filesystem, so the repository was moved by
+an atomic rename rather than copied or reconstructed. Host and previously broken ROS
+symlink caches and the non-relocatable inference venv were moved to a recoverable
+external backup. The active Docker-built `ros_ws/build`, `install`, and `log` trees are
+root-owned because colcon ran inside the container, but an audit found no
+`/home/diy/RAMP` or `/home/diy/bonus_track/PGRR` references and only stable
+`/workspace` symlinks. They are retained and must be managed through the pinned Docker
+profile, not mixed with a host colcon build.
+
+## D-063: Define the current EI deliverable below the original full protocol
+
+The current submission boundary is an imitation-only PGRR paper supported by the
+64-episode locked Gazebo fallback test, 24 primary pairs, eight high-density mechanism
+rows, an offline mask/DAgger ablation, and generated failure/statistical artifacts. It
+does not meet the original 360-episode-per-method Flatland target and does not include
+selected PPO, a learned failure detector, a second classical planner, or real-robot
+validation. These remain explicit limitations. Expanding test scale or adding those
+modules requires a newly frozen protocol; it may not be backfilled selectively after
+seeing the current test.

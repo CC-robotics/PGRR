@@ -1,0 +1,95 @@
+\subsection{Problem and Observable State}
+Let a differential-drive robot navigate a known static occupancy map from pose
+$x_0$ to goal $g$ while a classical planner $B$ supplies command $u^B_t$.  PGRR
+must attempt recovery without using pedestrian truth at deployment.  Its history
+$o_t$ contains five 180-beam LiDAR scans, goal distance and bearing, eight path
+waypoints in the robot frame, robot velocity, $u^B_t$, ten-step goal-distance and
+angular-velocity histories, a one-hot planner status, and four rule scores.
+Ground-truth pedestrian state is isolated in a privileged record used only for
+expert labeling and evaluation.
+
+\subsection{Failure Trigger and Recovery State Machine}
+The detector computes collision-risk, freeze, oscillation, and deadlock scores.
+Collision risk combines braking distance, 1.5-s time to collision, absolute
+near-field clearance, and a 0.5-s radial closing trend.  Freeze requires more
+than 1 m remaining, less than 0.15 m displacement over 3 s, and a planner request
+for motion.  Oscillation requires at least six angular-velocity sign changes
+after a 0.08 rad/s deadband and less than 0.20 m progress over 4 s.  Deadlock uses
+less than 0.15 m displacement and less than 0.15 m goal progress over 4 s, an
+obstacle within 1.2 m, and low robot speed.  Motion rules are disabled for the
+first 4 s after the synchronized
+episode handshake; collision evidence remains active.
+
+The usual state sequence is
+NORMAL$\rightarrow$PENDING$\rightarrow$RECOVERY$\rightarrow$REJOIN, although a
+confirmed one-frame trigger may enter RECOVERY directly after cooldown.
+EMERGENCY-STOP has highest priority and may resume; only FAILED and SUCCEEDED
+are terminal.  Recovery enters above $\tau_{on}=0.65$ and exits after four
+frames below $\tau_{off}=0.35$ plus valid
+goal progress.  Decisions occur at 2 Hz, velocity control at 10 Hz, with a 0.5-s
+minimum hold, 2-s cooldown, an 8-s learned-policy recovery bound, a 5-s rejoin
+bound, and four consecutive recovery attempts.  A 30-s extension exists only
+for the privileged online Oracle's yield option and is not used by PGRR.  The
+original goal is stored before intervention and reissued whenever a bounded
+temporary option hands control to REJOIN; this does not imply that Nav2 reached
+the temporary target.
+
+\subsection{Recovery Actions, Mask, and Safety Supervisor}
+The 25 actions are 21 robot-relative subgoals
+\begin{equation}
+ (r,\theta)\in\{0.6,1.0,1.4\}\,\mathrm{m}
+ \times\{-90,-60,-30,0,30,60,90\}^{\circ},
+\end{equation}
+and WAIT, BACKUP, REPLAN, and CONTINUE.  For action $a$, a Boolean mask
+$M(o_t,a)$ rejects occupied or off-map endpoints, disconnected grid components,
+an obstructed swept LiDAR segment, insufficient rear observability, excessive
+global-path deviation, or unavailable replanning.  WAIT is the final safe
+fallback, so at least one action remains legal.  Before softmax, masked logits
+are set to the minimum representable value.
+
+An independent supervisor may override any policy output.  Its longitudinal
+stopping distance is
+\begin{equation}
+ d_{stop}=\frac{v^2}{2a_b}+v\ell+m,
+\end{equation}
+with $a_b=0.8$ m/s$^2$, latency $\ell=0.15$ s, and margin $m=0.45$ m in the
+recovery controller.  It provides bounded stop, reverse, turn, and forward
+escape submodes, all logged separately from the learned action.  This is an
+empirical safety filter, not a formal guarantee.
+
+\subsection{Privileged Planning Expert}
+At training time the expert constructs local occupancy from the recorded LiDAR
+and observes privileged robot and pedestrian positions.  Pedestrian velocities
+are estimated by finite differences rather than read as simulator truth.  It
+uses constant-velocity prediction with conservative yielding and uncertainty
+inflation, then simulates every
+legal action for 3 s at 0.1-s resolution.  Subgoal rollouts use grid A* and pure
+pursuit with differential-drive kinematics; the four mode actions have matched
+short-horizon models.  The cost is
+\begin{align}
+J(a)={}&w_cJ_c+w_pJ_p+w_sJ_s+w_rJ_r+w_lJ_l \\
+      &+w_{sm}J_{sm}+w_tJ_t+w_{sw}J_{sw}+w_wJ_w,
+\end{align}
+where the terms denote collision, insufficient progress, social-distance
+integral, path-rejoin distance, length, angular smoothness, time, side switching,
+and repeated waiting.  The weights are respectively
+$(10^6,8,4,3,0.4,0.2,0.3,0.5,1)$; collision and masked actions are effectively
+hard constraints.  Besides the minimum-cost action, the expert stores all 25
+costs and the gap to the second-best action for analysis.
+
+\subsection{Behavior Cloning and DAgger}
+The policy uses two 1-D convolutions over the $5\times180$ LiDAR stack, a
+128-unit state encoder, and a two-layer head, totaling 59,193 parameters.  For
+the selected model, uniform behavior cloning minimizes
+\begin{equation}
+ \mathcal{L}_{BC}=-\frac{1}{N}\sum_i\log\pi_{\theta}(a_i^*\mid o_i,M_i).
+\end{equation}
+DAgger then executes the learner on training scenarios, asks the privileged
+expert to relabel visited recovery states, aggregates them, and retrains.  The
+selected aggregate contains 1,387 raw recovery states from 12 episodes; mirror
+augmentation yields 2,774 training samples, with 399 states in a
+scenario-disjoint validation set.  Training uses AdamW at $3\times10^{-4}$,
+batch size 128, maximum 30 epochs, gradient norm 1, and early-stopping patience
+6.  The deployment checkpoint is selected by validation loss.  Its configuration
+has zero margin weight and no PPO; accordingly neither MWBC nor reinforcement
+learning is claimed as part of PGRR.

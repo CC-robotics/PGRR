@@ -1,282 +1,771 @@
 #!/usr/bin/env python3
-"""Generate LaTeX tables exclusively from recorded result artifacts."""
+"""Generate LaTeX tables exclusively from locked final result artifacts."""
 
 from __future__ import annotations
 
-import csv
-import statistics
+import argparse
+import hashlib
+import json
+import sys
+from collections.abc import Sequence
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+import numpy as np
+import pandas as pd
 
-
-def verified_actual_pose_pair() -> None:
-    source = ROOT / "outputs/pilot/crossing_flow_medium_s02201_2164e08_pair.csv"
-    with source.open(encoding="utf-8", newline="") as stream:
-        payload = list(csv.DictReader(stream))
-    if [row["source_policy"] for row in payload] != ["base", "bc"]:
-        raise RuntimeError("expected one ordered Base/BC verified-pose pair")
-    if len({row["project_commit"] for row in payload}) != 1:
-        raise RuntimeError("paired episodes must come from one project commit")
-    names = {"base": "Classical DWB", "bc": "Triggered DAgger"}
-    rows = [
-        f"{names[result['source_policy']]} & {result['outcome'].replace('_', ' ')} & "
-        f"{float(result['sim_duration_s']):.1f} & "
-        f"{float(result['actual_goal_distance_m']):.3f} & "
-        f"{float(result['min_human_distance_m']):.3f} & "
-        f"{int(result['recovery_actions'])} \\\\"
-        for result in payload
-    ]
-    caption = (
-        "Verified-pose medium crossing-flow validation pair. Goal distance and human clearance "
-        "use Gazebo model feedback; this is single-seed execution evidence only."
+try:
+    from make_figures import (
+        EXCLUDED_OUTCOMES,
+        ROOT,
+        ArtifactError,
+        _method_order,
+        display_method,
+        load_final_artifacts,
     )
-    table = (
-        """% Generated from outputs/pilot/crossing_flow_medium_s02201_2164e08_pair.csv
-\\begin{table}[t]
-\\caption{__CAPTION__}
-\\label{tab:corrected-pair}
-\\centering
-\\small
-\\resizebox{\\columnwidth}{!}{%
-\\begin{tabular}{llrrrr}
-\\hline
-Method & Outcome & Time [s] & $d_g^{\\mathrm{phys}}$ [m] & $d_{\\min}$ [m] & Recovery \\\\
-\\hline
-"""
-        + "\n".join(rows)
-        + """
-\\hline
-\\end{tabular}
-}
-\\end{table}
-"""
-    ).replace("__CAPTION__", caption)
-    output = ROOT / "paper/generated/verified_actual_pose_pair.tex"
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(table, encoding="utf-8")
-
-
-def high_density_pilot() -> None:
-    sources = [
-        ROOT / "outputs/pilot/crossing_flow_high_s02201_8577ff1_pair.csv",
-        ROOT / "outputs/pilot/crossing_flow_high_s02202_8577ff1_pair.csv",
-        ROOT / "outputs/pilot/crossing_flow_high_s02220_8577ff1_pair.csv",
-    ]
-    results: dict[str, list[dict[str, str]]] = {"base": [], "bc": []}
-    commits: set[str] = set()
-    for source in sources:
-        with source.open(encoding="utf-8", newline="") as stream:
-            payload = list(csv.DictReader(stream))
-        if [row["source_policy"] for row in payload] != ["base", "bc"]:
-            raise RuntimeError(f"expected an ordered Base/BC pair in {source}")
-        for row in payload:
-            results[row["source_policy"]].append(row)
-            commits.add(row["project_commit"])
-    if len(commits) != 1:
-        raise RuntimeError("high-density pilot episodes must come from one project commit")
-
-    names = {"base": "Classical DWB", "bc": "Triggered DAgger"}
-    rows = []
-    episode_count = len(sources)
-    for policy in ("base", "bc"):
-        payload = results[policy]
-        successes = sum(row["outcome"] == "GOAL_REACHED" for row in payload)
-        collisions = sum(row["outcome"] == "COLLISION" for row in payload)
-        median_time = statistics.median(float(row["sim_duration_s"]) for row in payload)
-        median_clearance = statistics.median(float(row["min_human_distance_m"]) for row in payload)
-        median_actions = statistics.median(int(row["recovery_actions"]) for row in payload)
-        rows.append(
-            f"{names[policy]} & {successes}/{episode_count} & {collisions}/{episode_count} & "
-            f"{median_time:.1f} & "
-            f"{median_clearance:.3f} & {median_actions:.1f} \\\\"
-        )
-    caption = (
-        "High-density crossing-flow validation pilot on three fixed seeds. Values are "
-        "descriptive medians; $n=3$ is insufficient for significance testing."
+except ModuleNotFoundError:  # Imported as a namespace module by pytest.
+    from scripts.paper.make_figures import (
+        EXCLUDED_OUTCOMES,
+        ROOT,
+        ArtifactError,
+        _method_order,
+        display_method,
+        load_final_artifacts,
     )
-    table = (
-        """% Generated from three outputs/pilot/crossing_flow_high_*_8577ff1_pair.csv files
-\\begin{table}[t]
-\\caption{__CAPTION__}
-\\label{tab:high-density-pilot}
-\\centering
-\\small
-\\resizebox{\\columnwidth}{!}{%
-\\begin{tabular}{lrrrrr}
-\\hline
-Method & Goal & Collision & Time [s] & $d_{\\min}$ [m] & Recovery \\\\
-\\hline
-"""
-        + "\n".join(rows)
-        + """
-\\hline
-\\end{tabular}
-}
-\\end{table}
-"""
-    ).replace("__CAPTION__", caption)
-    (ROOT / "paper/generated/high_density_pilot.tex").write_text(table, encoding="utf-8")
 
 
-def cross_family_pilot() -> None:
-    sources = [
-        (
-            "Temporary blockage",
-            ROOT / "outputs/pilot/temporary_blockage_high_s02720_d9b5ef8_pair.csv",
-        ),
-        (
-            "Group blocking",
-            ROOT / "outputs/pilot/group_blocking_high_s02420_926cc95_pair.csv",
-        ),
-        (
-            "Overtaking",
-            ROOT / "outputs/pilot/overtaking_high_s02520_324fcdf_pair.csv",
-        ),
-        (
-            "Blind corner",
-            ROOT / "outputs/pilot/blind_corner_high_s02320_fafcddd_pair.csv",
-        ),
-    ]
-    rows: list[str] = []
-    for scenario, source in sources:
-        with source.open(encoding="utf-8", newline="") as stream:
-            payload = list(csv.DictReader(stream))
-        if [row["source_policy"] for row in payload] != ["base", "bc"]:
-            raise RuntimeError(f"expected an ordered Base/BC pair in {source}")
-        if len({row["project_commit"] for row in payload}) != 1:
-            raise RuntimeError(f"pair must come from one project commit: {source}")
-        base, recovery = payload
-        rows.append(
-            f"{scenario} & {base['outcome'].replace('_', ' ')} & "
-            f"{recovery['outcome'].replace('_', ' ')} & "
-            f"{float(base['sim_duration_s']):.1f}/{float(recovery['sim_duration_s']):.1f} & "
-            f"{float(base['min_human_distance_m']):.3f}/"
-            f"{float(recovery['min_human_distance_m']):.3f} & "
-            f"{int(recovery['recovery_actions'])} \\\\"
-        )
-    caption = (
-        "Cross-family high-density validation examples (DWB/full hierarchy). Each row is one "
-        "internally same-commit pair; values are descriptive and are not pooled for inference."
-    )
-    table = (
-        """% Generated from four cross-family pair CSV files
-\\begin{table}[t]
-\\caption{__CAPTION__}
-\\label{tab:cross-family-pilot}
-\\centering
-\\small
-\\resizebox{\\columnwidth}{!}{%
-\\begin{tabular}{lllrrr}
-\\hline
-Scenario & DWB & Hierarchy & Time [s] & $d_{\\min}$ [m] & Recovery \\\\
-\\hline
-"""
-        + "\n".join(rows)
-        + """
-\\hline
-\\end{tabular}
-}
-\\end{table}
-"""
-    ).replace("__CAPTION__", caption)
-    (ROOT / "paper/generated/cross_family_pilot.tex").write_text(table, encoding="utf-8")
-
-
-def group_blocking_methods() -> None:
-    source = ROOT / "outputs/pilot/group_blocking_high_s02420_926cc95_methods.csv"
-    with source.open(encoding="utf-8", newline="") as stream:
-        payload = list(csv.DictReader(stream))
-    expected = ["base", "standard", "heuristic", "bc"]
-    if [row["source_policy"] for row in payload] != expected:
-        raise RuntimeError("expected Base/Standard/Heuristic/BC group-blocking rows")
-    if len({row["project_commit"] for row in payload}) != 1:
-        raise RuntimeError("group-blocking methods must come from one project commit")
-    names = {
-        "base": "Classical DWB",
-        "standard": "Standard recovery",
-        "heuristic": "Heuristic hierarchy",
-        "bc": "Triggered DAgger",
+def _latex_escape(value: object) -> str:
+    text = str(value)
+    replacements = {
+        "\\": r"\textbackslash{}",
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\textasciicircum{}",
     }
-    rows = [
-        f"{names[result['source_policy']]} & {result['outcome'].replace('_', ' ')} & "
-        f"{float(result['sim_duration_s']):.1f} & "
-        f"{float(result['min_human_distance_m']):.3f} & "
-        f"{int(result['recovery_actions'])} \\\\"
-        for result in payload
-    ]
-    caption = (
-        "Same-commit group-blocking mechanism check on one validation seed. Results are "
-        "descriptive; the comparison is not a statistical ablation."
+    return "".join(replacements.get(character, character) for character in text)
+
+
+def _valid_rows(results: pd.DataFrame) -> pd.DataFrame:
+    return results.loc[~results["outcome"].isin(EXCLUDED_OUTCOMES)].copy()
+
+
+def _mean_std(values: pd.Series, *, digits: int) -> str:
+    numeric = pd.to_numeric(values, errors="coerce").to_numpy(dtype=float)
+    numeric = numeric[np.isfinite(numeric)]
+    if numeric.size == 0:
+        return "--"
+    mean = float(np.mean(numeric))
+    if numeric.size == 1:
+        return f"{mean:.{digits}f}"
+    standard_deviation = float(np.std(numeric, ddof=1))
+    return f"{mean:.{digits}f} $\\pm$ {standard_deviation:.{digits}f}"
+
+
+def _percentage(numerator: int, denominator: int) -> str:
+    return "--" if denominator == 0 else f"{100.0 * numerator / denominator:.1f}"
+
+
+def _p_value(value: float) -> str:
+    return "$<0.001$" if value < 0.001 else f"{value:.3f}"
+
+
+STATISTIC_METRIC_LABELS = {
+    "goal_reached": "Success rate",
+    "collision": "Collision rate",
+    "timeout": "Timeout rate",
+    "successful_episode_duration_s": "Successful time [s]",
+    "successful_path_length_m": "Successful path length [m]",
+    "spl": "SPL",
+    "min_human_distance_m": "Minimum human distance [m]",
+    "personal_space_violation_ratio": "Personal-space violation",
+    "discomfort_time_s": "Discomfort time [s]",
+    "emergency_stop_count": "Emergency stops",
+    "recovery_trigger_count": "Recovery triggers",
+    "intervention_ratio": "Intervention ratio",
+    "mean_abs_angular_jerk_rad_s3": "Mean angular jerk",
+}
+
+
+def _display_statistic_metric(metric: object) -> str:
+    key = str(metric).strip().lower()
+    return STATISTIC_METRIC_LABELS.get(key, key.replace("_", " "))
+
+
+def _display_comparison(comparison: object) -> str:
+    key = str(comparison).strip().lower().replace("_", " ")
+    if key in {
+        "base vs bc",
+        "dwb vs bc",
+        "base vs pgrr",
+        "dwb vs pgrr",
+        "base vs dagger",
+        "dwb vs dagger",
+        "base vs triggered dagger",
+        "dwb vs triggered dagger",
+    }:
+        return "DWB vs PGRR"
+    return str(comparison)
+
+
+def _provenance(results_path: Path, summary_path: Path, commit: str) -> str:
+    return (
+        "% Generated only from "
+        f"{results_path.as_posix()} and {summary_path.as_posix()}; "
+        f"project_commit={commit}\n"
     )
-    table = (
-        """% Generated from outputs/pilot/group_blocking_high_s02420_926cc95_methods.csv
-\\begin{table}[t]
-\\caption{__CAPTION__}
-\\label{tab:group-blocking-methods}
+
+
+def _write(path: Path, payload: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(payload, encoding="utf-8")
+
+
+ABLATION_COLUMNS = (
+    "model",
+    "action_mask",
+    "checkpoint",
+    "checkpoint_sha256",
+    "dataset",
+    "dataset_sha256",
+    "parameter_count",
+    "sample_count",
+    "top1_accuracy",
+    "top3_accuracy",
+    "invalid_action_rate",
+    "expert_cost_regret",
+    "near_optimal_rate",
+    "catastrophic_action_rate",
+)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def load_offline_ablation(path: Path) -> tuple[pd.DataFrame, dict[str, object]]:
+    """Validate the immutable offline ablation and every referenced hash."""
+
+    sidecar_path = path.with_suffix(".json")
+    missing = [str(candidate) for candidate in (path, sidecar_path) if not candidate.is_file()]
+    if missing:
+        raise ArtifactError("missing locked offline ablation artifact(s): " + ", ".join(missing))
+    try:
+        frame = pd.read_csv(path)
+        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, pd.errors.ParserError) as error:
+        raise ArtifactError(f"failed to read offline ablation artifacts: {error}") from error
+    if not isinstance(sidecar, dict) or sidecar.get("schema_version") != 1:
+        raise ArtifactError(f"{sidecar_path} is not a schema-version 1 object")
+    if set(frame.columns) != set(ABLATION_COLUMNS):
+        missing_columns = sorted(set(ABLATION_COLUMNS) - set(frame.columns))
+        unexpected = sorted(set(frame.columns) - set(ABLATION_COLUMNS))
+        raise ArtifactError(
+            f"{path} has wrong columns; missing={missing_columns}, unexpected={unexpected}"
+        )
+    declared_hash = str(sidecar.get("output_sha256", ""))
+    observed_hash = _sha256(path)
+    if observed_hash != declared_hash:
+        raise ArtifactError(
+            "offline ablation CSV hash mismatch: "
+            f"declared {declared_hash}, observed {observed_hash}"
+        )
+
+    expected_models = {"Uniform BC", "Margin-weighted BC", "Triggered DAgger"}
+    expected_masks = {"enabled", "disabled_offline"}
+    if set(frame["model"]) != expected_models or set(frame["action_mask"]) != expected_masks:
+        raise ArtifactError(f"{path} does not contain the declared three-model/two-mask ablation")
+    combinations = frame.groupby(["model", "action_mask"], dropna=False).size()
+    if len(frame) != 6 or len(combinations) != 6 or not (combinations == 1).all():
+        raise ArtifactError(f"{path} must contain exactly one row for each of six ablation cells")
+
+    numeric_columns = (
+        "parameter_count",
+        "sample_count",
+        "top1_accuracy",
+        "top3_accuracy",
+        "invalid_action_rate",
+        "expert_cost_regret",
+        "near_optimal_rate",
+        "catastrophic_action_rate",
+    )
+    for column in numeric_columns:
+        frame[column] = pd.to_numeric(frame[column], errors="coerce")
+        if not np.isfinite(frame[column].to_numpy(dtype=float)).all():
+            raise ArtifactError(f"{path} contains non-finite {column}")
+    for column in (
+        "top1_accuracy",
+        "top3_accuracy",
+        "invalid_action_rate",
+        "near_optimal_rate",
+        "catastrophic_action_rate",
+    ):
+        if ((frame[column] < 0.0) | (frame[column] > 1.0)).any():
+            raise ArtifactError(f"{path} contains {column} outside [0, 1]")
+    if (frame["expert_cost_regret"] < 0.0).any() or (frame["parameter_count"] <= 0).any():
+        raise ArtifactError(f"{path} contains a negative regret or non-positive parameter count")
+
+    sample_counts = set(frame["sample_count"].astype(int))
+    if sample_counts != {int(sidecar.get("sample_count", -1))}:
+        raise ArtifactError(f"{path} sample count disagrees with {sidecar_path}")
+    datasets = set(frame["dataset"].astype(str))
+    dataset_hashes = set(frame["dataset_sha256"].astype(str))
+    if datasets != {str(sidecar.get("dataset"))} or dataset_hashes != {
+        str(sidecar.get("dataset_sha256"))
+    }:
+        raise ArtifactError(f"{path} dataset provenance disagrees with {sidecar_path}")
+    note = str(sidecar.get("note", "")).lower()
+    if "offline" not in note or "never executed" not in note:
+        raise ArtifactError(f"{sidecar_path} does not state the mask-disabled execution caveat")
+
+    artifact_root = path.resolve().parents[2]
+    referenced = frame[["checkpoint", "checkpoint_sha256"]].drop_duplicates()
+    for row in referenced.itertuples(index=False):
+        checkpoint = artifact_root / str(row.checkpoint)
+        if not checkpoint.is_file():
+            raise ArtifactError(f"missing ablation checkpoint: {checkpoint}")
+        if _sha256(checkpoint) != str(row.checkpoint_sha256):
+            raise ArtifactError(f"checkpoint hash mismatch: {checkpoint}")
+    dataset = artifact_root / next(iter(datasets))
+    if not dataset.is_file():
+        raise ArtifactError(f"missing ablation dataset: {dataset}")
+    if _sha256(dataset) != next(iter(dataset_hashes)):
+        raise ArtifactError(f"dataset hash mismatch: {dataset}")
+    return frame, sidecar
+
+
+def main_results_table(
+    results: pd.DataFrame,
+    summary: pd.DataFrame,
+    *,
+    results_path: Path,
+    summary_path: Path,
+    output: Path,
+) -> None:
+    valid = _valid_rows(results)
+    method_summary = summary.loc[summary["row_type"] == "method_summary"].copy()
+    excluded_attempts: dict[str, int] = {}
+    if "excluded_attempt_count" in method_summary.columns:
+        for row in method_summary.itertuples(index=False):
+            value = getattr(row, "excluded_attempt_count", np.nan)
+            if pd.notna(value):
+                excluded_attempts[str(row.method)] = int(value)
+    rows: list[str] = []
+    for method in _method_order(results["method"].unique()):
+        complete = results.loc[results["method"] == method]
+        selected = valid.loc[valid["method"] == method]
+        successful = selected.loc[selected["outcome"] == "GOAL_REACHED"]
+        episode_count = len(selected)
+        excluded = excluded_attempts.get(str(method), len(complete) - episode_count)
+        rows.append(
+            f"{_latex_escape(display_method(method))} & {episode_count} & "
+            f"{_percentage(int((selected['outcome'] == 'GOAL_REACHED').sum()), episode_count)} & "
+            f"{_percentage(int((selected['outcome'] == 'COLLISION').sum()), episode_count)} & "
+            f"{_percentage(int((selected['outcome'] == 'TIMEOUT').sum()), episode_count)} & "
+            f"{_mean_std(selected['spl'], digits=3)} & "
+            f"{_mean_std(successful['navigation_time_s'], digits=1)} & "
+            f"{_mean_std(selected['min_human_distance_m'], digits=3)} & {excluded} \\\\"
+        )
+    commit = str(results["project_commit"].iloc[0])
+    payload = _provenance(results_path, summary_path, commit) + (
+        """\\begin{table*}[t]
+\\caption{Locked final evaluation. DWB and PGRR use the full 24-episode manifest; standard and
+heuristic recovery use the paired 8-episode high-density subset. Rates use valid algorithm
+episodes, and navigation time is reported only for successful episodes. Values after $\\pm$ are
+standard deviations. ``Excl.'' counts retained simulator-failure or invalid-reset physical
+attempts that were retried and excluded from algorithm rates.}
+\\label{tab:main-results}
 \\centering
 \\small
-\\resizebox{\\columnwidth}{!}{%
-\\begin{tabular}{lrrrr}
-\\hline
-Method & Outcome & Time [s] & $d_{\\min}$ [m] & Recovery \\\\
-\\hline
+\\begin{tabular}{lrrrrrrrr}
+\\toprule
+Method & $N$ & Success [\\%] & Collision [\\%] & Timeout [\\%] & SPL & Time [s]
+& $d_{\\min}$ [m] & Excl. \\\\
+\\midrule
 """
         + "\n".join(rows)
         + """
-\\hline
+\\bottomrule
 \\end{tabular}
-}
-\\end{table}
+\\end{table*}
 """
-    ).replace("__CAPTION__", caption)
-    (ROOT / "paper/generated/group_blocking_methods.tex").write_text(table, encoding="utf-8")
+    )
+    _write(output, payload)
 
 
-def opposite_streams_ablation() -> None:
-    source = ROOT / "outputs/pilot/opposite_streams_train_ablation.csv"
-    with source.open(encoding="utf-8", newline="") as stream:
-        payload = list(csv.DictReader(stream))
-    if [row["method"] for row in payload] != ["Iteration 4", "Turn memory", "Iteration 5"]:
-        raise RuntimeError("unexpected opposite-stream ablation rows")
-    rows = [
-        f"{result['method']} & {float(result['net_progress_m']):.2f} & "
-        f"{float(result['last_60s_progress_m']):.2f} & "
-        f"{100.0 * int(result['emergency_samples']) / int(result['samples']):.1f} & "
-        f"{int(result['backup_id_samples'])} & {int(result['temporary_subgoal_samples'])} \\\\"
-        for result in payload
-    ]
-    table = (
-        """% Generated from outputs/pilot/opposite_streams_train_ablation.csv
-\\begin{table}[t]
-\\caption{Retained opposite-stream train failures. Revisions are diagnostic and not paired.}
-\\label{tab:opposite-streams-ablation}
+def density_results_table(
+    results: pd.DataFrame,
+    *,
+    results_path: Path,
+    summary_path: Path,
+    output: Path,
+) -> None:
+    valid = _valid_rows(results)
+    density_priority = {"low": 0, "medium": 1, "high": 2}
+    densities = sorted(
+        map(str, valid["density"].unique()),
+        key=lambda value: (density_priority.get(value.lower(), 3), value),
+    )
+    rows: list[str] = []
+    for density in densities:
+        for method in _method_order(valid["method"].unique()):
+            selected = valid.loc[(valid["density"] == density) & (valid["method"] == method)]
+            successful = selected.loc[selected["outcome"] == "GOAL_REACHED"]
+            episode_count = len(selected)
+            if episode_count == 0:
+                continue
+            successes = int((selected["outcome"] == "GOAL_REACHED").sum())
+            rows.append(
+                f"{_latex_escape(density.title())} & {_latex_escape(display_method(method))} & "
+                f"{episode_count} & "
+                f"{_percentage(successes, episode_count)} & "
+                f"{_percentage(int((selected['outcome'] == 'COLLISION').sum()), episode_count)} & "
+                f"{_percentage(int((selected['outcome'] == 'TIMEOUT').sum()), episode_count)} & "
+                f"{_mean_std(successful['navigation_time_s'], digits=1)} \\\\"
+            )
+    commit = str(results["project_commit"].iloc[0])
+    payload = _provenance(results_path, summary_path, commit) + (
+        """\\begin{table}[t]
+\\caption{Final outcomes by crowd density. Time is mean $\\pm$ standard deviation over
+successful episodes only.}
+\\label{tab:density-results}
 \\centering
-\\small
-\\resizebox{\\columnwidth}{!}{%
-\\begin{tabular}{lrrrrr}
-\\hline
-Variant & Progress [m] & Final 60 s [m] & Safety [\\%] & Backup & Subgoal \\\\
-\\hline
+\\footnotesize
+\\begin{tabular}{llrrrrr}
+\\toprule
+Density & Method & $N$ & Succ. [\\%] & Coll. [\\%] & TO [\\%] & Time [s] \\\\
+\\midrule
 """
         + "\n".join(rows)
         + """
-\\hline
+\\bottomrule
 \\end{tabular}
-}
 \\end{table}
 """
     )
-    (ROOT / "paper/generated/opposite_streams_ablation.tex").write_text(table, encoding="utf-8")
+    _write(output, payload)
 
 
-def main() -> None:
-    verified_actual_pose_pair()
-    high_density_pilot()
-    cross_family_pilot()
-    group_blocking_methods()
-    opposite_streams_ablation()
+def recovery_metrics_table(
+    results: pd.DataFrame,
+    *,
+    results_path: Path,
+    summary_path: Path,
+    output: Path,
+) -> None:
+    valid = _valid_rows(results)
+    rows: list[str] = []
+    for method in _method_order(valid["method"].unique()):
+        selected = valid.loc[valid["method"] == method]
+        rows.append(
+            f"{_latex_escape(display_method(method))} & {len(selected)} & "
+            f"{_mean_std(selected['recovery_trigger_count'], digits=2)} & "
+            f"{_mean_std(100.0 * selected['recovery_success_rate'], digits=1)} & "
+            f"{_mean_std(selected['recovery_duration_s'], digits=2)} & "
+            f"{_mean_std(100.0 * selected['intervention_ratio'], digits=1)} & "
+            f"{_mean_std(selected['emergency_stop_count'], digits=2)} \\\\"
+        )
+    commit = str(results["project_commit"].iloc[0])
+    payload = _provenance(results_path, summary_path, commit) + (
+        """\\begin{table*}[t]
+\\caption{Recovery behavior on valid final episodes. Entries are episode-level mean $\\pm$
+standard deviation; undefined recovery rates for methods without a trigger are shown as dashes.}
+\\label{tab:recovery-metrics}
+\\centering
+\\small
+\\begin{tabular}{lrrrrrr}
+\\toprule
+Method & $N$ & Triggers / ep. & Recovery success [\\%] & Duration [s] & Intervention [\\%]
+& Emergency stops / ep. \\\\
+\\midrule
+"""
+        + "\n".join(rows)
+        + """
+\\bottomrule
+\\end{tabular}
+\\end{table*}
+"""
+    )
+    _write(output, payload)
+
+
+def statistical_results_table(
+    results: pd.DataFrame,
+    summary: pd.DataFrame,
+    *,
+    results_path: Path,
+    summary_path: Path,
+    output: Path,
+) -> None:
+    rows = [
+        f"{_latex_escape(_display_comparison(row.comparison))} & "
+        f"{_latex_escape(_display_statistic_metric(row.metric))} & "
+        f"{_latex_escape(row.test)} & {float(row.estimate):.3f} "
+        f"[{float(row.ci_low):.3f}, {float(row.ci_high):.3f}] & "
+        f"{_p_value(float(row.p_value))} & {_p_value(float(row.p_value_holm))} & "
+        f"{float(row.effect_size):.3f} & {int(row.n_pairs)} \\\\"
+        for row in summary.itertuples(index=False)
+    ]
+    commit = str(results["project_commit"].iloc[0])
+    payload = _provenance(results_path, summary_path, commit) + (
+        """\\begin{table*}[t]
+\\caption{Paired statistical comparisons from the locked final manifest. Confidence intervals
+are 95\\%; $p_{\\mathrm{Holm}}$ denotes multiplicity-corrected values.}
+\\label{tab:statistical-results}
+\\centering
+\\footnotesize
+\\begin{tabular}{lllrrrrr}
+\\toprule
+Comparison & Metric & Test & Estimate [95\\% CI] & $p$ & $p_{\\mathrm{Holm}}$
+& Effect & $N_{\\mathrm{pairs}}$ \\\\
+\\midrule
+"""
+        + "\n".join(rows)
+        + """
+\\bottomrule
+\\end{tabular}
+\\end{table*}
+"""
+    )
+    _write(output, payload)
+
+
+def offline_ablation_table(
+    ablation: pd.DataFrame,
+    sidecar: dict[str, object],
+    *,
+    ablation_path: Path,
+    output: Path,
+) -> None:
+    model_order = {"Uniform BC": 0, "Margin-weighted BC": 1, "Triggered DAgger": 2}
+    mask_order = {"enabled": 0, "disabled_offline": 1}
+    ordered = ablation.assign(
+        _model_order=ablation["model"].map(model_order),
+        _mask_order=ablation["action_mask"].map(mask_order),
+    ).sort_values(["_model_order", "_mask_order"])
+    rows: list[str] = []
+    for row in ordered.itertuples(index=False):
+        mask_label = "Enabled" if row.action_mask == "enabled" else r"Disabled$^{\dagger}$"
+        regret_value = float(row.expert_cost_regret)
+        if regret_value < 10_000.0:
+            regret = f"{regret_value:.3f}"
+        else:
+            coefficient, exponent = f"{regret_value:.2e}".split("e")
+            regret = rf"${coefficient}\times 10^{{{int(exponent)}}}$"
+        rows.append(
+            f"{_latex_escape(row.model)} & {mask_label} & "
+            f"{100.0 * float(row.top1_accuracy):.1f} & "
+            f"{100.0 * float(row.top3_accuracy):.1f} & "
+            f"{100.0 * float(row.invalid_action_rate):.1f} & {regret} & "
+            f"{100.0 * float(row.near_optimal_rate):.1f} & "
+            f"{100.0 * float(row.catastrophic_action_rate):.1f} \\\\"
+        )
+    sample_count = int(sidecar["sample_count"])
+    payload = (
+        f"% Generated only from {ablation_path.as_posix()}; "
+        f"sha256={_sha256(ablation_path)}\n"
+        """\\begin{table*}[t]
+\\caption{Offline policy ablation on the same """
+        + str(sample_count)
+        + """ held-out validation states. Regret uses the
+expert cost, whose hard invalid-action penalty dominates mask-disabled rows. $^{\\dagger}$ Mask
+disabled denotes counterfactual offline proposals only; those actions were never executed by the
+robot or simulator in closed loop.}
+\\label{tab:offline-ablation}
+\\centering
+\\footnotesize
+\\begin{tabular}{llrrrrrr}
+\\toprule
+Model & Planning mask & Top-1 [\\%] & Top-3 [\\%] & Invalid [\\%] & Cost regret
+& Near-opt. [\\%] & Catastrophic [\\%] \\\\
+\\midrule
+"""
+        + "\n".join(rows)
+        + """
+\\bottomrule
+\\end{tabular}
+\\end{table*}
+"""
+    )
+    _write(output, payload)
+
+
+def _macro(name: str, value: str) -> str:
+    return f"\\providecommand{{\\{name}}}{{{value}}}"
+
+
+def _finite_mean(values: pd.Series, label: str) -> float:
+    numeric = pd.to_numeric(values, errors="coerce").to_numpy(dtype=float)
+    finite = numeric[np.isfinite(numeric)]
+    if finite.size == 0:
+        raise ArtifactError(f"cannot generate result macro: {label} has no finite values")
+    return float(np.mean(finite))
+
+
+def _holm_macro(value: float) -> str:
+    if value < 0.001:
+        return r"\ensuremath{<0.001}"
+    return f"{value:.3f}"
+
+
+def result_macros(
+    results: pd.DataFrame,
+    summary: pd.DataFrame,
+    *,
+    results_path: Path,
+    summary_path: Path,
+    output: Path,
+) -> None:
+    """Generate stable manuscript macros; absent primary evidence is fatal."""
+
+    method_keys = {
+        str(method).lower().replace("_", " ").strip(): str(method)
+        for method in results["method"].unique()
+    }
+    try:
+        base_method = next(
+            method_keys[key]
+            for key in ("base", "dwb", "classical dwb", "classical planner")
+            if key in method_keys
+        )
+        pgrr_method = next(
+            method_keys[key]
+            for key in ("bc", "behavior cloning", "behaviour cloning")
+            if key in method_keys
+        )
+    except StopIteration as error:
+        raise ArtifactError(
+            "cannot generate result macros without one base and one BC method"
+        ) from error
+
+    valid = _valid_rows(results)
+    base_all = results.loc[results["method"] == base_method]
+    pgrr_all = results.loc[results["method"] == pgrr_method]
+    base = valid.loc[valid["method"] == base_method]
+    pgrr = valid.loc[valid["method"] == pgrr_method]
+    if len(base_all) != 24 or len(pgrr_all) != 24:
+        raise ArtifactError("result macros require the locked 24-pair base/BC evaluation")
+
+    lines = [
+        "% Automatically generated. Do not hand-edit numerical claims.",
+        _provenance(results_path, summary_path, str(results["project_commit"].iloc[0])).rstrip(),
+        _macro("PGRRTotalEpisodeCount", str(len(results))),
+        _macro("PGRRMainPairCount", str(len(base_all))),
+        _macro(
+            "PGRRHighDensityPairCount",
+            str(
+                len(
+                    results.loc[
+                        results["method"]
+                        .astype(str)
+                        .str.lower()
+                        .str.replace("_", " ", regex=False)
+                        .isin({"standard", "standard recovery"})
+                        & results["density"].astype(str).str.lower().eq("high")
+                    ]
+                )
+            ),
+        ),
+        _macro("PGRRBaseValidEpisodeCount", str(len(base))),
+        _macro("PGRRValidEpisodeCount", str(len(pgrr))),
+    ]
+
+    for prefix, selected in (("PGRRBase", base), ("PGRR", pgrr)):
+        denominator = len(selected)
+        if denominator == 0:
+            raise ArtifactError(f"cannot generate result macros for empty method {prefix}")
+        for suffix, outcome in (
+            ("SuccessRate", "GOAL_REACHED"),
+            ("CollisionRate", "COLLISION"),
+            ("TimeoutRate", "TIMEOUT"),
+        ):
+            rate = 100.0 * float((selected["outcome"] == outcome).mean())
+            lines.append(_macro(prefix + suffix, f"{rate:.1f}\\%"))
+        successful = selected.loc[selected["outcome"] == "GOAL_REACHED"]
+        lines.extend(
+            (
+                _macro(prefix + "MeanSPL", f"{_finite_mean(selected['spl'], prefix + ' SPL'):.3f}"),
+                _macro(
+                    prefix + "SuccessfulTime",
+                    f"{_finite_mean(successful['navigation_time_s'], prefix + ' time'):.1f}~s",
+                ),
+                _macro(
+                    prefix + "MinHumanDistance",
+                    f"{_finite_mean(selected['min_human_distance_m'], prefix + ' distance'):.3f}~m",
+                ),
+            )
+        )
+
+    paired_metrics = {
+        "goal_reached": ("Success", 100.0, r"\,\mathrm{pp}", 1),
+        "collision": ("Collision", 100.0, r"\,\mathrm{pp}", 1),
+        "timeout": ("Timeout", 100.0, r"\,\mathrm{pp}", 1),
+        "successful_episode_duration_s": ("SuccessfulTime", 1.0, r"\,\mathrm{s}", 1),
+        "min_human_distance_m": ("MinHumanDistance", 1.0, r"\,\mathrm{m}", 3),
+    }
+    for metric, (prefix, scale, unit, digits) in paired_metrics.items():
+        comparison = summary["comparison"].astype(str).str.lower()
+        main_comparison = comparison.str.contains(
+            r"\b(?:base|dwb)\b", regex=True
+        ) & comparison.str.contains(
+            r"\b(?:bc|pgrr|dagger)\b|behavior cloning|behaviour cloning|triggered dagger",
+            regex=True,
+        )
+        matches = summary.loc[
+            (summary["metric"].astype(str).str.lower() == metric) & main_comparison
+        ]
+        if len(matches) != 1:
+            raise ArtifactError(
+                f"result macros require exactly one paired summary row for {metric}; "
+                f"found {len(matches)}"
+            )
+        row = matches.iloc[0]
+        estimate = scale * float(row["estimate"])
+        lower = scale * float(row["ci_low"])
+        upper = scale * float(row["ci_high"])
+        lines.extend(
+            (
+                _macro(
+                    "PGRR" + prefix + "Difference",
+                    f"\\ensuremath{{{estimate:+.{digits}f}{unit}}}",
+                ),
+                _macro(
+                    "PGRR" + prefix + "CILow",
+                    f"\\ensuremath{{{lower:+.{digits}f}{unit}}}",
+                ),
+                _macro(
+                    "PGRR" + prefix + "CIHigh",
+                    f"\\ensuremath{{{upper:+.{digits}f}{unit}}}",
+                ),
+                _macro("PGRR" + prefix + "HolmP", _holm_macro(float(row["p_value_holm"]))),
+            )
+        )
+    _write(output, "\n".join(lines) + "\n")
+
+
+def generate_tables(
+    results_path: Path,
+    summary_path: Path,
+    output_dir: Path,
+    statistics_path: Path | None = ROOT / "outputs/final/statistics.json",
+    ablation_path: Path = ROOT / "outputs/final/offline_policy_ablation.csv",
+) -> list[Path]:
+    results, summary = load_final_artifacts(results_path, summary_path, statistics_path)
+    raw_summary = pd.read_csv(summary_path)
+    ablation, ablation_sidecar = load_offline_ablation(ablation_path)
+    outputs = [
+        output_dir / "main_results.tex",
+        output_dir / "density_results.tex",
+        output_dir / "recovery_metrics.tex",
+        output_dir / "statistical_results.tex",
+        output_dir / "offline_ablation.tex",
+        output_dir / "result_macros.tex",
+    ]
+    main_results_table(
+        results,
+        raw_summary,
+        results_path=results_path,
+        summary_path=summary_path,
+        output=outputs[0],
+    )
+    density_results_table(
+        results,
+        results_path=results_path,
+        summary_path=summary_path,
+        output=outputs[1],
+    )
+    recovery_metrics_table(
+        results,
+        results_path=results_path,
+        summary_path=summary_path,
+        output=outputs[2],
+    )
+    statistical_results_table(
+        results,
+        summary,
+        results_path=results_path,
+        summary_path=summary_path,
+        output=outputs[3],
+    )
+    offline_ablation_table(
+        ablation,
+        ablation_sidecar,
+        ablation_path=ablation_path,
+        output=outputs[4],
+    )
+    result_macros(
+        results,
+        summary,
+        results_path=results_path,
+        summary_path=summary_path,
+        output=outputs[5],
+    )
+    return outputs
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--results",
+        type=Path,
+        default=ROOT / "outputs/final/results.parquet",
+        help="Locked episode-level results Parquet (default: outputs/final/results.parquet)",
+    )
+    parser.add_argument(
+        "--summary",
+        type=Path,
+        default=ROOT / "outputs/final/summary.csv",
+        help="Locked statistical summary CSV (default: outputs/final/summary.csv)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=ROOT / "paper/generated",
+        help="Destination for generated LaTeX (default: paper/generated)",
+    )
+    parser.add_argument(
+        "--statistics-json",
+        type=Path,
+        default=ROOT / "outputs/final/statistics.json",
+        help="Optional authoritative statistics JSON; cross-checked when present",
+    )
+    parser.add_argument(
+        "--ablation",
+        type=Path,
+        default=ROOT / "outputs/final/offline_policy_ablation.csv",
+        help=(
+            "Locked offline policy ablation CSV "
+            "(default: outputs/final/offline_policy_ablation.csv)"
+        ),
+    )
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    try:
+        outputs = generate_tables(
+            args.results,
+            args.summary,
+            args.output_dir,
+            args.statistics_json,
+            args.ablation,
+        )
+    except (ArtifactError, OSError, ValueError) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 2
+    for output in outputs:
+        print(output)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

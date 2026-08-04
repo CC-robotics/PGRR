@@ -1,10 +1,14 @@
-# RAMP agent contract
+# PGRR agent contract
 
 ## Objective
 
 Build and validate a failure-triggered dynamic social-navigation recovery system. A classical planner remains in control during normal navigation. Recovery is activated only for collision risk, freeze, oscillation, deadlock, or planner failure, and chooses one of 21 temporary subgoals plus WAIT, BACKUP, REPLAN, and CONTINUE. Temporary goals are executed by the classical planner and the original goal must be restored.
 
-The working paper title is **Planning-Guided Failure-Triggered Recovery via Imitation and Reinforcement Learning for Dynamic Social Navigation**. `RAMP` is only the repository name and must not be presented as a novel paper acronym.
+The release and paper name is **PGRR: Planning-Guided Failure-Triggered
+Recovery and Rejoin for Dynamic Social Navigation**. Historical Python/ROS
+packages, environment names, and runtime variables retain `ramp_*`/`RAMP_*` as
+compatibility interfaces; they are not the public method name. PPO is not a
+claimed contribution in this release.
 
 ## Non-negotiable execution rules
 
@@ -29,6 +33,21 @@ The working paper title is **Planning-Guided Failure-Triggered Recovery via Imit
 
 ## Current milestone and acceptance
 
-Gates 0--5 are accepted on the pinned `arena_humble_docker` Gazebo profile: the synchronized classical baseline, temporary-goal recovery chain, privileged expert, observable offline/online BC pipeline, and two train-only DAgger aggregations are operational. A head-on train coverage shard and multi-scenario validation produced the current coverage candidate. With bounded WAIT/REPLAN, collision-latched rejoin blocking, and path-corridor masking, its locked crossing-flow repeat-5 pilot achieved 3/5 goals versus Base 0/5 and executed real +60-degree temporary subgoals. The Fisher pilot p-value is 0.167 and intervals are wide; this is promising pilot evidence, not a final significance claim. Regenerate training labels under the latest path mask before freezing the candidate. All pre-synchronization and pre-mask-alignment learning artifacts are diagnostic only.
+The imitation-learning release is complete on the pinned
+`arena_humble_docker` Gazebo profile. The frozen test has 64/64 logical
+episodes: Base and PGRR each cover eight families by three densities, while
+Standard and Heuristic cover the eight high-density conditions. PGRR records
+0/24 collisions versus Base 19/24, but 16/24 PGRR episodes time out versus Base
+0/24; success is 8/24 versus 5/24 and the adjusted success comparison is not
+significant. Preserve this safety--completion trade-off in every summary.
 
-If PPO, the learned detector, a second planner, or Gazebo cannot be completed honestly, follow the documented imitation-learning minimum path; do not block the core system or claim those modules succeeded.
+The selected model is the validation-chosen Triggered-DAgger checkpoint exposed
+at `checkpoints/final/best.onnx`. The two-round DAgger workflow completed, but
+the second candidate was rejected on validation. Margin weighting did not
+improve the frozen offline ablation. PPO, the learned detector, a second
+planner, Flatland, hardware, and formal safety are not completed claims.
+
+Final evidence lives under `outputs/final`, generated figures/tables under
+`outputs/{figures,tables}`, and the compiled anonymous paper at
+`paper/main.pdf`. Do not tune using the locked test, replace failed episodes,
+or describe telemetry reconstructions as simulator camera screenshots.

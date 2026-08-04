@@ -4,6 +4,7 @@ PROJECT_ROOT ?= $(CURDIR)
 ARENA_WS ?= $(HOME)/arena5_ws
 CONDA_ENV_NAME ?= ramp-offline
 SEED ?= 0
+BOOTSTRAP_SEED ?= 20260804
 HEADLESS ?= 1
 CONFIG ?=
 EXPERT_RAW ?= data/raw/temporary_blockage_high_train_s01720_finite2_heuristic_dwb.jsonl
@@ -81,11 +82,21 @@ evaluate-flatland: ## Run the locked Flatland final manifest.
 evaluate-gazebo: ## Run the optional Gazebo transfer validation.
 	@scripts/evaluate/run_experiment.sh --tier gazebo --simulator gazebo
 statistics: ## Compute paired statistics from final artifacts.
-	@$(OFFLINE_RUN) python scripts/evaluate/statistics.py
+	@$(OFFLINE_RUN) python scripts/evaluate/collect_results.py \
+		--manifest outputs/final/episode_manifest.parquet \
+		--run-manifest outputs/final/run_manifest.json \
+		--raw-dir data/raw \
+		--results outputs/final/results.parquet \
+		--summary outputs/final/summary.csv \
+		--statistics outputs/final/statistics.json \
+		--reference-policy base --treatment-policy bc \
+		--bootstrap-samples 10000 --bootstrap-seed "$(BOOTSTRAP_SEED)"
 figures: ## Generate figures from recorded results.
 	@$(OFFLINE_RUN) python scripts/paper/make_figures.py
+	@$(OFFLINE_RUN) python scripts/paper/make_figures.py --output-dir outputs/figures
 tables: ## Generate LaTeX tables from recorded results.
 	@$(OFFLINE_RUN) python scripts/paper/make_tables.py
+	@$(OFFLINE_RUN) python scripts/paper/make_tables.py --output-dir outputs/tables
 paper: ## Compile the manuscript after validating generated artifacts.
 	@scripts/paper/build_paper.sh
 reproduce-small: ## Exercise the full small-data pipeline.

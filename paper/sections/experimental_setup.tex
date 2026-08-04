@@ -1,0 +1,80 @@
+\subsection{Platform and Robot}
+Experiments run in a pinned ROS2 Humble Arena Docker image (Arena commit
+\texttt{c2ff4a87}) with Gazebo, Nav2 NavFn/DWB, and a Jackal model.  Flatland is
+not available in this profile.  Scenario-coordinate bounds span
+$31.28\times24.03$ m.  The evaluation footprint radius is 0.36 m; the loaded
+DWB limits are 0.26 m/s and 1.0 rad/s.  A 360-degree, 360-sample planar GPU
+LiDAR runs at 10 Hz and is resampled to 180 bins.  Pose-derived simulation odometry supplies
+the declared known-pose interface, while evaluation independently uses Gazebo
+model poses for physical goal and contact checks.
+
+The installed profile lacks the complete HuNav chain.  We therefore use
+deterministic, LiDAR-visible, contactless cylindrical pedestrians following
+scenario routes.  Most actors hold when a candidate step would both enter a
+1.3 m robot-clearance region and reduce separation; temporary blockage uses a
+finite route and a 0.8 m threshold.  This removes rigid-body impulses but is less
+realistic than a responsive crowd model; conclusions are restricted to dynamic
+pedestrian navigation in simulation.
+
+\subsection{Scenarios, Splits, and Locked Manifest}
+Eight families exercise distinct local failures: head-on corridor, doorway
+bottleneck, crossing flow, blind corner, group blocking, overtaking, opposite
+streams, and temporary blockage.  Low, medium, and high densities contain 2, 4,
+and 6 pedestrians, with family-specific speed ranges of 0.08--0.75 m/s.  Train,
+validation, and test use disjoint compiled scenario variants and seed ranges
+1000, 2000, and 3000, respectively.
+
+Before test execution we tagged commit \texttt{35d7e60} as
+\texttt{pre-final-eval}, hashed the scenario manifest, checkpoint, detector,
+state-machine, and action configurations, and prohibited further tuning.  The
+primary paired test runs Base DWB and PGRR on all eight families and three
+densities (48 episodes).  At high density, Standard Nav2 Recovery and the
+rule-triggered Heuristic hierarchy add 16 episodes, for 64 algorithm episodes
+total.  Each family--density cell has one fixed test seed; this broad coverage
+does not substitute for multi-seed replication and is reported as a limitation.
+
+\subsection{Baselines and Ablations}
+The evaluated closed-loop methods are: (i) Base DWB with periodic global
+replanning and no recovery subtree; (ii) Arena's Standard Nav2 recovery behavior
+tree; (iii) the same failure trigger, state machine, action mask, and safety
+supervisor with deterministic Heuristic action selection; and (iv) PGRR with
+the selected DAgger policy.  The primary pair isolates addition of the complete
+hierarchy to Base.  The high-density four-method subset separates standard,
+heuristic, and learned recovery mechanisms.
+
+The training workflow completed two aggregation rounds on the train split.
+Validation rejected the second-round checkpoint; the frozen model instead
+extends the better first-round aggregate with one train-only head-on coverage
+shard.  Its selected aggregate contains 1,387 recovery states from 12 episodes,
+and no test episode entered model selection.
+
+A separate offline ablation evaluates Uniform BC, Margin-Weighted BC, and the
+selected DAgger checkpoint on the same 399 scenario-disjoint recovery states.
+Each model is evaluated both with the original mask and with an all-legal mask;
+the latter reports unsafe proposals only and is never executed in simulation.
+
+\subsection{Metrics and Statistical Protocol}
+Every 10-Hz stream records robot and pedestrian geometry, commands, planner and
+recovery state, failure scores, LiDAR, and paths.  We report terminal success,
+collision, timeout, planner failure, SPL, physical path length, navigation time,
+minimum human-centre distance, time below 1.0 m, fraction below 1.2 m, angular
+jerk, emergency stops, triggers, recovery duration, and intervention ratio.
+\texttt{SIMULATOR\_FAILURE} and \texttt{INVALID\_RESET} attempts are retained, counted, and
+retried once, but excluded from algorithm metrics.  All other failures remain.
+
+Base and PGRR are paired by the same immutable scenario and seed.  Binary
+outcomes use exact McNemar tests; continuous paired differences use two-sided
+Wilcoxon signed-rank tests.  Mean differences receive 10,000-sample paired
+bootstrap 95\% confidence intervals, and related $p$-values use Holm correction.
+We report effects and confidence intervals even when significance is absent.
+
+\subsection{Execution Integrity}
+Concurrent workers use distinct ROS domain IDs and Gazebo partitions.  A start
+handshake holds pedestrians until navigation and logging are active.  Goal reach
+requires a physical-pose confirmation; supported shelves use a
+robot-circle-to-oriented-box distance test.  Near-pedestrian LiDAR consistency
+is evaluation-only.
+The runner refuses overwrite, preserves both physical attempts after an
+infrastructure retry, and fails unless each logical manifest row has exactly one
+valid algorithm outcome.  Tables and figures are regenerated from the resulting
+Parquet/JSON artifacts rather than hand-entered values.

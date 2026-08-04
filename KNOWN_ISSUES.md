@@ -1,5 +1,68 @@
 # Known issues
 
+## KI-082: Upstream Jackal smoke mapping advertised idle odometry
+
+The first post-migration `make smoke` discovered
+`/task_generator_node/jackal/odom` but timed out waiting for a sample. The
+upstream Jackal mapping still bridged `/model/jackal/odometry`, while the pinned
+robot model publishes `/model/jackal/ground_truth_odometry`. Final episodes had
+already mounted `configs/platform/jackal_mappings_mux.yaml`, so this was a smoke
+wrapper mismatch rather than missing evaluation odometry. The smoke wrapper now
+mounts the same pinned mapping, and its checker probes every topic of the
+required message type until it receives an actual sample instead of accepting
+graph discovery alone. A regression test covers both requirements. The fresh
+run received clock, TF, LaserScan, Odometry, and goal acceptance, then completed
+controlled cleanup with exit status zero.
+
+## KI-078: The final collision reduction is primarily a collision--timeout trade-off
+
+Across the 24 locked Base/PGRR pairs, Base produced five goals and 19 collisions,
+whereas PGRR produced eight goals, zero collisions, and 16 timeouts. Collision reduction
+and timeout increase remain significant after Holm correction, but the goal-reach
+increase does not. PGRR also has significantly higher intervention ratio, emergency
+stop count, and angular jerk. The result supports collision avoidance in this fixed
+sample, not a claim of generally better completion, efficiency, comfort, or social
+navigation. Five families have no PGRR goal reach at any density.
+
+## KI-079: The first parallel final pass had two pre-logger missing outcomes
+
+In the initial four-worker pass, the high-density doorway Base launcher (task 12) and
+the medium-density group-blocking PGRR retry launcher (task 35 attempt 1) returned
+without producing an outcome artifact. There is no trajectory-backed terminal class to
+assign, so neither event is counted as an algorithm episode or one of the three retained
+technical attempts. The runner stopped the affected worker instead of silently
+continuing. A three-worker resume reused completed artifacts and reran the missing work;
+the final outcomes are Base collision and PGRR goal reach, and the accepted run manifest
+reports 64/64 tasks with no worker errors.
+
+The three separately auditable retry causes in the final manifest are: high-density
+head-on PGRR `SIMULATOR_FAILURE` followed by timeout, medium-density group-blocking PGRR
+`INVALID_RESET` followed by goal reach, and high-density opposite-streams Base
+`INVALID_RESET` followed by collision. All three failed attempts remain recorded and
+are excluded only from algorithm metrics.
+
+## KI-080: Relocated Docker ROS caches are root-owned but host-path neutral
+
+After the atomic move to `/home/diy/bonus_track/PGRR`, `ros_ws/build`, `install`, and
+`log` remain owned by root because the pinned Arena container ran colcon as root. They
+contain zero old/new host-path references and their symlinks use the stable `/workspace`
+mount, so relocation did not invalidate them. Host and previously broken host-path
+caches were moved to `/home/diy/bonus_track/PGRR_migration_backup_20260804` instead of
+being deleted. Do not run a host colcon build into the root-owned container trees or
+blindly `chown` historical artifacts; use the Docker build profile or archive the trees
+before a clean rebuild.
+
+## KI-081: The locked EI test is smaller than the original publication protocol
+
+The final manifest has one deterministic seed per family-density condition: 24 paired
+Base/PGRR conditions and eight high-density Standard/Heuristic conditions. This is far
+below the original 360-episode-per-method Flatland minimum. The verified profile is the
+Arena Humble Gazebo fallback, and PPO, the learned detector, a second planner, Gazebo-to-
+Flatland transfer, and real-robot validation are absent. The paper must describe this as
+an EI-scale bounded evaluation and may not imply that the original Tier-2/Tier-3
+protocol was completed. Expanding it requires a newly frozen manifest and full reruns,
+not selective additions based on observed final failures.
+
 ## KI-063: The verified learned recovery is conservative and slow
 
 On high-density validation seeds 2201 and 2202, DWB collided after 29.50 and 30.00 s, whereas the selected DAgger hierarchy reached the physical goal after 114.92 and 118.91 s. It used 254 and 263 non-CONTINUE samples, including 140/185 WAIT samples and 35/27 BACKUP samples. The result is a real collision-to-goal conversion rather than an always-WAIT timeout, but it exposes a strong safety--time trade-off. The final evaluation must report navigation time, intervention ratio, WAIT/BACKUP use, and timeout rate together with collision and success; the validation pilot must not be described as efficiency improvement.
@@ -318,3 +381,15 @@ The selected hierarchy applied the 0.85 m collision-latched human-safety margin 
 ## KI-064: Centimetre-scale backup gains trade collision avoidance for recovery live-lock
 
 A current temporary-blockage repeat exposed premature rotation after two bounded reverse pulses and ended in human collision. Reducing the required pulse gain from 0.05 m to 0.02 m retained reverse motion long enough to avoid collision and restore minimum human distance from 0.698 m to 0.795 m, but the episode timed out with 1,317 non-CONTINUE samples. More importantly, the same candidate regressed the frozen overtaking success to a 200 s timeout with 1,425 recovery samples. The candidate is removed. The historical temporary-blockage success is no longer cited as repeatable positive evidence.
+
+## KI-065: Offline expert and Heuristic retain a legacy LiDAR field-of-view calibration
+
+The final Jackal GPU scan covers 360 degrees with 360 samples and is resampled over its
+full angular range to 180 policy bins. Online PGRR action masking uses the scan
+message's actual angle metadata. The selected offline labeler and the Heuristic
+baseline, however, interpret the same 180 bins with a legacy 270-degree calibration.
+Training and deployment CNN inputs remain consistently full-scan, but expert occupancy
+and action costs can be angularly distorted. This was discovered after the locked test
+had started. The algorithm, labels, and checkpoint are not changed post-test; the EI
+paper reports the mismatch as a limitation, and a corrected calibration requires a
+newly versioned training and complete evaluation rather than selective reruns.

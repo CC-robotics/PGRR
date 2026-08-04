@@ -603,3 +603,123 @@ python3 scripts/evaluate/summarize_episode_pair.py \
 make test
 make paper
 ```
+
+## 2026-08-04 locked final evaluation, resume, aggregation, and relocation
+
+The first pass used the frozen checkpoint and four workers:
+
+```bash
+python3 scripts/evaluate/run_experiment.py \
+  --split test \
+  --methods base bc \
+  --high-density-methods standard heuristic \
+  --jobs 4 \
+  --timeout 180 \
+  --checkpoint checkpoints/dagger/coverage_safety_aligned/best.onnx \
+  --output-dir outputs/final
+```
+
+Two workers returned from a launch without an outcome artifact. The accepted resume
+used three isolated ROS domains and preserved completed attempts:
+
+```bash
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION \
+  -u ROS_PYTHON_VERSION \
+  python3 scripts/evaluate/run_experiment.py \
+    --split test \
+    --methods base bc \
+    --high-density-methods standard heuristic \
+    --jobs 3 \
+    --timeout 180 \
+    --checkpoint checkpoints/dagger/coverage_safety_aligned/best.onnx \
+    --output-dir outputs/final \
+    --resume
+```
+
+Final aggregation uses all 24 Base/PGRR pairs, 10,000 paired bootstrap samples, and one
+Holm correction family:
+
+```bash
+conda run -n ramp-offline python scripts/evaluate/collect_results.py \
+  --manifest outputs/final/episode_manifest.parquet \
+  --raw-dir data/raw \
+  --run-manifest outputs/final/run_manifest.json \
+  --results outputs/final/results.parquet \
+  --summary outputs/final/summary.csv \
+  --statistics outputs/final/statistics.json \
+  --reference-policy base \
+  --treatment-policy bc \
+  --bootstrap-samples 10000 \
+  --bootstrap-seed 20260804
+
+conda run -n ramp-offline python scripts/evaluate/failure_analysis.py \
+  --results outputs/final/results.parquet \
+  --output outputs/final/failure_analysis.md
+```
+
+The current figures, tables, video, and PDF were generated from those final artifacts.
+The all-in-one release packaging check passed and created
+`outputs/final/artifact_manifest.json`; the manifest is regenerated from a clean
+teacher revision before the release tag:
+
+```bash
+bash scripts/reproduce_paper.sh
+```
+
+The repository move was an atomic same-filesystem rename. Existing sibling projects
+under `bonus_track` were not touched:
+
+```bash
+cd /home/diy
+mv -- /home/diy/RAMP /home/diy/bonus_track/PGRR
+cd /home/diy/bonus_track/PGRR
+```
+
+The old host-path caches and venv were retained outside the repository rather than
+deleted. The active Docker build/install/log trees were left in place after proving
+they are host-path neutral:
+
+```bash
+mkdir -p /home/diy/bonus_track/PGRR_migration_backup_20260804/ros_ws
+
+mv -- ros_ws/build-host ros_ws/install-host ros_ws/log-host \
+  ros_ws/build.broken-hostpaths-20260730 \
+  ros_ws/install.broken-hostpaths-20260730 \
+  ros_ws/log.broken-hostpaths-20260730 \
+  /home/diy/bonus_track/PGRR_migration_backup_20260804/ros_ws/
+
+mv -- .venv-inference \
+  /home/diy/bonus_track/PGRR_migration_backup_20260804/.venv-inference
+
+python3 -m venv --system-site-packages .venv-inference
+.venv-inference/bin/python -m pip install \
+  coloredlogs==15.0.1 flatbuffers==25.12.19 humanfriendly==10.0 \
+  numpy==2.2.6 onnxruntime==1.23.2
+
+/home/diy/anaconda3/envs/ramp-offline/bin/python -m pip install \
+  -e packages/ramp_core -e packages/ramp_ml
+/home/diy/anaconda3/envs/ramp-offline/bin/python -m pip freeze \
+  > requirements-offline.lock.txt
+```
+
+Post-move provenance checks:
+
+```bash
+test ! -e /home/diy/RAMP
+git rev-parse --show-toplevel
+
+rg -l '/home/diy/RAMP|/home/diy/bonus_track/PGRR' \
+  ros_ws/build ros_ws/install ros_ws/log
+find ros_ws/build ros_ws/install ros_ws/log \
+  -type l -lname '/home/diy/RAMP*' -print
+
+sha256sum \
+  outputs/final/episode_manifest.parquet \
+  outputs/final/run_manifest.json \
+  outputs/final/results.parquet \
+  outputs/final/summary.csv \
+  outputs/final/statistics.json \
+  outputs/final/offline_policy_ablation.csv \
+  paper/main.pdf
+```

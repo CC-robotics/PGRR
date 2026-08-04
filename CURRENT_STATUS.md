@@ -1,6 +1,107 @@
 # Current status
 
-## 2026-08-01 — verified-pose DAgger pilot (active)
+## 2026-08-04 — locked EI evaluation complete and repository relocated (current)
+
+The immutable final test is complete at project commit
+`35d7e601cd6f5baf168948a7174cd32fa9c37c5b` and run ID `b8fcd1607de0`.
+The fixed manifest contains 64 logical episodes and the final run manifest reports
+64/64 completed tasks with no worker errors. Base and PGRR ran on all eight scenario
+families at all three densities (24 paired conditions); Standard and Heuristic ran on
+the eight high-density conditions. The runner retained 67 physical attempts: three
+technical attempts were excluded and retried, leaving 64 algorithm episodes and no
+excluded final row.
+
+`PGRR` is the public four-letter project name and expands to **Planning-Guided
+Failure-Triggered Recovery and Rejoin**. The historical `ramp_*` Python and ROS package
+names remain internal compatibility identifiers. In final artifacts, `method=bc` is
+the runner's legacy identifier for PGRR/Triggered DAgger; it must not be described as
+plain behavior cloning. The selected checkpoint is Uniform BC + DAgger with
+`margin_lambda=0`; MWBC, PPO, and a learned detector are not selected contributions.
+
+### Locked final outcomes
+
+| Method | Scope | Goal | Collision | Timeout | Mean duration (s) | Mean minimum human distance (m) | Mean intervention ratio |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Base DWB | 24 | 5 (20.83%) | 19 (79.17%) | 0 | 48.76 | 1.318 | 0.040 |
+| PGRR / Triggered DAgger | 24 | 8 (33.33%) | 0 | 16 (66.67%) | 157.27 | 1.267 | 0.619 |
+| Standard Recovery | 8 high-density | 1 (12.50%) | 7 (87.50%) | 0 | 44.71 | 1.008 | 0.050 |
+| Heuristic Recovery | 8 high-density | 1 (12.50%) | 0 | 7 (87.50%) | 173.63 | 1.092 | 0.757 |
+
+PGRR reached all three `crossing_flow` and all three `group_blocking` conditions,
+plus low- and medium-density `temporary_blockage`. It timed out in every
+`head_on_corridor`, `doorway_bottleneck`, `blind_corner`, `overtaking`, and
+`opposite_streams` condition and in high-density `temporary_blockage`. At high density,
+Standard reached only `crossing_flow` and collided in the other seven families;
+Heuristic reached only `group_blocking` and timed out in the other seven. The latter
+two rows are an eight-condition descriptive mechanism comparison, not a powered
+statistical ranking.
+
+The paired Base--PGRR analysis supports a collision reduction of 79.17 percentage
+points (95% paired-bootstrap CI 62.50--91.67 points; Holm-adjusted McNemar
+`p=4.20e-5`). It simultaneously records a timeout increase of 66.67 points (95% CI
+45.83--83.33; Holm `p=3.05e-4`). The 12.50-point goal-reach increase has CI
+0.00--29.17 points and is not significant (Holm `p=0.75`). PGRR also increased the
+intervention ratio by 0.580 (95% CI 0.462--0.688; Holm `p=4.65e-6`), emergency-stop
+count by 14.33 per episode (Holm `p=4.72e-4`), and mean absolute angular jerk by
+0.575 rad/s^3 (Holm `p=7.15e-6`). Minimum human distance, personal-space violation,
+discomfort time, SPL, and joint-success duration/path length do not survive Holm
+correction. The defensible conclusion is therefore collision avoidance traded for
+timeouts and much heavier control intervention, not general navigation superiority.
+
+The selected DAgger policy has 59,193 parameters. On the fixed 399-sample
+scenario-disjoint offline set it obtains 0.9223 top-1, 0.9850 top-3, zero invalid
+actions after masking, and 0.0310 expert-cost regret. Uniform BC and MWBC are identical
+on the reported enabled-mask metrics despite MWBC using `margin_lambda=1`; the final
+evidence therefore shows no benefit from margin weighting, and PGRR retains the
+Uniform-BC/`margin_lambda=0` path.
+With the mask disabled for offline proposals only, DAgger proposes an invalid action
+on 83.96% of samples; the unmasked policy was never executed on the robot.
+
+### Technical retries and evidence integrity
+
+Three technical attempts are preserved rather than deleted: a zero-sample
+`SIMULATOR_FAILURE` for high-density head-on PGRR, an `INVALID_RESET` for
+medium-density group-blocking PGRR, and an `INVALID_RESET` for high-density
+opposite-streams Base. Their retries ended in `TIMEOUT`, `GOAL_REACHED`, and
+`COLLISION`, respectively. A first four-worker pass also had two launch wrappers
+return before producing any outcome artifact (task 12, high-density doorway Base;
+task 35 retry, medium-density group-blocking PGRR). Those pre-logger events are not
+algorithm attempts. The three-worker `--resume` pass reused hash-verified completed
+artifacts and regenerated only missing work; the final run manifest has
+`worker_errors=[]`.
+
+Primary evidence is
+`outputs/final/{episode_manifest.parquet,run_manifest.json,results.parquet,summary.csv,statistics.json}`.
+The results SHA-256 is
+`b8a60bf442ab7add77d7565bdfb0c1fecb3904070dab82f6350d2c5aa30362fc`.
+Failure analysis retains 22 human collisions, four static-geometry collisions,
+16 stagnating timeouts, and seven timeouts with terminal progress across all four
+methods; it does not infer causality from terminal labels.
+
+### Relocation and current deliverable boundary
+
+The repository was atomically renamed from `/home/diy/RAMP` to
+`/home/diy/bonus_track/PGRR`; the directory inode is unchanged and the old path is
+absent. Non-relocatable host/broken ROS caches and the old inference venv are retained
+recoverably in `/home/diy/bonus_track/PGRR_migration_backup_20260804` (162 MB). The
+active Docker-built `ros_ws/{build,install,log}` directories are root-owned as expected,
+but contain no old or new host path and use only the stable `/workspace` container
+prefix. The inference venv and both Conda editable packages now resolve to the PGRR
+path.
+
+The current minimum honest EI deliverable is the imitation-only PGRR system, the
+locked 64-episode Gazebo fallback evaluation, paired statistics, offline mask/DAgger
+ablation, failure report, generated figures/tables/video, and the compiled eight-page
+`paper/main.pdf`. It does **not** satisfy the originally proposed 360-episode-per-method
+Flatland tier and does not include a selected PPO policy, learned detector, second
+planner, real robot, or formal safety guarantee. Those omissions are scope limits, not
+silent successes. Final artifact-manifest/tag creation and the student branch remain
+release-engineering steps after the teacher branch is clean.
+
+All sections below are retained as historical development evidence and may describe
+pilots or candidates that the locked final test supersedes.
+
+## 2026-08-01 — verified-pose DAgger pilot (historical; superseded)
 
 - A current selected-control repeat invalidates the historical temporary-blockage success as robust evidence. Under commit `d9b5ef8`, Base collided at 37.995 s and DAgger collided at 40.027 s after 65 recovery samples. The manuscript now uses this same-commit negative pair.
 - Lowering bounded-backup progress from 0.05 m to 0.02 m prevented that collision but produced a 180 s timeout, then regressed the frozen overtaking success to a 200 s timeout. The candidate is removed; raw hashes are retained in `outputs/pilot/emergency_backup_progress_iteration.csv`.

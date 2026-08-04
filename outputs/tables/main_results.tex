@@ -1,0 +1,22 @@
+% Generated only from /home/diy/bonus_track/PGRR/outputs/final/results.parquet and /home/diy/bonus_track/PGRR/outputs/final/summary.csv; project_commit=35d7e601cd6f5baf168948a7174cd32fa9c37c5b
+\begin{table*}[t]
+\caption{Locked final evaluation. DWB and PGRR use the full 24-episode manifest; standard and
+heuristic recovery use the paired 8-episode high-density subset. Rates use valid algorithm
+episodes, and navigation time is reported only for successful episodes. Values after $\pm$ are
+standard deviations. ``Excl.'' counts retained simulator-failure or invalid-reset physical
+attempts that were retried and excluded from algorithm rates.}
+\label{tab:main-results}
+\centering
+\small
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Method & $N$ & Success [\%] & Collision [\%] & Timeout [\%] & SPL & Time [s]
+& $d_{\min}$ [m] & Excl. \\
+\midrule
+DWB & 24 & 20.8 & 79.2 & 0.0 & 0.205 $\pm$ 0.409 & 85.6 $\pm$ 10.7 & 1.318 $\pm$ 1.311 & 1 \\
+Standard & 8 & 12.5 & 87.5 & 0.0 & 0.106 $\pm$ 0.299 & 114.5 & 1.008 $\pm$ 0.949 & 0 \\
+Heuristic & 8 & 12.5 & 0.0 & 87.5 & 0.108 $\pm$ 0.306 & 129.4 & 1.092 $\pm$ 0.306 & 0 \\
+PGRR & 24 & 33.3 & 0.0 & 66.7 & 0.303 $\pm$ 0.440 & 111.9 $\pm$ 32.2 & 1.267 $\pm$ 0.581 & 2 \\
+\bottomrule
+\end{tabular}
+\end{table*}

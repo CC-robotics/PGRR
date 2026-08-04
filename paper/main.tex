@@ -1,120 +1,94 @@
 \documentclass[conference]{IEEEtran}
-\usepackage{amsmath}
+
+\usepackage{amsmath,amssymb}
+\usepackage{newtxtext,newtxmath}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{xcolor}
 \usepackage{url}
 
-\title{Planning-Guided Failure-Triggered Recovery via Imitation Learning for Dynamic Social Navigation}
+\graphicspath{{figures/}}
+\input{generated/result_macros.tex}
+
+\title{PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin\\
+for Dynamic Social Navigation}
+
 \author{\IEEEauthorblockN{Anonymous Authors}}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Classical navigation stacks are reliable in routine mapped environments but can fail in reciprocal interactions with moving people. End-to-end learned navigation can address such interactions, yet replacing a mature planner everywhere changes behavior even where no recovery is needed. We study a bounded alternative: an observable failure detector invokes a learned policy only during collision risk, freezing, oscillation, or deadlock. The policy chooses among 21 temporary subgoals and four interpretable modes, while a planning-derived mask rejects invalid actions and Nav2 executes each selected goal. A privileged short-horizon expert supplies imitation labels and DAgger covers learner-induced recovery states. During validation we found that simulator command acceptance was insufficient evidence that sensed geometry, localization, and evaluation truth agreed. The corrected fallback reads robot and pedestrian evaluation poses from Gazebo, separates rendered pedestrians from contact dynamics, and uses pose-derived localization. Across three fixed high-density crossing-flow seeds, DWB reached two goals and collided once; triggered DAgger physically reached all three goals and increased median minimum human-centre distance from 0.927 to 1.027 m, but increased median terminal time from 91.7 to 128.4 s. Separately versioned high-density checks converted DWB collisions in group-blocking and overtaking scenarios into physical goal reaches, whereas a current temporary-blockage repeat collided and blind corner timed out. These executions establish preliminary feasibility and a safety--time trade-off, not statistical superiority; a locked multi-scenario evaluation remains required.
+Classical navigation is dependable in routine mapped environments but can
+freeze, oscillate, or collide in reciprocal pedestrian interactions.  We present
+PGRR, a bounded recovery layer that leaves Nav2 DWB in charge of nominal motion
+and invokes learning only after an observable failure trigger.  A compact policy
+selects among 21 temporary subgoals and four interpretable modes; a
+planning mask rejects infeasible actions and an independent supervisor may stop
+unsafe motion.  Training uses a privileged short-horizon rollout expert,
+behavior cloning, and DAgger, whereas deployment uses only LiDAR and navigation
+history.  A locked Gazebo study contains \PGRRTotalEpisodeCount{} logical
+episodes across eight interaction families and three densities.  In the
+\PGRRMainPairCount{} paired Base--PGRR tests, Base and PGRR achieve success rates
+of \PGRRBaseSuccessRate{} and \PGRRSuccessRate{}, and collision rates of
+\PGRRBaseCollisionRate{} and \PGRRCollisionRate{}, respectively.  The paired
+success-rate difference is \PGRRSuccessDifference{} (95\% bootstrap interval
+[\PGRRSuccessCILow{}, \PGRRSuccessCIHigh{}], Holm-adjusted
+$p=\PGRRSuccessHolmP$).  The results quantify a condition-dependent
+safety--completion trade-off rather than universal superiority.  All raw
+streams, exclusions, statistics, figures, and manuscript numbers are generated
+under a frozen manifest.
 \end{abstract}
 
 \section{Introduction}
-Classical navigation offers explicit maps, reusable planners, and predictable nominal behavior, but local optimization can freeze or oscillate in interactive bottlenecks. Learned policies can encode interaction patterns, but continuous end-to-end replacement expands the learned component's authority and makes failures harder to interpret.
-
-We instead confine learning to the failure boundary. Figure~\ref{fig:architecture} shows the hierarchy. A classical planner owns nominal PointGoal navigation. An observable detector and hysteretic state machine trigger a bounded recovery option. A compact policy chooses an interpretable temporary target or mode from a fixed action set, subject to one mask shared by data generation and deployment. Once progress resumes, the original task goal is reissued.
-
-The current contribution is threefold: (i) a failure-triggered architecture that preserves classical nominal control; (ii) an automated privileged planning expert that labels masked temporary-goal choices; and (iii) an imitation pipeline using behavior cloning and DAgger. We do not claim a first recovery system or a formal safety guarantee. This evidence-linked draft reports the corrected simulator-validity result and does not reuse pre-verified-pose comparisons as performance evidence.
+\input{sections/introduction.tex}
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=0.98\textwidth]{figures/system_architecture.pdf}
-  \caption{Closed-loop architecture. Privileged state and expert rollouts are used only during training. At test time, the policy receives observable state and may only choose actions admitted by the planning and safety mask.}
+  \includegraphics[width=0.96\textwidth]{system_architecture.pdf}
+  \caption{PGRR architecture.  Privileged simulator state and expert rollouts
+  are confined to training (dashed region); deployment observes LiDAR and
+  navigation history.  Nav2 retains nominal and temporary-goal execution.}
   \label{fig:architecture}
 \end{figure*}
 
 \section{Related Work}
-Arena-Bench and Arena-Rosnav provide reproducible interfaces for comparing model-based and learned navigation in dynamic environments~\cite{kastner2022arenabench,kastner2023arena2,kastner2024arena3,shcherbyna2024arena4}. All-in-One learns to select among navigation planners~\cite{kastner2021allinone}; DR-MPC learns a residual around model-predictive control~\cite{han2024drmpc}. Both motivate hybrid navigation but differ from failure-only intervention.
+\input{sections/related_work.tex}
 
-Learned navigation recovery predates this work. Del Duchetto \emph{et al.} learn failure detection and local recovery from human demonstrations~\cite{delduchetto2018recovery}. Mohammad \emph{et al.} proactively predict planning failure and search for a recovery state~\cite{mohammad2024gprecovery}. Recent failure-aware learning uses unsafe experience to shape value estimation while restricting policy learning to successful demonstrations~\cite{wang2026failureaware}. Our narrower distinction is automatic recovery demonstrations from privileged rollout planning, temporary-subgoal decisions, and aggregation on learner-induced recovery states. DAgger is the standard mechanism for mitigating sequential distribution shift~\cite{ross2011dagger}.
+\section{Problem Formulation and Method}
+\input{sections/method.tex}
 
-\section{Method}
-\subsection{Failure-Triggered Hierarchy}
-Let $g$ be the original goal and let the classical stack produce command $u_b$. From observable history $o_t$, the detector returns scores for collision risk, freeze, oscillation, and deadlock. Recovery begins after the maximum score exceeds $\tau_{\mathrm{on}}$ and exits only after it remains below $\tau_{\mathrm{off}}<\tau_{\mathrm{on}}$ while valid goal progress resumes. Cooldown, option duration, and recovery-count limits prevent rapid switching.
-
-\subsection{Action Space and Mask}
-The action space contains temporary goals at radii $\{0.6,1.0,1.4\}$ m and bearings $\{-90,-60,-30,0,30,60,90\}^{\circ}$, plus WAIT, BACKUP, REPLAN, and CONTINUE. The mask rejects occupied, disconnected, LiDAR-occluded, rear-unobserved, or path-divergent motion. During latched collision risk it also blocks unsafe continuation and applies endpoint and swept-segment clearance. Masking precedes softmax, so invalid actions cannot be selected while a valid fallback remains.
-
-An independent stopping layer uses
-\begin{equation}
-d_{\mathrm{stop}} = \frac{v^2}{2a_{\mathrm{brake}}} + v\ell + m,
-\end{equation}
-where $\ell$ is control latency and $m$ an empirical margin. It may override learning but is not a formal collision-avoidance certificate.
-
-\subsection{Privileged Expert and Imitation}
-During training only, the expert receives the static grid and true pedestrian states. Each legal candidate is rolled out with differential-drive kinematics and predicted human motion. It minimizes collision, progress, social distance, path rejoin, length, smoothness, time, and action-switch costs; collision and masked actions receive hard penalties. The policy uses a one-dimensional CNN over five 180-beam scans and an MLP over observable navigation state. Behavior cloning minimizes expert cross entropy, and DAgger relabels policy-visited training states with the privileged expert.
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.96\textwidth]{action_space_expert.pdf}
+  \caption{Interpretable recovery decisions and privileged expert labeling.
+  Candidate rollouts that violate the configured planning mask are never
+  selectable; privileged pedestrian prediction is used only to rank legal
+  training actions.}
+  \label{fig:action-expert}
+\end{figure*}
 
 \section{Experimental Setup}
-Experiments use ROS2 Humble, Nav2 DWB, and a pinned Arena Humble Gazebo profile. The installed profile lacks a complete HuNav dependency chain, so deterministic LiDAR-visible fallback pedestrians are disclosed. The robot receives a known static map and a planar scan downsampled to 180 beams. Train, validation, and test splits are scenario-separated.
+\input{sections/experimental_setup.tex}
 
-Fallback pedestrians are non-static, gravity-disabled rendered cylinders without contact response; overlap is classified geometrically from Gazebo model poses. This prevents teleported proxy bodies from imparting non-human impulses to the Jackal while preserving GPU-LiDAR visibility. Gazebo's pose-derived odometry supplies the declared known-pose localization interface; a real mapped deployment would replace it with localization such as AMCL. An evaluation-only gate projects human centres into the scan and checks that near-human surfaces are visible at expected bearings. Human privileged data are never policy inputs. All valid outcomes are retained; simulator/reset failures are reported separately. The reported pilot pairs use validation scenarios and are not a final test evaluation.
-
-\input{generated/verified_actual_pose_pair.tex}
-
-\begin{figure}[t]
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=\columnwidth]{figures/verified_actual_pose_pair.pdf}
-  \caption{First verified-pose pair. DWB collides; learned recovery reaches the physical goal while maintaining greater human clearance.}
-  \label{fig:full-actual-pose}
-\end{figure}
+  \includegraphics[width=0.98\textwidth]{final_scenario_montage.pdf}
+  \caption{The eight locked test families.  Each panel is generated from its
+  checked-in scenario definition and shows the static layout, robot start and
+  goal, reference route, and initial pedestrian motion.}
+  \label{fig:scenarios}
+\end{figure*}
 
-\input{generated/high_density_pilot.tex}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/high_density_pilot.pdf}
-  \caption{Three-seed high-density pilot under one frozen code revision; bars within each method are seeds 2201, 2202, and 2220 from left to right. Triggered DAgger converts one DWB collision and preserves two goal reaches. The dashed line is the 0.71 m geometric robot--human collision threshold.}
-  \label{fig:high-density-pilot}
-\end{figure}
-
-\input{generated/cross_family_pilot.tex}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/cross_family_pilot.pdf}
-  \caption{Four cross-family validation examples: temporary blockage (TB), group blocking (GB), overtaking (OT), and blind corner (BL). Each pair uses one scenario, seed, and code revision for both methods. The dashed line marks the 0.71 m geometric collision threshold. These single pairs are not pooled for significance testing.}
-  \label{fig:cross-family-pilot}
-\end{figure}
-
-\input{generated/group_blocking_methods.tex}
-
-\section{Corrected Validation Check}
-The static-proxy implementation produced an impossible observation: privileged evaluation placed a pedestrian centre 0.697 m from the robot while the LiDAR sector at that bearing remained 1.473 m away. A non-static kinematic-link revision still allowed model pose requests to diverge from rendered geometry. A later dynamic collision-body revision pushed the Jackal, and wheel-integrated odometry declared arrival while the physical robot remained 1.06 m from the goal. Consequently, every pre-verified-pose comparison is retained only for debugging. The final path reads evaluation poses from Gazebo's dynamic-pose topic, uses rendered contactless pedestrians, and checks physical goal distance independently of localized distance.
-
-Table~\ref{tab:corrected-pair} and Fig.~\ref{fig:full-actual-pose} summarize the first verified-pose pair from commit \texttt{2164e08}. DWB collided at 29.47 s with 0.665 m minimum centre distance. The learned hierarchy physically reached the goal at 98.43 s after 117 non-CONTINUE recovery samples, with 1.203 m minimum centre distance and 0.299 m final physical goal error. Its sensor gate passed 30/30 near-human frames; Base passed 26/26. Maximum localization--physical position disagreement was 0.128 m.
-
-The current high-density pilot in Table~\ref{tab:high-density-pilot} and Fig.~\ref{fig:high-density-pilot} uses three independent scenario seeds under commit \texttt{8577ff1}. On seed 2201, DWB collided at 29.50 s and triggered DAgger physically reached the goal at 128.40 s with 0.215 m terminal physical error. On seeds 2202 and 2220, both methods reached the goal; DAgger required 149.92 and 118.41 s versus DWB's 95.20 and 91.67 s. Median minimum centre distance changed from 0.927 to 1.027 m. Learned runs used 308 median non-CONTINUE samples and included WAIT, BACKUP, and temporary subgoals. All six sensor-consistency gates passed; the least-visible run still passed 77/80 near-human frames. Thus recovery converts one observed collision and preserves two nominal successes, but is consistently slower. With $n=3$, the one discordant outcome is not statistically significant and no general performance claim is justified.
-
-Table~\ref{tab:cross-family-pilot} and Fig.~\ref{fig:cross-family-pilot} add four high-density, single-seed checks from distinct scenario families. In the current same-commit temporary-blockage pair, DWB collided at 38.00 s and the hierarchy collided at 40.03 s after 65 non-CONTINUE samples. A historical 80.92 s success at the same scenario seed is therefore not treated as repeatable evidence. In the current same-commit group-blocking pair, DWB collided at 46.02 s while the hierarchy reached the physical goal at 128.94 s with 0.211 m terminal error and 1.019 m minimum human distance. The learned policy selected temporary-subgoal actions 3 and 11 alongside separately logged STOP, BACKUP, TURN, and FORWARD safety modes. In the frozen overtaking pair, DWB collided at 82.02 s while the hierarchy physically reached the goal at 178.39 s with 0.224 m terminal error and 1.156 m minimum human distance. Both overtaking sensor gates passed every near-human frame, but completion had only 1.61 s timeout margin and required 1,133 recovery samples. Finally, in blind corner, DWB intersected declared static geometry after 49.48 s. The selected hierarchy remained collision-free and made 13.47 m progress, but timed out 8.16 m from the physical goal. This is collision avoidance, not recovery success.
-
-Table~\ref{tab:group-blocking-methods} adds Standard and Heuristic recovery under the identical group-blocking revision. Standard recovery collided at 44.99 s. Heuristic recovery reached the goal at 152.38 s with 0.841 m minimum human distance and 606 recovery samples; triggered DAgger reached it 23.44 s sooner with 1.019 m minimum human distance and 395 recovery samples. All four sensor gates passed at 100\%. This single seed shows a concrete efficiency and clearance difference from the heuristic, but is not a statistical ablation or a generalization claim.
-
-\section{Failure Analysis}
-The held-out high-density opposite-stream case exposes a boundary of the hierarchy: DWB collided after 3.50 s, whereas the selected recovery hierarchy preserved 0.838 m minimum human distance but timed out after 180 s with only 0.200 m net progress. The final minute had negative progress. We did not add this validation trajectory to training. Instead, we collected a disjoint train-split policy trajectory and tested two corrections there.
-
-\input{generated/opposite_streams_ablation.tex}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/opposite_streams_ablation.pdf}
-  \caption{Retained opposite-stream train failures across separately versioned diagnostic revisions. Bars show total goal progress and mutually exclusive control-state occupancy; diamonds show progress during the final 60 s. Turn commitment removed switches but produced negative progress, while immediate WAIT exhaustion increased active recovery without solving the timeout.}
-  \label{fig:opposite-streams-ablation}
-\end{figure}
-
-Table~\ref{tab:opposite-streams-ablation} and Fig.~\ref{fig:opposite-streams-ablation} show that neither intervention solved recurrent flow. A five-second cross-hazard turn commitment reduced turn-side switches from nine to zero but changed net progress from $+2.378$ m to $-0.146$ m. Sequence-aware DAgger with immediate freeze/deadlock WAIT exhaustion reduced action-21 occupancy and increased BACKUP/subgoal execution, yet timed out with only 0.196 m progress. Both candidates were rejected. This separates action activity from recovery: more interventions, fewer WAIT samples, or fewer switches do not imply global task progress.
-
-A separate train-only attempt classified the closest LiDAR endpoint as static when it lay near known shelf geometry. It improved blind-corner progress, and removing duplicated radial braking even reached the train goal. Cross-scenario checks nevertheless rejected the idea: the no-radial-braking variant drifted into a doorway during skid-steer rotation, while the restored-braking classifier treated a pedestrian beside that doorway as static and collided at 0.705 m centre distance. We restored uniform collision-latched margins. This illustrates why a local performance gain cannot override a retained safety counterexample.
+\section{Results and Analysis}
+\input{sections/results.tex}
 
 \section{Limitations}
-The method assumes a known two-dimensional map and planar LiDAR. Its privileged expert depends on simulator state and constant-velocity pedestrian prediction. The finite discrete action set cannot express arbitrary maneuvers. The Gazebo fallback differs from real crowds and exhibits scheduling artifacts. Pose-derived simulation localization is more accurate than a real localization stack. There is no formal safety guarantee, hardware study, completed learned detector, or PPO refinement. The learned policy is conservative and substantially increases navigation time in the reported high-density pilot. Recurrent opposite-direction streams and the blind-corner case can still produce safe stagnation, and the rejected train variants show that simple anti-WAIT or anti-switch rules are insufficient. The cross-family checks contain one seed per family and use separately audited revisions, so they cannot establish generalization or statistical benefit. Corrected multi-family training data and the final locked multi-scenario test remain incomplete.
+\input{sections/limitations.tex}
 
 \section{Conclusion}
-Failure-triggered temporary-goal recovery can be integrated with a classical ROS2 navigation stack and trained from an automated privileged planner without granting the learned policy continuous velocity authority. The simulator-validity gate exposed and corrected hidden proxy, yielding, odometry, and terminal-evidence errors. Under verified-pose implementations, the learned hierarchy converted one DWB collision and preserved two DWB goal reaches across three fixed high-density crossing-flow seeds, and separately recovered group-blocking and overtaking DWB collisions. Both cross-family successes include actual learned temporary-subgoal selections. All recovered executions took longer; the current temporary-blockage repeat still collided, and blind corner remained a timeout despite collision avoidance. This is mixed execution evidence rather than a general claim. The required next steps are broader corrected-data training and a locked paired multi-scenario evaluation.
+\input{sections/conclusion.tex}
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}

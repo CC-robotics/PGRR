@@ -1,0 +1,40 @@
+\subsection{Classical and Social Navigation}
+The dynamic-window approach searches dynamically feasible velocity commands over
+a short horizon~\cite{fox1997dwa}; Nav2 provides a modern ROS2 navigation
+system in which DWB implements this family of local control~\cite{macenski2020marathon2}.
+Reciprocal methods such as ORCA~\cite{vandenberg2011orca} and learned crowd-aware
+policies such as SARL~\cite{chen2019sarl} instead model interaction more directly.
+The broader social-navigation literature emphasizes that collision avoidance,
+comfort, legibility, and task efficiency are distinct objectives
+~\cite{mavrogiannis2023survey}.  PGRR retains DWB as the nominal
+controller and evaluates geometric clearance and discomfort time; it does not
+claim to model all social norms.
+
+\subsection{Hybrid Planning and Recovery}
+All-in-One learns a continuous switch among complete navigation planners
+~\cite{kastner2021allinone}, whereas DR-MPC learns a residual around model-predictive
+control~\cite{han2024drmpc}.  Both demonstrate the value of hybrid model-based and
+learned navigation.  PGRR differs in authority and output: intervention is
+failure-triggered, and the learned output is a temporary subgoal or an
+interpretable recovery mode rather than a nominal planner choice or velocity
+residual.
+
+Navigation recovery itself is not new.  Del Duchetto \emph{et al.} learn local
+failure detection and recovery from human demonstrations
+~\cite{delduchetto2018recovery}; Mohammad \emph{et al.} predict planning failure
+and search for a recovery state using a Gaussian-process model
+~\cite{mohammad2024gprecovery}.  Our focus is automatic privileged-planner labels,
+planning-mask enforcement, and aggregation on states
+induced by the recovery learner.  DAgger supplies the standard reduction for this
+sequential distribution shift~\cite{ross2011dagger}.  Invalid-action masking has
+also been analyzed in policy-gradient learning~\cite{huang2022invalidmasking};
+here it is used as a deterministic planning constraint for imitation inference,
+not as a safety proof.
+
+\subsection{Simulation and Evaluation}
+Arena-Bench introduced reproducible dynamic-obstacle evaluation
+~\cite{kastner2022arenabench}, and later Arena releases expanded social-navigation
+scenarios and ROS2 support~\cite{kastner2024arena3,shcherbyna2024arena4,shcherbyna2025arena5}.
+Our installed, pinned Humble profile is an earlier Gazebo fallback rather than
+Arena~5.0.  We therefore use the later releases only as platform context and
+fully disclose the deterministic pedestrian proxy used by the experiments.
