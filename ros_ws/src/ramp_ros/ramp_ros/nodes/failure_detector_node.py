@@ -56,6 +56,8 @@ class FailureDetectorNode(Node):
         self.declare_parameter("collision_trend_sector_degrees", 90.0)
         self.declare_parameter("minimum_valid_lidar_range_m", 0.0)
         self.declare_parameter("bilateral_edge_self_return_max_m", 0.34)
+        self.declare_parameter("maximum_valid_linear_speed_mps", 2.0)
+        self.declare_parameter("maximum_valid_angular_speed_radps", 4.0)
         defaults = RuleFailureConfig()
         for name in defaults.__dataclass_fields__:
             self.declare_parameter(name, getattr(defaults, name))
@@ -201,6 +203,19 @@ class FailureDetectorNode(Node):
         # so non-increasing samples are safely discarded instead.
         if self._last_timestamp is not None and timestamp <= self._last_timestamp:
             return
+        linear_velocity = float(message.twist.twist.linear.x)
+        angular_velocity = float(message.twist.twist.angular.z)
+        # Gazebo's pose-derived odometry differentiates across the initial
+        # spawn/reset jump. The first post-handshake sample can consequently
+        # report tens of metres per second while the command mux is holding
+        # zero. Feeding that impossible value into braking distance creates a
+        # two-second false collision latch at every episode start.
+        if abs(linear_velocity) > float(
+            self.get_parameter("maximum_valid_linear_speed_mps").value
+        ) or abs(angular_velocity) > float(
+            self.get_parameter("maximum_valid_angular_speed_radps").value
+        ):
+            return
         self._last_timestamp = timestamp
         local_x = float(message.pose.pose.position.x)
         local_y = float(message.pose.pose.position.y)
@@ -216,8 +231,8 @@ class FailureDetectorNode(Node):
                 timestamp=timestamp,
                 position=(world_x, world_y),
                 goal_distance=goal_distance,
-                linear_velocity=float(message.twist.twist.linear.x),
-                angular_velocity=float(message.twist.twist.angular.z),
+                linear_velocity=linear_velocity,
+                angular_velocity=angular_velocity,
                 base_linear_command=self._base_command[0],
                 base_angular_command=self._base_command[1],
                 nearest_lidar_distance=self._scan_minimum,
