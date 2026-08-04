@@ -21,6 +21,12 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
         assert len(profile["behavior_tree_sha256"]) == 64
     assert 'inter_planner:="${INTER_PLANNER}"' in runtime
     assert 'policy_type:="${recovery_policy_type}"' in runtime
+    assert (
+        'model_path="${RAMP_BC_MODEL_PATH:-/workspace/checkpoints/bc/'
+        'uniform_scenario/best.onnx}"' in runtime
+    )
+    assert '-p model_path:="${model_path}"' in runtime
+    assert 'model_path:="${model_path:-}"' not in runtime
     assert '"${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc"' in runtime
     assert "/workspace/.venv-inference/bin/python" in runtime
     assert "-m ramp_ros.nodes.recovery_manager_node" in runtime

@@ -393,3 +393,13 @@ and action costs can be angularly distorted. This was discovered after the locke
 had started. The algorithm, labels, and checkpoint are not changed post-test; the EI
 paper reports the mismatch as a limitation, and a corrected calibration requires a
 newly versioned training and complete evaluation rather than selective reruns.
+
+## KI-066: Empty model-path overrides invalidated a diagnostic multi-method batch
+
+The shared recovery-manager launch supplied `model_path:=` for non-learned policies,
+which ROS 2 rejects before the node starts. A diagnostic validation batch could still
+produce base-planner terminal files while the intended recovery layer was absent, so
+the runner's pre-cleanup traceback check correctly rejected those episodes. The
+launcher now always supplies a portable non-empty default and has a regression test.
+Files from the interrupted batch are excluded from evidence; all compared methods are
+rerun under fresh episode identifiers after the fix.

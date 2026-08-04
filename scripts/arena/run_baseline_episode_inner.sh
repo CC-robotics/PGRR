@@ -326,6 +326,11 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || \
         >>"${RUNTIME_LOG}" 2>&1 &
     detector_pid=$!
     recovery_command=("${ramp_ros_prefix}/lib/ramp_ros/recovery_manager")
+    # ROS 2 rejects an empty string override written as ``model_path:=``.
+    # Non-learned recovery profiles do not consume this parameter, but they
+    # share the same node and launch argument list, so always provide a valid
+    # portable default instead of emitting an empty override.
+    model_path="${RAMP_BC_MODEL_PATH:-/workspace/checkpoints/bc/uniform_scenario/best.onnx}"
     if [[ "${recovery_policy_type}" == "bc" ]]; then
         inference_python="/workspace/.venv-inference/bin/python"
         default_model_path="/workspace/checkpoints/bc/uniform_scenario/best.onnx"
@@ -357,7 +362,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || \
         -p recovery_decision_topic:=/ramp/recovery_decision \
         -p policy_type:="${recovery_policy_type}" \
         -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
-        -p model_path:="${model_path:-}" \
+        -p model_path:="${model_path}" \
         -p privileged_humans_topic:=/ramp/privileged/humans \
         >>"${RUNTIME_LOG}" 2>&1 &
     recovery_pid=$!
