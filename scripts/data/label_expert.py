@@ -219,7 +219,8 @@ def main() -> None:
     parser.add_argument("--stride", type=int, default=5)
     parser.add_argument("--failure-threshold", type=float, default=0.65)
     parser.add_argument("--rejoin-release-threshold", type=float, default=0.65)
-    parser.add_argument("--collision-latched-action-clearance", type=float, default=0.65)
+    parser.add_argument("--collision-latched-action-clearance", type=float, default=0.90)
+    parser.add_argument("--maximum-recovery-path-deviation", type=float, default=0.60)
     parser.add_argument("--wait-budget-decisions", type=int, default=3)
     args = parser.parse_args()
     rows = _load(args.raw_jsonl)
@@ -262,8 +263,14 @@ def main() -> None:
                 args.collision_latched_action_clearance if collision_latched else 0.25
             ),
             allow_unobserved_backup=False,
+            allow_initial_overlap_when_separating=collision_latched,
         )
-        mask = apply_path_corridor_mask(mask, state.robot_pose, state.global_path)
+        mask = apply_path_corridor_mask(
+            mask,
+            state.robot_pose,
+            state.global_path,
+            maximum_deviation_m=args.maximum_recovery_path_deviation,
+        )
         mask = constrain_rejoin_actions(
             mask,
             collision_risk=collision_risk,
@@ -321,6 +328,7 @@ def main() -> None:
         "predicted_success_count": int(sum(successes)),
         "rejoin_release_threshold": args.rejoin_release_threshold,
         "collision_latched_action_clearance": args.collision_latched_action_clearance,
+        "maximum_recovery_path_deviation": args.maximum_recovery_path_deviation,
         "wait_budget_decisions": args.wait_budget_decisions,
         "finite_selected_cost_count": int(
             sum(

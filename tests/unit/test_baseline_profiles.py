@@ -219,6 +219,10 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()
     assert "RecoveryDecision.EMERGENCY_STOP" in detector
     assert "timestamp <= self._last_timestamp" in detector
+    labeler = (root / "scripts/data/label_expert.py").read_text()
+    assert '"--collision-latched-action-clearance", type=float, default=0.90' in labeler
+    assert '"--maximum-recovery-path-deviation", type=float, default=0.60' in labeler
+    assert "allow_initial_overlap_when_separating=collision_latched" in labeler
     assert detector.count("self._detector.reset()") == 1
     assert 'self.declare_parameter("wait_for_episode_start", False)' in detector
     assert "def _on_episode_start(self, message: Bool)" in detector
