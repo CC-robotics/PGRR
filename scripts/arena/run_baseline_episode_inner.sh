@@ -19,12 +19,12 @@ case "${SOURCE_POLICY}" in
         INTER_PLANNER="navigate_to_pose_w_replanning_and_recovery"
         TERMINATE_ON_PLANNER_ABORT="true"
         ;;
-    heuristic|bc|oracle)
+    heuristic|bc|bc_uniform|mwbc|pgrr|oracle)
         INTER_PLANNER="navigate_w_replanning_time"
         TERMINATE_ON_PLANNER_ABORT="false"
         ;;
     *)
-        echo "ERROR: RAMP_SOURCE_POLICY must be base, standard, heuristic, bc, or oracle" >&2
+        echo "ERROR: RAMP_SOURCE_POLICY must be base, standard, heuristic, bc, bc_uniform, mwbc, pgrr, or oracle" >&2
         exit 2
         ;;
 esac
@@ -297,11 +297,14 @@ mux_pid=$!
     -p update_frequency_hz:="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
     >>"${RUNTIME_LOG}" 2>&1 &
 actor_pid=$!
-if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOURCE_POLICY}" == "oracle" ]]; then
+if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || \
+      "${SOURCE_POLICY}" == "bc_uniform" || "${SOURCE_POLICY}" == "mwbc" || \
+      "${SOURCE_POLICY}" == "pgrr" || "${SOURCE_POLICY}" == "oracle" ]]; then
     recovery_policy_type="heuristic"
     if [[ "${SOURCE_POLICY}" == "oracle" ]]; then
         recovery_policy_type="expert"
-    elif [[ "${SOURCE_POLICY}" == "bc" ]]; then
+    elif [[ "${SOURCE_POLICY}" == "bc" || "${SOURCE_POLICY}" == "bc_uniform" || \
+            "${SOURCE_POLICY}" == "mwbc" || "${SOURCE_POLICY}" == "pgrr" ]]; then
         recovery_policy_type="bc"
     fi
     "${ramp_ros_prefix}/lib/ramp_ros/failure_detector" --ros-args \
@@ -323,9 +326,15 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOUR
         >>"${RUNTIME_LOG}" 2>&1 &
     detector_pid=$!
     recovery_command=("${ramp_ros_prefix}/lib/ramp_ros/recovery_manager")
-    if [[ "${SOURCE_POLICY}" == "bc" ]]; then
+    if [[ "${recovery_policy_type}" == "bc" ]]; then
         inference_python="/workspace/.venv-inference/bin/python"
-        model_path="${RAMP_BC_MODEL_PATH:-/workspace/checkpoints/bc/uniform_scenario/best.onnx}"
+        default_model_path="/workspace/checkpoints/bc/uniform_scenario/best.onnx"
+        if [[ "${SOURCE_POLICY}" == "pgrr" ]]; then
+            default_model_path="/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx"
+        elif [[ "${SOURCE_POLICY}" == "mwbc" ]]; then
+            default_model_path="/workspace/checkpoints/bc/mwbc_scenario/best.onnx"
+        fi
+        model_path="${RAMP_BC_MODEL_PATH:-${default_model_path}}"
         if [[ ! -x "${inference_python}" || ! -f "${model_path}" ]]; then
             echo "ERROR: BC inference runtime or model is missing" >&2
             exit 2
@@ -348,7 +357,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || "${SOUR
         -p recovery_decision_topic:=/ramp/recovery_decision \
         -p policy_type:="${recovery_policy_type}" \
         -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
-        -p model_path:="${RAMP_BC_MODEL_PATH:-}" \
+        -p model_path:="${model_path:-}" \
         -p privileged_humans_topic:=/ramp/privileged/humans \
         >>"${RUNTIME_LOG}" 2>&1 &
     recovery_pid=$!

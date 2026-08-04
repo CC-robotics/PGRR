@@ -16,7 +16,7 @@ import json
 import os
 import subprocess
 import sys
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -31,7 +31,13 @@ ALGORITHM_OUTCOMES = {"GOAL_REACHED", "COLLISION", "TIMEOUT", "PLANNER_FAILURE"}
 RETRYABLE_OUTCOMES = {"SIMULATOR_FAILURE", "INVALID_RESET"}
 ALL_OUTCOMES = ALGORITHM_OUTCOMES | RETRYABLE_OUTCOMES
 METHOD_ALIASES = {"dagger": "bc", "triggered_dagger": "bc"}
-SUPPORTED_METHODS = {"base", "standard", "heuristic", "bc", "oracle"}
+LEARNED_METHODS = {"bc", "bc_uniform", "mwbc", "pgrr"}
+SUPPORTED_METHODS = {"base", "standard", "heuristic", "oracle"} | LEARNED_METHODS
+DEFAULT_METHOD_CHECKPOINTS = {
+    "bc_uniform": Path("checkpoints/bc/uniform_scenario/best.onnx"),
+    "mwbc": Path("checkpoints/bc/mwbc_scenario/best.onnx"),
+    "pgrr": Path("checkpoints/dagger/coverage_safety_aligned/best.onnx"),
+}
 MAX_ROS_DOMAIN_ID = 232
 MAX_ATTEMPTS = 2
 
@@ -51,11 +57,23 @@ class EpisodeTask:
     scenario_relpath: str
     scenario_sha256: str
     method: str
+    checkpoint_path: str
+    checkpoint_sha256: str
+    checkpoint_container_path: str
     episode_stem: str
     timeout_s: float
     robot_start: str
     robot_goal: str
     pedestrian_config_hash: str
+
+
+@dataclass(frozen=True)
+class CheckpointProvenance:
+    """One deployable method checkpoint resolved inside the project root."""
+
+    relative_path: str
+    sha256: str
+    container_path: str
 
 
 def canonical_json(value: Any) -> str:
@@ -94,6 +112,79 @@ def normalize_methods(values: Sequence[str]) -> tuple[str, ...]:
     return tuple(parsed)
 
 
+def _normalize_method(value: str) -> str:
+    method = METHOD_ALIASES.get(value.strip().lower(), value.strip().lower())
+    if method not in SUPPORTED_METHODS:
+        allowed = ", ".join(sorted(SUPPORTED_METHODS | set(METHOD_ALIASES)))
+        raise ValueError(f"unsupported method {method!r}; choose from {allowed}")
+    return method
+
+
+def parse_method_checkpoint_assignments(values: Sequence[str]) -> dict[str, Path]:
+    """Parse repeatable ``METHOD=PATH`` checkpoint overrides."""
+
+    assignments: dict[str, Path] = {}
+    for value in values:
+        method_text, separator, path_text = value.partition("=")
+        if not separator or not method_text.strip() or not path_text.strip():
+            raise ValueError("--method-checkpoint must use METHOD=PATH")
+        method = _normalize_method(method_text)
+        if method not in LEARNED_METHODS:
+            raise ValueError(f"method {method!r} does not use a learned checkpoint")
+        if method in assignments:
+            raise ValueError(f"duplicate checkpoint assignment for method {method!r}")
+        assignments[method] = Path(path_text)
+    return assignments
+
+
+def _resolve_project_file(root: Path, path: Path, *, description: str) -> Path:
+    candidate = path if path.is_absolute() else root / path
+    resolved = candidate.resolve()
+    project_root = root.resolve()
+    if project_root not in resolved.parents:
+        raise ValueError(f"{description} must be inside PROJECT_ROOT")
+    if not resolved.is_file():
+        raise FileNotFoundError(f"{description} does not exist: {resolved}")
+    return resolved
+
+
+def resolve_method_checkpoints(
+    root: Path,
+    methods: Sequence[str],
+    legacy_checkpoint: Path,
+    assignment_values: Sequence[str],
+) -> dict[str, CheckpointProvenance]:
+    """Resolve the exact checkpoint used by every selected learned method."""
+
+    selected = set(methods)
+    assignments = parse_method_checkpoint_assignments(assignment_values)
+    unused = sorted(set(assignments) - selected)
+    if unused:
+        raise ValueError(
+            "checkpoint assignments reference unselected methods: " + ", ".join(unused)
+        )
+
+    declared_paths = dict(DEFAULT_METHOD_CHECKPOINTS)
+    declared_paths["bc"] = legacy_checkpoint
+    declared_paths.update(assignments)
+    provenance: dict[str, CheckpointProvenance] = {}
+    for method in sorted(selected & LEARNED_METHODS):
+        if method not in declared_paths:
+            raise ValueError(f"no checkpoint configured for learned method {method!r}")
+        resolved = _resolve_project_file(
+            root,
+            declared_paths[method],
+            description=f"checkpoint for method {method}",
+        )
+        relative_path = str(resolved.relative_to(root.resolve()))
+        provenance[method] = CheckpointProvenance(
+            relative_path=relative_path,
+            sha256=sha256_file(resolved),
+            container_path=f"/workspace/{relative_path}",
+        )
+    return provenance
+
+
 def worker_identity(worker_index: int, jobs: int, domain_base: int, run_id: str) -> tuple[int, str]:
     """Return the fixed DDS domain and Gazebo partition owned by one worker."""
 
@@ -114,12 +205,31 @@ def _resolve_scenario_path(root: Path, declared_path: str) -> Path:
     return candidate
 
 
-def load_split_records(root: Path, split: str) -> list[dict[str, Any]]:
-    """Load and fully verify one checked-in validation/test split."""
+def resolve_split_manifest_path(
+    root: Path,
+    split: str,
+    split_manifest: Path | None = None,
+) -> Path:
+    """Resolve a default or explicit split manifest without weakening split checks."""
 
     if split not in {"validation", "test"}:
         raise ValueError("split must be validation or test")
-    split_path = root / "scenarios" / "splits" / f"{split}.yaml"
+    declared = split_manifest or Path("scenarios") / "splits" / f"{split}.yaml"
+    candidate = declared if declared.is_absolute() else root / declared
+    resolved = candidate.resolve()
+    if not resolved.is_file():
+        raise FileNotFoundError(f"split manifest does not exist: {resolved}")
+    return resolved
+
+
+def load_split_records(
+    root: Path,
+    split: str,
+    split_manifest: Path | None = None,
+) -> list[dict[str, Any]]:
+    """Load and fully verify one checked-in validation/test split."""
+
+    split_path = resolve_split_manifest_path(root, split, split_manifest)
     document = yaml.safe_load(split_path.read_text(encoding="utf-8"))
     if document.get("split") != split or not isinstance(document.get("scenarios"), list):
         raise ValueError(f"invalid split manifest: {split_path}")
@@ -177,7 +287,7 @@ def experiment_fingerprint(
     methods: Sequence[str],
     high_density_methods: Sequence[str],
     timeout_s: float,
-    checkpoint_sha256: str | None,
+    method_checkpoints: Mapping[str, CheckpointProvenance],
     project_commit: str,
 ) -> str:
     """Identify exactly one frozen experiment configuration."""
@@ -187,7 +297,13 @@ def experiment_fingerprint(
         "methods": list(methods),
         "high_density_methods": list(high_density_methods),
         "timeout_s": timeout_s,
-        "checkpoint_sha256": checkpoint_sha256,
+        "method_checkpoints": {
+            method: {
+                "path": checkpoint.relative_path,
+                "sha256": checkpoint.sha256,
+            }
+            for method, checkpoint in sorted(method_checkpoints.items())
+        },
         "scenarios": [
             {
                 "scenario_id": record["scenario_id"],
@@ -204,11 +320,13 @@ def build_tasks(
     methods: Sequence[str],
     high_density_methods: Sequence[str],
     timeout_s: float,
+    method_checkpoints: Mapping[str, CheckpointProvenance] | None = None,
 ) -> list[EpisodeTask]:
     """Expand scenario records into a deterministic, duplicate-free task list."""
 
     if timeout_s <= 0.0:
         raise ValueError("timeout must be positive")
+    checkpoints = method_checkpoints or {}
     tasks: list[EpisodeTask] = []
     stems: set[str] = set()
     for record in records:
@@ -216,6 +334,9 @@ def build_tasks(
         if record["density"] == "high":
             selected_methods.extend(high_density_methods)
         for method in selected_methods:
+            checkpoint = checkpoints.get(method)
+            if method in LEARNED_METHODS and method_checkpoints is not None and checkpoint is None:
+                raise ValueError(f"no checkpoint provenance supplied for learned method {method!r}")
             stem = f"{record['scenario_id']}_eval_{method}"
             if stem in stems:
                 raise ValueError(f"duplicate logical episode stem: {stem}")
@@ -233,6 +354,9 @@ def build_tasks(
                     scenario_relpath=str(record["scenario_relpath"]),
                     scenario_sha256=str(record["scenario_sha256"]),
                     method=method,
+                    checkpoint_path=checkpoint.relative_path if checkpoint else "",
+                    checkpoint_sha256=checkpoint.sha256 if checkpoint else "",
+                    checkpoint_container_path=checkpoint.container_path if checkpoint else "",
                     episode_stem=stem,
                     timeout_s=timeout_s,
                     robot_start=str(record["robot_start"]),
@@ -253,7 +377,6 @@ def episode_id(task: EpisodeTask, attempt: int) -> str:
 
 def manifest_rows(
     tasks: Sequence[EpisodeTask],
-    checkpoint_sha256: str | None,
     project_commit: str,
 ) -> list[dict[str, Any]]:
     """Build the stable logical-episode table written before simulation."""
@@ -280,7 +403,8 @@ def manifest_rows(
             "pedestrian_config_hash": task.pedestrian_config_hash,
             "scenario_path": task.scenario_relpath,
             "scenario_sha256": task.scenario_sha256,
-            "checkpoint_sha256": checkpoint_sha256 or "",
+            "checkpoint_path": task.checkpoint_path,
+            "checkpoint_sha256": task.checkpoint_sha256,
             "project_commit": project_commit,
             "timeout_s": task.timeout_s,
         }
@@ -338,8 +462,10 @@ def validate_existing_attempts(tasks: Sequence[EpisodeTask], root: Path, resume:
             inspect_attempt(root, episode_id(task, attempt)) for attempt in range(MAX_ATTEMPTS)
         ]
         if not resume and any(record is not None for record in existing):
-            first = next(record for record in existing if record is not None)
-            raise FileExistsError(f"refusing to overwrite existing episode: {first['episode_id']}")
+            first_existing = next(record for record in existing if record is not None)
+            raise FileExistsError(
+                f"refusing to overwrite existing episode: {first_existing['episode_id']}"
+            )
         first, second = existing
         if second is not None and first is None:
             raise RuntimeError(f"retry exists without primary attempt: {second['episode_id']}")
@@ -375,7 +501,6 @@ def run_task(
     root: Path,
     domain: int,
     partition: str,
-    checkpoint_container_path: str | None,
     resume: bool,
 ) -> dict[str, Any]:
     """Run or resume one logical episode, retaining one retry at most."""
@@ -393,6 +518,8 @@ def run_task(
                     "task_index": task.task_index,
                     "scenario_id": task.scenario_id,
                     "method": task.method,
+                    "checkpoint_path": task.checkpoint_path,
+                    "checkpoint_sha256": task.checkpoint_sha256,
                     "status": "complete",
                     "episode_id": identifier,
                     "attempts": attempts,
@@ -410,10 +537,11 @@ def run_task(
                 "IGN_PARTITION": partition,
             }
         )
-        if task.method == "bc":
-            if checkpoint_container_path is None:
-                raise RuntimeError("method bc requires --checkpoint")
-            environment["RAMP_BC_MODEL_PATH"] = checkpoint_container_path
+        if task.method in LEARNED_METHODS:
+            if not task.checkpoint_container_path or not task.checkpoint_sha256:
+                raise RuntimeError(f"method {task.method} requires checkpoint provenance")
+            environment["RAMP_BC_MODEL_PATH"] = task.checkpoint_container_path
+            environment["RAMP_CHECKPOINT_SHA256"] = task.checkpoint_sha256
         print(
             f"[worker domain={domain}] RUN task={task.task_index} "
             f"attempt={attempt} episode={identifier}",
@@ -447,6 +575,8 @@ def run_task(
                 "task_index": task.task_index,
                 "scenario_id": task.scenario_id,
                 "method": task.method,
+                "checkpoint_path": task.checkpoint_path,
+                "checkpoint_sha256": task.checkpoint_sha256,
                 "status": "complete",
                 "episode_id": identifier,
                 "attempts": attempts,
@@ -460,6 +590,8 @@ def run_task(
         "task_index": task.task_index,
         "scenario_id": task.scenario_id,
         "method": task.method,
+        "checkpoint_path": task.checkpoint_path,
+        "checkpoint_sha256": task.checkpoint_sha256,
         "status": "incomplete",
         "episode_id": None,
         "attempts": attempts,
@@ -522,6 +654,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--split", choices=("validation", "test"), required=True)
     parser.add_argument(
+        "--split-manifest",
+        type=Path,
+        help="Explicit split YAML; its declared split must still match --split.",
+    )
+    parser.add_argument(
         "--methods",
         nargs="+",
         default=("base", "bc"),
@@ -539,6 +676,17 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--checkpoint",
         type=Path,
         default=ROOT / "checkpoints" / "dagger" / "coverage_safety_aligned" / "best.onnx",
+        help="Legacy checkpoint for method bc; prefer --method-checkpoint for new runs.",
+    )
+    parser.add_argument(
+        "--method-checkpoint",
+        action="append",
+        default=[],
+        metavar="METHOD=PATH",
+        help=(
+            "Repeatable learned-method checkpoint override. Defaults are registered for "
+            "bc_uniform, mwbc, and pgrr."
+        ),
     )
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "final")
     parser.add_argument("--resume", action="store_true")
@@ -556,28 +704,32 @@ def main(argv: Sequence[str] | None = None) -> int:
     overlap = sorted(set(methods) & set(high_density_methods))
     if overlap:
         raise ValueError(f"methods repeated across full/high-density groups: {overlap}")
-    records = load_split_records(ROOT, args.split)
+    selected_methods = (*methods, *high_density_methods)
+    method_checkpoints = resolve_method_checkpoints(
+        ROOT,
+        selected_methods,
+        args.checkpoint,
+        args.method_checkpoint,
+    )
+    split_manifest_path = resolve_split_manifest_path(ROOT, args.split, args.split_manifest)
+    records = load_split_records(ROOT, args.split, split_manifest_path)
     project_commit = _git_output(ROOT, "rev-parse", "HEAD")
-    checkpoint_path = args.checkpoint.resolve()
-    checkpoint_sha256: str | None = None
-    checkpoint_container_path: str | None = None
-    if "bc" in methods or "bc" in high_density_methods:
-        if not checkpoint_path.is_file():
-            raise FileNotFoundError(f"checkpoint does not exist: {checkpoint_path}")
-        if ROOT.resolve() not in checkpoint_path.parents:
-            raise ValueError("checkpoint must be inside PROJECT_ROOT for the container runtime")
-        checkpoint_sha256 = sha256_file(checkpoint_path)
-        checkpoint_container_path = f"/workspace/{checkpoint_path.relative_to(ROOT.resolve())}"
 
     run_id = experiment_fingerprint(
         records,
         methods,
         high_density_methods,
         args.timeout,
-        checkpoint_sha256,
+        method_checkpoints,
         project_commit,
     )
-    tasks = build_tasks(records, methods, high_density_methods, args.timeout)
+    tasks = build_tasks(
+        records,
+        methods,
+        high_density_methods,
+        args.timeout,
+        method_checkpoints,
+    )
     validate_existing_attempts(tasks, ROOT, args.resume)
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -587,7 +739,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise FileExistsError(f"refusing to overwrite run manifest: {run_manifest_path}")
     _write_or_validate_parquet(
         episode_manifest_path,
-        manifest_rows(tasks, checkpoint_sha256, project_commit),
+        manifest_rows(tasks, project_commit),
         args.resume,
     )
 
@@ -603,7 +755,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 root=ROOT,
                 domain=domain,
                 partition=partition,
-                checkpoint_container_path=checkpoint_container_path,
                 resume=args.resume,
             )
             for task in assigned
@@ -624,20 +775,34 @@ def main(argv: Sequence[str] | None = None) -> int:
                 worker_errors.append(f"worker {worker_index}: {type(error).__name__}: {error}")
 
     results.sort(key=lambda result: int(result["task_index"]))
+    split_manifest_display = str(split_manifest_path)
+    try:
+        split_manifest_display = str(split_manifest_path.relative_to(ROOT.resolve()))
+    except ValueError:
+        pass
+    checkpoint_payload = {
+        method: {
+            "path": checkpoint.relative_path,
+            "sha256": checkpoint.sha256,
+        }
+        for method, checkpoint in sorted(method_checkpoints.items())
+    }
+    legacy_checkpoint = method_checkpoints.get("bc")
     payload: dict[str, Any] = {
         "schema_version": 1,
         "run_id": run_id,
         "split": args.split,
+        "split_manifest": split_manifest_display,
+        "split_manifest_sha256": sha256_file(split_manifest_path),
         "methods": list(methods),
         "high_density_methods": list(high_density_methods),
         "requested_jobs": args.jobs,
         "effective_jobs": jobs,
         "timeout_s": args.timeout,
         "project_commit": project_commit,
-        "checkpoint": (
-            str(checkpoint_path.relative_to(ROOT.resolve())) if checkpoint_sha256 else None
-        ),
-        "checkpoint_sha256": checkpoint_sha256,
+        "method_checkpoints": checkpoint_payload,
+        "checkpoint": legacy_checkpoint.relative_path if legacy_checkpoint else None,
+        "checkpoint_sha256": legacy_checkpoint.sha256 if legacy_checkpoint else None,
         "episode_manifest": str(episode_manifest_path.relative_to(ROOT)),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "expected_task_count": len(tasks),

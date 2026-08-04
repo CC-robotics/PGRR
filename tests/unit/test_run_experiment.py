@@ -1,8 +1,10 @@
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 _SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "evaluate" / "run_experiment.py"
 _SPEC = importlib.util.spec_from_file_location("ramp_run_experiment", _SCRIPT)
@@ -39,6 +41,95 @@ def test_normalize_methods_supports_aliases_and_rejects_duplicates() -> None:
         _MODULE.normalize_methods(["bc", "dagger"])
     with pytest.raises(ValueError, match="unsupported"):
         _MODULE.normalize_methods(["random"])
+    assert _MODULE.normalize_methods(["bc_uniform", "mwbc", "pgrr"]) == (
+        "bc_uniform",
+        "mwbc",
+        "pgrr",
+    )
+
+
+def test_method_checkpoint_defaults_overrides_and_provenance(tmp_path: Path) -> None:
+    defaults = _MODULE.resolve_method_checkpoints(
+        _SCRIPT.parents[2],
+        ("bc_uniform", "pgrr"),
+        _SCRIPT.parents[2] / "checkpoints/dagger/coverage_safety_aligned/best.onnx",
+        (),
+    )
+    assert defaults["bc_uniform"].relative_path == ("checkpoints/bc/uniform_scenario/best.onnx")
+    assert defaults["pgrr"].relative_path == (
+        "checkpoints/dagger/coverage_safety_aligned/best.onnx"
+    )
+    assert len(defaults["pgrr"].sha256) == 64
+
+    custom = tmp_path / "models" / "custom.onnx"
+    custom.parent.mkdir()
+    custom.write_bytes(b"checkpoint")
+    overridden = _MODULE.resolve_method_checkpoints(
+        tmp_path,
+        ("pgrr",),
+        Path("unused.onnx"),
+        ("pgrr=models/custom.onnx",),
+    )
+    assert overridden["pgrr"].relative_path == "models/custom.onnx"
+    assert overridden["pgrr"].container_path == "/workspace/models/custom.onnx"
+    assert overridden["pgrr"].sha256 == _MODULE.sha256_file(custom)
+
+    with pytest.raises(ValueError, match="does not use"):
+        _MODULE.resolve_method_checkpoints(
+            tmp_path,
+            ("base",),
+            Path("unused.onnx"),
+            ("base=models/custom.onnx",),
+        )
+    with pytest.raises(ValueError, match="unselected"):
+        _MODULE.resolve_method_checkpoints(
+            tmp_path,
+            ("pgrr",),
+            Path("unused.onnx"),
+            ("bc_uniform=models/custom.onnx",),
+        )
+
+
+def test_explicit_split_manifest_still_enforces_declared_split(tmp_path: Path) -> None:
+    generated = tmp_path / "scenarios" / "generated"
+    generated.mkdir(parents=True)
+    scenario_path = generated / "custom.json"
+    scenario = {
+        "ramp_metadata": {
+            "scenario_id": "custom_test",
+            "family": "crossing_flow",
+            "density": "low",
+            "seed": 7,
+            "split": "test",
+            "map_id": "map_empty",
+        },
+        "robots": [{"start": [0, 0, 0], "goal": [1, 0, 0]}],
+        "obstacles": {"dynamic": []},
+    }
+    scenario_path.write_text(json.dumps(scenario), encoding="utf-8")
+    manifest = tmp_path / "custom_split.yaml"
+    document = {
+        "split": "test",
+        "scenarios": [
+            {
+                "scenario_id": "custom_test",
+                "family": "crossing_flow",
+                "density": "low",
+                "seed": 7,
+                "map_id": "map_empty",
+                "path": "custom.json",
+                "sha256": _MODULE.sha256_file(scenario_path),
+            }
+        ],
+    }
+    manifest.write_text(yaml.safe_dump(document), encoding="utf-8")
+    records = _MODULE.load_split_records(tmp_path, "test", manifest)
+    assert [record["scenario_id"] for record in records] == ["custom_test"]
+
+    document["split"] = "validation"
+    manifest.write_text(yaml.safe_dump(document), encoding="utf-8")
+    with pytest.raises(ValueError, match="invalid split manifest"):
+        _MODULE.load_split_records(tmp_path, "test", manifest)
 
 
 def test_worker_identity_is_fixed_unique_and_bounded() -> None:
@@ -52,12 +143,30 @@ def test_worker_identity_is_fixed_unique_and_bounded() -> None:
 
 def test_build_tasks_produces_deterministic_unique_episode_ids(tmp_path: Path) -> None:
     records = [_record(tmp_path), _record(tmp_path, "group_blocking_high_test_s03420")]
-    tasks = _MODULE.build_tasks(records, ("base", "bc"), (), 180.0)
-    assert len(tasks) == 4
+    checkpoints = {
+        "bc_uniform": _MODULE.CheckpointProvenance(
+            "checkpoints/bc/uniform.onnx", "c" * 64, "/workspace/checkpoints/bc/uniform.onnx"
+        ),
+        "pgrr": _MODULE.CheckpointProvenance(
+            "checkpoints/dagger/pgrr.onnx", "d" * 64, "/workspace/checkpoints/dagger/pgrr.onnx"
+        ),
+    }
+    tasks = _MODULE.build_tasks(
+        records,
+        ("base", "bc_uniform", "pgrr"),
+        (),
+        180.0,
+        checkpoints,
+    )
+    assert len(tasks) == 6
     identifiers = [_MODULE.episode_id(task, 0) for task in tasks]
     assert len(identifiers) == len(set(identifiers))
     assert identifiers[0].endswith("_eval_base_a0_dwb")
     assert _MODULE.episode_id(tasks[0], 1).endswith("_a1_dwb")
+    assert any(identifier.endswith("_eval_bc_uniform_a0_dwb") for identifier in identifiers)
+    assert any(identifier.endswith("_eval_pgrr_a0_dwb") for identifier in identifiers)
+    pgrr_task = next(task for task in tasks if task.method == "pgrr")
+    assert pgrr_task.checkpoint_sha256 == "d" * 64
 
 
 def test_validate_completed_results_rejects_missing_and_duplicate_tasks(tmp_path: Path) -> None:
@@ -88,11 +197,17 @@ def test_high_density_method_selection_builds_64_final_tasks(tmp_path: Path) -> 
             record["family"] = f"family{family_index}"
             record["density"] = density
             records.append(record)
+    checkpoints = {
+        "bc": _MODULE.CheckpointProvenance(
+            "checkpoints/dagger/best.onnx", "c" * 64, "/workspace/checkpoints/dagger/best.onnx"
+        )
+    }
     tasks = _MODULE.build_tasks(
         records,
         ("base", "bc"),
         ("standard", "heuristic"),
         180.0,
+        checkpoints,
     )
     assert len(tasks) == 64
     assert sum(task.method == "base" for task in tasks) == 24
@@ -101,10 +216,73 @@ def test_high_density_method_selection_builds_64_final_tasks(tmp_path: Path) -> 
     assert sum(task.method == "heuristic" for task in tasks) == 8
     assert all(task.density == "high" for task in tasks if task.method in {"standard", "heuristic"})
 
-    rows = _MODULE.manifest_rows(tasks, "c" * 64, "d" * 40)
+    rows = _MODULE.manifest_rows(tasks, "d" * 40)
     assert len({row["pair_id"] for row in rows}) == 24
     assert all(row["source_policy"] == row["method"] for row in rows)
     assert {row["replicate"] for row in rows} == {0}
+    assert {row["checkpoint_sha256"] for row in rows if row["method"] == "bc"} == {"c" * 64}
+    assert {row["checkpoint_sha256"] for row in rows if row["method"] == "base"} == {""}
+
+
+def test_fingerprint_includes_complete_method_checkpoint_map(tmp_path: Path) -> None:
+    records = [_record(tmp_path)]
+    uniform = _MODULE.CheckpointProvenance("uniform.onnx", "a" * 64, "/workspace/uniform.onnx")
+    pgrr = _MODULE.CheckpointProvenance("pgrr.onnx", "b" * 64, "/workspace/pgrr.onnx")
+    first = _MODULE.experiment_fingerprint(
+        records,
+        ("bc_uniform", "pgrr"),
+        (),
+        180.0,
+        {"bc_uniform": uniform, "pgrr": pgrr},
+        "d" * 40,
+    )
+    changed = _MODULE.experiment_fingerprint(
+        records,
+        ("bc_uniform", "pgrr"),
+        (),
+        180.0,
+        {
+            "bc_uniform": uniform,
+            "pgrr": _MODULE.CheckpointProvenance("pgrr.onnx", "e" * 64, "/workspace/pgrr.onnx"),
+        },
+        "d" * 40,
+    )
+    assert first != changed
+
+
+def test_parse_args_accepts_repeatable_method_checkpoints_and_split_manifest() -> None:
+    args = _MODULE.parse_args(
+        [
+            "--split",
+            "validation",
+            "--split-manifest",
+            "scenarios/splits/validation.yaml",
+            "--methods",
+            "bc_uniform",
+            "pgrr",
+            "--method-checkpoint",
+            "bc_uniform=checkpoints/bc/uniform_scenario/best.onnx",
+            "--method-checkpoint",
+            "pgrr=checkpoints/dagger/coverage_safety_aligned/best.onnx",
+        ]
+    )
+    assert args.split_manifest == Path("scenarios/splits/validation.yaml")
+    assert args.method_checkpoint == [
+        "bc_uniform=checkpoints/bc/uniform_scenario/best.onnx",
+        "pgrr=checkpoints/dagger/coverage_safety_aligned/best.onnx",
+    ]
+
+
+def test_runtime_maps_new_source_policies_to_bc_without_renaming_logs() -> None:
+    root = _SCRIPT.parents[2]
+    runtime = (root / "scripts/arena/run_baseline_episode_inner.sh").read_text(encoding="utf-8")
+    wrapper = (root / "scripts/arena/run_baseline_episode.sh").read_text(encoding="utf-8")
+    for method in ("bc_uniform", "mwbc", "pgrr"):
+        assert method in runtime
+        assert method in wrapper or method == "bc_uniform"
+    assert '-p source_policy:="${SOURCE_POLICY}"' in runtime
+    assert 'recovery_policy_type="bc"' in runtime
+    assert "checkpoints/dagger/coverage_safety_aligned/best.onnx" in wrapper
 
 
 def test_inspect_attempt_preserves_retryable_outcome_without_stream(tmp_path: Path) -> None:

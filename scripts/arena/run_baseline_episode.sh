@@ -28,6 +28,16 @@ fi
 
 export RAMP_ENABLE_CMD_MUX=1
 export RAMP_DISABLE_AUTO_RESET=1
+source_policy="${RAMP_SOURCE_POLICY:-base}"
+default_model_path="/workspace/checkpoints/bc/uniform_scenario/best.onnx"
+case "${source_policy}" in
+    pgrr)
+        default_model_path="/workspace/checkpoints/dagger/coverage_safety_aligned/best.onnx"
+        ;;
+    mwbc)
+        default_model_path="/workspace/checkpoints/bc/mwbc_scenario/best.onnx"
+        ;;
+esac
 exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     env \
     RAMP_SCENARIO="/workspace/${relative}" \
@@ -35,8 +45,9 @@ exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     RAMP_EPISODE_TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}" \
     RAMP_ACTOR_UPDATE_HZ="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
     RAMP_TTC_THRESHOLD_S="${RAMP_TTC_THRESHOLD_S:-1.5}" \
-    RAMP_SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}" \
-    RAMP_BC_MODEL_PATH="${RAMP_BC_MODEL_PATH:-/workspace/checkpoints/bc/uniform_scenario/best.onnx}" \
+    RAMP_SOURCE_POLICY="${source_policy}" \
+    RAMP_BC_MODEL_PATH="${RAMP_BC_MODEL_PATH:-${default_model_path}}" \
+    RAMP_CHECKPOINT_SHA256="${RAMP_CHECKPOINT_SHA256:-}" \
     RAMP_HOST_UID="$(id -u)" \
     RAMP_HOST_GID="$(id -g)" \
     ROS_DOMAIN_ID="${ros_domain_id}" \
