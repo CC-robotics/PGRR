@@ -14,7 +14,9 @@ from ramp_core.action_space import (
 from ramp_core.observations import HumanState
 from ramp_core.recovery.options import (
     BoundedBackupOption,
+    ObservableNetRetreatGuard,
     PrivilegedYieldOption,
+    constrain_net_retreat,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
     constrain_repeated_backup,
@@ -98,6 +100,55 @@ def test_bounded_backup_rejects_motion_beyond_mask_validated_segment() -> None:
 def test_bounded_backup_rejects_invalid_configuration(kwargs: dict[str, float]) -> None:
     with pytest.raises(ValueError):
         BoundedBackupOption(**kwargs)
+
+
+def test_observable_retreat_guard_uses_task_progress_high_water_mark() -> None:
+    guard = ObservableNetRetreatGuard(task_heading_rad=0.0, maximum_net_retreat_m=1.4)
+    assert guard.backup_permitted(Pose2D(5.0, 12.0, 0.0), backup_distance_m=0.45)
+    assert guard.observe(Pose2D(8.0, 12.0, 0.0)) == pytest.approx(0.0)
+    assert guard.backup_permitted(Pose2D(7.1, 12.0, 0.0), backup_distance_m=0.45)
+    assert not guard.backup_permitted(Pose2D(7.0, 12.0, 0.0), backup_distance_m=0.45)
+
+
+def test_observable_retreat_guard_allows_backup_that_advances_task_progress() -> None:
+    guard = ObservableNetRetreatGuard(task_heading_rad=0.0, maximum_net_retreat_m=1.4)
+    guard.observe(Pose2D(8.0, 12.0, 0.0))
+    # When facing opposite the task heading, reverse motion increases the task
+    # coordinate and therefore cannot violate a net-retreat cap.
+    assert guard.backup_permitted(Pose2D(6.5, 12.0, np.pi), backup_distance_m=0.45)
+
+
+def test_net_retreat_constraint_only_removes_backup() -> None:
+    guard = ObservableNetRetreatGuard(
+        task_heading_rad=0.0,
+        maximum_net_retreat_m=1.4,
+        best_task_coordinate_m=8.0,
+    )
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    constrained = constrain_net_retreat(
+        mask,
+        guard=guard,
+        pose=Pose2D(7.0, 12.0, 0.0),
+        backup_distance_m=0.45,
+    )
+    expected = mask.copy()
+    expected[BACKUP_ACTION_ID] = False
+    assert np.array_equal(constrained, expected)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"task_heading_rad": float("nan")},
+        {"task_heading_rad": 0.0, "maximum_net_retreat_m": 0.0},
+        {"task_heading_rad": 0.0, "maximum_net_retreat_m": float("inf")},
+    ],
+)
+def test_observable_retreat_guard_rejects_invalid_configuration(
+    kwargs: dict[str, float],
+) -> None:
+    with pytest.raises(ValueError):
+        ObservableNetRetreatGuard(**kwargs)
 
 
 def _continue(**overrides: object) -> bool:

@@ -50,7 +50,9 @@ from ramp_core.planning.online import (
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.options import (
     BoundedBackupOption,
+    ObservableNetRetreatGuard,
     PrivilegedYieldOption,
+    constrain_net_retreat,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
     constrain_repeated_backup,
@@ -156,6 +158,13 @@ class RecoveryManagerNode(Node):
             speed_mps=self._float("backup_speed_mps"),
             clearance_improvement_m=self._float("backup_clearance_improvement_m"),
             mask_validated_distance_m=self._float("backup_mask_validated_distance_m"),
+        )
+        self._bc_retreat_guard = ObservableNetRetreatGuard(
+            task_heading_rad=math.atan2(
+                self._goal.y - self._start.y,
+                self._goal.x - self._start.x,
+            ),
+            maximum_net_retreat_m=self._float("bc_maximum_net_retreat_m"),
         )
         if self._policy_type == "bc":
             self._policy = ONNXRecoveryPolicy(
@@ -353,12 +362,13 @@ class RecoveryManagerNode(Node):
             "bc_backup_budget_decisions": 2,
             "bc_replan_budget_decisions": 1,
             "bc_progress_reset_m": 0.25,
+            "bc_maximum_net_retreat_m": 1.4,
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
             "footprint_stop_clearance_m": 0.48,
-            "collision_latched_stop_clearance_m": 0.60,
-            "collision_latched_action_clearance_m": 0.65,
+            "collision_latched_stop_clearance_m": 0.85,
+            "collision_latched_action_clearance_m": 0.90,
             "footprint_backup_forward_angle_degrees": 80.0,
             "emergency_hold_s": 0.5,
             "emergency_backup_duration_s": 0.8,
@@ -370,7 +380,7 @@ class RecoveryManagerNode(Node):
             # positive lateral margin while permitting in-place narrow-door
             # alignment instead of a permanent conservative stop.
             "emergency_rotation_clearance_m": 0.24,
-            "emergency_forward_entry_clearance_m": 0.65,
+            "emergency_forward_entry_clearance_m": 0.85,
             "emergency_backup_reset_clear_s": 3.0,
             "emergency_minimum_retreat_pulses": 3,
             "emergency_turn_speed_radps": 0.6,
@@ -767,7 +777,26 @@ class RecoveryManagerNode(Node):
         return self._laser_clearance(0.0)
 
     def _footprint_stop_distance(self, linear_velocity: float) -> float:
-        margin = self._float("footprint_stop_clearance_m")
+        """Return the omnidirectional physical-footprint stop distance.
+
+        A collision-risk latch describes an obstacle in the commanded motion
+        sector.  Applying its larger dynamic margin to the nearest return in
+        every direction lets a static side wall sustain an emergency forever
+        after the approaching actor has gone.  The independent footprint
+        margin remains active in every direction; the latched margin is
+        applied by :meth:`_motion_stop_distance` in the actual direction of
+        travel.
+        """
+        return stopping_distance(
+            abs(linear_velocity),
+            self._float("braking_acceleration_mps2"),
+            self._float("control_latency_s"),
+            self._float("footprint_stop_clearance_m"),
+        )
+
+    def _motion_stop_distance(self, linear_velocity: float) -> float:
+        """Return the directional stop distance, including a collision latch."""
+        margin = self._float("stopping_margin_m")
         if self._collision_safety_latched:
             margin = max(margin, self._float("collision_latched_stop_clearance_m"))
         return stopping_distance(
@@ -950,6 +979,9 @@ class RecoveryManagerNode(Node):
         mask = self._action_mask(pose, collision_risk=failure.collision_risk)
         if self._policy_type == "bc":
             self._update_bc_progress_budget(float(observation.goal_polar[0]))
+            # Observe every learned decision so the cap is relative to the
+            # furthest task progress achieved, not to a retreating local cycle.
+            self._bc_retreat_guard.observe(pose)
             mask = constrain_rejoin_actions(
                 mask,
                 collision_risk=failure.collision_risk,
@@ -971,6 +1003,12 @@ class RecoveryManagerNode(Node):
                 mask,
                 backup_count=self._bc_backups_without_progress,
                 backup_budget=self._integer("bc_backup_budget_decisions"),
+            )
+            mask = constrain_net_retreat(
+                mask,
+                guard=self._bc_retreat_guard,
+                pose=pose,
+                backup_distance_m=self._float("backup_mask_validated_distance_m"),
             )
         decision = self._policy.select_action(observation, mask)
         if self._policy_type == "bc":
@@ -1073,14 +1111,9 @@ class RecoveryManagerNode(Node):
         pose = self._world_pose()
         failure = self._effective_failure(pose)
         distance = math.dist((pose.x, pose.y), (self._goal.x, self._goal.y))
-        velocity = max(0.0, float(self._odom.twist.twist.linear.x))
-        stop = stopping_distance(
-            velocity,
-            self._float("braking_acceleration_mps2"),
-            self._float("control_latency_s"),
-            self._float("stopping_margin_m"),
-        )
-        motion_clearance = self._motion_clearance(float(self._odom.twist.twist.linear.x))
+        linear_velocity = float(self._odom.twist.twist.linear.x)
+        stop = self._motion_stop_distance(linear_velocity)
+        motion_clearance = self._motion_clearance(linear_velocity)
         nearest_clearance = self._nearest_clearance()
         self._collision_safety_latched = update_collision_safety_latch(
             latched=self._collision_safety_latched,
@@ -1092,7 +1125,7 @@ class RecoveryManagerNode(Node):
                 + self._float("emergency_release_hysteresis_m")
             ),
         )
-        footprint_stop = self._footprint_stop_distance(float(self._odom.twist.twist.linear.x))
+        footprint_stop = self._footprint_stop_distance(linear_velocity)
         footprint_hazard = nearest_clearance < footprint_stop
         raw_emergency = emergency_hazard_with_hysteresis(
             emergency_active=self._emergency,
@@ -1220,14 +1253,8 @@ class RecoveryManagerNode(Node):
         immediate_safety_stop = False
         now_s = self.get_clock().now().nanoseconds * 1.0e-9
         if self._odom is not None and self._lidar_stack:
-            velocity = max(0.0, float(self._odom.twist.twist.linear.x))
-            stop = stopping_distance(
-                velocity,
-                self._float("braking_acceleration_mps2"),
-                self._float("control_latency_s"),
-                self._float("stopping_margin_m"),
-            )
             linear_velocity = float(self._odom.twist.twist.linear.x)
+            stop = self._motion_stop_distance(linear_velocity)
             immediate_safety_stop = self._motion_clearance(
                 linear_velocity
             ) < stop or self._nearest_clearance() < self._footprint_stop_distance(linear_velocity)

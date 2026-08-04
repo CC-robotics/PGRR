@@ -96,6 +96,65 @@ class BoundedBackupOption:
 
 
 @dataclass
+class ObservableNetRetreatGuard:
+    """Bound policy-directed retreat relative to achieved task progress.
+
+    The guard projects the robot pose onto the fixed start-to-goal task axis
+    and remembers the furthest coordinate reached.  A BACKUP option is legal
+    only when its complete mask-validated segment would remain inside the
+    configured net-retreat budget.  This uses robot odometry and the task goal
+    only; it neither consumes privileged actor state nor relaxes a planning or
+    LiDAR constraint.
+
+    Emergency safety motion deliberately remains outside this policy guard:
+    an immediate collision-avoidance command must retain priority over task
+    progress.  Those commands are independently bounded and rechecked by the
+    emergency controller.
+    """
+
+    task_heading_rad: float
+    maximum_net_retreat_m: float = 1.4
+    best_task_coordinate_m: float | None = None
+
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.task_heading_rad):
+            raise ValueError("task heading must be finite")
+        if not math.isfinite(self.maximum_net_retreat_m) or self.maximum_net_retreat_m <= 0.0:
+            raise ValueError("maximum net retreat must be finite and positive")
+        if self.best_task_coordinate_m is not None and not math.isfinite(
+            self.best_task_coordinate_m
+        ):
+            raise ValueError("best task coordinate must be finite")
+
+    def task_coordinate(self, pose: Pose2D) -> float:
+        """Return the observable longitudinal task coordinate of ``pose``."""
+
+        return pose.x * math.cos(self.task_heading_rad) + pose.y * math.sin(self.task_heading_rad)
+
+    def observe(self, pose: Pose2D) -> float:
+        """Update the progress high-water mark and return current net retreat."""
+
+        coordinate = self.task_coordinate(pose)
+        if self.best_task_coordinate_m is None:
+            self.best_task_coordinate_m = coordinate
+        else:
+            self.best_task_coordinate_m = max(self.best_task_coordinate_m, coordinate)
+        return self.best_task_coordinate_m - coordinate
+
+    def backup_permitted(self, pose: Pose2D, *, backup_distance_m: float) -> bool:
+        """Return whether a full reverse segment stays within the retreat cap."""
+
+        if not math.isfinite(backup_distance_m) or backup_distance_m < 0.0:
+            raise ValueError("backup distance must be finite and non-negative")
+        self.observe(pose)
+        assert self.best_task_coordinate_m is not None
+        reverse_task_delta = -backup_distance_m * math.cos(pose.yaw - self.task_heading_rad)
+        endpoint_coordinate = self.task_coordinate(pose) + reverse_task_delta
+        endpoint_retreat = self.best_task_coordinate_m - endpoint_coordinate
+        return endpoint_retreat <= self.maximum_net_retreat_m + 1.0e-9
+
+
+@dataclass
 class PrivilegedYieldOption:
     """Commit to longitudinal yielding until approaching humans have passed."""
 
@@ -369,5 +428,22 @@ def constrain_repeated_backup(
         constrained[:WAIT_ACTION_ID].any() or constrained[REPLAN_ACTION_ID]
     )
     if backup_count >= backup_budget and planned_escape_available:
+        constrained[BACKUP_ACTION_ID] = False
+    return constrained
+
+
+def constrain_net_retreat(
+    mask: npt.NDArray[np.bool_],
+    *,
+    guard: ObservableNetRetreatGuard,
+    pose: Pose2D,
+    backup_distance_m: float,
+) -> npt.NDArray[np.bool_]:
+    """Apply a policy BACKUP retreat cap without changing any other action."""
+
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if not guard.backup_permitted(pose, backup_distance_m=backup_distance_m):
         constrained[BACKUP_ACTION_ID] = False
     return constrained
