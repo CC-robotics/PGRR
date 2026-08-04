@@ -15,6 +15,7 @@ from ramp_core.observations import HumanState
 from ramp_core.recovery.options import (
     BoundedBackupOption,
     ObservableNetRetreatGuard,
+    ObservableSubgoalStallGuard,
     PrivilegedYieldOption,
     constrain_net_retreat,
     constrain_recurrent_yield_escape,
@@ -22,6 +23,7 @@ from ramp_core.recovery.options import (
     constrain_repeated_backup,
     constrain_repeated_replan,
     constrain_stalled_rejoin,
+    constrain_stalled_subgoals,
     constrain_stalled_wait,
     should_continue_recovery_option,
 )
@@ -163,6 +165,41 @@ def test_retreat_guard_can_bound_optional_emergency_backup_pulse() -> None:
     )
     assert guard.backup_permitted(Pose2D(6.8, 12.0, 0.0), backup_distance_m=0.12)
     assert not guard.backup_permitted(Pose2D(6.7, 12.0, 0.0), backup_distance_m=0.12)
+
+
+def test_stationary_subgoal_retries_require_non_subgoal_escape() -> None:
+    guard = ObservableSubgoalStallGuard(retry_budget=3, minimum_displacement_m=0.08)
+    pose = Pose2D(2.0, 1.0, 0.0)
+    for _ in range(3):
+        guard.observe_decision(6, pose)
+    assert guard.escape_required
+    mask = constrain_stalled_subgoals(np.ones(ACTION_COUNT, dtype=np.bool_), escape_required=True)
+    assert not mask[:WAIT_ACTION_ID].any()
+    assert mask[WAIT_ACTION_ID]
+    assert mask[BACKUP_ACTION_ID]
+    guard.observe_decision(BACKUP_ACTION_ID, pose)
+    assert not guard.escape_required
+
+
+def test_subgoal_motion_resets_stationary_retry_count() -> None:
+    guard = ObservableSubgoalStallGuard(retry_budget=3, minimum_displacement_m=0.08)
+    guard.observe_decision(6, Pose2D(2.0, 1.0, 0.0))
+    guard.observe_decision(6, Pose2D(2.1, 1.0, 0.0))
+    guard.observe_decision(6, Pose2D(2.1, 1.0, 0.0))
+    assert not guard.escape_required
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"retry_budget": 0},
+        {"minimum_displacement_m": -0.1},
+        {"minimum_displacement_m": float("nan")},
+    ],
+)
+def test_subgoal_stall_guard_rejects_invalid_configuration(kwargs: dict[str, float]) -> None:
+    with pytest.raises(ValueError):
+        ObservableSubgoalStallGuard(**kwargs)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize(

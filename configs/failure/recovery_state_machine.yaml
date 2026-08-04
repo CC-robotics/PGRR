@@ -16,6 +16,8 @@ bc_backup_budget_decisions: 2
 bc_replan_budget_decisions: 1
 bc_progress_reset_m: 0.25
 bc_maximum_net_retreat_m: 1.4
+bc_subgoal_retry_budget_decisions: 4
+bc_subgoal_stall_displacement_m: 0.08
 maximum_recovery_duration_s: 8.0
 maximum_extended_recovery_duration_s: 30.0
 maximum_rejoin_duration_s: 5.0

@@ -159,6 +159,53 @@ class ObservableNetRetreatGuard:
 
 
 @dataclass
+class ObservableSubgoalStallGuard:
+    """Escalate a repeatedly stationary learned subgoal to a non-subgoal option."""
+
+    retry_budget: int = 4
+    minimum_displacement_m: float = 0.08
+    action_id: int | None = None
+    reference_position: tuple[float, float] | None = None
+    repeated_decisions: int = 0
+    escape_required: bool = False
+
+    def __post_init__(self) -> None:
+        if self.retry_budget <= 0:
+            raise ValueError("subgoal retry budget must be positive")
+        if not math.isfinite(self.minimum_displacement_m) or self.minimum_displacement_m < 0.0:
+            raise ValueError("subgoal displacement threshold must be finite and non-negative")
+
+    def reset(self) -> None:
+        self.action_id = None
+        self.reference_position = None
+        self.repeated_decisions = 0
+        self.escape_required = False
+
+    def observe_decision(self, action_id: int, pose: Pose2D) -> None:
+        """Update the guard after selecting an action from deployable observations."""
+
+        if not 0 <= action_id < ACTION_COUNT:
+            raise ValueError(f"action_id must be in [0, {ACTION_COUNT - 1}]")
+        if action_id >= WAIT_ACTION_ID:
+            if action_id in {BACKUP_ACTION_ID, REPLAN_ACTION_ID}:
+                self.reset()
+            return
+        position = (pose.x, pose.y)
+        moved = (
+            self.reference_position is None
+            or math.dist(position, self.reference_position) >= self.minimum_displacement_m
+        )
+        if action_id != self.action_id or moved:
+            self.action_id = action_id
+            self.reference_position = position
+            self.repeated_decisions = 1
+        else:
+            self.repeated_decisions += 1
+        if self.repeated_decisions >= self.retry_budget:
+            self.escape_required = True
+
+
+@dataclass
 class PrivilegedYieldOption:
     """Commit to longitudinal yielding until approaching humans have passed."""
 
@@ -455,4 +502,19 @@ def constrain_net_retreat(
             constrained[action.action_id] = False
     if not guard.backup_permitted(pose, backup_distance_m=backup_distance_m):
         constrained[BACKUP_ACTION_ID] = False
+    return constrained
+
+
+def constrain_stalled_subgoals(
+    mask: npt.NDArray[np.bool_],
+    *,
+    escape_required: bool,
+) -> npt.NDArray[np.bool_]:
+    """Temporarily remove subgoals after repeated stationary replanning."""
+
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if escape_required:
+        constrained[:WAIT_ACTION_ID] = False
     return constrained

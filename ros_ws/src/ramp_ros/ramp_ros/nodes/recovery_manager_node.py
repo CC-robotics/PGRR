@@ -51,6 +51,7 @@ from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecov
 from ramp_core.recovery.options import (
     BoundedBackupOption,
     ObservableNetRetreatGuard,
+    ObservableSubgoalStallGuard,
     PrivilegedYieldOption,
     constrain_net_retreat,
     constrain_recurrent_yield_escape,
@@ -58,6 +59,7 @@ from ramp_core.recovery.options import (
     constrain_repeated_backup,
     constrain_repeated_replan,
     constrain_stalled_rejoin,
+    constrain_stalled_subgoals,
     constrain_stalled_wait,
     should_continue_recovery_option,
 )
@@ -165,6 +167,10 @@ class RecoveryManagerNode(Node):
                 self._goal.x - self._start.x,
             ),
             maximum_net_retreat_m=self._float("bc_maximum_net_retreat_m"),
+        )
+        self._bc_subgoal_stall_guard = ObservableSubgoalStallGuard(
+            retry_budget=self._integer("bc_subgoal_retry_budget_decisions"),
+            minimum_displacement_m=self._float("bc_subgoal_stall_displacement_m"),
         )
         if self._policy_type == "bc":
             self._policy = ONNXRecoveryPolicy(
@@ -363,6 +369,8 @@ class RecoveryManagerNode(Node):
             "bc_replan_budget_decisions": 1,
             "bc_progress_reset_m": 0.25,
             "bc_maximum_net_retreat_m": 1.4,
+            "bc_subgoal_retry_budget_decisions": 4,
+            "bc_subgoal_stall_displacement_m": 0.08,
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
@@ -996,6 +1004,10 @@ class RecoveryManagerNode(Node):
                 release_threshold=self._float("bc_rejoin_block_threshold"),
             )
             mask = constrain_stalled_rejoin(mask, escape_required=stalled_rejoin)
+            mask = constrain_stalled_subgoals(
+                mask,
+                escape_required=self._bc_subgoal_stall_guard.escape_required,
+            )
             bc_wait_budget = self._integer("bc_wait_budget_decisions")
             mask = constrain_stalled_wait(
                 mask,
@@ -1026,6 +1038,7 @@ class RecoveryManagerNode(Node):
                 self._bc_backups_without_progress += 1
             elif decision.action_id == REPLAN_ACTION_ID:
                 self._bc_replans_without_progress += 1
+            self._bc_subgoal_stall_guard.observe_decision(decision.action_id, pose)
         return decision
 
     def _update_bc_progress_budget(self, distance_to_goal_m: float) -> None:
@@ -1043,6 +1056,7 @@ class RecoveryManagerNode(Node):
         self._bc_waits_without_progress = 0
         self._bc_backups_without_progress = 0
         self._bc_replans_without_progress = 0
+        self._bc_subgoal_stall_guard.reset()
 
     def _valid_progress(self) -> bool:
         if len(self._distance_history) < 2:

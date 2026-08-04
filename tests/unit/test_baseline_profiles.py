@@ -192,6 +192,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_replan_budget_decisions"] == 1
     assert config["bc_progress_reset_m"] == 0.25
     assert config["bc_maximum_net_retreat_m"] == 1.4
+    assert config["bc_subgoal_retry_budget_decisions"] == 4
+    assert config["bc_subgoal_stall_displacement_m"] == 0.08
     assert config["bc_rejoin_block_threshold"] == 0.65
     assert '"emergency_rotation_clearance_m": 0.24' in manager
     assert '"collision_latched_stop_clearance_m": 0.85' in manager
@@ -211,6 +213,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert manager.count("collision_latched_motion_clearance(") == 2
     assert "constrain_repeated_backup(" in manager
     assert "constrain_net_retreat(" in manager
+    assert "constrain_stalled_subgoals(" in manager
     assert "emergency_backup_permitted &= self._bc_retreat_guard.backup_permitted(" in manager
     assert "footprint_clearance_m=motion_clearance" in manager
     detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()
