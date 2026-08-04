@@ -17,6 +17,7 @@ from ramp_core.action_mask import (
     apply_observable_scan_mask,
     apply_path_corridor_mask,
     compute_action_mask,
+    path_corridor_target_is_permitted,
 )
 from ramp_core.action_space import (
     ACTION_COUNT,
@@ -50,6 +51,7 @@ from ramp_core.recovery.options import (
     PrivilegedYieldOption,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
+    constrain_repeated_backup,
     constrain_repeated_replan,
     constrain_stalled_rejoin,
     constrain_stalled_wait,
@@ -59,6 +61,7 @@ from ramp_core.recovery.safety import (
     EmergencyEscapeController,
     EmergencyEscapeMode,
     backup_increases_obstacle_clearance,
+    collision_latched_motion_clearance,
     emergency_hazard_with_hysteresis,
     emergency_mode_reason,
     update_collision_safety_latch,
@@ -190,6 +193,7 @@ class RecoveryManagerNode(Node):
         self._scan: LaserScan | None = None
         self._lidar_stack: deque[np.ndarray[Any, np.dtype[np.float32]]] = deque(maxlen=5)
         self._path: tuple[tuple[float, float], ...] = ()
+        self._task_corridor_path: tuple[tuple[float, float], ...] = ()
         self._map: OccupancyGrid | None = None
         self._privileged_humans: tuple[HumanState, ...] = ()
         self._previous_human_positions: tuple[tuple[float, float], ...] = ()
@@ -210,7 +214,9 @@ class RecoveryManagerNode(Node):
         self._expert_previous_side = 0
         self._expert_repeated_waits = 0
         self._bc_waits_without_progress = 0
+        self._bc_backups_without_progress = 0
         self._bc_replans_without_progress = 0
+        self._bc_progress_reference_distance_m: float | None = None
         self._failure = FailurePrediction(0.0, 0.0, 0.0, 0.0)
         self._planner_status = PlannerStatus.UNKNOWN
         self._armed = False
@@ -330,13 +336,15 @@ class RecoveryManagerNode(Node):
             "expert_wait_budget_decisions": 3,
             "bc_rejoin_block_threshold": 0.65,
             "bc_wait_budget_decisions": 3,
+            "bc_backup_budget_decisions": 2,
             "bc_replan_budget_decisions": 1,
+            "bc_progress_reset_m": 0.25,
             "braking_acceleration_mps2": 0.8,
             "control_latency_s": 0.15,
             "stopping_margin_m": 0.45,
             "footprint_stop_clearance_m": 0.48,
             "collision_latched_stop_clearance_m": 0.85,
-            "collision_latched_action_clearance_m": 0.65,
+            "collision_latched_action_clearance_m": 0.90,
             "footprint_backup_forward_angle_degrees": 80.0,
             "emergency_hold_s": 0.5,
             "emergency_backup_duration_s": 0.8,
@@ -512,6 +520,12 @@ class RecoveryManagerNode(Node):
         # until the original goal has been restored.
         if not self._goal_preempted:
             self._path = path
+            # Anchor the safety corridor to the first task-level plan.  Nav2
+            # republishes locally deformed paths while recovering; replacing
+            # this anchor would allow repeated relative subgoals to ratchet
+            # the nominal corridor toward unmodeled Gazebo shelf geometry.
+            if path and not self._task_corridor_path:
+                self._task_corridor_path = path
 
     def _on_map(self, message: OccupancyGridMessage) -> None:
         width = int(message.info.width)
@@ -702,10 +716,25 @@ class RecoveryManagerNode(Node):
         )
         translation_clearance = self._float("emergency_translation_clearance_m")
         if self._collision_safety_latched:
-            translation_clearance = max(
-                translation_clearance,
-                self._float("collision_latched_stop_clearance_m"),
+            translation_clearance = collision_latched_motion_clearance(
+                configured_action_clearance_m=translation_clearance,
+                stop_clearance_m=self._float("collision_latched_stop_clearance_m"),
+                release_hysteresis_m=self._float("emergency_release_hysteresis_m"),
             )
+        corridor_path = self._task_corridor_path or self._path
+        if corridor_path:
+            pose = self._world_pose()
+            target = (
+                pose.x + travel * math.cos(pose.yaw),
+                pose.y + travel * math.sin(pose.yaw),
+            )
+            if not path_corridor_target_is_permitted(
+                (pose.x, pose.y),
+                target,
+                corridor_path,
+                maximum_deviation_m=self._float("maximum_recovery_path_deviation_m"),
+            ):
+                return 0.0
         if not scan_segment_is_free(
             self._scan.ranges,
             angle_min=float(self._scan.angle_min),
@@ -756,9 +785,13 @@ class RecoveryManagerNode(Node):
         action_clearance = self._float("robot_clearance_m")
         swept_clearance = self._float("footprint_stop_clearance_m")
         if collision_risk >= self._float("bc_rejoin_block_threshold"):
-            action_clearance = max(
-                action_clearance,
-                self._float("collision_latched_action_clearance_m"),
+            action_clearance = collision_latched_motion_clearance(
+                configured_action_clearance_m=max(
+                    action_clearance,
+                    self._float("collision_latched_action_clearance_m"),
+                ),
+                stop_clearance_m=self._float("collision_latched_stop_clearance_m"),
+                release_hysteresis_m=self._float("emergency_release_hysteresis_m"),
             )
             swept_clearance = max(swept_clearance, action_clearance)
         mask = apply_observable_scan_mask(
@@ -772,11 +805,12 @@ class RecoveryManagerNode(Node):
                 self._policy_type == "expert" and self._received_privileged_humans
             ),
         )
-        if self._path:
+        corridor_path = self._task_corridor_path or self._path
+        if corridor_path:
             mask = apply_path_corridor_mask(
                 mask,
                 pose,
-                self._path,
+                corridor_path,
                 maximum_deviation_m=self._float("maximum_recovery_path_deviation_m"),
             )
         mask[REPLAN_ACTION_ID] &= self._adapter.ready
@@ -889,9 +923,7 @@ class RecoveryManagerNode(Node):
                 return CoreRecoveryDecision(WAIT_ACTION_ID, 0.0, "oracle_error_wait")
         mask = self._action_mask(pose, collision_risk=failure.collision_risk)
         if self._policy_type == "bc":
-            if self._valid_progress():
-                self._bc_waits_without_progress = 0
-                self._bc_replans_without_progress = 0
+            self._update_bc_progress_budget(float(observation.goal_polar[0]))
             mask = constrain_rejoin_actions(
                 mask,
                 collision_risk=failure.collision_risk,
@@ -909,13 +941,37 @@ class RecoveryManagerNode(Node):
                 replan_count=self._bc_replans_without_progress,
                 replan_budget=self._integer("bc_replan_budget_decisions"),
             )
+            mask = constrain_repeated_backup(
+                mask,
+                backup_count=self._bc_backups_without_progress,
+                backup_budget=self._integer("bc_backup_budget_decisions"),
+            )
         decision = self._policy.select_action(observation, mask)
         if self._policy_type == "bc":
             if decision.action_id == WAIT_ACTION_ID:
                 self._bc_waits_without_progress += 1
+            elif decision.action_id == BACKUP_ACTION_ID:
+                self._bc_backups_without_progress += 1
             elif decision.action_id == REPLAN_ACTION_ID:
                 self._bc_replans_without_progress += 1
         return decision
+
+    def _update_bc_progress_budget(self, distance_to_goal_m: float) -> None:
+        """Reset anti-stall budgets only after meaningful cumulative progress."""
+        if not math.isfinite(distance_to_goal_m) or distance_to_goal_m < 0.0:
+            raise ValueError("distance to goal must be finite and non-negative")
+        if self._bc_progress_reference_distance_m is None:
+            self._bc_progress_reference_distance_m = distance_to_goal_m
+            return
+        if (
+            self._bc_progress_reference_distance_m - distance_to_goal_m
+            < self._float("bc_progress_reset_m")
+        ):
+            return
+        self._bc_progress_reference_distance_m = distance_to_goal_m
+        self._bc_waits_without_progress = 0
+        self._bc_backups_without_progress = 0
+        self._bc_replans_without_progress = 0
 
     def _valid_progress(self) -> bool:
         if len(self._distance_history) < 2:

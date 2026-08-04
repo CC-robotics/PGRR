@@ -3,6 +3,7 @@ from ramp_core.action_mask import (
     apply_observable_scan_mask,
     apply_path_corridor_mask,
     compute_action_mask,
+    path_corridor_target_is_permitted,
     validate_selected_action,
 )
 from ramp_core.action_space import BACKUP_ACTION_ID, REPLAN_ACTION_ID, WAIT_ACTION_ID
@@ -67,3 +68,11 @@ def test_path_corridor_blocks_outward_actions_and_allows_return() -> None:
     outside = apply_path_corridor_mask(mask, Pose2D(2.0, 1.2, 0.0), path)
     assert not bool(outside[6])
     assert bool(outside[0])
+
+
+def test_emergency_translation_must_stay_in_or_improve_task_corridor() -> None:
+    path = ((0.0, 0.0), (10.0, 0.0))
+    assert path_corridor_target_is_permitted((2.0, 0.8), (2.2, 0.85), path)
+    assert not path_corridor_target_is_permitted((2.0, 0.8), (2.0, 1.0), path)
+    assert path_corridor_target_is_permitted((2.0, 1.1), (2.0, 0.9), path)
+    assert not path_corridor_target_is_permitted((2.0, 1.1), (2.2, 1.1), path)

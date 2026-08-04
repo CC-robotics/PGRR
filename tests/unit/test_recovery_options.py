@@ -16,6 +16,7 @@ from ramp_core.recovery.options import (
     PrivilegedYieldOption,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
+    constrain_repeated_backup,
     constrain_repeated_replan,
     constrain_stalled_rejoin,
     constrain_stalled_wait,
@@ -132,6 +133,25 @@ def test_replan_remains_when_it_is_the_only_legal_action() -> None:
     mask[REPLAN_ACTION_ID] = True
     constrained = constrain_repeated_replan(mask, replan_count=1, replan_budget=1)
     assert constrained[REPLAN_ACTION_ID]
+
+
+def test_backup_budget_forces_planning_valid_subgoal() -> None:
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[3] = True
+    mask[BACKUP_ACTION_ID] = True
+    mask[WAIT_ACTION_ID] = True
+    constrained = constrain_repeated_backup(mask, backup_count=2, backup_budget=2)
+    assert constrained[3]
+    assert not constrained[BACKUP_ACTION_ID]
+    assert constrained[WAIT_ACTION_ID]
+
+
+def test_backup_remains_when_no_planned_escape_is_safe() -> None:
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[BACKUP_ACTION_ID] = True
+    mask[WAIT_ACTION_ID] = True
+    constrained = constrain_repeated_backup(mask, backup_count=2, backup_budget=2)
+    assert constrained[BACKUP_ACTION_ID]
 
 
 def test_wait_remains_valid_before_budget_is_exhausted() -> None:

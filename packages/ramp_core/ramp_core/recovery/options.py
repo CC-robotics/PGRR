@@ -270,3 +270,29 @@ def constrain_repeated_replan(
     if replan_count >= replan_budget and bool(alternatives.any()):
         constrained[REPLAN_ACTION_ID] = False
     return constrained
+
+
+def constrain_repeated_backup(
+    mask: npt.NDArray[np.bool_],
+    *,
+    backup_count: int,
+    backup_budget: int,
+) -> npt.NDArray[np.bool_]:
+    """Bound no-progress retreats when a planning-valid escape exists.
+
+    BACKUP remains available when it is the only safe translational option.
+    Once the budget is exhausted, it is disabled only when the existing
+    planning mask contains a subgoal or REPLAN.  The helper therefore cannot
+    manufacture an unsafe action or weaken any collision clearance.
+    """
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if backup_count < 0 or backup_budget <= 0:
+        raise ValueError("backup count must be non-negative and budget positive")
+    planned_escape_available = bool(
+        constrained[:WAIT_ACTION_ID].any() or constrained[REPLAN_ACTION_ID]
+    )
+    if backup_count >= backup_budget and planned_escape_available:
+        constrained[BACKUP_ACTION_ID] = False
+    return constrained

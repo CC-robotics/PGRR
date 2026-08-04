@@ -93,24 +93,54 @@ def apply_path_corridor_mask(
         raise ValueError("global path must not be empty")
     if maximum_deviation_m <= 0.0 or required_improvement_m < 0.0 or backup_distance_m < 0.0:
         raise ValueError("path-corridor distances are invalid")
-    current_deviation = point_to_polyline_distance((robot.x, robot.y), path)
-
-    def permitted(point: tuple[float, float]) -> bool:
-        deviation = point_to_polyline_distance(point, path)
-        return deviation <= maximum_deviation_m or (
-            deviation <= current_deviation - required_improvement_m
-        )
-
     for action in ACTIONS[:21]:
         target = action.target_pose(robot)
         assert target is not None
-        constrained[action.action_id] &= permitted((target.x, target.y))
+        constrained[action.action_id] &= path_corridor_target_is_permitted(
+            (robot.x, robot.y),
+            (target.x, target.y),
+            path,
+            maximum_deviation_m=maximum_deviation_m,
+            required_improvement_m=required_improvement_m,
+        )
     backup_end = (
         robot.x - backup_distance_m * math.cos(robot.yaw),
         robot.y - backup_distance_m * math.sin(robot.yaw),
     )
-    constrained[BACKUP_ACTION_ID] &= permitted(backup_end)
+    constrained[BACKUP_ACTION_ID] &= path_corridor_target_is_permitted(
+        (robot.x, robot.y),
+        backup_end,
+        path,
+        maximum_deviation_m=maximum_deviation_m,
+        required_improvement_m=required_improvement_m,
+    )
     return constrained
+
+
+def path_corridor_target_is_permitted(
+    start: tuple[float, float],
+    target: tuple[float, float],
+    global_path: Iterable[tuple[float, float]],
+    *,
+    maximum_deviation_m: float = 0.9,
+    required_improvement_m: float = 0.05,
+) -> bool:
+    """Return whether a translation stays in or moves back toward the task corridor.
+
+    Emergency translations use this same geometric invariant as learned
+    subgoals.  This prevents a safety escape from repeatedly translating along
+    a wall after the learned action mask has already reached the corridor edge.
+    """
+    path = tuple(global_path)
+    if not path:
+        raise ValueError("global path must not be empty")
+    if maximum_deviation_m <= 0.0 or required_improvement_m < 0.0:
+        raise ValueError("path-corridor distances are invalid")
+    current_deviation = point_to_polyline_distance(start, path)
+    target_deviation = point_to_polyline_distance(target, path)
+    return target_deviation <= maximum_deviation_m or (
+        target_deviation <= current_deviation - required_improvement_m
+    )
 
 
 def apply_observable_scan_mask(

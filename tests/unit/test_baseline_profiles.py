@@ -160,7 +160,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     config = yaml.safe_load((root / "configs/failure/recovery_state_machine.yaml").read_text())
     assert config["footprint_stop_clearance_m"] == 0.48
     assert config["collision_latched_stop_clearance_m"] == 0.85
-    assert config["collision_latched_action_clearance_m"] == 0.65
+    assert config["collision_latched_action_clearance_m"] == 0.90
     assert config["maximum_recovery_path_deviation_m"] == 0.9
     assert config["emergency_rotation_clearance_m"] == 0.24
     assert config["emergency_forward_entry_clearance_m"] == 0.85
@@ -169,7 +169,9 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["emergency_backup_progress_m"] == 0.05
     assert config["emergency_translation_clearance_m"] == 0.36
     assert config["bc_wait_budget_decisions"] == 3
+    assert config["bc_backup_budget_decisions"] == 2
     assert config["bc_replan_budget_decisions"] == 1
+    assert config["bc_progress_reset_m"] == 0.25
     assert config["bc_rejoin_block_threshold"] == 0.65
     assert '"emergency_rotation_clearance_m": 0.24' in manager
     assert '"emergency_backup_reset_clear_s": 3.0' in manager
@@ -177,6 +179,9 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert manager.count("_forward_escape_clearance()") >= 2
     assert 'translation_clearance = self._float("emergency_translation_clearance_m")' in manager
     assert 'self._float("collision_latched_stop_clearance_m")' in manager
+    assert "self._task_corridor_path or self._path" in manager
+    assert manager.count("collision_latched_motion_clearance(") == 2
+    assert "constrain_repeated_backup(" in manager
     detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()
     assert "RecoveryDecision.EMERGENCY_STOP" in detector
     assert "timestamp <= self._last_timestamp" in detector

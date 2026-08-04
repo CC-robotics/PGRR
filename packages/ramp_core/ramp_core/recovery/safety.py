@@ -7,6 +7,23 @@ from dataclasses import dataclass
 from enum import Enum
 
 
+def collision_latched_motion_clearance(
+    *,
+    configured_action_clearance_m: float,
+    stop_clearance_m: float,
+    release_hysteresis_m: float,
+) -> float:
+    """Keep every latched translation outside the latch-release boundary."""
+    values = (
+        configured_action_clearance_m,
+        stop_clearance_m,
+        release_hysteresis_m,
+    )
+    if any(not math.isfinite(value) or value < 0.0 for value in values):
+        raise ValueError("collision-latched clearances must be finite and non-negative")
+    return max(configured_action_clearance_m, stop_clearance_m + release_hysteresis_m)
+
+
 def emergency_hazard_with_hysteresis(
     *,
     emergency_active: bool,

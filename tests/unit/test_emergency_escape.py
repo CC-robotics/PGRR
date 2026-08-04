@@ -7,10 +7,24 @@ from ramp_core.recovery.safety import (
     EmergencyEscapeController,
     EmergencyEscapeMode,
     backup_increases_obstacle_clearance,
+    collision_latched_motion_clearance,
     emergency_hazard_with_hysteresis,
     emergency_mode_reason,
     update_collision_safety_latch,
 )
+
+
+def test_collision_latched_motion_cannot_enter_unreleasable_clearance_band() -> None:
+    assert collision_latched_motion_clearance(
+        configured_action_clearance_m=0.65,
+        stop_clearance_m=0.85,
+        release_hysteresis_m=0.05,
+    ) == pytest.approx(0.90)
+    assert collision_latched_motion_clearance(
+        configured_action_clearance_m=1.0,
+        stop_clearance_m=0.85,
+        release_hysteresis_m=0.05,
+    ) == pytest.approx(1.0)
 
 
 def _controller() -> EmergencyEscapeController:

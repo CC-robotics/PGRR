@@ -12,7 +12,9 @@ expert_replan_interval_s: 0.5
 expert_wait_budget_decisions: 3
 bc_rejoin_block_threshold: 0.65
 bc_wait_budget_decisions: 3
+bc_backup_budget_decisions: 2
 bc_replan_budget_decisions: 1
+bc_progress_reset_m: 0.25
 maximum_recovery_duration_s: 8.0
 maximum_extended_recovery_duration_s: 30.0
 maximum_rejoin_duration_s: 5.0
@@ -22,7 +24,7 @@ wait_duration_s: 0.5
 subgoal_settle_s: 1.0
 footprint_stop_clearance_m: 0.48
 collision_latched_stop_clearance_m: 0.85
-collision_latched_action_clearance_m: 0.65
+collision_latched_action_clearance_m: 0.90
 footprint_backup_forward_angle_degrees: 80.0
 backup_duration_s: 0.8
 backup_speed_mps: 0.15
