@@ -134,7 +134,7 @@ cleanup_started=0
 
 record_startup_failure() {
     local detail="${1:?startup failure detail is required}"
-    [[ -e "${outcome_file}" ]] && return 0
+    [[ -s "${outcome_file}" ]] && return 0
     python3 - "${outcome_file}" "${episode_id}" "${detail}" <<'PY'
 import json
 import pathlib
@@ -484,7 +484,9 @@ fi
 monitor_pid=""
 
 if [[ ! -e "${stream_file}" || ! -s "${outcome_file}" ]]; then
-    echo "ERROR: episode logger did not produce stream and outcome files" >&2
+    missing_artifact_detail="episode logger exited without complete artifacts (status=${logger_status})"
+    record_startup_failure "${missing_artifact_detail}"
+    echo "ERROR: ${missing_artifact_detail}" >&2
     tail -120 "${RUNTIME_LOG}" >&2
     exit 1
 fi

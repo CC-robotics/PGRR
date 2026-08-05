@@ -42,6 +42,9 @@ def test_baseline_profiles_are_distinct_and_wired_into_runtime() -> None:
     assert "static_obstacles_json" in runtime
     assert '"outcome": "SIMULATOR_FAILURE"' in runtime
     assert '"sample_count": 0' in runtime
+    assert '[[ -s "${outcome_file}" ]] && return 0' in runtime
+    assert 'record_startup_failure "${missing_artifact_detail}"' in runtime
+    assert "episode logger exited without complete artifacts (status=${logger_status})" in runtime
     assert "collision_omnidirectional_absolute_distance_m=0.70" in runtime
     assert (
         runtime.count(

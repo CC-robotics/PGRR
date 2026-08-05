@@ -392,6 +392,68 @@ def test_inspect_attempt_preserves_retryable_outcome_without_stream(tmp_path: Pa
     assert inspected["stream_path"] is None
 
 
+def test_run_task_retries_a_classified_logger_artifact_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    task = _MODULE.build_tasks(
+        [_record(tmp_path)], ("base",), (), 1.0, run_namespace="rretry"
+    )[0]
+    attempted: list[str] = []
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        identifier = str(environment["RAMP_EPISODE_ID"])
+        attempted.append(identifier)
+        raw = tmp_path / "data" / "raw"
+        raw.mkdir(parents=True, exist_ok=True)
+        if identifier.endswith("_a0_dwb"):
+            (raw / f"{identifier}.outcome.json").write_text(
+                json.dumps(
+                    {
+                        "episode_id": identifier,
+                        "outcome": "SIMULATOR_FAILURE",
+                        "sample_count": 0,
+                        "detail": "episode logger exited without complete artifacts (status=1)",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return subprocess.CompletedProcess(command, 1)
+        (raw / f"{identifier}.jsonl").write_text("{}\n", encoding="utf-8")
+        (raw / f"{identifier}.outcome.json").write_text(
+            json.dumps(
+                {
+                    "episode_id": identifier,
+                    "outcome": "GOAL_REACHED",
+                    "sample_count": 1,
+                }
+            ),
+            encoding="utf-8",
+        )
+        (raw / f"{identifier}.metadata.json").write_text(
+            json.dumps({"episode_id": identifier}), encoding="utf-8"
+        )
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(_MODULE.subprocess, "run", fake_run)
+    result = _MODULE.run_task(
+        task,
+        root=tmp_path,
+        domain=20,
+        partition="ramp_retry_test",
+        resume=False,
+    )
+    assert result["status"] == "complete"
+    assert result["episode_id"].endswith("_a1_dwb")
+    assert len(result["attempts"]) == 2
+    assert [attempt["outcome"] for attempt in result["attempts"]] == [
+        "SIMULATOR_FAILURE",
+        "GOAL_REACHED",
+    ]
+    assert len(attempted) == 2
+
+
 def test_existing_attempt_preflight_rejects_overwrite_and_orphan_retry(tmp_path: Path) -> None:
     tasks = _MODULE.build_tasks([_record(tmp_path)], ("base",), (), 180.0)
     raw = tmp_path / "data" / "raw"
