@@ -5,7 +5,9 @@ import hashlib
 import importlib.util
 import json
 import sys
+from itertools import combinations, pairwise
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -13,6 +15,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "configs" / "experiments" / "scenario_catalog_moderate.yaml"
 V2_CONFIG = ROOT / "configs" / "experiments" / "scenario_catalog_moderate_v2.yaml"
+V3_CONFIG = ROOT / "configs" / "experiments" / "scenario_catalog_moderate_v3.yaml"
 SCRIPT = ROOT / "scripts" / "data" / "compile_moderate_benchmark.py"
 FAMILIES = {
     "head_on_corridor",
@@ -37,6 +40,23 @@ def _compiler():  # type: ignore[no-untyped-def]
 
 def _manifest(root: Path, split: str, suffix: str = "moderate") -> dict:
     return yaml.safe_load((root / "splits" / f"{suffix}_{split}.yaml").read_text())
+
+
+@pytest.fixture(scope="module")
+def v3_compilation(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> tuple[Any, Path, dict[str, Any]]:
+    compiler = _compiler()
+    output = tmp_path_factory.mktemp("moderate_v3")
+    summary = compiler.compile_benchmark(
+        V3_CONFIG,
+        output,
+        train_repetitions=1,
+        validation_repetitions=1,
+        test_repetitions=1,
+        render_previews=False,
+    )
+    return compiler, output, summary
 
 
 def test_moderate_catalog_has_declared_scale_and_disjoint_seed_blocks() -> None:
@@ -81,6 +101,26 @@ def test_v2_catalog_preserves_scale_and_declares_recoverable_egress() -> None:
     assert config["splits"]["test"]["repetitions"] == 5
 
 
+def test_v3_catalog_declares_recoverable_actor_dynamics_and_split_blocks() -> None:
+    config = yaml.safe_load(V3_CONFIG.read_text(encoding="utf-8"))
+    moderation = config["moderation"]
+    assert config["benchmark_id"] == "moderate_social_navigation_v3"
+    assert moderation["robot_avoidance_distance_m"] == 0.90
+    assert moderation["robot_soft_yield_distance_m"] == 0.90
+    assert moderation["robot_hard_guard_distance_m"] == 0.73
+    assert moderation["actor_update_frequency_hz"] == 5.0
+    assert moderation["actor_dynamics_version"] == "deterministic_one_shot_swept_guard_v1"
+    assert moderation["doorway_single_side_lane_stream"] is True
+    assert moderation["doorway_lane_offset_m"] == 0.75
+    assert moderation["doorway_exit_x_m"] == 5.0
+    assert config["output"]["manifest_suffix"] == "moderate_v3"
+    assert {split: values["seed_base"] for split, values in config["splits"].items()} == {
+        "train": 70000,
+        "validation": 71000,
+        "test": 81000,
+    }
+
+
 def test_route_parameter_defaults_preserve_v1_endpoints() -> None:
     compiler = _compiler()
     head_routes = compiler._moderate_routes(
@@ -122,11 +162,20 @@ def test_v2_compiler_emits_safe_behind_start_egress_without_overwriting_v1(
 
     for split in ("validation", "test"):
         manifest = _manifest(output, split, "moderate_v2")
+        committed_manifest = _manifest(ROOT / "scenarios", split, "moderate_v2")
+        assert [
+            (row["scenario_id"], row["seed"], row["sha256"]) for row in manifest["scenarios"]
+        ] == [
+            (row["scenario_id"], row["seed"], row["sha256"])
+            for row in committed_manifest["scenarios"]
+        ]
         for record in manifest["scenarios"]:
             scenario_path = output / "generated" / record["path"]
             scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
             actors = scenario["obstacles"]["dynamic"]
             assert all(actor["robot_avoidance_distance_m"] == 0.90 for actor in actors)
+            assert all("actor_dynamics_version" not in actor for actor in actors)
+            assert "actor_dynamics_version" not in scenario["ramp_metadata"]
             family = record["family"]
             if family not in {"head_on_corridor", "doorway_bottleneck"}:
                 continue
@@ -236,6 +285,8 @@ def test_compiler_generates_split_safe_one_shot_scenarios_and_previews(
             assert all(actor["cyclic_goals"] is False for actor in actors)
             assert all(actor["behavior"]["once"] is True for actor in actors)
             assert all(actor["robot_avoidance_distance_m"] == 1.50 for actor in actors)
+            assert all("actor_dynamics_version" not in actor for actor in actors)
+            assert "actor_dynamics_version" not in metadata
             if record["family"] == "group_blocking":
                 assert min(float(actor["pos"][1]) for actor in actors) >= 12.85
             _, path = compiler._footprint_path(
@@ -303,6 +354,125 @@ def test_compiler_generates_split_safe_one_shot_scenarios_and_previews(
         assert split_sets["validation"][key].isdisjoint(split_sets["test"][key])
 
 
+def test_v3_compiler_emits_lane_preserving_stream_and_behavior_metadata(
+    v3_compilation: tuple[Any, Path, dict[str, Any]],
+) -> None:
+    compiler, output, summary = v3_compilation
+    assert summary["benchmark_id"] == "moderate_social_navigation_v3"
+    assert summary["manifest_suffix"] == "moderate_v3"
+    assert summary["counts_by_split"] == {"train": 24, "validation": 24, "test": 24}
+    assert summary["scenario_count"] == 72
+    assert {split: summary[f"{split}_seed_base"] for split in ("train", "validation", "test")} == {
+        "train": 70000,
+        "validation": 71000,
+        "test": 81000,
+    }
+
+    split_values: dict[str, dict[str, set[object]]] = {}
+    for split, seed_floor in (("train", 70000), ("validation", 71000), ("test", 81000)):
+        manifest = _manifest(output, split, "moderate_v3")
+        assert manifest["split"] == split
+        records = manifest["scenarios"]
+        assert len(records) == 24
+        assert min(int(row["seed"]) for row in records) >= seed_floor
+        assert max(int(row["seed"]) for row in records) < seed_floor + 1000
+        identifiers: set[object] = set()
+        seeds: set[object] = set()
+        hashes: set[object] = set()
+        doorway_sides: set[int] = set()
+        for record in records:
+            scenario_path = output / "generated" / record["path"]
+            serialized = scenario_path.read_text(encoding="utf-8")
+            assert hashlib.sha256(serialized.encode()).hexdigest() == record["sha256"]
+            scenario = json.loads(serialized)
+            metadata = scenario["ramp_metadata"]
+            behavior_parameters = {
+                "robot_soft_yield_distance_m": 0.90,
+                "robot_hard_guard_distance_m": 0.73,
+                "actor_update_frequency_hz": 5.0,
+            }
+            assert metadata["actor_dynamics_version"] == ("deterministic_one_shot_swept_guard_v1")
+            assert metadata["actor_behavior_parameters"] == behavior_parameters
+            assert all(
+                actor["actor_dynamics_version"] == "deterministic_one_shot_swept_guard_v1"
+                for actor in scenario["obstacles"]["dynamic"]
+            )
+            assert all(
+                {
+                    key: actor["behavior"][key]
+                    for key in (
+                        "robot_soft_yield_distance_m",
+                        "robot_hard_guard_distance_m",
+                        "actor_update_frequency_hz",
+                    )
+                }
+                == behavior_parameters
+                for actor in scenario["obstacles"]["dynamic"]
+            )
+            if record["family"] == "doorway_bottleneck":
+                stream = metadata["doorway_stream"]
+                side = int(stream["lane_side"])
+                doorway_sides.add(side)
+                assert side == compiler._seeded_doorway_lane_side(int(record["seed"]))
+                assert stream["lane_offset_m"] == 0.75
+                assert stream["lane_preserving"] is True
+                lane_y = float(stream["lane_y_m"])
+                recovery_y = float(stream["recovery_channel_y_m"])
+                actors = scenario["obstacles"]["dynamic"]
+                assert all(
+                    all(float(point[1]) == pytest.approx(lane_y) for point in actor["waypoints"])
+                    for actor in actors
+                )
+                starts = sorted(float(actor["waypoints"][0][0]) for actor in actors)
+                assert all(right - left == pytest.approx(1.50) for left, right in pairwise(starts))
+                assert all(float(actor["waypoints"][-1][0]) == 5.0 for actor in actors)
+                grid = compiler._footprint_occupancy(
+                    scenario,
+                    [0.0, 31.28, 0.0, 24.03],
+                    0.10,
+                    0.40,
+                )
+                robot = scenario["robots"][0]
+                assert grid.segment_is_free(
+                    (float(robot["start"][0]), recovery_y),
+                    (float(robot["goal"][0]), recovery_y),
+                )
+                assert (lane_y - 12.0) * (recovery_y - 12.0) < 0.0
+            identifiers.add(record["scenario_id"])
+            seeds.add(record["seed"])
+            hashes.add(record["sha256"])
+        assert doorway_sides == {-1, 1}
+        assert len(identifiers) == len(records)
+        assert len(seeds) == len(records)
+        assert len(hashes) == len(records)
+        split_values[split] = {"ids": identifiers, "seeds": seeds, "hashes": hashes}
+
+    for left, right in combinations(("train", "validation", "test"), 2):
+        for key in ("ids", "seeds", "hashes"):
+            assert split_values[left][key].isdisjoint(split_values[right][key])
+
+
+def test_v3_validation_rejects_partial_dynamics_and_seed_block_leakage() -> None:
+    compiler = _compiler()
+    config = yaml.safe_load(V3_CONFIG.read_text(encoding="utf-8"))
+    incomplete = copy.deepcopy(config)
+    del incomplete["moderation"]["robot_hard_guard_distance_m"]
+    with pytest.raises(ValueError, match="actor dynamics configuration is incomplete"):
+        compiler._validate_config(incomplete)
+
+    unsafe_guard = copy.deepcopy(config)
+    unsafe_guard["moderation"]["robot_hard_guard_distance_m"] = 0.71
+    with pytest.raises(ValueError, match="hard guard must exceed collision radii"):
+        compiler._validate_config(unsafe_guard)
+
+    overlapping = copy.deepcopy(config)
+    overlapping["splits"]["validation"]["seed_base"] = 70500
+    with pytest.raises(
+        ValueError, match="train/validation seed blocks must differ and not overlap"
+    ):
+        compiler._validate_config(overlapping)
+
+
 def test_cli_overrides_are_deterministic_and_isolate_suffix_outputs(tmp_path: Path) -> None:
     compiler = _compiler()
     first = tmp_path / "first"
@@ -353,6 +523,25 @@ def test_cli_overrides_are_deterministic_and_isolate_suffix_outputs(tmp_path: Pa
     assert args.validation_repetitions == 2
     assert args.test_repetitions == 1
     assert args.manifest_suffix == "moderate_ci"
+    assert args.no_previews is True
+
+
+def test_v3_cli_exposes_train_split_overrides() -> None:
+    compiler = _compiler()
+    args = compiler.parse_args(
+        [
+            "--config",
+            str(V3_CONFIG),
+            "--train-repetitions",
+            "1",
+            "--train-seed-base",
+            "72000",
+            "--no-previews",
+        ]
+    )
+    assert args.config == V3_CONFIG
+    assert args.train_repetitions == 1
+    assert args.train_seed_base == 72000
     assert args.no_previews is True
 
 

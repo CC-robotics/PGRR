@@ -1,0 +1,87 @@
+schema_version: 1
+benchmark_id: moderate_social_navigation_v3
+map:
+  id: map_empty
+  bounds_m: [0.0, 31.28, 0.0, 24.03]
+  preview_resolution_m: 0.10
+robot:
+  radius_m: 0.36
+  static_path_margin_m: 0.04
+moderation:
+  corridor_footprint_clear_width_m: 2.60
+  doorway_footprint_clear_width_m: 2.30
+  lane_offset_range_m: [0.65, 0.90]
+  pedestrian_longitudinal_stagger_m: 1.50
+  robot_avoidance_distance_m: 0.90
+  robot_soft_yield_distance_m: 0.90
+  robot_hard_guard_distance_m: 0.73
+  actor_update_frequency_hz: 5.0
+  actor_dynamics_version: deterministic_one_shot_swept_guard_v1
+  doorway_single_side_lane_stream: true
+  doorway_lane_offset_m: 0.75
+  head_on_exit_x_m: 3.00
+  doorway_exit_x_m: 5.00
+  group_clear_channel_width_m: 1.30
+  all_routes_one_shot: true
+densities:
+  low: 1
+  medium: 2
+  high: 4
+splits:
+  train:
+    seed_base: 70000
+    repetitions: 3
+    geometry_offsets_m: [-0.10, 0.00, 0.10]
+  validation:
+    seed_base: 71000
+    repetitions: 3
+    geometry_offsets_m: [-0.10, 0.00, 0.10]
+  test:
+    seed_base: 81000
+    repetitions: 5
+    geometry_offsets_m: [-0.12, -0.06, 0.00, 0.06, 0.12]
+output:
+  generated_subdirectory: moderate_v3/arena
+  preview_subdirectory: moderate_v3
+  manifest_suffix: moderate_v3
+families:
+  - id: head_on_corridor
+    layout: horizontal_corridor
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.35, 0.55]
+  - id: doorway_bottleneck
+    layout: doorway
+    robot_start: [7.0, 12.0, 0.0]
+    robot_goal: [24.0, 12.0, 0.0]
+    speed_range_mps: [0.25, 0.45]
+  - id: crossing_flow
+    layout: crossing
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.35, 0.55]
+  - id: blind_corner
+    layout: blind_corner
+    robot_start: [6.0, 7.5, 0.0]
+    robot_goal: [24.0, 16.0, 1.57]
+    speed_range_mps: [0.30, 0.50]
+  - id: group_blocking
+    layout: group_blocking
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.06, 0.14]
+  - id: overtaking
+    layout: overtaking
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.08, 0.18]
+  - id: opposite_streams
+    layout: opposite_streams
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.30, 0.50]
+  - id: temporary_blockage
+    layout: temporary_blockage
+    robot_start: [7.0, 12.0, 0.0]
+    robot_goal: [24.0, 12.0, 0.0]
+    speed_range_mps: [0.06, 0.22]

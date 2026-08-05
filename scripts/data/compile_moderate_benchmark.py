@@ -3,9 +3,9 @@
 
 The benchmark deliberately changes the scenario distribution rather than
 post-selecting successful episodes: pedestrian counts are 1/2/4, every route
-is one-shot, and validation/test use disjoint predeclared seed blocks.  Static
-reachability is checked with A* after inflating shelf footprints by the robot
-radius and a configured clearance margin.
+is one-shot, and all configured splits use disjoint predeclared seed blocks.
+Static reachability is checked with A* after inflating shelf footprints by the
+robot radius and a configured clearance margin.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ import json
 import math
 import re
 from dataclasses import dataclass
+from itertools import combinations
 from pathlib import Path
 from types import ModuleType
 from typing import Any, cast
@@ -46,6 +47,7 @@ EXPECTED_FAMILIES = (
 EXPECTED_DENSITIES = {"low": 1, "medium": 2, "high": 4}
 SUFFIX_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 COMBINED_COLLISION_RADIUS_M = 0.71
+SEED_BLOCK_SIZE = 1_000
 EGRESS_EXIT_KEYS = {
     "head_on_corridor": "head_on_exit_x_m",
     "doorway_bottleneck": "doorway_exit_x_m",
@@ -90,6 +92,20 @@ def _positive_repetitions(value: int, split: str) -> int:
     return value
 
 
+def _assert_seed_blocks_disjoint(seed_bases: dict[str, int]) -> None:
+    """Reserve one decimal 1,000-seed block for every configured split."""
+
+    for left, right in combinations(seed_bases, 2):
+        left_base = seed_bases[left]
+        right_base = seed_bases[right]
+        overlap = max(left_base, right_base) < min(
+            left_base + SEED_BLOCK_SIZE,
+            right_base + SEED_BLOCK_SIZE,
+        )
+        if overlap:
+            raise ValueError(f"{left}/{right} seed blocks must differ and not overlap")
+
+
 def _validate_config(config: dict[str, Any]) -> None:
     if int(config.get("schema_version", -1)) != 1:
         raise ValueError("moderate catalog schema_version must be 1")
@@ -117,6 +133,36 @@ def _validate_config(config: dict[str, Any]) -> None:
     avoidance = float(moderation["robot_avoidance_distance_m"])
     if not math.isfinite(avoidance) or avoidance <= COMBINED_COLLISION_RADIUS_M:
         raise ValueError("robot avoidance distance must exceed the 0.71 m combined collision radii")
+    dynamics_keys = {
+        "actor_dynamics_version",
+        "robot_soft_yield_distance_m",
+        "robot_hard_guard_distance_m",
+        "actor_update_frequency_hz",
+        "doorway_single_side_lane_stream",
+        "doorway_lane_offset_m",
+    }
+    present_dynamics_keys = dynamics_keys & set(moderation)
+    if present_dynamics_keys and present_dynamics_keys != dynamics_keys:
+        missing = sorted(dynamics_keys - present_dynamics_keys)
+        raise ValueError(f"actor dynamics configuration is incomplete: {missing}")
+    if present_dynamics_keys:
+        version = str(moderation["actor_dynamics_version"])
+        if version != "deterministic_one_shot_swept_guard_v1":
+            raise ValueError("unsupported actor_dynamics_version")
+        soft_yield = float(moderation["robot_soft_yield_distance_m"])
+        hard_guard = float(moderation["robot_hard_guard_distance_m"])
+        update_frequency = float(moderation["actor_update_frequency_hz"])
+        if not math.isclose(soft_yield, avoidance, abs_tol=1.0e-9):
+            raise ValueError("soft yield distance must equal robot avoidance distance")
+        if not COMBINED_COLLISION_RADIUS_M < hard_guard <= soft_yield:
+            raise ValueError("hard guard must exceed collision radii and not exceed soft yield")
+        if not math.isfinite(update_frequency) or update_frequency <= 0.0:
+            raise ValueError("actor update frequency must be finite and positive")
+        if moderation["doorway_single_side_lane_stream"] is not True:
+            raise ValueError("v3 actor dynamics require the single-side doorway stream")
+        doorway_lane_offset = float(moderation["doorway_lane_offset_m"])
+        if not lane_min <= doorway_lane_offset <= lane_max:
+            raise ValueError("doorway lane offset must lie inside the configured lane range")
     families_by_id = {str(family["id"]): family for family in families}
     for family_id, key in EGRESS_EXIT_KEYS.items():
         if key not in moderation:
@@ -128,8 +174,11 @@ def _validate_config(config: dict[str, Any]) -> None:
         if exit_x >= robot_start_x:
             raise ValueError(f"{key} must lie behind the {family_id} robot start")
     splits = config.get("splits")
-    if not isinstance(splits, dict) or set(splits) != {"validation", "test"}:
-        raise ValueError("moderate benchmark must contain validation and test splits only")
+    if not isinstance(splits, dict) or set(splits) not in (
+        {"validation", "test"},
+        {"train", "validation", "test"},
+    ):
+        raise ValueError("moderate benchmark must contain validation/test and optional train")
     for split, split_config in splits.items():
         _positive_repetitions(int(split_config["repetitions"]), split)
         if int(split_config["seed_base"]) < 0:
@@ -137,14 +186,22 @@ def _validate_config(config: dict[str, Any]) -> None:
         offsets = split_config.get("geometry_offsets_m")
         if not isinstance(offsets, list) or not offsets:
             raise ValueError(f"{split} requires at least one geometry offset")
-    if int(splits["validation"]["seed_base"]) == int(splits["test"]["seed_base"]):
-        raise ValueError("validation and test seed blocks must differ")
+    _assert_seed_blocks_disjoint(
+        {split: int(split_config["seed_base"]) for split, split_config in splits.items()}
+    )
 
 
 def _scenario_seed(seed_base: int, family_index: int, density_index: int, repeat: int) -> int:
     """Allocate non-overlapping decimal sub-blocks within one split seed block."""
 
     return seed_base + family_index * 100 + density_index * 10 + repeat
+
+
+def _seeded_doorway_lane_side(seed: int) -> int:
+    """Return a stable seed-selected side without relying on process hash state."""
+
+    digest = hashlib.sha256(str(seed).encode()).digest()
+    return -1 if digest[0] & 1 else 1
 
 
 def _moderate_static_layout(
@@ -214,9 +271,15 @@ def _moderate_routes(
     longitudinal_stagger: float,
     head_on_exit_x_m: float | None = None,
     doorway_exit_x_m: float | None = None,
+    doorway_lane_side: int | None = None,
+    doorway_lane_offset_m: float | None = None,
 ) -> list[list[list[float]]]:
     """Return separated, longitudinally staggered one-shot actor routes."""
 
+    if (doorway_lane_side is None) != (doorway_lane_offset_m is None):
+        raise ValueError("doorway lane side and offset must be configured together")
+    if doorway_lane_side is not None and doorway_lane_side not in {-1, 1}:
+        raise ValueError("doorway lane side must be -1 or 1")
     lanes = (-lane_min, lane_min, -lane_max, lane_max)
     routes: list[list[list[float]]] = []
     for index in range(count):
@@ -232,12 +295,22 @@ def _moderate_routes(
             )
         elif layout == "doorway":
             exit_x = 12.0 - 0.35 * index if doorway_exit_x_m is None else doorway_exit_x_m
-            routes.append(
-                [
-                    [19.0 + stagger, 12.0 + lane, math.pi],
-                    [exit_x, 12.0 - 0.45 * lane, math.pi],
-                ]
-            )
+            if doorway_lane_side is None:
+                routes.append(
+                    [
+                        [19.0 + stagger, 12.0 + lane, math.pi],
+                        [exit_x, 12.0 - 0.45 * lane, math.pi],
+                    ]
+                )
+            else:
+                assert doorway_lane_offset_m is not None
+                lane_y = 12.0 + offset + doorway_lane_side * doorway_lane_offset_m
+                routes.append(
+                    [
+                        [19.0 + stagger, lane_y, math.pi],
+                        [exit_x, lane_y, math.pi],
+                    ]
+                )
         elif layout == "crossing":
             x = 11.8 + 2.2 * index + offset
             if index % 2:
@@ -298,6 +371,15 @@ def _apply_moderation(
     layout = str(family["layout"])
     actors = scenario["obstacles"]["dynamic"]
     lane_min, lane_max = (float(value) for value in moderation["lane_offset_range_m"])
+    single_side_doorway = bool(moderation.get("doorway_single_side_lane_stream", False))
+    doorway_lane_side = (
+        _seeded_doorway_lane_side(int(scenario["ramp_metadata"]["seed"]))
+        if layout == "doorway" and single_side_doorway
+        else None
+    )
+    doorway_lane_offset = (
+        float(moderation["doorway_lane_offset_m"]) if doorway_lane_side is not None else None
+    )
     routes = _moderate_routes(
         layout,
         len(actors),
@@ -311,13 +393,20 @@ def _apply_moderation(
         doorway_exit_x_m=(
             float(moderation["doorway_exit_x_m"]) if "doorway_exit_x_m" in moderation else None
         ),
+        doorway_lane_side=doorway_lane_side,
+        doorway_lane_offset_m=doorway_lane_offset,
     )
     scenario["obstacles"]["static"] = _moderate_static_layout(base_compiler, layout, offset)
     metadata = scenario["ramp_metadata"]
     metadata["benchmark_id"] = str(config["benchmark_id"])
     metadata["difficulty"] = "moderate"
     metadata["replicate"] = repeat
-    metadata["human_behavior_model"] = "deterministic one-shot waypoint kinematic proxy"
+    dynamics_version = moderation.get("actor_dynamics_version")
+    metadata["human_behavior_model"] = (
+        str(dynamics_version)
+        if dynamics_version is not None
+        else "deterministic one-shot waypoint kinematic proxy"
+    )
     metadata["moderation"] = {
         "corridor_footprint_clear_width_m": float(moderation["corridor_footprint_clear_width_m"]),
         "doorway_footprint_clear_width_m": float(moderation["doorway_footprint_clear_width_m"]),
@@ -329,12 +418,45 @@ def _apply_moderation(
     for key in EGRESS_EXIT_KEYS.values():
         if key in moderation:
             metadata["moderation"][key] = float(moderation[key])
+    if dynamics_version is not None:
+        actor_behavior = {
+            "robot_soft_yield_distance_m": float(moderation["robot_soft_yield_distance_m"]),
+            "robot_hard_guard_distance_m": float(moderation["robot_hard_guard_distance_m"]),
+            "actor_update_frequency_hz": float(moderation["actor_update_frequency_hz"]),
+        }
+        metadata["actor_dynamics_version"] = str(dynamics_version)
+        metadata["actor_behavior_parameters"] = actor_behavior
+        metadata["moderation"].update(actor_behavior)
+        metadata["moderation"]["actor_dynamics_version"] = str(dynamics_version)
+    if doorway_lane_side is not None:
+        assert doorway_lane_offset is not None
+        doorway_center_y = 12.0 + offset
+        metadata["doorway_stream"] = {
+            "lane_side": doorway_lane_side,
+            "lane_offset_m": doorway_lane_offset,
+            "lane_y_m": doorway_center_y + doorway_lane_side * doorway_lane_offset,
+            "recovery_channel_y_m": doorway_center_y - doorway_lane_side * doorway_lane_offset,
+            "lane_preserving": True,
+        }
     for actor, route in zip(actors, routes, strict=True):
         actor["pos"] = route[0]
         actor["waypoints"] = route
         actor["cyclic_goals"] = False
         actor["robot_avoidance_distance_m"] = float(moderation["robot_avoidance_distance_m"])
         actor["behavior"]["once"] = True
+        if dynamics_version is not None:
+            actor["actor_dynamics_version"] = str(dynamics_version)
+            actor["robot_soft_yield_distance_m"] = float(moderation["robot_soft_yield_distance_m"])
+            actor["robot_hard_guard_distance_m"] = float(moderation["robot_hard_guard_distance_m"])
+            actor["actor_update_frequency_hz"] = float(moderation["actor_update_frequency_hz"])
+            actor["behavior"].update(
+                {
+                    "actor_dynamics_version": str(dynamics_version),
+                    "robot_soft_yield_distance_m": float(moderation["robot_soft_yield_distance_m"]),
+                    "robot_hard_guard_distance_m": float(moderation["robot_hard_guard_distance_m"]),
+                    "actor_update_frequency_hz": float(moderation["actor_update_frequency_hz"]),
+                }
+            )
 
 
 def _validate_configured_egress_endpoints(
@@ -360,6 +482,37 @@ def _validate_configured_egress_endpoints(
         grid = _footprint_occupancy(scenario, bounds, resolution, human_radius)
         if not grid.is_free(grid.world_to_grid(endpoint_x, endpoint_y)):
             raise ValueError(f"{family} egress endpoint intersects inflated static geometry")
+
+
+def _validate_single_side_doorway_stream(
+    scenario: dict[str, Any],
+    bounds: list[float],
+    resolution: float,
+    footprint_inflation_m: float,
+    moderation: dict[str, Any],
+) -> None:
+    """Validate the v3 lane stream and its static-map-free recovery channel."""
+
+    if not bool(moderation.get("doorway_single_side_lane_stream", False)):
+        return
+    if str(scenario["ramp_metadata"]["family"]) != "doorway_bottleneck":
+        return
+    stream = scenario["ramp_metadata"].get("doorway_stream")
+    if not isinstance(stream, dict) or stream.get("lane_preserving") is not True:
+        raise ValueError("single-side doorway stream metadata is missing")
+    lane_y = float(stream["lane_y_m"])
+    actors = scenario["obstacles"]["dynamic"]
+    for actor in actors:
+        waypoint_y = [float(point[1]) for point in actor["waypoints"]]
+        if any(not math.isclose(value, lane_y, abs_tol=1.0e-9) for value in waypoint_y):
+            raise ValueError("doorway actor route crosses lanes")
+    robot = scenario["robots"][0]
+    recovery_y = float(stream["recovery_channel_y_m"])
+    grid = _footprint_occupancy(scenario, bounds, resolution, footprint_inflation_m)
+    channel_start = (float(robot["start"][0]), recovery_y)
+    channel_goal = (float(robot["goal"][0]), recovery_y)
+    if not grid.segment_is_free(channel_start, channel_goal):
+        raise ValueError("doorway opposite-side recovery channel intersects static geometry")
 
 
 def _footprint_occupancy(
@@ -467,7 +620,10 @@ def _render_preview(
 
 def _assert_split_isolation(compiled: list[CompiledScenario]) -> None:
     values: dict[str, dict[str, set[Any]]] = {}
-    for split in ("validation", "test"):
+    split_order = tuple(dict.fromkeys(item.split for item in compiled))
+    if not split_order:
+        raise ValueError("compiled benchmark must contain at least one split")
+    for split in split_order:
         rows = [item.record for item in compiled if item.split == split]
         values[split] = {
             "scenario IDs": {row["scenario_id"] for row in rows},
@@ -480,10 +636,11 @@ def _assert_split_isolation(compiled: list[CompiledScenario]) -> None:
             raise ValueError(f"duplicate seed inside {split}")
         if len(values[split]["scenario hashes"]) != len(rows):
             raise ValueError(f"duplicate scenario hash inside {split}")
-    for label in values["validation"]:
-        overlap = values["validation"][label] & values["test"][label]
-        if overlap:
-            raise ValueError(f"validation/test {label} leakage: {sorted(overlap)!r}")
+    for left, right in combinations(split_order, 2):
+        for label in values[left]:
+            overlap = values[left][label] & values[right][label]
+            if overlap:
+                raise ValueError(f"{left}/{right} {label} leakage: {sorted(overlap)!r}")
 
 
 def _relative_or_absolute(path: Path, root: Path) -> str:
@@ -497,14 +654,16 @@ def compile_benchmark(
     config_path: Path,
     output_root: Path,
     *,
+    train_repetitions: int | None = None,
     validation_repetitions: int | None = None,
     test_repetitions: int | None = None,
+    train_seed_base: int | None = None,
     validation_seed_base: int | None = None,
     test_seed_base: int | None = None,
     manifest_suffix: str | None = None,
     render_previews: bool = True,
 ) -> dict[str, Any]:
-    """Compile deterministic moderate validation/test scenarios and manifests."""
+    """Compile deterministic moderate scenarios and split manifests."""
 
     config_path = config_path.resolve()
     output_root = output_root.resolve()
@@ -518,16 +677,25 @@ def compile_benchmark(
         generated_subdirectory = Path(suffix) / "arena"
         preview_subdirectory = Path(suffix)
 
-    split_options = {
+    split_overrides = {
+        "train": {
+            "repetitions": train_repetitions,
+            "seed_base": train_seed_base,
+        },
         "validation": {
             "repetitions": validation_repetitions,
             "seed_base": validation_seed_base,
         },
         "test": {"repetitions": test_repetitions, "seed_base": test_seed_base},
     }
+    split_order = tuple(str(split) for split in config["splits"])
+    for split, overrides in split_overrides.items():
+        if split not in split_order and any(value is not None for value in overrides.values()):
+            raise ValueError(f"{split} overrides require a configured {split} split")
     resolved_repetitions: dict[str, int] = {}
     resolved_seed_bases: dict[str, int] = {}
-    for split, overrides in split_options.items():
+    for split in split_order:
+        overrides = split_overrides[split]
         split_config = config["splits"][split]
         repetitions = overrides["repetitions"]
         seed_base = overrides["seed_base"]
@@ -539,8 +707,7 @@ def compile_benchmark(
         )
         if resolved_seed_bases[split] < 0:
             raise ValueError(f"{split} seed base must be non-negative")
-    if resolved_seed_bases["validation"] == resolved_seed_bases["test"]:
-        raise ValueError("validation and test seed blocks must differ")
+    _assert_seed_blocks_disjoint(resolved_seed_bases)
 
     bounds = [float(value) for value in config["map"]["bounds_m"]]
     resolution = float(config["map"]["preview_resolution_m"])
@@ -551,7 +718,7 @@ def compile_benchmark(
     base_compiler = _load_base_compiler()
     compiled: list[CompiledScenario] = []
 
-    for split in ("validation", "test"):
+    for split in split_order:
         split_config = config["splits"][split]
         repetitions = resolved_repetitions[split]
         seed_base = resolved_seed_bases[split]
@@ -589,6 +756,13 @@ def compile_benchmark(
                         resolution,
                         config["moderation"],
                     )
+                    _validate_single_side_doorway_stream(
+                        scenario,
+                        bounds,
+                        resolution,
+                        footprint_inflation,
+                        config["moderation"],
+                    )
                     _, path_cells = _footprint_path(
                         scenario,
                         bounds,
@@ -624,7 +798,7 @@ def compile_benchmark(
                     )
 
     _assert_split_isolation(compiled)
-    manifests: dict[str, list[dict[str, Any]]] = {"validation": [], "test": []}
+    manifests: dict[str, list[dict[str, Any]]] = {split: [] for split in split_order}
     for item in compiled:
         destination = output_root / "generated" / item.relative_path
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -678,8 +852,7 @@ def compile_benchmark(
         "manifest_paths": manifest_paths,
         "counts_by_split": {split: len(records) for split, records in manifests.items()},
         "scenario_count": len(compiled),
-        "validation_seed_base": resolved_seed_bases["validation"],
-        "test_seed_base": resolved_seed_bases["test"],
+        **{f"{split}_seed_base": resolved_seed_bases[split] for split in split_order},
         "footprint_inflation_m": footprint_inflation,
         "scenario_ids_sha256": hashlib.sha256("\n".join(scenario_ids).encode()).hexdigest(),
     }
@@ -696,8 +869,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--output-root", type=Path, default=ROOT / "scenarios")
+    parser.add_argument("--train-repetitions", type=int)
     parser.add_argument("--validation-repetitions", type=int)
     parser.add_argument("--test-repetitions", type=int)
+    parser.add_argument("--train-seed-base", type=int)
     parser.add_argument("--validation-seed-base", type=int)
     parser.add_argument("--test-seed-base", type=int)
     parser.add_argument("--manifest-suffix")
@@ -710,8 +885,10 @@ def main(argv: list[str] | None = None) -> int:
     summary = compile_benchmark(
         args.config,
         args.output_root,
+        train_repetitions=args.train_repetitions,
         validation_repetitions=args.validation_repetitions,
         test_repetitions=args.test_repetitions,
+        train_seed_base=args.train_seed_base,
         validation_seed_base=args.validation_seed_base,
         test_seed_base=args.test_seed_base,
         manifest_suffix=args.manifest_suffix,
