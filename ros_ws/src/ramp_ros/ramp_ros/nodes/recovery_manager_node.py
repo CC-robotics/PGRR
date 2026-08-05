@@ -299,7 +299,9 @@ class RecoveryManagerNode(Node):
             backup_duration_s=self._float("emergency_backup_duration_s"),
             backup_clearance_m=self._float("emergency_backup_clearance_m"),
             release_speed_mps=self._float("emergency_release_speed_mps"),
-            rotation_clearance_m=self._float("emergency_rotation_clearance_m"),
+            rotation_clearance_m=self._effective_emergency_rotation_clearance(),
+            turn_duration_s=self._float("emergency_turn_duration_s"),
+            maximum_turn_pulses=self._integer("emergency_maximum_turn_pulses"),
             forward_entry_clearance_m=self._float("emergency_forward_entry_clearance_m"),
             backup_reset_clear_s=self._float("emergency_backup_reset_clear_s"),
             minimum_retreat_pulses=self._integer("emergency_minimum_retreat_pulses"),
@@ -426,11 +428,11 @@ class RecoveryManagerNode(Node):
             "emergency_backup_clearance_m": 0.70,
             "emergency_release_speed_mps": 0.03,
             "emergency_release_hysteresis_m": 0.05,
-            # Jackal's measured half width is smaller than its 0.36 m
-            # circumscribed collision radius. This threshold preserves a
-            # positive lateral margin while permitting in-place narrow-door
-            # alignment instead of a permanent conservative stop.
+            # This nominal geometric floor is composed with the stricter
+            # footprint stop-and-release boundary before any turn is allowed.
             "emergency_rotation_clearance_m": 0.24,
+            "emergency_turn_duration_s": 0.8,
+            "emergency_maximum_turn_pulses": 4,
             "emergency_forward_entry_clearance_m": 0.85,
             "emergency_backup_reset_clear_s": 3.0,
             "emergency_minimum_retreat_pulses": 3,
@@ -871,6 +873,15 @@ class RecoveryManagerNode(Node):
             self._float("braking_acceleration_mps2"),
             self._float("control_latency_s"),
             self._float("footprint_stop_clearance_m"),
+        )
+
+    def _effective_emergency_rotation_clearance(self) -> float:
+        """Return the observable swept margin required for emergency rotation."""
+
+        return max(
+            self._float("emergency_rotation_clearance_m"),
+            self._float("footprint_stop_clearance_m")
+            + self._float("emergency_release_hysteresis_m"),
         )
 
     def _motion_stop_distance(self, linear_velocity: float) -> float:
@@ -1578,10 +1589,14 @@ class RecoveryManagerNode(Node):
             in {EmergencyEscapeMode.TURN_LEFT, EmergencyEscapeMode.TURN_RIGHT}
         ):
             command = Twist()
-            direction = (
-                1.0 if self._emergency_escape_mode is EmergencyEscapeMode.TURN_LEFT else -1.0
-            )
-            command.angular.z = direction * self._float("emergency_turn_speed_radps")
+            # The decision timer bounds and re-evaluates each turn pulse.  The
+            # faster control loop independently stops the sweep as soon as the
+            # same omnidirectional footprint margin becomes unsafe.
+            if self._nearest_clearance() >= self._effective_emergency_rotation_clearance():
+                direction = (
+                    1.0 if self._emergency_escape_mode is EmergencyEscapeMode.TURN_LEFT else -1.0
+                )
+                command.angular.z = direction * self._float("emergency_turn_speed_radps")
         elif (
             immediate_safety_stop
             or self._machine.state is RecoveryState.EMERGENCY_STOP

@@ -125,6 +125,26 @@ def _assert_terminal_publication(
     )
 
 
+def _assert_emergency_rotation_bounds(manager: RecoveryManagerNode) -> None:
+    expected_clearance = max(
+        manager._float("emergency_rotation_clearance_m"),
+        manager._float("footprint_stop_clearance_m")
+        + manager._float("emergency_release_hysteresis_m"),
+    )
+    controller = manager._emergency_escape
+    if not math.isclose(controller.rotation_clearance_m, expected_clearance):
+        raise RuntimeError(
+            "emergency rotation omitted the footprint release margin: "
+            f"expected={expected_clearance}, observed={controller.rotation_clearance_m}"
+        )
+    if not math.isclose(controller.turn_duration_s, 0.8):
+        raise RuntimeError(f"unexpected emergency turn duration: {controller.turn_duration_s}")
+    if controller.maximum_turn_pulses != 4:
+        raise RuntimeError(
+            f"unexpected emergency turn pulse budget: {controller.maximum_turn_pulses}"
+        )
+
+
 def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     threshold = manager._integer("bc_recurrent_escape_after_recoveries")
     if threshold != 1:
@@ -354,6 +374,7 @@ def main() -> int:
             raise RuntimeError(f"original goal was not restored: {restored}")
         if not any(item.has_temporary_goal for item in driver.decisions):
             raise RuntimeError("manager published no temporary-goal recovery decision")
+        _assert_emergency_rotation_bounds(manager)
         _assert_recurrent_escape_mask(manager)
         _assert_bc_subgoal_lifecycle(manager)
         _assert_directional_yield_lifecycle(manager)
@@ -384,7 +405,7 @@ def main() -> int:
         print(
             "PASS recovery manager ROS smoke: "
             f"temporary={temporary}, restored={restored}, decisions={len(driver.decisions)}, "
-            "bc_subgoal=bounded, directional_yield=observable, "
+            "bc_subgoal=bounded, emergency_turn=bounded, directional_yield=observable, "
             "recurrent_escape=planning_safe, terminal_reasons=preserved"
         )
         return 0

@@ -27,12 +27,21 @@ def test_collision_latched_motion_cannot_enter_unreleasable_clearance_band() -> 
     ) == pytest.approx(1.0)
 
 
-def _controller(*, minimum_retreat_pulses: int = 3) -> EmergencyEscapeController:
+def _controller(
+    *,
+    minimum_retreat_pulses: int = 3,
+    rotation_clearance_m: float = 0.30,
+    turn_duration_s: float = 0.8,
+    maximum_turn_pulses: int = 4,
+) -> EmergencyEscapeController:
     return EmergencyEscapeController(
         hold_s=0.5,
         backup_duration_s=0.8,
         backup_clearance_m=0.7,
         release_speed_mps=0.03,
+        rotation_clearance_m=rotation_clearance_m,
+        turn_duration_s=turn_duration_s,
+        maximum_turn_pulses=maximum_turn_pulses,
         minimum_retreat_pulses=minimum_retreat_pulses,
     )
 
@@ -321,6 +330,80 @@ def test_emergency_turn_direction_persists_across_bearing_sign_change() -> None:
     ) == (True, EmergencyEscapeMode.TURN_RIGHT)
 
 
+def test_emergency_turn_stops_when_observable_clearance_falls_below_margin() -> None:
+    controller = _controller(rotation_clearance_m=0.53)
+    common = {
+        "hazard": True,
+        "linear_speed_mps": 0.0,
+        "rear_clearance_m": 0.0,
+        "rear_observed": False,
+        "obstacle_angle_rad": -0.4,
+    }
+    assert controller.update(now_s=0.0, obstacle_clearance_m=0.60, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.update(now_s=0.5, obstacle_clearance_m=0.60, **common) == (
+        True,
+        EmergencyEscapeMode.TURN_LEFT,
+    )
+    # The active pulse is cancelled immediately instead of persisting to its
+    # nominal 1.3 s expiry after the observable footprint margin becomes unsafe.
+    assert controller.update(now_s=0.6, obstacle_clearance_m=0.52, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+
+
+def test_turn_pulses_recheck_direction_and_have_a_persistent_hazard_limit() -> None:
+    controller = _controller(maximum_turn_pulses=2)
+    common = {
+        "hazard": True,
+        "linear_speed_mps": 0.0,
+        "rear_clearance_m": 0.0,
+        "rear_observed": False,
+        "obstacle_clearance_m": 0.60,
+    }
+    assert controller.update(now_s=0.0, obstacle_angle_rad=0.4, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.update(now_s=0.5, obstacle_angle_rad=0.4, **common) == (
+        True,
+        EmergencyEscapeMode.TURN_RIGHT,
+    )
+    # Bearing changes do not chatter inside a pulse.
+    assert controller.update(now_s=1.0, obstacle_angle_rad=-0.4, **common) == (
+        True,
+        EmergencyEscapeMode.TURN_RIGHT,
+    )
+    # Once the pulse expires, the current bearing selects the next direction.
+    assert controller.update(now_s=1.31, obstacle_angle_rad=-0.4, **common) == (
+        True,
+        EmergencyEscapeMode.TURN_LEFT,
+    )
+    # A persistent hazard cannot renew rotation after the finite pulse budget.
+    assert controller.update(now_s=2.12, obstacle_angle_rad=-0.4, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.update(now_s=10.0, obstacle_angle_rad=-0.4, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.turn_count == 2
+
+    assert controller.update(
+        now_s=10.1,
+        hazard=False,
+        linear_speed_mps=0.0,
+        rear_clearance_m=0.0,
+        rear_observed=False,
+        obstacle_clearance_m=0.60,
+    ) == (False, EmergencyEscapeMode.STOP)
+    assert controller.turn_count == 0
+
+
 def test_continuous_hazard_can_repeat_only_when_backup_improves_clearance() -> None:
     controller = _controller(minimum_retreat_pulses=1)
     controller.update(
@@ -521,3 +604,7 @@ def test_backup_direction_guard_distinguishes_front_and_rear_obstacles() -> None
 def test_emergency_escape_configuration_rejects_negative_values() -> None:
     with pytest.raises(ValueError, match="non-negative"):
         EmergencyEscapeController(-0.1, 0.8, 0.7, 0.03)
+    with pytest.raises(ValueError, match="non-negative"):
+        _controller(turn_duration_s=0.0)
+    with pytest.raises(ValueError, match="non-negative"):
+        _controller(maximum_turn_pulses=0)

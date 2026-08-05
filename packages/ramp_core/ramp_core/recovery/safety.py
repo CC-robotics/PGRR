@@ -105,13 +105,20 @@ def emergency_mode_reason(mode: EmergencyEscapeMode) -> str:
 
 @dataclass
 class EmergencyEscapeController:
-    """Hold a stop, then choose a bounded observable geometric escape."""
+    """Hold a stop, then choose a bounded observable geometric escape.
+
+    Translation and rotation are finite pulses.  A turn direction is held
+    only inside one pulse; every pulse boundary consumes a fresh observable
+    clearance and bearing, and a persistent hazard has a finite turn budget.
+    """
 
     hold_s: float
     backup_duration_s: float
     backup_clearance_m: float
     release_speed_mps: float
     rotation_clearance_m: float = 0.30
+    turn_duration_s: float = 0.8
+    maximum_turn_pulses: int = 4
     rear_obstacle_angle_rad: float = math.radians(100.0)
     forward_entry_clearance_m: float = 0.85
     backup_reset_clear_s: float = 3.0
@@ -126,6 +133,7 @@ class EmergencyEscapeController:
     backup_count: int = 0
     backup_start_clearance_m: float | None = None
     backup_peak_clearance_m: float | None = None
+    turn_count: int = 0
 
     def __post_init__(self) -> None:
         values = (
@@ -134,12 +142,15 @@ class EmergencyEscapeController:
             self.backup_clearance_m,
             self.release_speed_mps,
             self.rotation_clearance_m,
+            self.turn_duration_s,
             self.forward_entry_clearance_m,
             self.backup_reset_clear_s,
             self.backup_progress_m,
         )
         if (
             any(value < 0.0 for value in values)
+            or self.turn_duration_s <= 0.0
+            or self.maximum_turn_pulses <= 0
             or self.minimum_retreat_pulses <= 0
             or self.maximum_improving_backups <= 0
             or self.minimum_retreat_pulses > self.maximum_improving_backups
@@ -177,7 +188,34 @@ class EmergencyEscapeController:
                 if self.backup_peak_clearance_m is not None
                 else self.backup_start_clearance_m,
             )
-        if now_s < self.escape_until_s:
+        if not hazard:
+            self.turn_count = 0
+
+        turning = self.mode in {
+            EmergencyEscapeMode.TURN_LEFT,
+            EmergencyEscapeMode.TURN_RIGHT,
+        }
+        turn_active = turning and now_s < self.escape_until_s
+        if turning:
+            # Unlike a bounded reverse pulse, rotation should end immediately
+            # when the hazard clears or when its omnidirectional swept margin
+            # becomes unsafe.  An active safe pulse may still be preempted by
+            # the higher-priority BACKUP/FORWARD checks below.
+            if not hazard:
+                self.escape_until_s = float("-inf")
+                self.mode = EmergencyEscapeMode.STOP
+                turn_active = False
+            elif obstacle_clearance_m < self.rotation_clearance_m:
+                self.escape_until_s = float("-inf")
+                self.mode = EmergencyEscapeMode.STOP
+                turn_active = False
+            elif not turn_active:
+                # Pulse expiry deliberately drops the sticky direction before
+                # selecting again from the current observable bearing.
+                self.escape_until_s = float("-inf")
+                self.mode = EmergencyEscapeMode.STOP
+
+        if not turning and now_s < self.escape_until_s:
             if self.mode is not EmergencyEscapeMode.BACKUP or backup_permitted:
                 return True, self.mode
             self.escape_until_s = float("-inf")
@@ -234,19 +272,17 @@ class EmergencyEscapeController:
             self.mode = EmergencyEscapeMode.FORWARD
             self.escape_until_s = now_s + self.backup_duration_s
             return True, self.mode
-        if obstacle_clearance_m >= self.rotation_clearance_m:
-            # Keep a safe turn direction through the +/-pi bearing wrap and
-            # through nearest-obstacle identity changes. Re-choosing from the
-            # instantaneous sign can produce an endless left/right limit
-            # cycle before a separating forward heading is reached.
-            if self.mode in {
-                EmergencyEscapeMode.TURN_LEFT,
-                EmergencyEscapeMode.TURN_RIGHT,
-            }:
-                return True, self.mode
+        if turn_active:
+            return True, self.mode
+        if (
+            obstacle_clearance_m >= self.rotation_clearance_m
+            and self.turn_count < self.maximum_turn_pulses
+        ):
             self.mode = (
                 EmergencyEscapeMode.TURN_RIGHT if wrapped >= 0.0 else EmergencyEscapeMode.TURN_LEFT
             )
+            self.escape_until_s = now_s + self.turn_duration_s
+            self.turn_count += 1
             return True, self.mode
         self.mode = EmergencyEscapeMode.STOP
         return True, self.mode

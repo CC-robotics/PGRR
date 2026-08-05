@@ -75,7 +75,13 @@ emergency_backup_duration_s: 0.8
 emergency_backup_clearance_m: 0.70
 emergency_release_speed_mps: 0.03
 emergency_release_hysteresis_m: 0.05
+# The effective turn threshold is max(this value,
+# footprint_stop_clearance_m + emergency_release_hysteresis_m). A turn is a
+# bounded observable pulse, never an unbounded in-place command.
 emergency_rotation_clearance_m: 0.24
+emergency_turn_duration_s: 0.8
+# At 0.6 rad/s this caps one persistent hazard at 1.92 rad of commanded turn.
+emergency_maximum_turn_pulses: 4
 emergency_forward_entry_clearance_m: 0.85
 emergency_backup_reset_clear_s: 3.0
 emergency_minimum_retreat_pulses: 3

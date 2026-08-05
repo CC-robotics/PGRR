@@ -277,6 +277,15 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         <= config["backup_mask_validated_distance_m"]
     )
     assert config["emergency_rotation_clearance_m"] == 0.24
+    assert config["emergency_turn_duration_s"] == 0.8
+    assert config["emergency_maximum_turn_pulses"] == 4
+    assert config["emergency_maximum_turn_pulses"] * config["emergency_turn_duration_s"] * config[
+        "emergency_turn_speed_radps"
+    ] == pytest.approx(1.92)
+    assert max(
+        config["emergency_rotation_clearance_m"],
+        config["footprint_stop_clearance_m"] + config["emergency_release_hysteresis_m"],
+    ) == pytest.approx(0.53)
     assert config["emergency_forward_entry_clearance_m"] == 0.85
     assert config["emergency_backup_reset_clear_s"] == 3.0
     assert config["emergency_minimum_retreat_pulses"] == 3
@@ -314,6 +323,9 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"bc_yield_forward_half_width_degrees": 45.0' in manager
     assert '"bc_yield_maximum_forward_progress_m": 0.05' in manager
     assert '"emergency_rotation_clearance_m": 0.24' in manager
+    assert '"emergency_turn_duration_s": 0.8' in manager
+    assert '"emergency_maximum_turn_pulses": 4' in manager
+    assert "self._effective_emergency_rotation_clearance()" in manager
     assert '"collision_latched_stop_clearance_m": 0.85' in manager
     assert '"collision_latched_action_clearance_m": 0.90' in manager
     assert "the latched margin is" in manager
