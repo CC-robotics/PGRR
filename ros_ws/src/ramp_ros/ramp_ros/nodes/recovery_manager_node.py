@@ -424,7 +424,6 @@ class RecoveryManagerNode(Node):
             "wait_duration_s": 0.5,
             "subgoal_settle_s": 1.0,
             "expert_replan_interval_s": 0.5,
-            "expert_rejoin_block_threshold": 0.9,
             "expert_wait_budget_decisions": 3,
             "bc_rejoin_block_threshold": 0.65,
             "bc_yield_release_clearance_m": 1.25,
@@ -705,6 +704,7 @@ class RecoveryManagerNode(Node):
         )
         if not self._armed and (nominal_ready or startup_failure_ready):
             self._bc_closing_side_latch.reset()
+            self._oracle_yield.reset()
             self._armed = True
             self._armed_at_s = now_s
             self._distance_history.clear()
@@ -1045,7 +1045,7 @@ class RecoveryManagerNode(Node):
         mask = constrain_rejoin_actions(
             mask,
             collision_risk=failure.collision_risk,
-            release_threshold=self._float("expert_rejoin_block_threshold"),
+            release_threshold=self._machine.config.tau_on,
         )
         expert_wait_budget = self._integer("expert_wait_budget_decisions")
         mask = constrain_stalled_wait(
@@ -1053,6 +1053,15 @@ class RecoveryManagerNode(Node):
             consecutive_waits=self._expert_repeated_waits,
             wait_budget=expert_wait_budget,
         )
+        backup_mask_legal = bool(mask[BACKUP_ACTION_ID])
+        self._oracle_yield.require_escape_if_retreat_unavailable(
+            retreat_is_safe=backup_mask_legal,
+        )
+        if self._oracle_yield.active and not self._oracle_yield.backup_required:
+            # The longitudinal distance budget is independent of the planning
+            # mask.  Intersect it here before the recurrent escape constraint;
+            # never re-authorize BACKUP after the bounded retreat is exhausted.
+            mask[BACKUP_ACTION_ID] = False
         mask = constrain_recurrent_yield_escape(
             mask,
             escape_required=self._oracle_yield.escape_required,
@@ -1100,7 +1109,10 @@ class RecoveryManagerNode(Node):
             confidence,
             (
                 (
-                    "oracle_recurrent_yield_escape "
+                    "oracle_yield_escape "
+                    f"cause={self._oracle_yield.escape_reason or 'unspecified'} "
+                    f"backup_required={int(self._oracle_yield.backup_required)} "
+                    f"backup_mask_legal={int(backup_mask_legal)}; "
                     if self._oracle_yield.escape_required
                     else "oracle_rollout "
                 )
@@ -1490,6 +1502,7 @@ class RecoveryManagerNode(Node):
         }:
             return False
         self._bc_closing_side_latch.reset()
+        self._oracle_yield.reset()
         self._published_emergency_mode = None
         self._publish_decision(CONTINUE_ACTION_ID, confidence, transition.reason)
         return True

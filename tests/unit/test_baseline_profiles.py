@@ -419,6 +419,24 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
 def test_oracle_rejoin_distinguishes_hard_risk_from_soft_latch() -> None:
     root = Path(__file__).resolve().parents[2]
     manager = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py").read_text()
-    assert '"expert_rejoin_block_threshold": 0.9' in manager
-    assert 'release_threshold=self._float("expert_rejoin_block_threshold")' in manager
+    expert_config = yaml.safe_load((root / "configs/expert/default.yaml").read_text())
+    failure_config = yaml.safe_load(
+        (root / "configs/failure/recovery_state_machine.yaml").read_text()
+    )
+    assert "expert_rejoin_block_threshold" not in manager
+    assert "rejoin_block_collision_threshold" not in expert_config
+    assert failure_config["tau_on"] == pytest.approx(0.65)
+    assert "release_threshold=self._machine.config.tau_on" in manager
     assert 'release_threshold=self._float("bc_rejoin_block_threshold")' in manager
+
+
+def test_oracle_yield_escape_is_planning_masked_and_reports_cause() -> None:
+    root = Path(__file__).resolve().parents[2]
+    manager = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py").read_text()
+    retreat_update = manager.index("self._oracle_yield.require_escape_if_retreat_unavailable(")
+    recurrent_mask = manager.index("mask = constrain_recurrent_yield_escape(", retreat_update)
+    expert_label = manager.index("label = PlanningRecoveryExpert(grid).label(", recurrent_mask)
+    assert retreat_update < recurrent_mask < expert_label
+    assert "retreat_is_safe=backup_mask_legal" in manager
+    assert "mask[BACKUP_ACTION_ID] = False" in manager
+    assert "f\"cause={self._oracle_yield.escape_reason or 'unspecified'} \"" in manager

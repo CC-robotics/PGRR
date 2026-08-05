@@ -18,7 +18,6 @@ oracle_yield_passed_margin_m: 0.5
 oracle_yield_maximum_retreat_m: 1.4
 oracle_yield_recurrence_progress_m: 0.75
 oracle_yield_maximum_recurrences_without_progress: 1
-rejoin_block_collision_threshold: 0.9
 wait_budget_decisions: 3
 cost:
   collision: 1000000.0

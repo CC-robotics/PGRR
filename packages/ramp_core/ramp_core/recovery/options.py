@@ -489,6 +489,7 @@ class PrivilegedYieldOption:
     previous_activation_coordinate_m: float | None = None
     recurrence_count: int = 0
     escape_required: bool = False
+    escape_reason: str | None = None
     backup_required: bool = False
 
     def __post_init__(self) -> None:
@@ -508,6 +509,36 @@ class PrivilegedYieldOption:
     def active(self) -> bool:
         return bool(self.threat_indices)
 
+    def reset(self) -> None:
+        """Clear all episode-local threat, retreat, and recurrence state."""
+
+        self.threat_indices = ()
+        self.activation_coordinate_m = None
+        self.previous_activation_coordinate_m = None
+        self.recurrence_count = 0
+        self.escape_required = False
+        self.escape_reason = None
+        self.backup_required = False
+
+    def require_escape_if_retreat_unavailable(self, *, retreat_is_safe: bool) -> bool:
+        """Escalate an unresolved yield after its safe retreat is exhausted.
+
+        ``backup_required`` captures the longitudinal distance budget, while
+        ``retreat_is_safe`` is supplied by the authoritative planning mask.
+        This method never makes an action legal; it only selects the existing
+        planning-constrained escape branch.
+        """
+
+        if not self.active or self.escape_required:
+            return self.escape_required
+        if self.backup_required and retreat_is_safe:
+            return False
+        self.escape_required = True
+        self.escape_reason = (
+            "retreat_distance_exhausted" if not self.backup_required else "retreat_planning_masked"
+        )
+        return True
+
     def update(
         self,
         robot: Pose2D,
@@ -525,6 +556,7 @@ class PrivilegedYieldOption:
         ):
             self.recurrence_count = 0
             self.escape_required = False
+            self.escape_reason = None
 
         def longitudinal(position: tuple[float, float]) -> float:
             return (position[0] - robot.x) * tangent[0] + (position[1] - robot.y) * tangent[1]
@@ -546,6 +578,9 @@ class PrivilegedYieldOption:
             if passed or receding or not valid:
                 self.threat_indices = ()
                 self.activation_coordinate_m = None
+                self.escape_required = False
+                self.escape_reason = None
+                self.backup_required = False
             else:
                 self.threat_indices = valid
         if not self.threat_indices and collision_risk:
@@ -566,6 +601,8 @@ class PrivilegedYieldOption:
                     self.escape_required = (
                         self.recurrence_count >= self.maximum_recurrences_without_progress
                     )
+                    if self.escape_required:
+                        self.escape_reason = "recurrent_flow_without_progress"
                 self.threat_indices = new_threats
                 self.activation_coordinate_m = robot_coordinate
                 self.previous_activation_coordinate_m = robot_coordinate

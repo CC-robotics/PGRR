@@ -20,7 +20,12 @@ from ramp_core.action_space import (
     REPLAN_ACTION_ID,
     WAIT_ACTION_ID,
 )
-from ramp_core.recovery.options import constrain_directional_yield_motion
+from ramp_core.observations import HumanState
+from ramp_core.recovery.options import (
+    constrain_directional_yield_motion,
+    constrain_recurrent_yield_escape,
+    constrain_rejoin_actions,
+)
 from ramp_core.recovery.safety import EmergencyEscapeMode
 from ramp_core.state_machine import RecoveryState, StateTransition
 from ramp_core.types import PlannerStatus, Pose2D
@@ -513,13 +518,27 @@ def _assert_new_episode_arm_resets_closing_side(manager: RecoveryManagerNode) ->
             left_occupied=True,
             rotation_gated=False,
         )
+        manager._oracle_yield.threat_indices = (0,)
+        manager._oracle_yield.activation_coordinate_m = 0.0
+        manager._oracle_yield.previous_activation_coordinate_m = 0.0
+        manager._oracle_yield.recurrence_count = 2
+        manager._oracle_yield.escape_required = True
+        manager._oracle_yield.escape_reason = "retreat_planning_masked"
+        manager._oracle_yield.backup_required = True
         manager._armed = False
         manager._movement_observed = True
         manager._planner_status = PlannerStatus.ACTIVE
         manager._failure = type(failure)(0.0, 0.0, 0.0, 0.0)
         manager._try_arm()
-        if not manager._armed or manager._bc_closing_side_latch.active:
-            raise RuntimeError("new episode arming retained closing-side evidence")
+        if (
+            not manager._armed
+            or manager._bc_closing_side_latch.active
+            or manager._oracle_yield.active
+            or manager._oracle_yield.escape_required
+            or manager._oracle_yield.escape_reason is not None
+            or manager._oracle_yield.recurrence_count
+        ):
+            raise RuntimeError("new episode arming retained recovery evidence")
     finally:
         manager._armed = armed
         manager._armed_at_s = armed_at_s
@@ -530,6 +549,47 @@ def _assert_new_episode_arm_resets_closing_side(manager: RecoveryManagerNode) ->
         manager._distance_history.extend(distance_history)
         manager._angular_history.clear()
         manager._angular_history.extend(angular_history)
+        manager._oracle_yield.reset()
+
+
+def _assert_oracle_yield_safety_contract(manager: RecoveryManagerNode) -> None:
+    if manager.has_parameter("expert_rejoin_block_threshold"):
+        raise RuntimeError("Oracle retained a threshold independent of tau_on")
+    if abs(manager._machine.config.tau_on - 0.65) > 1.0e-9:
+        raise RuntimeError(f"unexpected deployment tau_on: {manager._machine.config.tau_on}")
+
+    ordinary = np.ones(ACTION_COUNT, dtype=np.bool_)
+    aligned = constrain_rejoin_actions(
+        ordinary,
+        collision_risk=0.75,
+        release_threshold=manager._machine.config.tau_on,
+    )
+    if aligned[CONTINUE_ACTION_ID]:
+        raise RuntimeError("Oracle allowed CONTINUE above the deployment trigger")
+
+    option = manager._oracle_yield
+    option.reset()
+    approaching = HumanState((1.5, 0.0), (-0.5, 0.0), 0.35)
+    if not option.update(Pose2D(0.0, 0.0, 0.0), (approaching,), collision_risk=True):
+        raise RuntimeError("Oracle yield did not activate for an approaching human")
+    planning_mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    planning_mask[[6, WAIT_ACTION_ID]] = True
+    if not option.require_escape_if_retreat_unavailable(retreat_is_safe=False):
+        raise RuntimeError("Oracle yield did not escape a planning-masked retreat")
+    constrained = constrain_recurrent_yield_escape(
+        planning_mask,
+        escape_required=option.escape_required,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        minimum_lateral_displacement_m=manager._float(
+            "recurrent_escape_minimum_lateral_displacement_m"
+        ),
+    )
+    if np.any(constrained & ~planning_mask) or not constrained[6]:
+        raise RuntimeError("Oracle recurrent escape weakened the authoritative mask")
+    if option.escape_reason != "retreat_planning_masked":
+        raise RuntimeError(f"Oracle escape telemetry cause mismatch: {option.escape_reason}")
+    option.reset()
 
 
 def _assert_directional_yield_lifecycle(manager: RecoveryManagerNode) -> None:
@@ -636,6 +696,7 @@ def main() -> int:
         _assert_temporal_closing_side_mask(manager)
         _assert_bc_subgoal_lifecycle(manager)
         _assert_new_episode_arm_resets_closing_side(manager)
+        _assert_oracle_yield_safety_contract(manager)
         _assert_directional_yield_lifecycle(manager)
         _assert_recurrent_path_envelope(manager)
         nonterminal = StateTransition(
@@ -667,6 +728,7 @@ def main() -> int:
             f"temporary={temporary}, restored={restored}, decisions={len(driver.decisions)}, "
             "bc_subgoal=bounded, emergency_turn=bounded, directional_yield=observable, "
             "closing_side=latched_observable, recurrent_escape=planning_safe, "
+            "oracle_yield=bounded_masked_escape, "
             "recurrent_path=bounded, "
             "terminal_reasons=preserved"
         )

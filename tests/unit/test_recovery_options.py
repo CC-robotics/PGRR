@@ -780,8 +780,44 @@ def test_privileged_yield_commits_until_threat_passes_longitudinally() -> None:
     assert option.backup_required
     assert option.update(Pose2D(-1.5, 0.0, 0.0), (stopped_ahead,), collision_risk=False)
     assert not option.backup_required
+    assert option.require_escape_if_retreat_unavailable(retreat_is_safe=True)
+    assert option.escape_reason == "retreat_distance_exhausted"
     passed = HumanState((-1.1, 0.0), (-0.5, 0.0), 0.35)
     assert not option.update(Pose2D(0.0, 0.0, 0.0), (passed,), collision_risk=False)
+    assert not option.escape_required
+    assert option.escape_reason is None
+
+
+def test_privileged_yield_escalates_when_planning_mask_rejects_retreat() -> None:
+    option = PrivilegedYieldOption(task_heading_rad=0.0)
+    approaching = HumanState((1.5, 0.0), (-0.5, 0.0), 0.35)
+    assert option.update(Pose2D(0.0, 0.0, 0.0), (approaching,), collision_risk=True)
+    assert option.backup_required
+    assert not option.require_escape_if_retreat_unavailable(retreat_is_safe=True)
+    assert option.require_escape_if_retreat_unavailable(retreat_is_safe=False)
+    assert option.escape_reason == "retreat_planning_masked"
+
+
+def test_privileged_yield_escape_state_resets_for_progress_and_new_episode() -> None:
+    option = PrivilegedYieldOption(task_heading_rad=0.0, recurrence_progress_m=0.75)
+    approaching = HumanState((2.0, 0.0), (-0.5, 0.0), 0.35)
+    assert option.update(Pose2D(0.0, 0.0, 0.0), (approaching,), collision_risk=True)
+    assert option.require_escape_if_retreat_unavailable(retreat_is_safe=False)
+
+    farther_ahead = HumanState((3.0, 0.0), (-0.5, 0.0), 0.35)
+    assert option.update(Pose2D(1.0, 0.0, 0.0), (farther_ahead,), collision_risk=True)
+    assert not option.escape_required
+    assert option.escape_reason is None
+    assert option.backup_required
+
+    assert option.require_escape_if_retreat_unavailable(retreat_is_safe=False)
+    option.reset()
+    assert not option.active
+    assert not option.backup_required
+    assert not option.escape_required
+    assert option.escape_reason is None
+    assert option.recurrence_count == 0
+    assert option.previous_activation_coordinate_m is None
 
 
 def test_privileged_yield_ignores_nonapproaching_human() -> None:
@@ -819,6 +855,7 @@ def test_privileged_yield_escalates_when_flow_recurs_without_progress() -> None:
     returning = HumanState((1.0, 0.0), (-0.5, 0.0), 0.35)
     assert option.update(Pose2D(-0.8, 0.0, 0.0), (returning,), collision_risk=True)
     assert option.escape_required
+    assert option.escape_reason == "recurrent_flow_without_progress"
     assert option.recurrence_count == 1
 
 
