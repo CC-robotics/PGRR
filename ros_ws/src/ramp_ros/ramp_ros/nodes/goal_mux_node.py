@@ -88,19 +88,34 @@ class GoalMuxNode(Node):
 
     def _publish(self) -> None:
         now = self._now()
+        recovery_fresh = now - self._recovery_stamp <= self._timeout
         terminal_stop = self._recovery_state in {
             RecoveryDecision.FAILED,
             RecoveryDecision.SUCCEEDED,
         }
         pending_stop = self._recovery_state == RecoveryDecision.PENDING_RECOVERY
-        direct_recovery = self._recovery_state == RecoveryDecision.EMERGENCY_STOP or (
+        # RecoveryManager publishes a zero command while an asynchronous
+        # temporary-goal preemption settles.  Honor that fresh stop here;
+        # otherwise the mux forwards the last nominal-plan command even though
+        # it still targets the original goal.  Once the stop heartbeat becomes
+        # stale, the newly planned base command resumes normally.
+        subgoal_settling = (
             self._recovery_state == RecoveryDecision.RECOVERY
-            and self._recovery_action in {WAIT_ACTION_ID, BACKUP_ACTION_ID}
+            and 0 <= self._recovery_action < WAIT_ACTION_ID
+            and recovery_fresh
+        )
+        direct_recovery = (
+            self._recovery_state == RecoveryDecision.EMERGENCY_STOP
+            or (
+                self._recovery_state == RecoveryDecision.RECOVERY
+                and self._recovery_action in {WAIT_ACTION_ID, BACKUP_ACTION_ID}
+            )
+            or subgoal_settling
         )
         if not self._episode_started or terminal_stop or pending_stop:
             output = Twist()
         elif direct_recovery:
-            output = self._recovery if now - self._recovery_stamp <= self._timeout else Twist()
+            output = self._recovery if recovery_fresh else Twist()
         else:
             output = self._base if now - self._base_stamp <= self._timeout else Twist()
         self._publisher.publish(output)

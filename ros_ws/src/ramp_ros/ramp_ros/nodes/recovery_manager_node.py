@@ -206,6 +206,13 @@ class RecoveryManagerNode(Node):
             clearance_improvement_m=self._float("backup_clearance_improvement_m"),
             mask_validated_distance_m=self._float("backup_mask_validated_distance_m"),
         )
+        self._bc_unilateral_backup_option = BoundedBackupOption(
+            minimum_duration_s=self._float("backup_minimum_duration_s"),
+            maximum_duration_s=self._float("bc_unilateral_backup_maximum_duration_s"),
+            speed_mps=self._float("backup_speed_mps"),
+            clearance_improvement_m=self._float("backup_clearance_improvement_m"),
+            mask_validated_distance_m=self._float("backup_mask_validated_distance_m"),
+        )
         self._bc_retreat_guard = ObservableNetRetreatGuard(
             task_heading_rad=math.atan2(
                 self._goal.y - self._start.y,
@@ -323,6 +330,7 @@ class RecoveryManagerNode(Node):
         self._goal_preempted = False
         self._action_started_s = float("-inf")
         self._backup_start_clearance_m: float | None = None
+        self._backup_redecision_due_to_unilateral_flow = False
         self._emergency = False
         self._collision_safety_latched = False
         self._emergency_escape_active = False
@@ -425,11 +433,12 @@ class RecoveryManagerNode(Node):
             "deadlock_backup_after_decisions": 2,
             "deadlock_replan_after_decisions": 4,
             "robot_clearance_m": 0.25,
-            "maximum_recovery_path_deviation_m": 0.6,
+            "maximum_recovery_path_deviation_m": 0.65,
             "recurrent_escape_maximum_path_deviation_m": 1.5,
             "backup_speed_mps": 0.15,
             "backup_minimum_duration_s": 0.8,
             "backup_maximum_duration_s": 3.0,
+            "bc_unilateral_backup_maximum_duration_s": 1.0,
             "backup_clearance_improvement_m": 0.25,
             "backup_mask_validated_distance_m": 0.45,
             "wait_duration_s": 0.5,
@@ -1162,13 +1171,17 @@ class RecoveryManagerNode(Node):
 
         if not self._bc_yield_latch.latched or self._machine.consecutive_recoveries <= 0:
             return False
-        unilateral_flow = (
-            self._bc_closing_side_latch.right_occupied != self._bc_closing_side_latch.left_occupied
-        )
         return bool(
-            unilateral_flow
+            self._bc_unilateral_flow_latched()
             or self._machine.consecutive_recoveries
             >= self._integer("bc_recurrent_escape_after_recoveries")
+        )
+
+    def _bc_unilateral_flow_latched(self) -> bool:
+        """Return whether deployable LiDAR history supports exactly one closing side."""
+
+        return bool(
+            self._bc_closing_side_latch.right_occupied != self._bc_closing_side_latch.left_occupied
         )
 
     def _constrain_bc_temporal_closing_side(
@@ -1482,6 +1495,14 @@ class RecoveryManagerNode(Node):
         mask = ensure_safe_wait_fallback(mask)
         decision = self._policy.select_action(observation, mask)
         if self._policy_type == "bc":
+            if decision.action_id == BACKUP_ACTION_ID and self._bc_unilateral_flow_latched():
+                decision = CoreRecoveryDecision(
+                    decision.action_id,
+                    decision.confidence,
+                    "bc_unilateral_backup=short_redecision "
+                    f"maximum_s={self._float('bc_unilateral_backup_maximum_duration_s'):.3f}; "
+                    f"{decision.reason}",
+                )
             if self._bc_yield_latch.latched and self._bc_lateral_side_commitment.commit_action(
                 decision.action_id,
                 pose=pose,
@@ -1545,12 +1566,26 @@ class RecoveryManagerNode(Node):
             return False
         return self._distance_history[0] - self._distance_history[-1] > 0.03
 
+    def _active_backup_option(self) -> BoundedBackupOption:
+        """Return the option whose bound governs both command and completion."""
+
+        return (
+            self._bc_unilateral_backup_option
+            if self._backup_redecision_due_to_unilateral_flow
+            else self._backup_option
+        )
+
+    def _backup_command_active(self, now_s: float) -> bool:
+        """Bound reverse command duration even when the decision timer is delayed."""
+
+        return now_s - self._action_started_s < self._active_backup_option().maximum_duration_s
+
     def _action_complete(self, now_s: float) -> bool:
         elapsed = now_s - self._action_started_s
         if self._active_action == WAIT_ACTION_ID:
             return elapsed >= self._float("wait_duration_s")
         if self._active_action == BACKUP_ACTION_ID:
-            return self._backup_option.is_complete(
+            return self._active_backup_option().is_complete(
                 elapsed_s=elapsed,
                 start_clearance_m=self._backup_start_clearance_m,
                 current_clearance_m=self._observable_nearest_clearance(),
@@ -1569,6 +1604,12 @@ class RecoveryManagerNode(Node):
     def _execute(self, action_id: int, now_s: float) -> Pose2D | None:
         self._active_action = action_id
         self._action_started_s = now_s
+        self._backup_redecision_due_to_unilateral_flow = bool(
+            action_id == BACKUP_ACTION_ID
+            and self._policy_type == "bc"
+            and self._bc_yield_latch.latched
+            and self._bc_unilateral_flow_latched()
+        )
         self._backup_start_clearance_m = (
             self._observable_nearest_clearance() if action_id == BACKUP_ACTION_ID else None
         )
@@ -1918,7 +1959,7 @@ class RecoveryManagerNode(Node):
             # completion rule.  Even if the slower decision timer is delayed,
             # ideal commanded travel therefore cannot exceed the 0.45 m rear
             # segment checked by the planning and observable-scan masks.
-            if now_s - self._action_started_s < self._backup_option.maximum_duration_s:
+            if self._backup_command_active(now_s):
                 command.linear.x = -self._float("backup_speed_mps")
         if command is not None:
             self._override_publisher.publish(command)

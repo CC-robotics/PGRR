@@ -445,6 +445,99 @@ def test_continuous_hazard_can_repeat_only_when_backup_improves_clearance() -> N
     ) == (True, EmergencyEscapeMode.BACKUP)
 
 
+def test_positive_subthreshold_gain_can_create_missing_rotation_clearance() -> None:
+    controller = _controller(minimum_retreat_pulses=1, rotation_clearance_m=0.53)
+    common = {
+        "hazard": True,
+        "linear_speed_mps": 0.0,
+        "rear_clearance_m": 2.0,
+        "obstacle_angle_rad": 0.2,
+    }
+    assert controller.update(now_s=0.0, obstacle_clearance_m=0.45, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.update(now_s=0.5, obstacle_clearance_m=0.45, **common) == (
+        True,
+        EmergencyEscapeMode.BACKUP,
+    )
+    # The 0.041 m gain is real but below the ordinary 0.05 m repeat threshold.
+    # Because rotation is still unsafe, one more independently gated pulse can
+    # continue creating clearance instead of entering an unrecoverable stop.
+    assert controller.update(now_s=1.4, obstacle_clearance_m=0.491, **common) == (
+        True,
+        EmergencyEscapeMode.BACKUP,
+    )
+
+
+@pytest.mark.parametrize(
+    ("rear_clearance_m", "backup_permitted"),
+    [(0.69, True), (2.0, False)],
+)
+def test_clearance_creation_repeat_never_bypasses_translation_gates(
+    rear_clearance_m: float,
+    backup_permitted: bool,
+) -> None:
+    controller = _controller(minimum_retreat_pulses=1, rotation_clearance_m=0.53)
+    controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.45,
+    )
+    assert controller.update(
+        now_s=0.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=2.0,
+        obstacle_clearance_m=0.45,
+    ) == (True, EmergencyEscapeMode.BACKUP)
+    # A positive 0.041 m gain cannot override either the independently
+    # observed rear margin or the caller's planning/LiDAR/net-retreat gate.
+    assert controller.update(
+        now_s=1.4,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=rear_clearance_m,
+        backup_permitted=backup_permitted,
+        obstacle_angle_rad=0.2,
+        obstacle_clearance_m=0.491,
+    ) == (True, EmergencyEscapeMode.STOP)
+
+
+def test_subthreshold_clearance_creation_still_obeys_hard_pulse_limit() -> None:
+    controller = EmergencyEscapeController(
+        hold_s=0.0,
+        backup_duration_s=0.1,
+        backup_clearance_m=0.7,
+        release_speed_mps=0.03,
+        rotation_clearance_m=0.53,
+        minimum_retreat_pulses=1,
+        maximum_improving_backups=2,
+        backup_progress_m=0.05,
+    )
+    common = {
+        "hazard": True,
+        "linear_speed_mps": 0.0,
+        "rear_clearance_m": 2.0,
+        "obstacle_angle_rad": 0.2,
+    }
+    assert controller.update(now_s=0.0, obstacle_clearance_m=0.40, **common) == (
+        True,
+        EmergencyEscapeMode.BACKUP,
+    )
+    assert controller.update(now_s=0.2, obstacle_clearance_m=0.42, **common) == (
+        True,
+        EmergencyEscapeMode.BACKUP,
+    )
+    assert controller.update(now_s=0.4, obstacle_clearance_m=0.44, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.backup_count == 2
+
+
 def test_minimum_retreat_uses_three_rear_safe_pulses_before_requiring_gain() -> None:
     controller = _controller(minimum_retreat_pulses=3)
     common = {

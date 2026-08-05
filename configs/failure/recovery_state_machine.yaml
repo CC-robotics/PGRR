@@ -86,13 +86,19 @@ footprint_backup_forward_angle_degrees: 80.0
 backup_speed_mps: 0.15
 backup_minimum_duration_s: 0.8
 backup_maximum_duration_s: 3.0
+# Reliable unilateral closing-flow evidence calls for frequent replanning: a
+# shorter bounded BACKUP pulse lets the planning/LiDAR mask reconsider the
+# opposite-side escape before the approaching actor reaches the robot. This
+# remains above the minimum hold and below the fully validated 3 s retreat.
+bc_unilateral_backup_maximum_duration_s: 1.0
 backup_clearance_improvement_m: 0.25
 backup_mask_validated_distance_m: 0.45
 robot_clearance_m: 0.25
-# Ordinary recovery remains close to the task path. A learned directional
-# yield may use the wider envelope only after its configured recurrence count;
-# static-map and observable-LiDAR masks remain authoritative in both modes.
-maximum_recovery_path_deviation_m: 0.6
+# The shortest lateral action is exactly 0.60 m. Keep a 5 cm path-tracking
+# tolerance so centimetre-scale localization/path discretization cannot mask
+# only one of the two symmetric choices. Static-map and observable-LiDAR masks
+# remain authoritative; recurrent recovery still uses the wider envelope.
+maximum_recovery_path_deviation_m: 0.65
 recurrent_escape_maximum_path_deviation_m: 1.5
 braking_acceleration_mps2: 0.8
 control_latency_s: 0.15

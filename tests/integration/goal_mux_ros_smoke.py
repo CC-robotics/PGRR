@@ -23,16 +23,22 @@ class MuxDriver(Node):
         self.outputs: list[Twist] = []
         self.subscription = self.create_subscription(Twist, "/cmd_vel", self.outputs.append, 10)
 
-    def publish(self, state: int, action: int, recovery_speed: float) -> None:
+    def publish(
+        self,
+        state: int,
+        action: int,
+        recovery_speed: float | None,
+    ) -> None:
         base = Twist()
         base.linear.x = 0.30
-        recovery = Twist()
-        recovery.linear.x = recovery_speed
         decision = RecoveryDecision()
         decision.recovery_state = state
         decision.action_id = action
         self.base_publisher.publish(base)
-        self.recovery_publisher.publish(recovery)
+        if recovery_speed is not None:
+            recovery = Twist()
+            recovery.linear.x = recovery_speed
+            self.recovery_publisher.publish(recovery)
         self.decision_publisher.publish(decision)
 
 
@@ -43,7 +49,7 @@ def _wait_for_speed(
     *,
     state: int,
     action: int,
-    recovery_speed: float,
+    recovery_speed: float | None,
 ) -> None:
     deadline = time.monotonic() + 3.0
     while time.monotonic() < deadline:
@@ -96,13 +102,35 @@ def main() -> int:
             action=BACKUP_ACTION_ID,
             recovery_speed=-0.15,
         )
+        # A newly submitted temporary goal is asynchronous.  The recovery
+        # manager's fresh zero command must suppress the still-fresh command
+        # for the original task goal during this settling window.
+        _wait_for_speed(
+            executor,
+            driver,
+            0.0,
+            state=RecoveryDecision.RECOVERY,
+            action=0,
+            recovery_speed=0.0,
+        )
+        # RecoveryManager stops publishing the zero override when settling is
+        # complete.  The mux must then resume fresh commands from Nav2 rather
+        # than holding the robot stopped for the entire subgoal action.
         _wait_for_speed(
             executor,
             driver,
             0.30,
             state=RecoveryDecision.RECOVERY,
             action=0,
-            recovery_speed=-0.15,
+            recovery_speed=None,
+        )
+        _wait_for_speed(
+            executor,
+            driver,
+            -0.10,
+            state=RecoveryDecision.EMERGENCY_STOP,
+            action=BACKUP_ACTION_ID,
+            recovery_speed=-0.10,
         )
         _wait_for_speed(
             executor,
@@ -115,7 +143,8 @@ def main() -> int:
         print(
             "PASS goal mux ROS smoke: "
             "normal=0.30 pending=0.00 wait=0.00 backup=-0.15 "
-            "subgoal=0.30 succeeded=0.00"
+            "subgoal_settle=0.00 subgoal_base=0.30 emergency=-0.10 "
+            "succeeded=0.00"
         )
         return 0
     finally:

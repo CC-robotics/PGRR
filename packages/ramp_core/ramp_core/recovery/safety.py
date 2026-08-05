@@ -256,24 +256,33 @@ class EmergencyEscapeController:
             self.mode = EmergencyEscapeMode.STOP
             return True, self.mode
         rear_safe = rear_observed and rear_clearance_m >= self.backup_clearance_m
-        improving_repeat = (
+        clearance_gain_m = float("-inf")
+        if (
             self.backup_start_clearance_m is not None
             and self.backup_peak_clearance_m is not None
-            and self.backup_peak_clearance_m
-            >= self.backup_start_clearance_m + self.backup_progress_m
-            and self.backup_count < self.maximum_improving_backups
+            and math.isfinite(self.backup_start_clearance_m)
+            and math.isfinite(self.backup_peak_clearance_m)
+        ):
+            clearance_gain_m = self.backup_peak_clearance_m - self.backup_start_clearance_m
+        improving_repeat = clearance_gain_m >= self.backup_progress_m
+        clearance_creation_repeat = (
+            0.0 < clearance_gain_m < self.backup_progress_m
+            and self.backup_peak_clearance_m is not None
+            and self.backup_peak_clearance_m < self.rotation_clearance_m
         )
         minimum_retreat_incomplete = self.backup_count < self.minimum_retreat_pulses
         # A short sequence of individually bounded pulses creates enough
         # separation to break a reciprocal head-on stop.  After that minimum,
-        # every additional pulse requires measured clearance improvement. The
-        # existing global pulse budget, rear observation, and footprint guard
-        # remain authoritative for every pulse.
+        # every additional pulse requires measured clearance improvement.  A
+        # smaller positive gain may create the swept clearance needed to turn,
+        # but only while that clearance is still unavailable.  The existing
+        # global pulse budget, independent rear observation, and caller-owned
+        # planning/LiDAR gate remain authoritative for every pulse.
         if (
             backup_permitted
             and rear_safe
             and self.backup_count < self.maximum_improving_backups
-            and (minimum_retreat_incomplete or improving_repeat)
+            and (minimum_retreat_incomplete or improving_repeat or clearance_creation_repeat)
         ):
             self.mode = EmergencyEscapeMode.BACKUP
             self.escape_until_s = now_s + self.backup_duration_s

@@ -574,6 +574,52 @@ def _assert_bc_subgoal_lifecycle(manager: RecoveryManagerNode) -> None:
         manager._adapter._status = adapter_status
 
 
+def _assert_bc_unilateral_backup_redecision(manager: RecoveryManagerNode) -> None:
+    ordinary = manager._backup_option
+    short = manager._bc_unilateral_backup_option
+    if not math.isclose(short.maximum_duration_s, 1.0):
+        raise RuntimeError(f"unexpected unilateral BACKUP duration: {short.maximum_duration_s}")
+    if not short.maximum_duration_s < ordinary.maximum_duration_s:
+        raise RuntimeError("unilateral BACKUP does not reconsider before ordinary BACKUP")
+
+    policy_type = manager._policy_type
+    active_action = manager._active_action
+    action_started_s = manager._action_started_s
+    backup_start = manager._backup_start_clearance_m
+    short_active = manager._backup_redecision_due_to_unilateral_flow
+    try:
+        manager._policy_type = "bc"
+        manager._bc_yield_latch.update(
+            collision_risk=manager._machine.config.tau_on,
+            forward_clearance_m=0.5,
+        )
+        manager._bc_closing_side_latch.left_occupied = True
+        manager._execute(BACKUP_ACTION_ID, 10.0)
+        if not manager._backup_redecision_due_to_unilateral_flow:
+            raise RuntimeError("unilateral flow did not arm short BACKUP reconsideration")
+        if manager._action_complete(10.999) or not manager._action_complete(11.0):
+            raise RuntimeError("unilateral BACKUP did not use its 1 s hard bound")
+        if not manager._backup_command_active(10.999) or manager._backup_command_active(11.0):
+            raise RuntimeError("unilateral BACKUP command outlived its 1 s hard bound")
+
+        manager._bc_closing_side_latch.reset()
+        manager._execute(BACKUP_ACTION_ID, 20.0)
+        if manager._backup_redecision_due_to_unilateral_flow:
+            raise RuntimeError("ambiguous flow incorrectly shortened ordinary BACKUP")
+        if manager._action_complete(21.0) or not manager._action_complete(23.0):
+            raise RuntimeError("ordinary BACKUP no longer uses its 3 s hard bound")
+        if not manager._backup_command_active(22.999) or manager._backup_command_active(23.0):
+            raise RuntimeError("ordinary BACKUP command no longer uses its 3 s hard bound")
+    finally:
+        manager._policy_type = policy_type
+        manager._active_action = active_action
+        manager._action_started_s = action_started_s
+        manager._backup_start_clearance_m = backup_start
+        manager._backup_redecision_due_to_unilateral_flow = short_active
+        manager._bc_closing_side_latch.reset()
+        manager._bc_yield_latch.reset()
+
+
 def _assert_new_episode_arm_resets_closing_side(manager: RecoveryManagerNode) -> None:
     armed = manager._armed
     armed_at_s = manager._armed_at_s
@@ -701,20 +747,22 @@ def _assert_recurrent_path_envelope(manager: RecoveryManagerNode) -> None:
     try:
         manager._policy_type = "bc"
         threshold = manager._integer("bc_recurrent_escape_after_recoveries")
+        normal_deviation = manager._float("maximum_recovery_path_deviation_m")
+        recurrent_deviation = manager._float("recurrent_escape_maximum_path_deviation_m")
         latch.latched = False
         latch.clear_frames = 0
         manager._machine._consecutive_recoveries = threshold
-        if abs(manager._effective_recovery_path_deviation() - 0.6) > 1.0e-9:
+        if abs(manager._effective_recovery_path_deviation() - normal_deviation) > 1.0e-9:
             raise RuntimeError("unlatched BC unexpectedly used recurrent path envelope")
         latch.latched = True
         manager._machine._consecutive_recoveries = threshold - 1
-        if abs(manager._effective_recovery_path_deviation() - 0.6) > 1.0e-9:
+        if abs(manager._effective_recovery_path_deviation() - normal_deviation) > 1.0e-9:
             raise RuntimeError("first BC attempt unexpectedly used recurrent path envelope")
         manager._machine._consecutive_recoveries = threshold
-        if abs(manager._effective_recovery_path_deviation() - 1.5) > 1.0e-9:
+        if abs(manager._effective_recovery_path_deviation() - recurrent_deviation) > 1.0e-9:
             raise RuntimeError("latched recurrent BC did not use wider path envelope")
         manager._policy_type = "expert"
-        if abs(manager._effective_recovery_path_deviation() - 0.6) > 1.0e-9:
+        if abs(manager._effective_recovery_path_deviation() - normal_deviation) > 1.0e-9:
             raise RuntimeError("expert unexpectedly used learned recurrent path envelope")
     finally:
         manager._policy_type = policy_type
@@ -767,6 +815,7 @@ def main() -> int:
         _assert_recurrent_escape_mask(manager)
         _assert_temporal_closing_side_mask(manager)
         _assert_bc_subgoal_lifecycle(manager)
+        _assert_bc_unilateral_backup_redecision(manager)
         _assert_new_episode_arm_resets_closing_side(manager)
         _assert_oracle_yield_safety_contract(manager)
         _assert_directional_yield_lifecycle(manager)

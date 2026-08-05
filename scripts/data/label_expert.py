@@ -220,7 +220,7 @@ def main() -> None:
     parser.add_argument("--failure-threshold", type=float, default=0.65)
     parser.add_argument("--rejoin-release-threshold", type=float, default=0.65)
     parser.add_argument("--collision-latched-action-clearance", type=float, default=0.90)
-    parser.add_argument("--maximum-recovery-path-deviation", type=float, default=0.60)
+    parser.add_argument("--maximum-recovery-path-deviation", type=float, default=0.65)
     parser.add_argument("--wait-budget-decisions", type=int, default=3)
     args = parser.parse_args()
     rows = _load(args.raw_jsonl)

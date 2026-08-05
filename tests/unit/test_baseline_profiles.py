@@ -266,7 +266,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["collision_latched_action_clearance_m"] >= (
         config["collision_latched_stop_clearance_m"] + config["emergency_release_hysteresis_m"]
     )
-    assert config["maximum_recovery_path_deviation_m"] == 0.6
+    assert config["maximum_recovery_path_deviation_m"] == 0.65
     assert config["recurrent_escape_maximum_path_deviation_m"] == 1.5
     assert (
         config["recurrent_escape_maximum_path_deviation_m"]
@@ -275,6 +275,12 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["maximum_recovery_sequence_duration_s"] == 45.0
     assert config["backup_minimum_duration_s"] == 0.8
     assert config["backup_maximum_duration_s"] == 3.0
+    assert config["bc_unilateral_backup_maximum_duration_s"] == 1.0
+    assert (
+        config["backup_minimum_duration_s"]
+        <= config["bc_unilateral_backup_maximum_duration_s"]
+        < config["backup_maximum_duration_s"]
+    )
     assert config["backup_clearance_improvement_m"] == 0.25
     assert config["backup_mask_validated_distance_m"] == 0.45
     assert (
@@ -368,6 +374,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"emergency_backup_reset_clear_s": 3.0' in manager
     assert '"emergency_minimum_retreat_pulses": 3' in manager
     assert '"backup_maximum_duration_s": 3.0' in manager
+    assert '"bc_unilateral_backup_maximum_duration_s": 1.0' in manager
     assert '"maximum_recovery_sequence_duration_s": 45.0' in manager
     assert '"bc_recurrent_escape_after_recoveries": 2' in manager
     assert '"recurrent_escape_maximum_path_deviation_m": 1.5' in manager
@@ -418,7 +425,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert "timestamp <= self._last_timestamp" in detector
     labeler = (root / "scripts/data/label_expert.py").read_text()
     assert '"--collision-latched-action-clearance", type=float, default=0.90' in labeler
-    assert '"--maximum-recovery-path-deviation", type=float, default=0.60' in labeler
+    assert '"--maximum-recovery-path-deviation", type=float, default=0.65' in labeler
     assert "allow_initial_overlap_when_separating=collision_latched" in labeler
     assert detector.count("self._detector.reset()") == 1
     assert 'self.declare_parameter("wait_for_episode_start", False)' in detector

@@ -90,6 +90,23 @@ def test_path_corridor_blocks_outward_actions_and_allows_return() -> None:
     assert bool(outside[0])
 
 
+def test_path_corridor_tolerance_preserves_symmetric_short_lateral_actions() -> None:
+    mask = np.ones(25, dtype=np.bool_)
+    path = ((0.0, 0.0), (10.0, 0.0))
+    # The robot is one centimetre above a discretized path. With a bound equal
+    # to the 0.60 m action radius, only the downward action survives. The
+    # configured 5 cm tracking tolerance must preserve both choices; obstacle
+    # and LiDAR masks are composed independently afterwards.
+    constrained = apply_path_corridor_mask(
+        mask,
+        Pose2D(2.0, 0.01, 0.0),
+        path,
+        maximum_deviation_m=0.65,
+    )
+    assert bool(constrained[0])
+    assert bool(constrained[6])
+
+
 def test_emergency_translation_must_stay_in_or_improve_task_corridor() -> None:
     path = ((0.0, 0.0), (10.0, 0.0))
     assert path_corridor_target_is_permitted((2.0, 0.8), (2.2, 0.85), path)
