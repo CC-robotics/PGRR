@@ -650,6 +650,60 @@ def run_task(
     }
 
 
+def run_worker_assignment(
+    worker_index: int,
+    assigned: Iterable[EpisodeTask],
+    *,
+    root: Path,
+    jobs: int,
+    domain_base: int,
+    run_id: str,
+    resume: bool,
+) -> list[dict[str, Any]]:
+    """Run every task assigned to one worker, isolating per-episode crashes.
+
+    A simulator process can occasionally exit before the episode logger has
+    written an outcome.  Such an infrastructure error must make the overall
+    run incomplete, but it must not silently discard every later task sharing
+    the same worker.  The explicit error row is retained in ``run_manifest``;
+    a subsequent ``--resume`` invocation reruns only that missing task while
+    accepting the immutable artifacts of tasks that did finish.
+    """
+
+    domain, partition = worker_identity(worker_index, jobs, domain_base, run_id)
+    results: list[dict[str, Any]] = []
+    for task in assigned:
+        try:
+            result = run_task(
+                task,
+                root=root,
+                domain=domain,
+                partition=partition,
+                resume=resume,
+            )
+        except Exception as error:
+            message = f"{type(error).__name__}: {error}"
+            print(
+                f"[worker domain={domain}] ERROR task={task.task_index} {message}",
+                file=sys.stderr,
+                flush=True,
+            )
+            result = {
+                "task_index": task.task_index,
+                "scenario_id": task.scenario_id,
+                "replicate": task.replicate,
+                "method": task.method,
+                "checkpoint_path": task.checkpoint_path,
+                "checkpoint_sha256": task.checkpoint_sha256,
+                "status": "error",
+                "episode_id": None,
+                "attempts": [],
+                "error": message,
+            }
+        results.append(result)
+    return results
+
+
 def validate_completed_results(
     tasks: Sequence[EpisodeTask], results: Sequence[dict[str, Any]]
 ) -> None:
@@ -810,24 +864,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     domain_base = int(os.environ.get("RAMP_ROS_DOMAIN_BASE", "20"))
     worker_assignments = [tasks[index::jobs] for index in range(jobs)]
 
-    def worker_loop(worker_index: int, assigned: Iterable[EpisodeTask]) -> list[dict[str, Any]]:
-        domain, partition = worker_identity(worker_index, jobs, domain_base, run_id)
-        return [
-            run_task(
-                task,
-                root=ROOT,
-                domain=domain,
-                partition=partition,
-                resume=args.resume,
-            )
-            for task in assigned
-        ]
-
     results: list[dict[str, Any]] = []
     worker_errors: list[str] = []
     with ThreadPoolExecutor(max_workers=jobs) as executor:
         futures = {
-            executor.submit(worker_loop, index, assigned): index
+            executor.submit(
+                run_worker_assignment,
+                index,
+                assigned,
+                root=ROOT,
+                jobs=jobs,
+                domain_base=domain_base,
+                run_id=run_id,
+                resume=args.resume,
+            ): index
             for index, assigned in enumerate(worker_assignments)
         }
         for future in as_completed(futures):

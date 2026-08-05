@@ -207,6 +207,55 @@ def test_worker_identity_is_fixed_unique_and_bounded() -> None:
         _MODULE.worker_identity(3, 4, 230, "abc123")
 
 
+def test_worker_assignment_continues_after_episode_process_crash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tasks = _MODULE.build_tasks(
+        [
+            _record(tmp_path, "crossing_flow_high_test_s03220", replicate=0),
+            _record(tmp_path, "crossing_flow_high_test_s03221", replicate=1),
+        ],
+        ("base",),
+        (),
+        1.0,
+        run_namespace="risolation",
+    )
+    attempted: list[int] = []
+
+    def fake_run_task(task: object, **_: object) -> dict:
+        task_index = int(task.task_index)
+        attempted.append(task_index)
+        if task_index == 0:
+            raise RuntimeError("episode command returned 1 without outcome")
+        return {
+            "task_index": task_index,
+            "scenario_id": task.scenario_id,
+            "replicate": task.replicate,
+            "method": task.method,
+            "checkpoint_path": task.checkpoint_path,
+            "checkpoint_sha256": task.checkpoint_sha256,
+            "status": "complete",
+            "episode_id": _MODULE.episode_id(task, 0),
+            "attempts": [],
+        }
+
+    monkeypatch.setattr(_MODULE, "run_task", fake_run_task)
+    results = _MODULE.run_worker_assignment(
+        0,
+        tasks,
+        root=tmp_path,
+        jobs=1,
+        domain_base=20,
+        run_id="isolation",
+        resume=False,
+    )
+
+    assert attempted == [0, 1]
+    assert [result["status"] for result in results] == ["error", "complete"]
+    assert results[0]["episode_id"] is None
+    assert "without outcome" in results[0]["error"]
+
+
 def test_build_tasks_produces_deterministic_unique_episode_ids(tmp_path: Path) -> None:
     records = [
         _record(tmp_path, replicate=4),
