@@ -30,6 +30,7 @@ from ramp_core.recovery.options import (
     PrivilegedYieldOption,
     TemporalClosingSideConfig,
     TemporalClosingSideResult,
+    constrain_ambiguous_yield_motion,
     constrain_directional_yield_motion,
     constrain_near_field_subgoal_radius,
     constrain_net_retreat,
@@ -271,9 +272,42 @@ def test_directional_yield_masks_forward_motion_without_unmasking() -> None:
         )
     assert constrained[BACKUP_ACTION_ID]
     assert constrained[WAIT_ACTION_ID]
-    assert not constrained[REPLAN_ACTION_ID]
+    assert constrained[REPLAN_ACTION_ID]
     assert not constrained[CONTINUE_ACTION_ID]
     assert not bool(np.any(constrained & ~mask))
+
+
+def test_ambiguous_yield_retains_only_existing_non_lateral_actions() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    mask[BACKUP_ACTION_ID] = False
+    constrained = constrain_ambiguous_yield_motion(
+        mask,
+        side_evidence_available=False,
+    )
+
+    expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    expected[[WAIT_ACTION_ID, REPLAN_ACTION_ID]] = True
+    assert np.array_equal(constrained, expected)
+    assert not np.any(constrained & ~mask)
+
+
+def test_ambiguous_yield_is_inactive_after_side_evidence() -> None:
+    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    mask[[0, WAIT_ACTION_ID, BACKUP_ACTION_ID, REPLAN_ACTION_ID]] = True
+    constrained = constrain_ambiguous_yield_motion(
+        mask,
+        side_evidence_available=True,
+    )
+    assert np.array_equal(constrained, mask)
+    assert constrained is not mask
+
+
+def test_ambiguous_yield_rejects_invalid_mask_shape() -> None:
+    with pytest.raises(ValueError, match="mask must have shape"):
+        constrain_ambiguous_yield_motion(
+            np.ones(ACTION_COUNT - 1, dtype=np.bool_),
+            side_evidence_available=False,
+        )
 
 
 def test_near_field_radius_bound_only_removes_long_subgoals() -> None:
@@ -1131,6 +1165,34 @@ def test_temporal_closing_side_low_trace_masks_only_task_right() -> None:
     assert not np.any(result.mask & ~mask)
 
 
+def test_temporal_closing_side_three_beam_boundary_is_conservative() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    three = constrain_temporal_closing_side(
+        mask,
+        _temporal_closing_stack(right_beams=3, left_beams=0),
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        angular_speed_radps=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+    two = constrain_temporal_closing_side(
+        mask,
+        _temporal_closing_stack(right_beams=2, left_beams=0),
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        angular_speed_radps=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+    assert three.right_occupied and not three.left_occupied
+    assert not two.right_occupied and not two.left_occupied
+    assert np.array_equal(two.mask, mask)
+
+
 @pytest.mark.parametrize(("right_beams", "left_beams"), [(6, 12), (5, 9)])
 def test_temporal_closing_side_medium_and_high_traces_mask_both_sides(
     right_beams: int,
@@ -1241,8 +1303,10 @@ def test_temporal_closing_side_uses_task_frame_after_robot_turn() -> None:
 
 def test_temporal_closing_side_preserves_recurrent_safe_fallback() -> None:
     pose = Pose2D(0.0, 0.0, 0.0)
+    high_risk_mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    high_risk_mask[REPLAN_ACTION_ID] = False
     directional = constrain_directional_yield_motion(
-        np.ones(ACTION_COUNT, dtype=np.bool_),
+        high_risk_mask,
         pose=pose,
         path_heading_rad=0.0,
         backup_distance_m=0.45,
@@ -1336,7 +1400,7 @@ def test_temporal_closing_side_rejects_invalid_config(kwargs: dict[str, float]) 
 
 @pytest.mark.parametrize(
     ("initial_right", "initial_left", "follow_right", "follow_left"),
-    [(11, 11, 3, 3), (5, 8, 4, 3)],
+    [(11, 11, 2, 2), (5, 8, 2, 1)],
 )
 def test_closing_side_latch_retains_both_v3_trace_sides_after_backup(
     initial_right: int,
@@ -1373,7 +1437,7 @@ def test_closing_side_latch_retains_both_v3_trace_sides_after_backup(
     assert not follow.right_occupied and not follow.left_occupied
     assert latch.right_occupied and latch.left_occupied
     safe_fallback = np.zeros(ACTION_COUNT, dtype=np.bool_)
-    safe_fallback[[WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
+    safe_fallback[[WAIT_ACTION_ID, BACKUP_ACTION_ID, REPLAN_ACTION_ID]] = True
     assert np.array_equal(initial_mask, safe_fallback)
     assert np.array_equal(follow_mask, safe_fallback)
 

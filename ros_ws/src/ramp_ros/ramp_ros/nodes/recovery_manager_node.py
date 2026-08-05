@@ -61,6 +61,7 @@ from ramp_core.recovery.options import (
     PrivilegedYieldOption,
     TemporalClosingSideConfig,
     TemporalClosingSideResult,
+    constrain_ambiguous_yield_motion,
     constrain_directional_yield_motion,
     constrain_near_field_subgoal_radius,
     constrain_net_retreat,
@@ -438,7 +439,7 @@ class RecoveryManagerNode(Node):
             "bc_closing_side_sector_max_degrees": 60.0,
             "bc_closing_side_delta_m": 0.20,
             "bc_closing_side_maximum_range_m": 4.0,
-            "bc_closing_side_minimum_beams": 5,
+            "bc_closing_side_minimum_beams": 3,
             "bc_closing_side_maximum_angular_speed_radps": 0.20,
             "bc_wait_budget_decisions": 3,
             "bc_backup_budget_decisions": 4,
@@ -1347,6 +1348,17 @@ class RecoveryManagerNode(Node):
                         f"clearance_m={self._nearest_clearance():.3f} "
                         f"maximum_radius_m={self._float('bc_near_field_max_subgoal_radius_m'):.3f} "
                         f"pre={','.join(map(str, np.flatnonzero(pre_near_field_mask)))} "
+                        f"post={','.join(map(str, np.flatnonzero(mask)))}"
+                    )
+                pre_ambiguous_yield_mask = mask.copy()
+                mask = constrain_ambiguous_yield_motion(
+                    mask,
+                    side_evidence_available=self._bc_closing_side_latch.active,
+                )
+                if not self._bc_closing_side_latch.active:
+                    closing_side_telemetry += (
+                        "; bc_ambiguous_yield=applied side_evidence=0 "
+                        f"pre={','.join(map(str, np.flatnonzero(pre_ambiguous_yield_mask)))} "
                         f"post={','.join(map(str, np.flatnonzero(mask)))}"
                     )
             mask = constrain_stalled_rejoin(mask, escape_required=stalled_rejoin)

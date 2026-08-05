@@ -330,7 +330,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_closing_side_sector_max_degrees"] == 60.0
     assert config["bc_closing_side_delta_m"] == 0.20
     assert config["bc_closing_side_maximum_range_m"] == 4.0
-    assert config["bc_closing_side_minimum_beams"] == 5
+    assert config["bc_closing_side_minimum_beams"] == 3
     assert config["bc_closing_side_maximum_angular_speed_radps"] == 0.20
     assert '"bc_yield_release_clearance_m": 0.90' in manager
     assert '"bc_near_field_radius_activation_clearance_m": 1.0' in manager
@@ -343,10 +343,12 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"bc_closing_side_sector_max_degrees": 60.0' in manager
     assert '"bc_closing_side_delta_m": 0.20' in manager
     assert '"bc_closing_side_maximum_range_m": 4.0' in manager
-    assert '"bc_closing_side_minimum_beams": 5' in manager
+    assert '"bc_closing_side_minimum_beams": 3' in manager
     assert '"bc_closing_side_maximum_angular_speed_radps": 0.20' in manager
     assert "ObservableClosingSideLatch()" in manager
     assert "constrain_task_lateral_sides(" in manager
+    assert "constrain_ambiguous_yield_motion(" in manager
+    assert "side_evidence_available=self._bc_closing_side_latch.active" in manager
     assert manager.count("self._bc_closing_side_latch.reset()") >= 3
     assert "latched_right={int(self._bc_closing_side_latch.right_occupied)}" in manager
     assert "latched_left={int(self._bc_closing_side_latch.left_occupied)}" in manager
@@ -397,6 +399,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     closing_constraint_order = (
         manager.index("mask = constrain_directional_yield_motion(", learned_selection),
         manager.index("closing_side_result = self._constrain_bc_temporal_closing_side("),
+        manager.index("mask = constrain_ambiguous_yield_motion(", learned_selection),
         manager.index("mask = self._constrain_bc_recurrent_escape(", learned_selection),
     )
     assert closing_constraint_order == tuple(sorted(closing_constraint_order))

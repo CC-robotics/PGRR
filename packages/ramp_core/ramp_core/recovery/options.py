@@ -28,7 +28,7 @@ class TemporalClosingSideConfig:
     sector_max_degrees: float = 60.0
     closing_delta_m: float = 0.20
     maximum_current_range_m: float = 4.0
-    minimum_closing_beams: int = 5
+    minimum_closing_beams: int = 3
     maximum_angular_speed_radps: float = 0.20
 
     def __post_init__(self) -> None:
@@ -671,7 +671,8 @@ def constrain_directional_yield_motion(
     projected onto the observable local path tangent; a learned subgoal or
     BACKUP cannot advance toward the blocked corridor until the independent
     directional-clearance latch releases. WAIT remains untouched, while task
-    rejoin actions are disabled explicitly.
+    CONTINUE is disabled explicitly. REPLAN is preserved when an earlier
+    collision-risk constraint has deemed the non-translating request safe.
     """
 
     constrained = np.asarray(mask, dtype=np.bool_).copy()
@@ -700,7 +701,32 @@ def constrain_directional_yield_motion(
     )
     if advances_path(backup_endpoint):
         constrained[BACKUP_ACTION_ID] = False
-    constrained[REPLAN_ACTION_ID] = False
+    constrained[CONTINUE_ACTION_ID] = False
+    return constrained
+
+
+def constrain_ambiguous_yield_motion(
+    mask: npt.NDArray[np.bool_],
+    *,
+    side_evidence_available: bool,
+) -> npt.NDArray[np.bool_]:
+    """Fail closed when a directional yield has no reliable side evidence.
+
+    A learned lateral subgoal is interpretable only after the temporal LiDAR
+    observation has identified at least one occupied task side.  Without that
+    evidence, choosing either side can turn a conservative yield into an
+    unsupported crossing manoeuvre.  The helper therefore intersects the
+    existing mask with non-translating WAIT/REPLAN and the independently
+    validated BACKUP action.  It never enables an action and leaves a mask
+    unchanged once the per-yield side-evidence latch is active.
+    """
+
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    if side_evidence_available:
+        return constrained
+    constrained[:WAIT_ACTION_ID] = False
     constrained[CONTINUE_ACTION_ID] = False
     return constrained
 
