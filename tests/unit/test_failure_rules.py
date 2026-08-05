@@ -184,6 +184,60 @@ def test_closing_obstacle_inside_proximity_window_triggers_early_warning() -> No
     assert prediction.collision_risk == pytest.approx(0.75)
 
 
+def test_bearing_consistent_head_on_closing_warns_at_three_metres() -> None:
+    detector = RuleFailureDetector()
+    detector.update(
+        _sample(
+            0.0,
+            linear=0.2,
+            lidar=3.30,
+            forward_lidar=3.30,
+            collision_lidar=3.30,
+            nearest_bearing=0.0,
+            collision_bearing=0.0,
+        )
+    )
+    prediction = detector.update(
+        _sample(
+            0.5,
+            linear=0.2,
+            lidar=2.95,
+            forward_lidar=2.95,
+            collision_lidar=2.95,
+            nearest_bearing=0.0,
+            collision_bearing=0.0,
+        )
+    )
+    assert prediction.collision_risk == pytest.approx(0.75)
+
+
+def test_static_wall_at_three_metres_does_not_trigger_temporal_warning() -> None:
+    detector = RuleFailureDetector()
+    detector.update(
+        _sample(
+            0.0,
+            linear=0.2,
+            lidar=3.05,
+            forward_lidar=3.05,
+            collision_lidar=3.05,
+            nearest_bearing=0.0,
+            collision_bearing=0.0,
+        )
+    )
+    prediction = detector.update(
+        _sample(
+            0.5,
+            linear=0.2,
+            lidar=2.95,
+            forward_lidar=2.95,
+            collision_lidar=2.95,
+            nearest_bearing=0.0,
+            collision_bearing=0.0,
+        )
+    )
+    assert prediction.collision_risk == 0.0
+
+
 def test_planner_abort_is_not_mislabeled_as_collision_risk() -> None:
     prediction = RuleFailureDetector().update(_sample(0.0, lidar=3.0, status=PlannerStatus.ABORTED))
     assert prediction.collision_risk == 0.0

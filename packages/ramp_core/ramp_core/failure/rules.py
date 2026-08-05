@@ -28,7 +28,12 @@ class RuleFailureConfig:
     collision_max_hold_s: float = 3.0
     collision_stationary_confirmation_s: float = 0.5
     collision_immediate_forward_speed_mps: float = 0.05
-    collision_proximity_m: float = 2.00
+    # The trend gate already requires a bearing-consistent return to close
+    # faster than motion of the robot alone.  A 3 m observation envelope gives
+    # a differential-drive base enough lead time to rotate toward a temporary
+    # lateral goal; the previous 2 m envelope often detected a head-on actor
+    # only after less than one subgoal-execution horizon remained.
+    collision_proximity_m: float = 3.00
     collision_closing_speed_mps: float = 0.10
     collision_radial_excess_closing_speed_mps: float = 0.25
     collision_proximity_score: float = 0.75
