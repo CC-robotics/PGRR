@@ -58,6 +58,8 @@ from ramp_core.recovery.options import (
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
     PrivilegedYieldOption,
+    TemporalClosingSideConfig,
+    TemporalClosingSideResult,
     constrain_directional_yield_motion,
     constrain_net_retreat,
     constrain_recurrent_yield_escape,
@@ -67,6 +69,7 @@ from ramp_core.recovery.options import (
     constrain_stalled_rejoin,
     constrain_stalled_subgoals,
     constrain_stalled_wait,
+    constrain_temporal_closing_side,
     effective_recovery_path_deviation,
     ensure_safe_wait_fallback,
     recurrent_yield_lateral_action_ids,
@@ -207,6 +210,14 @@ class RecoveryManagerNode(Node):
             trigger_threshold=self._machine.config.tau_on,
             release_clearance_m=self._float("bc_yield_release_clearance_m"),
             release_frames=self._integer("bc_yield_release_frames"),
+        )
+        self._bc_closing_side_config = TemporalClosingSideConfig(
+            sector_min_degrees=self._float("bc_closing_side_sector_min_degrees"),
+            sector_max_degrees=self._float("bc_closing_side_sector_max_degrees"),
+            closing_delta_m=self._float("bc_closing_side_delta_m"),
+            maximum_current_range_m=self._float("bc_closing_side_maximum_range_m"),
+            minimum_closing_beams=self._integer("bc_closing_side_minimum_beams"),
+            maximum_angular_speed_radps=self._float("bc_closing_side_maximum_angular_speed_radps"),
         )
         self._bc_subgoal_stall_guard = ObservableSubgoalStallGuard(
             retry_budget=self._integer("bc_subgoal_retry_budget_decisions"),
@@ -417,6 +428,12 @@ class RecoveryManagerNode(Node):
             "bc_yield_release_frames": 3,
             "bc_yield_forward_half_width_degrees": 45.0,
             "bc_yield_maximum_forward_progress_m": 0.05,
+            "bc_closing_side_sector_min_degrees": 5.0,
+            "bc_closing_side_sector_max_degrees": 60.0,
+            "bc_closing_side_delta_m": 0.20,
+            "bc_closing_side_maximum_range_m": 4.0,
+            "bc_closing_side_minimum_beams": 5,
+            "bc_closing_side_maximum_angular_speed_radps": 0.20,
             "bc_wait_budget_decisions": 3,
             "bc_backup_budget_decisions": 4,
             "bc_replan_budget_decisions": 1,
@@ -1111,6 +1128,68 @@ class RecoveryManagerNode(Node):
             ),
         )
 
+    def _constrain_bc_temporal_closing_side(
+        self,
+        mask: np.ndarray[Any, np.dtype[np.bool_]],
+        observation: RecoveryObservation,
+        *,
+        pose: Pose2D,
+        path_heading_rad: float,
+    ) -> TemporalClosingSideResult:
+        """Intersect learned lateral choices with observable flow evidence."""
+
+        assert self._scan is not None
+        return constrain_temporal_closing_side(
+            mask,
+            observation.lidar,
+            angle_min_rad=float(self._scan.angle_min),
+            # The policy stack is resampled across the first and last raw
+            # beams. Derive that exact endpoint from the scan metadata rather
+            # than trusting publishers that leave angle_max at its default.
+            angle_max_rad=float(self._scan.angle_min)
+            + float(self._scan.angle_increment) * (len(self._scan.ranges) - 1),
+            pose=pose,
+            path_heading_rad=path_heading_rad,
+            angular_speed_radps=float(observation.robot_velocity[1]),
+            minimum_lateral_displacement_m=self._float(
+                "recurrent_escape_minimum_lateral_displacement_m"
+            ),
+            config=self._bc_closing_side_config,
+        )
+
+    def _bc_temporal_closing_side_telemetry(
+        self,
+        before: np.ndarray[Any, np.dtype[np.bool_]],
+        result: TemporalClosingSideResult,
+        *,
+        angular_speed_radps: float,
+    ) -> str:
+        """Record measured beam counts, thresholds, and mask intersection."""
+
+        config = self._bc_closing_side_config
+        if result.rotation_gated:
+            mode = "rotation_gated"
+        elif result.right_occupied and result.left_occupied:
+            mode = "both_occupied"
+        elif result.right_occupied:
+            mode = "right_occupied"
+        elif result.left_occupied:
+            mode = "left_occupied"
+        else:
+            mode = "clear"
+        return (
+            f"bc_closing_side={mode} "
+            f"right_beams={result.right_closing_beams} left_beams={result.left_closing_beams} "
+            f"minimum_beams={config.minimum_closing_beams} "
+            f"sector_deg={config.sector_min_degrees:.1f}:{config.sector_max_degrees:.1f} "
+            f"delta_m={config.closing_delta_m:.3f} "
+            f"maximum_range_m={config.maximum_current_range_m:.3f} "
+            f"angular_speed_radps={angular_speed_radps:.3f} "
+            f"angular_gate_radps={config.maximum_angular_speed_radps:.3f} "
+            f"pre={','.join(map(str, np.flatnonzero(before)))} "
+            f"post={','.join(map(str, np.flatnonzero(result.mask)))}"
+        )
+
     def _bc_recurrent_escape_telemetry(
         self,
         before: np.ndarray[Any, np.dtype[np.bool_]],
@@ -1159,6 +1238,7 @@ class RecoveryManagerNode(Node):
     ) -> CoreRecoveryDecision:
         recurrent_escape_telemetry = ""
         directional_yield_telemetry = ""
+        closing_side_telemetry = ""
         if self._policy_type == "expert":
             try:
                 return self._expert_decision(pose, failure)
@@ -1190,6 +1270,19 @@ class RecoveryManagerNode(Node):
                     "bc_yield_mask=active "
                     f"pre={','.join(map(str, np.flatnonzero(pre_directional_yield_mask)))} "
                     f"post={','.join(map(str, np.flatnonzero(mask)))}"
+                )
+                pre_closing_side_mask = mask.copy()
+                closing_side_result = self._constrain_bc_temporal_closing_side(
+                    mask,
+                    observation,
+                    pose=pose,
+                    path_heading_rad=path_heading_rad,
+                )
+                mask = closing_side_result.mask
+                closing_side_telemetry = self._bc_temporal_closing_side_telemetry(
+                    pre_closing_side_mask,
+                    closing_side_result,
+                    angular_speed_radps=float(observation.robot_velocity[1]),
                 )
             mask = constrain_stalled_rejoin(mask, escape_required=stalled_rejoin)
             mask = constrain_stalled_subgoals(
@@ -1251,7 +1344,13 @@ class RecoveryManagerNode(Node):
                 self._bc_replans_without_progress += 1
             self._bc_subgoal_stall_guard.observe_decision(decision.action_id, pose)
             constraint_telemetry = "; ".join(
-                item for item in (directional_yield_telemetry, recurrent_escape_telemetry) if item
+                item
+                for item in (
+                    directional_yield_telemetry,
+                    closing_side_telemetry,
+                    recurrent_escape_telemetry,
+                )
+                if item
             )
             if constraint_telemetry:
                 decision = CoreRecoveryDecision(

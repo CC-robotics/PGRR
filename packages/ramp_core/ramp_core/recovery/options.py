@@ -21,6 +21,53 @@ from ramp_core.types import Pose2D
 
 
 @dataclass(frozen=True, slots=True)
+class TemporalClosingSideConfig:
+    """Validation-selected thresholds for observable crossing-flow evidence."""
+
+    sector_min_degrees: float = 5.0
+    sector_max_degrees: float = 60.0
+    closing_delta_m: float = 0.20
+    maximum_current_range_m: float = 4.0
+    minimum_closing_beams: int = 5
+    maximum_angular_speed_radps: float = 0.20
+
+    def __post_init__(self) -> None:
+        values = (
+            self.sector_min_degrees,
+            self.sector_max_degrees,
+            self.closing_delta_m,
+            self.maximum_current_range_m,
+            self.maximum_angular_speed_radps,
+        )
+        if not all(math.isfinite(value) for value in values):
+            raise ValueError("temporal closing-side thresholds must be finite")
+        if not 0.0 <= self.sector_min_degrees < self.sector_max_degrees <= 90.0:
+            raise ValueError("closing-side sector must satisfy 0 <= min < max <= 90 degrees")
+        if self.closing_delta_m <= 0.0 or self.maximum_current_range_m <= 0.0:
+            raise ValueError("closing delta and current-range limit must be positive")
+        if isinstance(self.minimum_closing_beams, bool) or not isinstance(
+            self.minimum_closing_beams, int
+        ):
+            raise ValueError("minimum closing beams must be an integer")
+        if not 1 <= self.minimum_closing_beams <= 180:
+            raise ValueError("minimum closing beams must lie in [1, 180]")
+        if self.maximum_angular_speed_radps < 0.0:
+            raise ValueError("maximum angular speed must be non-negative")
+
+
+@dataclass(frozen=True, slots=True)
+class TemporalClosingSideResult:
+    """Mask intersection and evidence retained for online telemetry."""
+
+    mask: npt.NDArray[np.bool_]
+    right_closing_beams: int
+    left_closing_beams: int
+    right_occupied: bool
+    left_occupied: bool
+    rotation_gated: bool
+
+
+@dataclass(frozen=True, slots=True)
 class BoundedBackupOption:
     """Closed-loop completion rule for one planning-validated retreat.
 
@@ -578,6 +625,109 @@ def constrain_directional_yield_motion(
     constrained[REPLAN_ACTION_ID] = False
     constrained[CONTINUE_ACTION_ID] = False
     return constrained
+
+
+def constrain_temporal_closing_side(
+    mask: npt.NDArray[np.bool_],
+    lidar_stack: npt.ArrayLike,
+    *,
+    angle_min_rad: float,
+    angle_max_rad: float,
+    pose: Pose2D,
+    path_heading_rad: float,
+    angular_speed_radps: float,
+    minimum_lateral_displacement_m: float,
+    config: TemporalClosingSideConfig | None = None,
+) -> TemporalClosingSideResult:
+    """Mask task-lateral subgoals toward an observably closing side flow.
+
+    The oldest and newest samples of the fixed five-frame, 180-beam policy
+    input are compared beam-wise. Beam bearings and action endpoints are both
+    expressed in the local task-path frame, so turning the robot does not swap
+    the physical yield sides. The helper only intersects ``mask``: it never
+    enables an action, and WAIT/BACKUP/REPLAN remain exactly as supplied.
+
+    Beam correspondence is not reliable while the robot is rotating. Above
+    the configured angular-speed gate, valid inputs therefore return an
+    unchanged defensive copy and explicit telemetry evidence.
+    """
+
+    if config is None:
+        config = TemporalClosingSideConfig()
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    lidar = np.asarray(lidar_stack, dtype=np.float64)
+    if lidar.shape != (5, 180):
+        raise ValueError("lidar stack must have shape (5, 180)")
+    geometry = (
+        angle_min_rad,
+        angle_max_rad,
+        pose.x,
+        pose.y,
+        pose.yaw,
+        path_heading_rad,
+        angular_speed_radps,
+    )
+    if not all(math.isfinite(value) for value in geometry):
+        raise ValueError("closing-side scan geometry and motion must be finite")
+    if angle_max_rad <= angle_min_rad:
+        raise ValueError("scan angle_max must be greater than angle_min")
+    if not math.isfinite(minimum_lateral_displacement_m) or minimum_lateral_displacement_m <= 0.0:
+        raise ValueError("minimum lateral displacement must be finite and positive")
+
+    if abs(angular_speed_radps) > config.maximum_angular_speed_radps + 1.0e-12:
+        return TemporalClosingSideResult(constrained, 0, 0, False, False, True)
+
+    beam_angles = np.linspace(angle_min_rad, angle_max_rad, 180, dtype=np.float64)
+    task_relative_angles = np.arctan2(
+        np.sin(pose.yaw + beam_angles - path_heading_rad),
+        np.cos(pose.yaw + beam_angles - path_heading_rad),
+    )
+    minimum_sector_rad = math.radians(config.sector_min_degrees)
+    maximum_sector_rad = math.radians(config.sector_max_degrees)
+    oldest = lidar[0]
+    newest = lidar[-1]
+    valid = (
+        np.isfinite(oldest)
+        & np.isfinite(newest)
+        & (oldest > 0.0)
+        & (newest > 0.0)
+        & (newest <= config.maximum_current_range_m)
+    )
+    closing = valid & (oldest - newest >= config.closing_delta_m - 1.0e-12)
+    right_sector = (task_relative_angles >= -maximum_sector_rad) & (
+        task_relative_angles <= -minimum_sector_rad
+    )
+    left_sector = (task_relative_angles >= minimum_sector_rad) & (
+        task_relative_angles <= maximum_sector_rad
+    )
+    right_closing_beams = int(np.count_nonzero(closing & right_sector))
+    left_closing_beams = int(np.count_nonzero(closing & left_sector))
+    right_occupied = right_closing_beams >= config.minimum_closing_beams
+    left_occupied = left_closing_beams >= config.minimum_closing_beams
+
+    if right_occupied or left_occupied:
+        normal = -math.sin(path_heading_rad), math.cos(path_heading_rad)
+        for action in ACTIONS[:WAIT_ACTION_ID]:
+            endpoint = action.target_pose(pose)
+            assert endpoint is not None
+            lateral_displacement = (endpoint.x - pose.x) * normal[0] + (
+                endpoint.y - pose.y
+            ) * normal[1]
+            toward_right = lateral_displacement <= -minimum_lateral_displacement_m + 1.0e-9
+            toward_left = lateral_displacement >= minimum_lateral_displacement_m - 1.0e-9
+            if (right_occupied and toward_right) or (left_occupied and toward_left):
+                constrained[action.action_id] = False
+
+    return TemporalClosingSideResult(
+        constrained,
+        right_closing_beams,
+        left_closing_beams,
+        right_occupied,
+        left_occupied,
+        False,
+    )
 
 
 def constrain_stalled_rejoin(

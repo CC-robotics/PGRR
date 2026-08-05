@@ -323,10 +323,22 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_yield_release_frames"] == 3
     assert config["bc_yield_forward_half_width_degrees"] == 45.0
     assert config["bc_yield_maximum_forward_progress_m"] == 0.05
+    assert config["bc_closing_side_sector_min_degrees"] == 5.0
+    assert config["bc_closing_side_sector_max_degrees"] == 60.0
+    assert config["bc_closing_side_delta_m"] == 0.20
+    assert config["bc_closing_side_maximum_range_m"] == 4.0
+    assert config["bc_closing_side_minimum_beams"] == 5
+    assert config["bc_closing_side_maximum_angular_speed_radps"] == 0.20
     assert '"bc_yield_release_clearance_m": 1.25' in manager
     assert '"bc_yield_release_frames": 3' in manager
     assert '"bc_yield_forward_half_width_degrees": 45.0' in manager
     assert '"bc_yield_maximum_forward_progress_m": 0.05' in manager
+    assert '"bc_closing_side_sector_min_degrees": 5.0' in manager
+    assert '"bc_closing_side_sector_max_degrees": 60.0' in manager
+    assert '"bc_closing_side_delta_m": 0.20' in manager
+    assert '"bc_closing_side_maximum_range_m": 4.0' in manager
+    assert '"bc_closing_side_minimum_beams": 5' in manager
+    assert '"bc_closing_side_maximum_angular_speed_radps": 0.20' in manager
     assert '"emergency_rotation_clearance_m": 0.24' in manager
     assert '"emergency_turn_duration_s": 0.8' in manager
     assert '"emergency_maximum_turn_pulses": 4' in manager
@@ -371,6 +383,14 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         manager.index("mask = ensure_safe_wait_fallback(mask)", learned_selection),
     )
     assert budget_constraint_order == tuple(sorted(budget_constraint_order))
+    closing_constraint_order = (
+        manager.index("mask = constrain_directional_yield_motion(", learned_selection),
+        manager.index("closing_side_result = self._constrain_bc_temporal_closing_side("),
+        manager.index("mask = self._constrain_bc_recurrent_escape(", learned_selection),
+    )
+    assert closing_constraint_order == tuple(sorted(closing_constraint_order))
+    assert "right_beams={result.right_closing_beams}" in manager
+    assert "left_beams={result.left_closing_beams}" in manager
     assert "emergency_backup_permitted &= self._bc_retreat_guard.backup_permitted(" in manager
     assert "footprint_clearance_m=motion_clearance" in manager
     detector = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/failure_detector_node.py").read_text()

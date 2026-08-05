@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import math
 import time
+from dataclasses import replace
 
 import numpy as np
 import rclpy
@@ -19,6 +20,7 @@ from ramp_core.action_space import (
     REPLAN_ACTION_ID,
     WAIT_ACTION_ID,
 )
+from ramp_core.recovery.options import constrain_directional_yield_motion
 from ramp_core.recovery.safety import EmergencyEscapeMode
 from ramp_core.state_machine import RecoveryState, StateTransition
 from ramp_core.types import PlannerStatus, Pose2D
@@ -257,6 +259,121 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     manager._bc_yield_latch.reset()
 
 
+def _assert_temporal_closing_side_mask(manager: RecoveryManagerNode) -> None:
+    config = manager._bc_closing_side_config
+    expected = (5.0, 60.0, 0.20, 4.0, 5, 0.20)
+    observed = (
+        config.sector_min_degrees,
+        config.sector_max_degrees,
+        config.closing_delta_m,
+        config.maximum_current_range_m,
+        config.minimum_closing_beams,
+        config.maximum_angular_speed_radps,
+    )
+    if observed != expected:
+        raise RuntimeError(f"unexpected temporal closing-side configuration: {observed}")
+
+    pose = Pose2D(0.0, 0.0, 0.0)
+    path_heading_rad = 0.0
+    scan_angle_min = float(manager._scan.angle_min)
+    scan_angle_max = scan_angle_min + float(manager._scan.angle_increment) * (
+        len(manager._scan.ranges) - 1
+    )
+    beam_angles = np.linspace(scan_angle_min, scan_angle_max, 180)
+    right_indices = np.flatnonzero(
+        (beam_angles >= -math.radians(60.0)) & (beam_angles <= -math.radians(5.0))
+    )
+    left_indices = np.flatnonzero(
+        (beam_angles >= math.radians(5.0)) & (beam_angles <= math.radians(60.0))
+    )
+
+    def observation_with_closing(right_count: int, left_count: int, omega: float = 0.0):
+        lidar = np.full((5, 180), 6.0, dtype=np.float32)
+        selected = np.concatenate((right_indices[:right_count], left_indices[:left_count]))
+        for frame_index, fraction in enumerate(np.linspace(1.0, 0.0, 5)):
+            lidar[frame_index, selected] = 2.0 + 0.30 * fraction
+        return replace(
+            manager._observation(),
+            lidar=lidar,
+            robot_velocity=np.asarray([0.0, omega], dtype=np.float32),
+        )
+
+    ordinary = np.ones(ACTION_COUNT, dtype=np.bool_)
+    ordinary[REPLAN_ACTION_ID] = False
+    low = manager._constrain_bc_temporal_closing_side(
+        ordinary,
+        observation_with_closing(10, 1),
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
+    if (low.right_closing_beams, low.left_closing_beams) != (10, 1):
+        raise RuntimeError(f"closing-side low evidence mismatch: {low}")
+    if not low.right_occupied or low.left_occupied:
+        raise RuntimeError(f"closing-side low occupancy mismatch: {low}")
+    if low.mask[[0, 1, 2, 7, 8, 9, 14, 15, 16]].any():
+        raise RuntimeError("closing-side low trace retained a task-right subgoal")
+    if not low.mask[[4, 5, 6, 11, 12, 13, 18, 19, 20]].all():
+        raise RuntimeError("closing-side low trace removed a legal task-left subgoal")
+    if low.mask[REPLAN_ACTION_ID] or np.any(low.mask & ~ordinary):
+        raise RuntimeError("closing-side mask re-authorized a planning-invalid action")
+    telemetry = manager._bc_temporal_closing_side_telemetry(
+        ordinary,
+        low,
+        angular_speed_radps=0.0,
+    )
+    for evidence in (
+        "bc_closing_side=right_occupied",
+        "right_beams=10 left_beams=1",
+        "minimum_beams=5",
+        "sector_deg=5.0:60.0",
+        "delta_m=0.200",
+        "maximum_range_m=4.000",
+        "pre=",
+        "post=",
+    ):
+        if evidence not in telemetry:
+            raise RuntimeError(f"closing-side telemetry omitted {evidence}: {telemetry}")
+
+    directional = constrain_directional_yield_motion(
+        np.ones(ACTION_COUNT, dtype=np.bool_),
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+        backup_distance_m=manager._float("backup_mask_validated_distance_m"),
+    )
+    both = manager._constrain_bc_temporal_closing_side(
+        directional,
+        observation_with_closing(5, 9),
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
+    safe_fallback = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    safe_fallback[[WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
+    if not np.array_equal(both.mask, safe_fallback):
+        raise RuntimeError(f"two-sided closing mask mismatch: {both.mask}")
+
+    manager._bc_yield_latch.latched = True
+    manager._machine._consecutive_recoveries = manager._integer(
+        "bc_recurrent_escape_after_recoveries"
+    )
+    recurrent = manager._constrain_bc_recurrent_escape(
+        both.mask,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
+    if not np.array_equal(recurrent, safe_fallback):
+        raise RuntimeError("two-sided closing flow lost the recurrent safe fallback")
+
+    gated = manager._constrain_bc_temporal_closing_side(
+        ordinary,
+        observation_with_closing(10, 10, 0.201),
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
+    if not gated.rotation_gated or not np.array_equal(gated.mask, ordinary):
+        raise RuntimeError("rotation gate did not preserve the existing action mask")
+    manager._bc_yield_latch.reset()
+
+
 def _assert_bc_subgoal_lifecycle(manager: RecoveryManagerNode) -> None:
     option = manager._bc_subgoal_option
     if abs(option.earliest_completion_s - 3.0) > 1.0e-9:
@@ -408,6 +525,7 @@ def main() -> int:
             raise RuntimeError("manager published no temporary-goal recovery decision")
         _assert_emergency_rotation_bounds(manager)
         _assert_recurrent_escape_mask(manager)
+        _assert_temporal_closing_side_mask(manager)
         _assert_bc_subgoal_lifecycle(manager)
         _assert_directional_yield_lifecycle(manager)
         _assert_recurrent_path_envelope(manager)
@@ -439,7 +557,7 @@ def main() -> int:
             "PASS recovery manager ROS smoke: "
             f"temporary={temporary}, restored={restored}, decisions={len(driver.decisions)}, "
             "bc_subgoal=bounded, emergency_turn=bounded, directional_yield=observable, "
-            "recurrent_escape=planning_safe, recurrent_path=bounded, "
+            "closing_side=observable, recurrent_escape=planning_safe, recurrent_path=bounded, "
             "terminal_reasons=preserved"
         )
         return 0

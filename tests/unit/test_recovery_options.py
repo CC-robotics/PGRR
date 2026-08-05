@@ -27,6 +27,7 @@ from ramp_core.recovery.options import (
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
     PrivilegedYieldOption,
+    TemporalClosingSideConfig,
     constrain_directional_yield_motion,
     constrain_net_retreat,
     constrain_recurrent_yield_escape,
@@ -36,11 +37,43 @@ from ramp_core.recovery.options import (
     constrain_stalled_rejoin,
     constrain_stalled_subgoals,
     constrain_stalled_wait,
+    constrain_temporal_closing_side,
     effective_recovery_path_deviation,
     ensure_safe_wait_fallback,
     should_continue_recovery_option,
 )
 from ramp_core.types import Pose2D
+
+
+def _temporal_closing_stack(
+    *,
+    right_beams: int,
+    left_beams: int,
+    pose_yaw_rad: float = 0.0,
+    path_heading_rad: float = 0.0,
+    closing_delta_m: float = 0.30,
+    current_range_m: float = 2.0,
+) -> np.ndarray:
+    """Construct exact task-frame closing evidence for option regressions."""
+
+    stack = np.full((5, 180), 6.0, dtype=np.float64)
+    beam_angles = np.linspace(-math.pi, math.pi, 180)
+    relative = np.arctan2(
+        np.sin(pose_yaw_rad + beam_angles - path_heading_rad),
+        np.cos(pose_yaw_rad + beam_angles - path_heading_rad),
+    )
+    right_indices = np.flatnonzero(
+        (relative >= -math.radians(60.0)) & (relative <= -math.radians(5.0))
+    )[:right_beams]
+    left_indices = np.flatnonzero(
+        (relative >= math.radians(5.0)) & (relative <= math.radians(60.0))
+    )[:left_beams]
+    assert len(right_indices) == right_beams
+    assert len(left_indices) == left_beams
+    for frame_index, fraction in enumerate(np.linspace(1.0, 0.0, 5)):
+        stack[frame_index, right_indices] = current_range_m + closing_delta_m * fraction
+        stack[frame_index, left_indices] = current_range_m + closing_delta_m * fraction
+    return stack
 
 
 def _path_deviation(*, policy_type: str, latched: bool, recoveries: int) -> float:
@@ -834,3 +867,234 @@ def test_recurrent_yield_escape_rejects_invalid_lateral_threshold(minimum: float
             path_heading_rad=0.0,
             minimum_lateral_displacement_m=minimum,
         )
+
+
+def test_temporal_closing_side_low_trace_masks_only_task_right() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    mask[4] = False
+    mask[REPLAN_ACTION_ID] = False
+    result = constrain_temporal_closing_side(
+        mask,
+        _temporal_closing_stack(right_beams=10, left_beams=1),
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        angular_speed_radps=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+    assert result.right_closing_beams == 10
+    assert result.left_closing_beams == 1
+    assert result.right_occupied and not result.left_occupied
+    assert not result.rotation_gated
+    assert not result.mask[[0, 1, 2, 7, 8, 9, 14, 15, 16]].any()
+    assert result.mask[[5, 6, 11, 12, 13, 18, 19, 20]].all()
+    assert not result.mask[4]
+    assert not result.mask[REPLAN_ACTION_ID]
+    assert result.mask[WAIT_ACTION_ID] == mask[WAIT_ACTION_ID]
+    assert result.mask[BACKUP_ACTION_ID] == mask[BACKUP_ACTION_ID]
+    assert not np.any(result.mask & ~mask)
+
+
+@pytest.mark.parametrize(("right_beams", "left_beams"), [(6, 12), (5, 9)])
+def test_temporal_closing_side_medium_and_high_traces_mask_both_sides(
+    right_beams: int,
+    left_beams: int,
+) -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    result = constrain_temporal_closing_side(
+        mask,
+        _temporal_closing_stack(right_beams=right_beams, left_beams=left_beams),
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        angular_speed_radps=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+    assert (result.right_closing_beams, result.left_closing_beams) == (
+        right_beams,
+        left_beams,
+    )
+    assert result.right_occupied and result.left_occupied
+    lateral_ids = [
+        action.action_id
+        for action in ACTIONS[:WAIT_ACTION_ID]
+        if action.action_id not in {3, 10, 17}
+    ]
+    assert not result.mask[lateral_ids].any()
+    assert result.mask[[3, 10, 17, WAIT_ACTION_ID, BACKUP_ACTION_ID, REPLAN_ACTION_ID]].all()
+    assert result.mask[CONTINUE_ACTION_ID]
+
+
+def test_temporal_closing_side_static_forward_motion_below_delta_is_unchanged() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    stack = _temporal_closing_stack(
+        right_beams=12,
+        left_beams=12,
+        closing_delta_m=0.19,
+    )
+    result = constrain_temporal_closing_side(
+        mask,
+        stack,
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        angular_speed_radps=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+    assert (result.right_closing_beams, result.left_closing_beams) == (0, 0)
+    assert np.array_equal(result.mask, mask)
+
+
+def test_temporal_closing_side_rotation_gate_is_closed_at_boundary() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    stack = _temporal_closing_stack(right_beams=5, left_beams=0)
+    active = constrain_temporal_closing_side(
+        mask,
+        stack,
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        angular_speed_radps=-0.20,
+        minimum_lateral_displacement_m=0.25,
+    )
+    gated = constrain_temporal_closing_side(
+        mask,
+        stack,
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        angular_speed_radps=0.2001,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+    assert active.right_occupied and not active.rotation_gated
+    assert gated.rotation_gated
+    assert (gated.right_closing_beams, gated.left_closing_beams) == (0, 0)
+    assert np.array_equal(gated.mask, mask)
+
+
+def test_temporal_closing_side_uses_task_frame_after_robot_turn() -> None:
+    pose = Pose2D(0.0, 0.0, math.pi / 2.0)
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    result = constrain_temporal_closing_side(
+        mask,
+        _temporal_closing_stack(
+            right_beams=0,
+            left_beams=7,
+            pose_yaw_rad=pose.yaw,
+            path_heading_rad=0.0,
+        ),
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=pose,
+        path_heading_rad=0.0,
+        angular_speed_radps=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+    assert result.left_occupied and not result.right_occupied
+    assert not result.mask[[3, 10, 17]].any()
+    assert result.mask[0] and result.mask[6]
+
+
+def test_temporal_closing_side_preserves_recurrent_safe_fallback() -> None:
+    pose = Pose2D(0.0, 0.0, 0.0)
+    directional = constrain_directional_yield_motion(
+        np.ones(ACTION_COUNT, dtype=np.bool_),
+        pose=pose,
+        path_heading_rad=0.0,
+        backup_distance_m=0.45,
+    )
+    closing = constrain_temporal_closing_side(
+        directional,
+        _temporal_closing_stack(right_beams=5, left_beams=9),
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=pose,
+        path_heading_rad=0.0,
+        angular_speed_radps=0.0,
+        minimum_lateral_displacement_m=0.25,
+    ).mask
+    recurrent = constrain_recurrent_yield_escape(
+        closing,
+        escape_required=True,
+        pose=pose,
+        path_heading_rad=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+    expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    expected[[WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
+    assert np.array_equal(closing, expected)
+    assert np.array_equal(recurrent, expected)
+
+
+@pytest.mark.parametrize("shape", [(180,), (4, 180), (5, 179)])
+def test_temporal_closing_side_rejects_invalid_stack_shape(shape: tuple[int, ...]) -> None:
+    with pytest.raises(ValueError, match="lidar stack"):
+        constrain_temporal_closing_side(
+            np.ones(ACTION_COUNT, dtype=np.bool_),
+            np.ones(shape),
+            angle_min_rad=-math.pi,
+            angle_max_rad=math.pi,
+            pose=Pose2D(0.0, 0.0, 0.0),
+            path_heading_rad=0.0,
+            angular_speed_radps=0.0,
+            minimum_lateral_displacement_m=0.25,
+        )
+
+
+@pytest.mark.parametrize(
+    ("angle_min", "angle_max", "pose", "path_heading", "angular_speed"),
+    [
+        (0.0, 0.0, Pose2D(0.0, 0.0, 0.0), 0.0, 0.0),
+        (float("nan"), 1.0, Pose2D(0.0, 0.0, 0.0), 0.0, 0.0),
+        (-1.0, 1.0, Pose2D(float("nan"), 0.0, 0.0), 0.0, 0.0),
+        (-1.0, 1.0, Pose2D(0.0, 0.0, 0.0), float("inf"), 0.0),
+        (-1.0, 1.0, Pose2D(0.0, 0.0, 0.0), 0.0, float("nan")),
+    ],
+)
+def test_temporal_closing_side_rejects_invalid_geometry(
+    angle_min: float,
+    angle_max: float,
+    pose: Pose2D,
+    path_heading: float,
+    angular_speed: float,
+) -> None:
+    with pytest.raises(ValueError, match=r"scan geometry|angle_max"):
+        constrain_temporal_closing_side(
+            np.ones(ACTION_COUNT, dtype=np.bool_),
+            np.ones((5, 180)),
+            angle_min_rad=angle_min,
+            angle_max_rad=angle_max,
+            pose=pose,
+            path_heading_rad=path_heading,
+            angular_speed_radps=angular_speed,
+            minimum_lateral_displacement_m=0.25,
+        )
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"sector_min_degrees": -1.0},
+        {"sector_min_degrees": 60.0, "sector_max_degrees": 5.0},
+        {"sector_max_degrees": 91.0},
+        {"closing_delta_m": 0.0},
+        {"maximum_current_range_m": -1.0},
+        {"minimum_closing_beams": 0},
+        {"minimum_closing_beams": 1.5},
+        {"maximum_angular_speed_radps": -0.1},
+    ],
+)
+def test_temporal_closing_side_rejects_invalid_config(kwargs: dict[str, float]) -> None:
+    with pytest.raises(ValueError):
+        TemporalClosingSideConfig(**kwargs)  # type: ignore[arg-type]
