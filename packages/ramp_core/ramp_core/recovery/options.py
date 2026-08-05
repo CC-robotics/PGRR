@@ -264,6 +264,66 @@ class ObservableNetRetreatGuard:
 
 
 @dataclass
+class ObservableDirectionalYieldLatch:
+    """Hold a social yield until the observable task-forward corridor clears.
+
+    A momentary reduction in estimated TTC is not enough evidence that an
+    approaching obstacle has passed.  The latch therefore starts from the
+    deployable collision-risk estimate and releases only after a directional
+    LiDAR sector exceeds ``release_clearance_m`` for consecutive observations.
+    Missing scan coverage fails closed.  No pedestrian identity, trajectory,
+    or simulator state is consumed.
+    """
+
+    trigger_threshold: float = 0.65
+    release_clearance_m: float = 1.25
+    release_frames: int = 3
+    latched: bool = False
+    clear_frames: int = 0
+
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.trigger_threshold) or not 0.0 <= self.trigger_threshold <= 1.0:
+            raise ValueError("yield trigger threshold must lie in [0, 1]")
+        if not math.isfinite(self.release_clearance_m) or self.release_clearance_m < 0.0:
+            raise ValueError("yield release clearance must be finite and non-negative")
+        if self.release_frames <= 0:
+            raise ValueError("yield release frames must be positive")
+        if self.clear_frames < 0:
+            raise ValueError("yield clear-frame count must be non-negative")
+        if not self.latched and self.clear_frames:
+            raise ValueError("an inactive yield latch cannot retain clear frames")
+
+    def reset(self) -> None:
+        """Clear all temporal state for a new navigation episode."""
+
+        self.latched = False
+        self.clear_frames = 0
+
+    def update(self, *, collision_risk: float, forward_clearance_m: float | None) -> bool:
+        """Update the latch and return whether task-goal rejoin remains blocked."""
+
+        if not math.isfinite(collision_risk) or not 0.0 <= collision_risk <= 1.0:
+            raise ValueError("collision risk must lie in [0, 1]")
+        if forward_clearance_m is not None and (
+            not math.isfinite(forward_clearance_m) or forward_clearance_m < 0.0
+        ):
+            raise ValueError("forward clearance must be finite and non-negative when observed")
+        if collision_risk >= self.trigger_threshold:
+            self.latched = True
+            self.clear_frames = 0
+            return True
+        if not self.latched:
+            return False
+        if forward_clearance_m is None or forward_clearance_m < self.release_clearance_m:
+            self.clear_frames = 0
+            return True
+        self.clear_frames += 1
+        if self.clear_frames >= self.release_frames:
+            self.reset()
+        return self.latched
+
+
+@dataclass
 class ObservableSubgoalStallGuard:
     """Escalate a repeatedly stationary learned subgoal to a non-subgoal option."""
 

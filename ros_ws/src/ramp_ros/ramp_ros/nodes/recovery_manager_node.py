@@ -51,6 +51,7 @@ from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecov
 from ramp_core.recovery.options import (
     BoundedBackupOption,
     BoundedSubgoalOption,
+    ObservableDirectionalYieldLatch,
     ObservableGoalProgressBudget,
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
@@ -183,6 +184,11 @@ class RecoveryManagerNode(Node):
                 self._goal.x - self._start.x,
             ),
             maximum_net_retreat_m=self._float("bc_maximum_net_retreat_m"),
+        )
+        self._bc_yield_latch = ObservableDirectionalYieldLatch(
+            trigger_threshold=self._float("bc_rejoin_block_threshold"),
+            release_clearance_m=self._float("bc_yield_release_clearance_m"),
+            release_frames=self._integer("bc_yield_release_frames"),
         )
         self._bc_subgoal_stall_guard = ObservableSubgoalStallGuard(
             retry_budget=self._integer("bc_subgoal_retry_budget_decisions"),
@@ -386,6 +392,9 @@ class RecoveryManagerNode(Node):
             "expert_rejoin_block_threshold": 0.9,
             "expert_wait_budget_decisions": 3,
             "bc_rejoin_block_threshold": 0.65,
+            "bc_yield_release_clearance_m": 1.25,
+            "bc_yield_release_frames": 3,
+            "bc_yield_forward_half_width_degrees": 45.0,
             "bc_wait_budget_decisions": 3,
             "bc_backup_budget_decisions": 4,
             "bc_replan_budget_decisions": 1,
@@ -753,6 +762,25 @@ class RecoveryManagerNode(Node):
         values = np.asarray(self._scan.ranges, dtype=np.float64)
         finite = values[np.isfinite(values) & (values >= 0.0)]
         return float(np.min(finite)) if finite.size else None
+
+    def _task_forward_clearance(self, pose: Pose2D) -> float | None:
+        """Measure the observable corridor ahead in the fixed task direction."""
+
+        task_heading = math.atan2(
+            self._goal.y - self._start.y,
+            self._goal.x - self._start.x,
+        )
+        relative_heading = math.atan2(
+            math.sin(task_heading - pose.yaw),
+            math.cos(task_heading - pose.yaw),
+        )
+        return directional_scan_clearance(
+            self._scan.ranges,
+            angle_min=float(self._scan.angle_min),
+            angle_increment=float(self._scan.angle_increment),
+            direction=relative_heading,
+            half_width_rad=math.radians(self._float("bc_yield_forward_half_width_degrees")),
+        )
 
     def _nearest_clearance(self) -> float:
         observed = self._observable_nearest_clearance()
@@ -1242,6 +1270,22 @@ class RecoveryManagerNode(Node):
             return
         pose = self._world_pose()
         failure = self._effective_failure(pose)
+        task_forward_clearance = self._task_forward_clearance(pose)
+        bc_yield_active = bool(
+            self._policy_type == "bc"
+            and self._bc_yield_latch.update(
+                collision_risk=failure.collision_risk,
+                forward_clearance_m=task_forward_clearance,
+            )
+        )
+        control_failure = failure
+        if bc_yield_active:
+            control_failure = FailurePrediction(
+                collision_risk=1.0,
+                freeze=failure.freeze,
+                oscillation=failure.oscillation,
+                deadlock=failure.deadlock,
+            )
         distance = math.dist((pose.x, pose.y), (self._goal.x, self._goal.y))
         meaningful_progress = self._sequence_progress_budget.progress_reached(distance)
         linear_velocity = float(self._odom.twist.twist.linear.x)
@@ -1301,21 +1345,25 @@ class RecoveryManagerNode(Node):
             policy_type=self._policy_type,
             action_id=self._active_action,
             action_complete=action_complete,
-            failure_score=failure.score,
+            failure_score=control_failure.score,
             tau_off=self._machine.config.tau_off,
             option_elapsed_s=now_s - self._machine.state_since_s,
-            maximum_option_duration_s=self._machine.config.maximum_recovery_duration_s,
+            maximum_option_duration_s=(
+                self._machine.config.maximum_extended_recovery_duration_s
+                if self._oracle_yield.active or bc_yield_active
+                else self._machine.config.maximum_recovery_duration_s
+            ),
         )
         transition = self._machine.update(
             StateMachineInput(
                 now_s=now_s,
-                failure_score=failure.score,
+                failure_score=control_failure.score,
                 valid_progress=self._valid_progress(),
                 meaningful_progress=meaningful_progress,
                 emergency_stop=self._emergency,
                 goal_reached=distance <= self._float("goal_tolerance_m"),
                 recovery_action_complete=action_complete and not persistent_failure_followup,
-                recovery_option_active=self._oracle_yield.active,
+                recovery_option_active=self._oracle_yield.active or bc_yield_active,
             )
         )
         if meaningful_progress and (
@@ -1330,16 +1378,16 @@ class RecoveryManagerNode(Node):
         if transition.current is RecoveryState.RECOVERY and (
             transition.changed or persistent_failure_followup
         ):
-            observation = self._observation(failure)
-            decision_failure = failure
-            if self._collision_safety_latched and failure.collision_risk < self._float(
+            observation = self._observation(control_failure)
+            decision_failure = control_failure
+            if self._collision_safety_latched and control_failure.collision_risk < self._float(
                 "bc_rejoin_block_threshold"
             ):
                 decision_failure = FailurePrediction(
                     collision_risk=self._float("bc_rejoin_block_threshold"),
-                    freeze=failure.freeze,
-                    oscillation=failure.oscillation,
-                    deadlock=failure.deadlock,
+                    freeze=control_failure.freeze,
+                    oscillation=control_failure.oscillation,
+                    deadlock=control_failure.deadlock,
                 )
             decision = self._select_decision(
                 observation,
@@ -1348,6 +1396,21 @@ class RecoveryManagerNode(Node):
                 stalled_rejoin=transition.reason == "rejoin_failure_retry",
             )
             temporary = self._execute(decision.action_id, now_s)
+            if bc_yield_active:
+                clearance_text = (
+                    "unobserved"
+                    if task_forward_clearance is None
+                    else f"{task_forward_clearance:.3f}"
+                )
+                decision = CoreRecoveryDecision(
+                    decision.action_id,
+                    decision.confidence,
+                    (
+                        "bc_directional_yield=active "
+                        f"forward_clearance_m={clearance_text} "
+                        f"clear_frames={self._bc_yield_latch.clear_frames}; {decision.reason}"
+                    ),
+                )
             self._publish_decision(
                 decision.action_id, decision.confidence, decision.reason, temporary
             )

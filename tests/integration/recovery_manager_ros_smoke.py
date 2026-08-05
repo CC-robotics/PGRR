@@ -20,7 +20,7 @@ from ramp_core.action_space import (
 )
 from ramp_core.recovery.safety import EmergencyEscapeMode
 from ramp_core.state_machine import RecoveryState, StateTransition
-from ramp_core.types import PlannerStatus
+from ramp_core.types import PlannerStatus, Pose2D
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from ramp_ros.nodes.recovery_manager_node import RecoveryManagerNode
 from rclpy.action import ActionServer
@@ -227,6 +227,26 @@ def _assert_bc_subgoal_lifecycle(manager: RecoveryManagerNode) -> None:
         manager._adapter._status = adapter_status
 
 
+def _assert_directional_yield_lifecycle(manager: RecoveryManagerNode) -> None:
+    latch = manager._bc_yield_latch
+    latch.reset()
+    if abs(latch.release_clearance_m - 1.25) > 1.0e-9 or latch.release_frames != 3:
+        raise RuntimeError(
+            "unexpected directional-yield configuration: "
+            f"clearance={latch.release_clearance_m}, frames={latch.release_frames}"
+        )
+    clearance = manager._task_forward_clearance(Pose2D(0.1, 0.0, 0.0))
+    if clearance is None or abs(clearance - 2.0) > 1.0e-6:
+        raise RuntimeError(f"task-forward clearance sector mismatch: {clearance}")
+    if not latch.update(collision_risk=0.8, forward_clearance_m=clearance):
+        raise RuntimeError("collision warning did not latch directional yield")
+    for _ in range(latch.release_frames - 1):
+        if not latch.update(collision_risk=0.0, forward_clearance_m=clearance):
+            raise RuntimeError("directional yield released without consecutive evidence")
+    if latch.update(collision_risk=0.0, forward_clearance_m=clearance):
+        raise RuntimeError("directional yield did not release at its evidence boundary")
+
+
 def main() -> int:
     rclpy.init(
         args=[
@@ -268,6 +288,7 @@ def main() -> int:
             raise RuntimeError("manager published no temporary-goal recovery decision")
         _assert_recurrent_escape_mask(manager)
         _assert_bc_subgoal_lifecycle(manager)
+        _assert_directional_yield_lifecycle(manager)
         nonterminal = StateTransition(
             previous=RecoveryState.EMERGENCY_STOP,
             current=RecoveryState.NORMAL,
@@ -295,7 +316,8 @@ def main() -> int:
         print(
             "PASS recovery manager ROS smoke: "
             f"temporary={temporary}, restored={restored}, decisions={len(driver.decisions)}, "
-            "bc_subgoal=bounded, recurrent_escape=planning_safe, terminal_reasons=preserved"
+            "bc_subgoal=bounded, directional_yield=observable, "
+            "recurrent_escape=planning_safe, terminal_reasons=preserved"
         )
         return 0
     finally:

@@ -294,6 +294,12 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         < config["maximum_recovery_duration_s"]
     )
     assert config["bc_rejoin_block_threshold"] == 0.65
+    assert config["bc_yield_release_clearance_m"] == 1.25
+    assert config["bc_yield_release_frames"] == 3
+    assert config["bc_yield_forward_half_width_degrees"] == 45.0
+    assert '"bc_yield_release_clearance_m": 1.25' in manager
+    assert '"bc_yield_release_frames": 3' in manager
+    assert '"bc_yield_forward_half_width_degrees": 45.0' in manager
     assert '"emergency_rotation_clearance_m": 0.24' in manager
     assert '"collision_latched_stop_clearance_m": 0.85' in manager
     assert '"collision_latched_action_clearance_m": 0.90' in manager

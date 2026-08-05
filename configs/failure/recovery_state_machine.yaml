@@ -16,6 +16,13 @@ bc_subgoal_minimum_execution_s: 2.0
 bc_subgoal_maximum_duration_s: 6.0
 expert_wait_budget_decisions: 3
 bc_rejoin_block_threshold: 0.65
+# A TTC warning remains latched until the task-forward LiDAR corridor is
+# socially clear for consecutive high-level observations.  For the 0.35 m
+# pedestrian proxy, 1.25 m surface clearance also exceeds its 1.5 m centre
+# avoidance boundary, preventing an immediate advance into the same deadlock.
+bc_yield_release_clearance_m: 1.25
+bc_yield_release_frames: 3
+bc_yield_forward_half_width_degrees: 45.0
 bc_wait_budget_decisions: 3
 # Four bounded attempts can realize the 1.4 m observable net-retreat cap when
 # individual backups terminate early; the geometric guard remains authoritative.

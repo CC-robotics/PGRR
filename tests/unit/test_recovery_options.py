@@ -15,6 +15,7 @@ from ramp_core.observations import HumanState
 from ramp_core.recovery.options import (
     BoundedBackupOption,
     BoundedSubgoalOption,
+    ObservableDirectionalYieldLatch,
     ObservableGoalProgressBudget,
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
@@ -31,6 +32,50 @@ from ramp_core.recovery.options import (
     should_continue_recovery_option,
 )
 from ramp_core.types import Pose2D
+
+
+def test_directional_yield_requires_consecutive_observable_clearance() -> None:
+    latch = ObservableDirectionalYieldLatch(
+        trigger_threshold=0.65,
+        release_clearance_m=1.25,
+        release_frames=3,
+    )
+    assert latch.update(collision_risk=0.8, forward_clearance_m=0.9)
+    assert latch.update(collision_risk=0.0, forward_clearance_m=1.30)
+    assert latch.clear_frames == 1
+    assert latch.update(collision_risk=0.0, forward_clearance_m=None)
+    assert latch.clear_frames == 0
+    assert latch.update(collision_risk=0.0, forward_clearance_m=1.30)
+    assert latch.update(collision_risk=0.0, forward_clearance_m=1.30)
+    assert not latch.update(collision_risk=0.0, forward_clearance_m=1.30)
+    assert latch.clear_frames == 0
+
+
+def test_directional_yield_retrigger_resets_release_evidence() -> None:
+    latch = ObservableDirectionalYieldLatch(release_frames=2)
+    assert latch.update(collision_risk=0.9, forward_clearance_m=2.0)
+    assert latch.update(collision_risk=0.0, forward_clearance_m=2.0)
+    assert latch.clear_frames == 1
+    assert latch.update(collision_risk=0.7, forward_clearance_m=2.0)
+    assert latch.clear_frames == 0
+    assert latch.update(collision_risk=0.0, forward_clearance_m=2.0)
+    assert not latch.update(collision_risk=0.0, forward_clearance_m=2.0)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"trigger_threshold": -0.1}, "trigger threshold"),
+        ({"release_clearance_m": float("inf")}, "release clearance"),
+        ({"release_frames": 0}, "release frames"),
+        ({"latched": False, "clear_frames": 1}, "cannot retain"),
+    ],
+)
+def test_directional_yield_rejects_invalid_configuration(
+    kwargs: dict[str, float | int | bool], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        ObservableDirectionalYieldLatch(**kwargs)
 
 
 def test_bounded_backup_holds_then_releases_on_observable_clearance_gain() -> None:
