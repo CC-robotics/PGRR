@@ -17,11 +17,16 @@ DAGGER_SHARDS ?= data/interim/dagger_iter1_temporary_blockage_high_train.h5 data
 DAGGER_VALIDATION ?= data/interim/temporary_blockage_validation_expert.h5
 DAGGER_CONFIG ?= configs/imitation/bc_uniform_scenario.yaml
 LOG_DIR ?= $(PROJECT_ROOT)/outputs/logs
+MODERATE_ANALYSIS_DIR ?= outputs/moderate/final
+MODERATE_RESULTS ?= $(MODERATE_ANALYSIS_DIR)/results.parquet
+MODERATE_SUMMARY ?= $(MODERATE_ANALYSIS_DIR)/summary.csv
+MODERATE_STATISTICS ?= $(MODERATE_ANALYSIS_DIR)/pairwise_statistics.json
+MODERATE_EXPECTED_CONDITIONS ?= 120
 OFFLINE_RUN := env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION conda run -n "$(CONDA_ENV_NAME)"
 
 .DEFAULT_GOAL := help
 
-.PHONY: help preflight conda arena build test smoke baseline scenarios mine-failures label-expert train-bc train-dagger train-ppo-smoke train-ppo train-detector pilot evaluate-flatland evaluate-gazebo statistics figures tables paper reproduce-small reproduce-paper student-branch
+.PHONY: help preflight conda arena build test smoke baseline scenarios mine-failures label-expert train-bc train-dagger train-ppo-smoke train-ppo train-detector pilot evaluate-flatland evaluate-gazebo statistics figures tables moderate-figures moderate-tables paper reproduce-small reproduce-paper student-branch
 
 help: ## Show available targets.
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z0-9_-]+:.*## / {printf "%-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -97,6 +102,18 @@ figures: ## Generate figures from recorded results.
 tables: ## Generate LaTeX tables from recorded results.
 	@$(OFFLINE_RUN) python scripts/paper/make_tables.py
 	@$(OFFLINE_RUN) python scripts/paper/make_tables.py --output-dir outputs/tables
+moderate-figures: ## Generate five-method moderate benchmark vector figures.
+	@$(OFFLINE_RUN) python scripts/paper/make_moderate_figures.py \
+		--results "$(MODERATE_RESULTS)" --summary "$(MODERATE_SUMMARY)" \
+		--statistics "$(MODERATE_STATISTICS)" \
+		--expected-condition-count "$(MODERATE_EXPECTED_CONDITIONS)" \
+		--output-dir paper/figures
+moderate-tables: ## Generate five-method moderate benchmark LaTeX tables.
+	@$(OFFLINE_RUN) python scripts/paper/make_moderate_tables.py \
+		--results "$(MODERATE_RESULTS)" --summary "$(MODERATE_SUMMARY)" \
+		--statistics "$(MODERATE_STATISTICS)" \
+		--expected-condition-count "$(MODERATE_EXPECTED_CONDITIONS)" \
+		--output-dir paper/generated
 paper: ## Compile the manuscript after validating generated artifacts.
 	@scripts/paper/build_paper.sh
 reproduce-small: ## Exercise the full small-data pipeline.
