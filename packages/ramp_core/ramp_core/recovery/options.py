@@ -64,15 +64,7 @@ class TemporalClosingSideResult:
     left_closing_beams: int
     right_occupied: bool
     left_occupied: bool
-    right_stack_minimum_clearance_m: float
-    left_stack_minimum_clearance_m: float
-    right_clear_for_release: bool
-    left_clear_for_release: bool
     rotation_gated: bool
-    right_latched_before: bool = False
-    left_latched_before: bool = False
-    right_latched_after: bool = False
-    left_latched_after: bool = False
 
 
 @dataclass
@@ -81,12 +73,10 @@ class ObservableClosingSideLatch:
 
     A recovery BACKUP changes beam correspondence and can temporarily reduce
     the five-frame closing count even though the same flow still blocks the
-    corridor. Reliable side observations are retained while the parent
-    directional-yield latch is active until all beams in that task-side sector
-    have remained clear across the complete five-frame observation. New raw
-    occupancy wins over same-frame clearance. Rotation-gated observations
-    neither add nor remove evidence, and releasing the parent resets both
-    sides.
+    corridor. Reliable side observations therefore accumulate by union while
+    the parent directional-yield latch is active. Rotation-gated observations
+    neither add nor remove evidence. The parent latch's independently observed
+    corridor-clear transition is the sole normal release condition.
     """
 
     right_occupied: bool = False
@@ -106,8 +96,6 @@ class ObservableClosingSideLatch:
         yield_active: bool,
         right_occupied: bool,
         left_occupied: bool,
-        right_clear_for_release: bool,
-        left_clear_for_release: bool,
         rotation_gated: bool,
     ) -> tuple[bool, bool]:
         """Update and return ``(right, left)`` retained occupancy flags."""
@@ -115,14 +103,8 @@ class ObservableClosingSideLatch:
         if not yield_active:
             self.reset()
         elif not rotation_gated:
-            if right_occupied:
-                self.right_occupied = True
-            elif right_clear_for_release:
-                self.right_occupied = False
-            if left_occupied:
-                self.left_occupied = True
-            elif left_clear_for_release:
-                self.left_occupied = False
+            self.right_occupied |= right_occupied
+            self.left_occupied |= left_occupied
         return self.right_occupied, self.left_occupied
 
 
@@ -696,7 +678,6 @@ def constrain_temporal_closing_side(
     path_heading_rad: float,
     angular_speed_radps: float,
     minimum_lateral_displacement_m: float,
-    release_clearance_m: float,
     config: TemporalClosingSideConfig | None = None,
 ) -> TemporalClosingSideResult:
     """Mask task-lateral subgoals toward an observably closing side flow.
@@ -735,8 +716,9 @@ def constrain_temporal_closing_side(
         raise ValueError("scan angle_max must be greater than angle_min")
     if not math.isfinite(minimum_lateral_displacement_m) or minimum_lateral_displacement_m <= 0.0:
         raise ValueError("minimum lateral displacement must be finite and positive")
-    if not math.isfinite(release_clearance_m) or release_clearance_m <= 0.0:
-        raise ValueError("release clearance must be finite and positive")
+
+    if abs(angular_speed_radps) > config.maximum_angular_speed_radps + 1.0e-12:
+        return TemporalClosingSideResult(constrained, 0, 0, False, False, True)
 
     beam_angles = np.linspace(angle_min_rad, angle_max_rad, 180, dtype=np.float64)
     task_relative_angles = np.arctan2(
@@ -761,32 +743,6 @@ def constrain_temporal_closing_side(
     left_sector = (task_relative_angles >= minimum_sector_rad) & (
         task_relative_angles <= maximum_sector_rad
     )
-
-    def stack_clearance(sector: npt.NDArray[np.bool_]) -> tuple[float, bool]:
-        values = lidar[:, sector]
-        valid_values = np.isfinite(values) & (values > 0.0)
-        if values.size == 0 or not bool(np.all(valid_values)):
-            return 0.0, False
-        minimum = float(np.min(values))
-        return minimum, minimum >= release_clearance_m
-
-    right_stack_minimum, right_clear_for_release = stack_clearance(right_sector)
-    left_stack_minimum, left_clear_for_release = stack_clearance(left_sector)
-
-    if abs(angular_speed_radps) > config.maximum_angular_speed_radps + 1.0e-12:
-        return TemporalClosingSideResult(
-            mask=constrained,
-            right_closing_beams=0,
-            left_closing_beams=0,
-            right_occupied=False,
-            left_occupied=False,
-            right_stack_minimum_clearance_m=right_stack_minimum,
-            left_stack_minimum_clearance_m=left_stack_minimum,
-            right_clear_for_release=right_clear_for_release,
-            left_clear_for_release=left_clear_for_release,
-            rotation_gated=True,
-        )
-
     right_closing_beams = int(np.count_nonzero(closing & right_sector))
     left_closing_beams = int(np.count_nonzero(closing & left_sector))
     right_occupied = right_closing_beams >= config.minimum_closing_beams
@@ -802,16 +758,12 @@ def constrain_temporal_closing_side(
     )
 
     return TemporalClosingSideResult(
-        mask=constrained,
-        right_closing_beams=right_closing_beams,
-        left_closing_beams=left_closing_beams,
-        right_occupied=right_occupied,
-        left_occupied=left_occupied,
-        right_stack_minimum_clearance_m=right_stack_minimum,
-        left_stack_minimum_clearance_m=left_stack_minimum,
-        right_clear_for_release=right_clear_for_release,
-        left_clear_for_release=left_clear_for_release,
-        rotation_gated=False,
+        constrained,
+        right_closing_beams,
+        left_closing_beams,
+        right_occupied,
+        left_occupied,
+        False,
     )
 
 

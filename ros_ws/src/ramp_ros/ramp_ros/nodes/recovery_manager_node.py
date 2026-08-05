@@ -1158,17 +1158,12 @@ class RecoveryManagerNode(Node):
             minimum_lateral_displacement_m=self._float(
                 "recurrent_escape_minimum_lateral_displacement_m"
             ),
-            release_clearance_m=self._float("bc_yield_release_clearance_m"),
             config=self._bc_closing_side_config,
         )
-        right_latched_before = self._bc_closing_side_latch.right_occupied
-        left_latched_before = self._bc_closing_side_latch.left_occupied
         right_occupied, left_occupied = self._bc_closing_side_latch.update(
             yield_active=self._bc_yield_latch.latched,
             right_occupied=raw_result.right_occupied,
             left_occupied=raw_result.left_occupied,
-            right_clear_for_release=raw_result.right_clear_for_release,
-            left_clear_for_release=raw_result.left_clear_for_release,
             rotation_gated=raw_result.rotation_gated,
         )
         effective_mask = constrain_task_lateral_sides(
@@ -1182,20 +1177,12 @@ class RecoveryManagerNode(Node):
             left_occupied=left_occupied,
         )
         return TemporalClosingSideResult(
-            mask=effective_mask,
-            right_closing_beams=raw_result.right_closing_beams,
-            left_closing_beams=raw_result.left_closing_beams,
-            right_occupied=raw_result.right_occupied,
-            left_occupied=raw_result.left_occupied,
-            right_stack_minimum_clearance_m=(raw_result.right_stack_minimum_clearance_m),
-            left_stack_minimum_clearance_m=raw_result.left_stack_minimum_clearance_m,
-            right_clear_for_release=raw_result.right_clear_for_release,
-            left_clear_for_release=raw_result.left_clear_for_release,
-            rotation_gated=raw_result.rotation_gated,
-            right_latched_before=right_latched_before,
-            left_latched_before=left_latched_before,
-            right_latched_after=right_occupied,
-            left_latched_after=left_occupied,
+            effective_mask,
+            raw_result.right_closing_beams,
+            raw_result.left_closing_beams,
+            raw_result.right_occupied,
+            raw_result.left_occupied,
+            raw_result.rotation_gated,
         )
 
     def _bc_temporal_closing_side_telemetry(
@@ -1225,20 +1212,11 @@ class RecoveryManagerNode(Node):
             f"sector_deg={config.sector_min_degrees:.1f}:{config.sector_max_degrees:.1f} "
             f"delta_m={config.closing_delta_m:.3f} "
             f"maximum_range_m={config.maximum_current_range_m:.3f} "
-            f"release_clearance_m={self._float('bc_yield_release_clearance_m'):.3f} "
-            f"right_stack_min_m={result.right_stack_minimum_clearance_m:.3f} "
-            f"left_stack_min_m={result.left_stack_minimum_clearance_m:.3f} "
-            f"right_clear5={int(result.right_clear_for_release)} "
-            f"left_clear5={int(result.left_clear_for_release)} "
             f"angular_speed_radps={angular_speed_radps:.3f} "
             f"angular_gate_radps={config.maximum_angular_speed_radps:.3f} "
             f"raw_right={int(result.right_occupied)} raw_left={int(result.left_occupied)} "
-            f"latched_before_right={int(result.right_latched_before)} "
-            f"latched_before_left={int(result.left_latched_before)} "
-            f"latched_after_right={int(result.right_latched_after)} "
-            f"latched_after_left={int(result.left_latched_after)} "
-            f"latched_right={int(result.right_latched_after)} "
-            f"latched_left={int(result.left_latched_after)} "
+            f"latched_right={int(self._bc_closing_side_latch.right_occupied)} "
+            f"latched_left={int(self._bc_closing_side_latch.left_occupied)} "
             f"pre={','.join(map(str, np.flatnonzero(before)))} "
             f"post={','.join(map(str, np.flatnonzero(result.mask)))}"
         )
