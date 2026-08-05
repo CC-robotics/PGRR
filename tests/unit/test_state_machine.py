@@ -138,6 +138,40 @@ def test_active_long_option_uses_separate_bounded_duration() -> None:
     assert transition.reason == "recovery_timeout"
 
 
+def test_completed_action_waits_for_configured_low_score_hysteresis() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            frames_off=3,
+            cooldown_s=0.0,
+            minimum_action_hold_s=0.0,
+        )
+    )
+    machine.update(StateMachineInput(0.0, 1.0, False))
+    for now_s in (0.1, 0.2):
+        transition = machine.update(
+            StateMachineInput(now_s, 0.0, False, recovery_action_complete=True)
+        )
+        assert transition.current is RecoveryState.RECOVERY
+    transition = machine.update(StateMachineInput(0.3, 0.0, False, recovery_action_complete=True))
+    assert transition.current is RecoveryState.REJOIN
+    assert transition.reason == "recovery_action_complete"
+
+
+def test_completed_action_cannot_rejoin_while_failure_persists() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            frames_off=1,
+            cooldown_s=0.0,
+            minimum_action_hold_s=0.0,
+        )
+    )
+    machine.update(StateMachineInput(0.0, 1.0, False))
+    transition = machine.update(StateMachineInput(0.1, 1.0, False, recovery_action_complete=True))
+    assert transition.current is RecoveryState.RECOVERY
+
+
 def test_threshold_order_is_validated() -> None:
     try:
         RecoveryStateMachineConfig(tau_on=0.3, tau_off=0.4)
@@ -164,6 +198,7 @@ def test_stalled_rejoin_retries_then_respects_recovery_limit() -> None:
     machine = RecoveryStateMachine(
         RecoveryStateMachineConfig(
             frames_on=1,
+            frames_off=1,
             cooldown_s=0.0,
             minimum_action_hold_s=0.0,
             maximum_rejoin_duration_s=2.0,

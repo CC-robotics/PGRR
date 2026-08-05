@@ -228,20 +228,19 @@ class RecoveryStateMachine:
             if elapsed >= recovery_limit:
                 self.state = RecoveryState.REJOIN
                 reason = "recovery_timeout"
-            elif (
-                state_input.recovery_action_complete
-                and elapsed >= self.config.minimum_action_hold_s
-            ):
-                self.state = RecoveryState.REJOIN
-                reason = "recovery_action_complete"
-            elif state_input.failure_score < self.config.tau_off and state_input.valid_progress:
+            elif state_input.failure_score < self.config.tau_off:
                 self._low_frames += 1
                 if (
                     self._low_frames >= self.config.frames_off
                     and elapsed >= self.config.minimum_action_hold_s
+                    and (state_input.recovery_action_complete or state_input.valid_progress)
                 ):
                     self.state = RecoveryState.REJOIN
-                    reason = "failure_cleared"
+                    reason = (
+                        "recovery_action_complete"
+                        if state_input.recovery_action_complete
+                        else "failure_cleared"
+                    )
             else:
                 self._low_frames = 0
         elif self.state is RecoveryState.REJOIN:
