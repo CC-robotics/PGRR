@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import socket
 import subprocess
 import sys
 from importlib.util import module_from_spec, spec_from_file_location
@@ -28,12 +29,12 @@ _load_module("make_figures", ROOT / "scripts/paper/make_figures.py")
 make_tables = _load_module("make_tables_privacy", ROOT / "scripts/paper/make_tables.py")
 
 
-def _private_home() -> str:
-    return "/" + "home" + "/" + "diy"
+def _runtime_home() -> str:
+    return str(Path.home())
 
 
-def _legacy_hostname() -> str:
-    return "diy" + "01"
+def _runtime_hostname() -> str:
+    return socket.gethostname()
 
 
 def test_clean_tree_allows_alias_anonymous_and_placeholders(tmp_path: Path) -> None:
@@ -53,12 +54,12 @@ def test_clean_tree_allows_alias_anonymous_and_placeholders(tmp_path: Path) -> N
 
 def test_text_binary_and_email_leaks_fail_closed(tmp_path: Path) -> None:
     (tmp_path / "report.txt").write_text(
-        f"root={_private_home()}/PGRR\nhostname={_legacy_hostname()}\n"
+        f"root={_runtime_home()}/PGRR\nhostname={_runtime_hostname()}\n"
         "maintainer=" + "ramp-local" + "@" + "example.com\n",
         encoding="utf-8",
     )
     (tmp_path / "model.bin").write_bytes(
-        b"\x00model metadata\x00" + _private_home().encode() + b"/checkpoint\x00"
+        b"\x00model metadata\x00" + _runtime_home().encode() + b"/checkpoint\x00"
     )
 
     findings, count = privacy_audit.scan_tree(tmp_path, all_files=True)
@@ -70,7 +71,7 @@ def test_text_binary_and_email_leaks_fail_closed(tmp_path: Path) -> None:
 
 
 def test_private_identifier_in_filename_is_rejected(tmp_path: Path) -> None:
-    (tmp_path / f"report_{_legacy_hostname()}.txt").write_text(
+    (tmp_path / f"report_{_runtime_hostname()}.txt").write_text(
         "Anonymous Authors\n", encoding="utf-8"
     )
 
@@ -82,7 +83,7 @@ def test_private_identifier_in_filename_is_rejected(tmp_path: Path) -> None:
 def test_hdf5_attributes_are_audited(tmp_path: Path) -> None:
     dataset = tmp_path / "expert.h5"
     with h5py.File(dataset, "w") as handle:
-        handle.attrs["source_jsonl"] = _private_home() + "/raw/episode.jsonl"
+        handle.attrs["source_jsonl"] = _runtime_home() + "/raw/episode.jsonl"
 
     findings, _ = privacy_audit.scan_tree(tmp_path, all_files=True)
 
@@ -94,15 +95,58 @@ def test_default_git_surface_includes_untracked_but_not_ignored(tmp_path: Path) 
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
     (tmp_path / ".gitignore").write_text("ignored.bin\n", encoding="utf-8")
     (tmp_path / "README.md").write_text("Anonymous Authors\n", encoding="utf-8")
-    (tmp_path / "ignored.bin").write_text(_private_home(), encoding="utf-8")
+    (tmp_path / "ignored.bin").write_text(_runtime_home(), encoding="utf-8")
 
     findings, count = privacy_audit.scan_tree(tmp_path)
 
     assert findings == []
     assert count == 2
-    (tmp_path / "untracked.txt").write_text(_private_home(), encoding="utf-8")
+    (tmp_path / "untracked.txt").write_text(_runtime_home(), encoding="utf-8")
     findings, _ = privacy_audit.scan_tree(tmp_path)
     assert any(finding.path == "untracked.txt" for finding in findings)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        'marker = "private-" + "machine-" + "marker"\n',
+        'marker = ("private-" "machine-" "marker")\n',
+    ],
+)
+def test_concatenated_forbidden_identifier_cannot_evade_scan(source: str) -> None:
+    forbidden = "private-machine-marker"
+
+    findings = privacy_audit._scan_text(
+        source,
+        "module.py",
+        "text",
+        extra_forbidden=[forbidden],
+    )
+
+    assert any(
+        finding.rule == "forbidden machine/user identifier assembled from string literals"
+        for finding in findings
+    )
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        ROOT / "scripts/bootstrap/privacy_audit.py",
+        ROOT / "tests/unit/test_privacy_audit.py",
+    ],
+)
+def test_privacy_sources_do_not_reconstruct_runtime_identifiers(path: Path) -> None:
+    source = path.read_text(encoding="utf-8")
+    sensitive = privacy_audit._sensitive_literals(())
+    assembled = privacy_audit._concatenated_string_literals(source)
+
+    assert all(literal.casefold() not in source.casefold() for literal in sensitive)
+    assert all(
+        literal.casefold() not in value.casefold()
+        for value, _ in assembled
+        for literal in sensitive
+    )
 
 
 @pytest.mark.skipif(shutil.which("pdfinfo") is None, reason="pdfinfo is unavailable")

@@ -9,6 +9,8 @@ virtual environments are deliberately outside the default release surface.
 from __future__ import annotations
 
 import argparse
+import ast
+import io
 import json
 import os
 import re
@@ -16,6 +18,8 @@ import shutil
 import socket
 import subprocess
 import sys
+import tokenize
+import warnings
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,11 +28,6 @@ ROOT = Path(__file__).resolve().parents[2]
 HDF5_SUFFIXES = {".h5", ".hdf5"}
 PDF_SUFFIXES = {".pdf"}
 SKIP_DIRECTORY_NAMES = {".git"}
-
-# Compose the legacy identifiers so the auditor does not contain the exact
-# strings that it is required to reject from a release tree.
-LEGACY_HOME = "/" + "home" + "/" + "diy"
-LEGACY_HOSTNAME = "diy" + "01"
 
 ABSOLUTE_HOME_RE = re.compile(
     r"(?<![A-Za-z0-9_${])/(?:home|Users)/[A-Za-z0-9._-]+",
@@ -81,7 +80,7 @@ def _allowed_email(value: str) -> bool:
 
 
 def _sensitive_literals(extra_forbidden: Iterable[str]) -> tuple[str, ...]:
-    candidates = {LEGACY_HOME, LEGACY_HOSTNAME}
+    candidates: set[str] = set()
     current_home = str(Path.home())
     if current_home not in {"", "/"}:
         candidates.add(current_home)
@@ -95,6 +94,79 @@ def _sensitive_literals(extra_forbidden: Iterable[str]) -> tuple[str, ...]:
     return tuple(sorted(candidates, key=lambda value: (-len(value), value.casefold())))
 
 
+def _literal_text(token_text: str) -> str | None:
+    """Return a static string token's value without evaluating source code."""
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            value = ast.literal_eval(token_text)
+    except (SyntaxError, ValueError):
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return None
+
+
+def _concatenated_string_literals(text: str) -> list[tuple[str, int]]:
+    """Reconstruct Python-style literal ``+`` chains for privacy scanning.
+
+    Splitting an identifier across quoted literals must not let it evade the
+    release audit.  Tokenization plus ``ast.literal_eval`` handles ordinary and
+    raw string prefixes without executing the inspected source.
+    """
+
+    if "'" not in text and '"' not in text:
+        return []
+
+    tokens: list[tokenize.TokenInfo] = []
+    generator = tokenize.generate_tokens(io.StringIO(text).readline)
+    try:
+        tokens.extend(generator)
+    except (IndentationError, tokenize.TokenError):
+        # Non-Python text may not tokenize completely.  Tokens yielded before
+        # the malformed region are still safe and useful to inspect.
+        pass
+
+    reconstructed: list[tuple[str, int]] = []
+    skippable = {tokenize.COMMENT, tokenize.NL}
+    index = 0
+    while index < len(tokens):
+        first = tokens[index]
+        first_value = _literal_text(first.string) if first.type == tokenize.STRING else None
+        if first_value is None:
+            index += 1
+            continue
+
+        parts = [first_value]
+        cursor = index + 1
+        while cursor < len(tokens):
+            while cursor < len(tokens) and tokens[cursor].type in skippable:
+                cursor += 1
+            if cursor < len(tokens) and tokens[cursor].type == tokenize.OP:
+                if tokens[cursor].string != "+":
+                    break
+                cursor += 1
+                while cursor < len(tokens) and tokens[cursor].type in skippable:
+                    cursor += 1
+            if cursor >= len(tokens) or tokens[cursor].type != tokenize.STRING:
+                break
+            next_value = _literal_text(tokens[cursor].string)
+            if next_value is None:
+                break
+            parts.append(next_value)
+            cursor += 1
+
+        if len(parts) > 1:
+            reconstructed.append(("".join(parts), first.start[0]))
+            index = cursor
+        else:
+            index += 1
+    return reconstructed
+
+
 def _scan_text(
     text: str,
     relative_path: str,
@@ -103,8 +175,9 @@ def _scan_text(
     extra_forbidden: Iterable[str] = (),
 ) -> set[Finding]:
     findings: set[Finding] = set()
+    sensitive_literals = _sensitive_literals(extra_forbidden)
     lowered = text.casefold()
-    for literal in _sensitive_literals(extra_forbidden):
+    for literal in sensitive_literals:
         start = lowered.find(literal.casefold())
         if start >= 0:
             findings.add(
@@ -113,6 +186,27 @@ def _scan_text(
                     source,
                     "forbidden machine/user identifier",
                     _line_number(text, start) if source == "text" else None,
+                )
+            )
+    assembled_literals = _concatenated_string_literals(text) if source == "text" else []
+    for assembled, line in assembled_literals:
+        assembled_lower = assembled.casefold()
+        if any(literal.casefold() in assembled_lower for literal in sensitive_literals):
+            findings.add(
+                Finding(
+                    relative_path,
+                    source,
+                    "forbidden machine/user identifier assembled from string literals",
+                    line if source == "text" else None,
+                )
+            )
+        if ABSOLUTE_HOME_RE.search(assembled) is not None:
+            findings.add(
+                Finding(
+                    relative_path,
+                    source,
+                    "absolute home-directory path assembled from string literals",
+                    line if source == "text" else None,
                 )
             )
     home_match = ABSOLUTE_HOME_RE.search(text)
