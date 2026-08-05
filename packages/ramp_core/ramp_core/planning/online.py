@@ -72,6 +72,52 @@ def directional_scan_clearance(
     return float(np.min(sector)) if sector.size else None
 
 
+def fully_observed_directional_scan_clearance(
+    ranges: npt.ArrayLike,
+    *,
+    angle_min: float,
+    angle_increment: float,
+    direction: float,
+    half_width_rad: float,
+    range_max: float,
+) -> float | None:
+    """Return clearance only when the complete requested sector is observed.
+
+    A partial overlap with the edge of a limited-FOV scan is not evidence that
+    a corridor is clear. Positive infinite readings are valid no-return
+    measurements and are conservatively represented by the sensor's finite
+    ``range_max``; NaN, negative, and negative-infinite readings fail closed.
+    """
+
+    values_to_validate = (angle_min, angle_increment, direction, half_width_rad, range_max)
+    if not all(math.isfinite(value) for value in values_to_validate):
+        raise ValueError("directional scan geometry and range must be finite")
+    if angle_increment <= 0.0 or half_width_rad < 0.0 or range_max <= 0.0:
+        raise ValueError("scan increment/range must be positive and half-width non-negative")
+    values = np.asarray(ranges, dtype=np.float64)
+    if values.ndim != 1 or values.size == 0:
+        return None
+    scan_min = angle_min
+    scan_max = angle_min + (values.size - 1) * angle_increment
+    scan_midpoint = 0.5 * (scan_min + scan_max)
+    unwrapped_direction = direction + round((scan_midpoint - direction) / (2.0 * math.pi)) * (
+        2.0 * math.pi
+    )
+    angular_tolerance = 0.5 * angle_increment + 1.0e-12
+    if (
+        unwrapped_direction - half_width_rad < scan_min - angular_tolerance
+        or unwrapped_direction + half_width_rad > scan_max + angular_tolerance
+    ):
+        return None
+    angles = angle_min + np.arange(values.size) * angle_increment
+    selected = np.abs(angles - unwrapped_direction) <= half_width_rad + angular_tolerance
+    sector = values[selected]
+    if sector.size == 0 or bool(np.any(np.isnan(sector) | np.isneginf(sector) | (sector < 0.0))):
+        return None
+    clearances = np.where(np.isposinf(sector), range_max, sector)
+    return float(np.min(clearances))
+
+
 def scan_segment_is_free(
     ranges: npt.ArrayLike,
     *,

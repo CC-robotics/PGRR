@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import pytest
 from ramp_core.action_space import (
@@ -20,6 +22,7 @@ from ramp_core.recovery.options import (
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
     PrivilegedYieldOption,
+    constrain_directional_yield_motion,
     constrain_net_retreat,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
@@ -60,6 +63,66 @@ def test_directional_yield_retrigger_resets_release_evidence() -> None:
     assert latch.clear_frames == 0
     assert latch.update(collision_risk=0.0, forward_clearance_m=2.0)
     assert not latch.update(collision_risk=0.0, forward_clearance_m=2.0)
+
+
+def test_directional_yield_uses_the_configured_recovery_threshold() -> None:
+    latch = ObservableDirectionalYieldLatch(trigger_threshold=0.8)
+    assert not latch.update(collision_risk=0.7, forward_clearance_m=0.5)
+    assert latch.update(collision_risk=0.8, forward_clearance_m=0.5)
+
+
+def test_directional_yield_does_not_count_a_stale_scan_twice() -> None:
+    latch = ObservableDirectionalYieldLatch(release_frames=2)
+    assert latch.update(collision_risk=0.9, forward_clearance_m=0.8, observation_id=10)
+    assert latch.update(collision_risk=0.0, forward_clearance_m=2.0, observation_id=11)
+    assert latch.clear_frames == 1
+    assert latch.update(collision_risk=0.0, forward_clearance_m=2.0, observation_id=11)
+    assert latch.clear_frames == 1
+    assert not latch.update(collision_risk=0.0, forward_clearance_m=2.0, observation_id=12)
+
+
+def test_directional_yield_masks_forward_motion_without_unmasking() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    mask[6] = False
+    constrained = constrain_directional_yield_motion(
+        mask,
+        pose=Pose2D(2.0, 1.0, 0.0),
+        path_heading_rad=0.0,
+        backup_distance_m=0.45,
+    )
+    for action in ACTIONS[:WAIT_ACTION_ID]:
+        assert action.angle_degrees is not None
+        assert bool(constrained[action.action_id]) == (
+            abs(action.angle_degrees) == 90 and bool(mask[action.action_id])
+        )
+    assert constrained[BACKUP_ACTION_ID]
+    assert constrained[WAIT_ACTION_ID]
+    assert not constrained[REPLAN_ACTION_ID]
+    assert not constrained[CONTINUE_ACTION_ID]
+    assert not bool(np.any(constrained & ~mask))
+
+
+def test_directional_yield_uses_path_heading_not_robot_heading() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    constrained = constrain_directional_yield_motion(
+        mask,
+        pose=Pose2D(0.0, 0.0, math.pi / 2.0),
+        path_heading_rad=0.0,
+        backup_distance_m=0.45,
+    )
+    assert constrained[BACKUP_ACTION_ID]
+    assert constrained[WAIT_ACTION_ID]
+    # With the robot facing north, its -90-degree subgoals point east along
+    # the blocked path and must be removed; +90 degrees point west and remain.
+    assert not constrained[0]
+    assert constrained[6]
+    facing_backward = constrain_directional_yield_motion(
+        mask,
+        pose=Pose2D(0.0, 0.0, math.pi),
+        path_heading_rad=0.0,
+        backup_distance_m=0.45,
+    )
+    assert not facing_backward[BACKUP_ACTION_ID]
 
 
 @pytest.mark.parametrize(

@@ -2,6 +2,7 @@ import math
 
 import pytest
 from ramp_core.geometry import (
+    nearest_polyline_tangent_heading,
     normalize_angle,
     parse_shelf_boxes,
     point_to_oriented_box_distance,
@@ -21,6 +22,25 @@ def test_coordinate_transforms_round_trip() -> None:
 def test_normalize_angle_half_open_interval() -> None:
     assert normalize_angle(math.pi) == pytest.approx(-math.pi)
     assert normalize_angle(3.0 * math.pi) == pytest.approx(-math.pi)
+
+
+def test_nearest_polyline_tangent_tracks_straight_and_turning_paths() -> None:
+    assert nearest_polyline_tangent_heading((1.0, 0.4), ((0.0, 0.0), (2.0, 0.0))) == pytest.approx(
+        0.0
+    )
+    turning = ((0.0, 0.0), (1.0, 0.0), (1.0, 2.0))
+    assert nearest_polyline_tangent_heading((0.7, 0.0), turning) == pytest.approx(0.0)
+    assert nearest_polyline_tangent_heading((1.0, 0.0), turning) == pytest.approx(math.pi / 2.0)
+    assert nearest_polyline_tangent_heading((1.2, 1.0), turning) == pytest.approx(math.pi / 2.0)
+
+
+def test_nearest_polyline_tangent_handles_degenerate_and_invalid_paths() -> None:
+    assert nearest_polyline_tangent_heading((0.0, 0.0), ((0.0, 0.0),)) is None
+    assert (
+        nearest_polyline_tangent_heading((0.0, 0.0), ((1.0, 1.0), (1.0, 1.0), (1.0, 1.0))) is None
+    )
+    with pytest.raises(ValueError, match="finite"):
+        nearest_polyline_tangent_heading((math.nan, 0.0), ((0.0, 0.0), (1.0, 0.0)))
 
 
 def test_point_to_oriented_box_distance_handles_inside_edge_and_rotation() -> None:

@@ -238,12 +238,20 @@ def _assert_directional_yield_lifecycle(manager: RecoveryManagerNode) -> None:
     clearance = manager._task_forward_clearance(Pose2D(0.1, 0.0, 0.0))
     if clearance is None or abs(clearance - 2.0) > 1.0e-6:
         raise RuntimeError(f"task-forward clearance sector mismatch: {clearance}")
-    if not latch.update(collision_risk=0.8, forward_clearance_m=clearance):
+    if not latch.update(collision_risk=0.8, forward_clearance_m=clearance, observation_id=1):
         raise RuntimeError("collision warning did not latch directional yield")
-    for _ in range(latch.release_frames - 1):
-        if not latch.update(collision_risk=0.0, forward_clearance_m=clearance):
+    for observation_id in range(2, latch.release_frames + 1):
+        if not latch.update(
+            collision_risk=0.0,
+            forward_clearance_m=clearance,
+            observation_id=observation_id,
+        ):
             raise RuntimeError("directional yield released without consecutive evidence")
-    if latch.update(collision_risk=0.0, forward_clearance_m=clearance):
+    if latch.update(
+        collision_risk=0.0,
+        forward_clearance_m=clearance,
+        observation_id=latch.release_frames + 1,
+    ):
         raise RuntimeError("directional yield did not release at its evidence boundary")
 
 

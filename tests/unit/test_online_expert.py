@@ -12,6 +12,7 @@ from ramp_core.planning.online import (
     augment_grid_with_scan,
     directional_scan_clearance,
     estimate_human_states,
+    fully_observed_directional_scan_clearance,
     privileged_collision_risk,
     privileged_time_to_collision,
     sanitize_near_field_returns,
@@ -90,6 +91,61 @@ def test_directional_clearance_reads_observed_front_sector() -> None:
         half_width_rad=math.radians(2.0),
     )
     assert clearance == pytest.approx(0.7)
+
+
+def test_full_directional_clearance_rejects_partial_fov_overlap() -> None:
+    ranges = np.full(271, 2.0, dtype=np.float32)
+    clearance = fully_observed_directional_scan_clearance(
+        ranges,
+        angle_min=-3.0 * math.pi / 4.0,
+        angle_increment=math.radians(1.0),
+        direction=math.pi,
+        half_width_rad=math.radians(45.0),
+        range_max=10.0,
+    )
+    assert clearance is None
+
+
+def test_full_directional_clearance_accepts_complete_sector_and_infinite_no_returns() -> None:
+    ranges = np.full(271, math.inf, dtype=np.float32)
+    ranges[135] = 1.4
+    clearance = fully_observed_directional_scan_clearance(
+        ranges,
+        angle_min=-3.0 * math.pi / 4.0,
+        angle_increment=math.radians(1.0),
+        direction=0.0,
+        half_width_rad=math.radians(45.0),
+        range_max=10.0,
+    )
+    assert clearance == pytest.approx(1.4)
+    ranges[135] = math.inf
+    assert fully_observed_directional_scan_clearance(
+        ranges,
+        angle_min=-3.0 * math.pi / 4.0,
+        angle_increment=math.radians(1.0),
+        direction=0.0,
+        half_width_rad=math.radians(45.0),
+        range_max=10.0,
+    ) == pytest.approx(10.0)
+
+
+@pytest.mark.parametrize("invalid", [math.nan, -1.0, -math.inf])
+def test_full_directional_clearance_fails_closed_on_invalid_sector_returns(
+    invalid: float,
+) -> None:
+    ranges = np.full(271, 2.0, dtype=np.float32)
+    ranges[135] = invalid
+    assert (
+        fully_observed_directional_scan_clearance(
+            ranges,
+            angle_min=-3.0 * math.pi / 4.0,
+            angle_increment=math.radians(1.0),
+            direction=0.0,
+            half_width_rad=math.radians(45.0),
+            range_max=10.0,
+        )
+        is None
+    )
 
 
 def test_open_map_near_field_sanitizer_removes_only_impossible_returns() -> None:

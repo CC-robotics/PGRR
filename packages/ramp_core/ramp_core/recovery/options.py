@@ -280,6 +280,7 @@ class ObservableDirectionalYieldLatch:
     release_frames: int = 3
     latched: bool = False
     clear_frames: int = 0
+    last_observation_id: int | None = None
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.trigger_threshold) or not 0.0 <= self.trigger_threshold <= 1.0:
@@ -292,14 +293,23 @@ class ObservableDirectionalYieldLatch:
             raise ValueError("yield clear-frame count must be non-negative")
         if not self.latched and self.clear_frames:
             raise ValueError("an inactive yield latch cannot retain clear frames")
+        if self.last_observation_id is not None and self.last_observation_id < 0:
+            raise ValueError("yield observation ID must be non-negative")
 
     def reset(self) -> None:
         """Clear all temporal state for a new navigation episode."""
 
         self.latched = False
         self.clear_frames = 0
+        self.last_observation_id = None
 
-    def update(self, *, collision_risk: float, forward_clearance_m: float | None) -> bool:
+    def update(
+        self,
+        *,
+        collision_risk: float,
+        forward_clearance_m: float | None,
+        observation_id: int | None = None,
+    ) -> bool:
         """Update the latch and return whether task-goal rejoin remains blocked."""
 
         if not math.isfinite(collision_risk) or not 0.0 <= collision_risk <= 1.0:
@@ -308,12 +318,18 @@ class ObservableDirectionalYieldLatch:
             not math.isfinite(forward_clearance_m) or forward_clearance_m < 0.0
         ):
             raise ValueError("forward clearance must be finite and non-negative when observed")
+        if observation_id is not None and observation_id < 0:
+            raise ValueError("yield observation ID must be non-negative")
         if collision_risk >= self.trigger_threshold:
             self.latched = True
             self.clear_frames = 0
+            self.last_observation_id = observation_id
             return True
         if not self.latched:
             return False
+        if observation_id is not None and observation_id == self.last_observation_id:
+            return True
+        self.last_observation_id = observation_id
         if forward_clearance_m is None or forward_clearance_m < self.release_clearance_m:
             self.clear_frames = 0
             return True
@@ -513,6 +529,54 @@ def constrain_rejoin_actions(
     if collision_risk >= release_threshold:
         constrained[CONTINUE_ACTION_ID] = False
         constrained[REPLAN_ACTION_ID] = False
+    return constrained
+
+
+def constrain_directional_yield_motion(
+    mask: npt.NDArray[np.bool_],
+    *,
+    pose: Pose2D,
+    path_heading_rad: float,
+    backup_distance_m: float,
+    maximum_forward_progress_m: float = 0.05,
+) -> npt.NDArray[np.bool_]:
+    """During an active yield, retain only non-forward legal translations.
+
+    The function only intersects an existing planning mask.  Endpoints are
+    projected onto the observable local path tangent; a learned subgoal or
+    BACKUP cannot advance toward the blocked corridor until the independent
+    directional-clearance latch releases. WAIT remains untouched, while task
+    rejoin actions are disabled explicitly.
+    """
+
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    values = (path_heading_rad, backup_distance_m, maximum_forward_progress_m)
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("directional-yield geometry must be finite")
+    if backup_distance_m < 0.0 or maximum_forward_progress_m < 0.0:
+        raise ValueError("directional-yield distances must be non-negative")
+    tangent = math.cos(path_heading_rad), math.sin(path_heading_rad)
+
+    def advances_path(endpoint: Pose2D) -> bool:
+        progress = (endpoint.x - pose.x) * tangent[0] + (endpoint.y - pose.y) * tangent[1]
+        return progress > maximum_forward_progress_m + 1.0e-9
+
+    for action in ACTIONS[:WAIT_ACTION_ID]:
+        endpoint = action.target_pose(pose)
+        assert endpoint is not None
+        if advances_path(endpoint):
+            constrained[action.action_id] = False
+    backup_endpoint = Pose2D(
+        pose.x - backup_distance_m * math.cos(pose.yaw),
+        pose.y - backup_distance_m * math.sin(pose.yaw),
+        pose.yaw,
+    )
+    if advances_path(backup_endpoint):
+        constrained[BACKUP_ACTION_ID] = False
+    constrained[REPLAN_ACTION_ID] = False
+    constrained[CONTINUE_ACTION_ID] = False
     return constrained
 
 

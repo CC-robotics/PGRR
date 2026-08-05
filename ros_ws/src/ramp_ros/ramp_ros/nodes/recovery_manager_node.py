@@ -29,6 +29,7 @@ from ramp_core.action_space import (
     WAIT_ACTION_ID,
     RecoveryActionKind,
 )
+from ramp_core.geometry import nearest_polyline_tangent_heading
 from ramp_core.kinematics import stopping_distance
 from ramp_core.observations import (
     HumanState,
@@ -43,6 +44,7 @@ from ramp_core.planning.online import (
     augment_grid_with_scan,
     directional_scan_clearance,
     estimate_human_states,
+    fully_observed_directional_scan_clearance,
     privileged_time_to_collision,
     sanitize_near_field_returns,
     scan_segment_is_free,
@@ -56,6 +58,7 @@ from ramp_core.recovery.options import (
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
     PrivilegedYieldOption,
+    constrain_directional_yield_motion,
     constrain_net_retreat,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
@@ -186,7 +189,7 @@ class RecoveryManagerNode(Node):
             maximum_net_retreat_m=self._float("bc_maximum_net_retreat_m"),
         )
         self._bc_yield_latch = ObservableDirectionalYieldLatch(
-            trigger_threshold=self._float("bc_rejoin_block_threshold"),
+            trigger_threshold=self._machine.config.tau_on,
             release_clearance_m=self._float("bc_yield_release_clearance_m"),
             release_frames=self._integer("bc_yield_release_frames"),
         )
@@ -395,6 +398,7 @@ class RecoveryManagerNode(Node):
             "bc_yield_release_clearance_m": 1.25,
             "bc_yield_release_frames": 3,
             "bc_yield_forward_half_width_degrees": 45.0,
+            "bc_yield_maximum_forward_progress_m": 0.05,
             "bc_wait_budget_decisions": 3,
             "bc_backup_budget_decisions": 4,
             "bc_replan_budget_decisions": 1,
@@ -763,23 +767,32 @@ class RecoveryManagerNode(Node):
         finite = values[np.isfinite(values) & (values >= 0.0)]
         return float(np.min(finite)) if finite.size else None
 
-    def _task_forward_clearance(self, pose: Pose2D) -> float | None:
-        """Measure the observable corridor ahead in the fixed task direction."""
+    def _task_path_heading(self, pose: Pose2D) -> float:
+        """Return the local task-path tangent without using simulator truth."""
 
-        task_heading = math.atan2(
-            self._goal.y - self._start.y,
-            self._goal.x - self._start.x,
-        )
+        corridor_path = self._task_corridor_path or self._path
+        heading = nearest_polyline_tangent_heading((pose.x, pose.y), corridor_path)
+        if heading is not None:
+            return heading
+        dx = self._goal.x - self._start.x
+        dy = self._goal.y - self._start.y
+        return math.atan2(dy, dx) if math.hypot(dx, dy) > 1.0e-9 else pose.yaw
+
+    def _task_forward_clearance(self, pose: Pose2D) -> float | None:
+        """Measure a fully observed LiDAR sector along the local task path."""
+
+        task_heading = self._task_path_heading(pose)
         relative_heading = math.atan2(
             math.sin(task_heading - pose.yaw),
             math.cos(task_heading - pose.yaw),
         )
-        return directional_scan_clearance(
+        return fully_observed_directional_scan_clearance(
             self._scan.ranges,
             angle_min=float(self._scan.angle_min),
             angle_increment=float(self._scan.angle_increment),
             direction=relative_heading,
             half_width_rad=math.radians(self._float("bc_yield_forward_half_width_degrees")),
+            range_max=float(self._scan.range_max),
         )
 
     def _nearest_clearance(self) -> float:
@@ -1082,6 +1095,7 @@ class RecoveryManagerNode(Node):
         stalled_rejoin: bool = False,
     ) -> CoreRecoveryDecision:
         recurrent_escape_telemetry = ""
+        directional_yield_telemetry = ""
         if self._policy_type == "expert":
             try:
                 return self._expert_decision(pose, failure)
@@ -1099,6 +1113,20 @@ class RecoveryManagerNode(Node):
                 collision_risk=failure.collision_risk,
                 release_threshold=self._float("bc_rejoin_block_threshold"),
             )
+            if self._bc_yield_latch.latched:
+                pre_directional_yield_mask = mask.copy()
+                mask = constrain_directional_yield_motion(
+                    mask,
+                    pose=pose,
+                    path_heading_rad=self._task_path_heading(pose),
+                    backup_distance_m=self._float("backup_mask_validated_distance_m"),
+                    maximum_forward_progress_m=self._float("bc_yield_maximum_forward_progress_m"),
+                )
+                directional_yield_telemetry = (
+                    "bc_yield_mask=active "
+                    f"pre={','.join(map(str, np.flatnonzero(pre_directional_yield_mask)))} "
+                    f"post={','.join(map(str, np.flatnonzero(mask)))}"
+                )
             mask = constrain_stalled_rejoin(mask, escape_required=stalled_rejoin)
             mask = constrain_stalled_subgoals(
                 mask,
@@ -1152,11 +1180,14 @@ class RecoveryManagerNode(Node):
             elif decision.action_id == REPLAN_ACTION_ID:
                 self._bc_replans_without_progress += 1
             self._bc_subgoal_stall_guard.observe_decision(decision.action_id, pose)
-            if recurrent_escape_telemetry:
+            constraint_telemetry = "; ".join(
+                item for item in (directional_yield_telemetry, recurrent_escape_telemetry) if item
+            )
+            if constraint_telemetry:
                 decision = CoreRecoveryDecision(
                     decision.action_id,
                     decision.confidence,
-                    f"{recurrent_escape_telemetry}; {decision.reason}",
+                    f"{constraint_telemetry}; {decision.reason}",
                 )
         return decision
 
@@ -1270,14 +1301,18 @@ class RecoveryManagerNode(Node):
             return
         pose = self._world_pose()
         failure = self._effective_failure(pose)
-        task_forward_clearance = self._task_forward_clearance(pose)
-        bc_yield_active = bool(
-            self._policy_type == "bc"
-            and self._bc_yield_latch.update(
+        task_forward_clearance: float | None = None
+        bc_yield_active = False
+        if self._policy_type == "bc":
+            task_forward_clearance = self._task_forward_clearance(pose)
+            scan_observation_id = int(self._scan.header.stamp.sec) * 1_000_000_000 + int(
+                self._scan.header.stamp.nanosec
+            )
+            bc_yield_active = self._bc_yield_latch.update(
                 collision_risk=failure.collision_risk,
                 forward_clearance_m=task_forward_clearance,
+                observation_id=scan_observation_id,
             )
-        )
         control_failure = failure
         if bc_yield_active:
             control_failure = FailurePrediction(

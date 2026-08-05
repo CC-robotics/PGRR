@@ -102,3 +102,43 @@ def point_to_polyline_distance(
             candidate = math.hypot(px - (start[0] + fraction * dx), py - (start[1] + fraction * dy))
         best = min(best, candidate)
     return best
+
+
+def nearest_polyline_tangent_heading(
+    point: tuple[float, float],
+    polyline: Sequence[tuple[float, float]],
+) -> float | None:
+    """Return the forward tangent of the path segment nearest ``point``.
+
+    Degenerate segments are ignored.  At an exact corner, equal-distance ties
+    select the later segment so the heading follows the untraversed path rather
+    than looking back along the segment that has just been completed.
+    """
+
+    values = (*point, *(coordinate for path_point in polyline for coordinate in path_point))
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("polyline tangent geometry must be finite")
+    best_distance = math.inf
+    best_progress = -math.inf
+    best_heading: float | None = None
+    cumulative = 0.0
+    px, py = point
+    for start, end in pairwise(polyline):
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        length = math.hypot(dx, dy)
+        if length <= 1.0e-12:
+            continue
+        fraction = max(0.0, min(1.0, ((px - start[0]) * dx + (py - start[1]) * dy) / length**2))
+        projection = start[0] + fraction * dx, start[1] + fraction * dy
+        candidate_distance = math.dist(point, projection)
+        candidate_progress = cumulative + fraction * length
+        if candidate_distance < best_distance - 1.0e-12 or (
+            abs(candidate_distance - best_distance) <= 1.0e-12
+            and candidate_progress >= best_progress - 1.0e-12
+        ):
+            best_distance = candidate_distance
+            best_progress = candidate_progress
+            best_heading = math.atan2(dy, dx)
+        cumulative += length
+    return best_heading
