@@ -238,6 +238,8 @@ def test_episode_logger_rejects_privileged_robot_pose_jumps() -> None:
     assert "localized goal success disagrees with Gazebo robot pose" in logger
     assert logger.count("self._confirm_goal_reached(") == 3
     assert "self._pending_goal_start_wall_s" in logger
+    assert 'or "unspecified_recovery_failure"' in logger
+    assert "recovery manager exhausted the configured recovery attempts" not in logger
 
 
 def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
@@ -255,6 +257,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         config["collision_latched_stop_clearance_m"] + config["emergency_release_hysteresis_m"]
     )
     assert config["maximum_recovery_path_deviation_m"] == 0.6
+    assert config["maximum_recovery_sequence_duration_s"] == 45.0
     assert config["backup_minimum_duration_s"] == 0.8
     assert config["backup_maximum_duration_s"] == 3.0
     assert config["backup_clearance_improvement_m"] == 0.25
@@ -288,6 +291,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"emergency_backup_reset_clear_s": 3.0' in manager
     assert '"emergency_minimum_retreat_pulses": 3' in manager
     assert '"backup_maximum_duration_s": 3.0' in manager
+    assert '"maximum_recovery_sequence_duration_s": 45.0' in manager
+    assert 'maximum_recovery_sequence_duration_s=self._float(' in manager
     assert "BoundedBackupOption(" in manager
     assert "self._backup_start_clearance_m" in manager
     assert 'backup_distance_m=self._float("backup_mask_validated_distance_m")' in manager

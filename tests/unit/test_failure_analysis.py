@@ -77,6 +77,29 @@ def test_classification_requires_explicit_collision_type_and_detects_stagnation(
     assert progress == pytest.approx(0.06)
 
 
+def test_recovery_sequence_timeout_is_not_misclassified_as_planner_abort() -> None:
+    module = _module()
+    repeated = _record(
+        "sequence_timeout",
+        "PLANNER_FAILURE",
+        "recovery_sequence_timeout",
+    )
+    planner_abort = _record("planner_abort", "PLANNER_FAILURE", "local planner aborted")
+
+    assert (
+        module.classify_episode(repeated, terminal_window_s=4.0, stagnation_threshold_m=0.15)[0]
+        == "repeated_recovery"
+    )
+    assert (
+        module.classify_episode(
+            planner_abort,
+            terminal_window_s=4.0,
+            stagnation_threshold_m=0.15,
+        )[0]
+        == "planner_abort"
+    )
+
+
 def test_report_uses_only_final_table_and_sha_verifies_representatives(tmp_path: Path) -> None:
     module = _module()
     raw_dir = tmp_path / "data" / "raw"

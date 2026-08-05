@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from enum import Enum
 
@@ -28,6 +29,7 @@ class RecoveryStateMachineConfig:
     minimum_action_hold_s: float = 0.5
     maximum_recovery_duration_s: float = 8.0
     maximum_extended_recovery_duration_s: float = 30.0
+    maximum_recovery_sequence_duration_s: float = 45.0
     maximum_rejoin_duration_s: float = 5.0
     maximum_rejoin_retries_per_sequence: int = 2
     maximum_consecutive_recoveries: int = 4
@@ -50,6 +52,11 @@ class RecoveryStateMachineConfig:
             raise ValueError("durations must be non-negative")
         if self.maximum_extended_recovery_duration_s < self.maximum_recovery_duration_s:
             raise ValueError("extended recovery duration must cover normal recovery duration")
+        if (
+            not math.isfinite(self.maximum_recovery_sequence_duration_s)
+            or self.maximum_recovery_sequence_duration_s <= 0.0
+        ):
+            raise ValueError("maximum recovery sequence duration must be finite and positive")
         if self.maximum_consecutive_recoveries <= 0:
             raise ValueError("maximum_consecutive_recoveries must be positive")
         if self.maximum_rejoin_retries_per_sequence < 0:
@@ -91,6 +98,7 @@ class RecoveryStateMachine:
         self._last_recovery_end_s = float("-inf")
         self._consecutive_recoveries = 0
         self._rejoin_retries = 0
+        self._recovery_sequence_started_s: float | None = None
         self._resume_after_emergency: RecoveryState | None = None
 
     @property
@@ -118,6 +126,7 @@ class RecoveryStateMachine:
         self._last_recovery_end_s = float("-inf")
         self._consecutive_recoveries = 0
         self._rejoin_retries = 0
+        self._recovery_sequence_started_s = None
         self._resume_after_emergency = None
 
     def update(self, state_input: StateMachineInput) -> StateTransition:
@@ -132,6 +141,7 @@ class RecoveryStateMachine:
         }:
             self._consecutive_recoveries = 0
             self._rejoin_retries = 0
+            self._recovery_sequence_started_s = None
 
         if self.state in {RecoveryState.FAILED, RecoveryState.SUCCEEDED}:
             reason = "terminal_state"
@@ -141,6 +151,13 @@ class RecoveryStateMachine:
         elif state_input.unrecoverable_failure:
             self.state = RecoveryState.FAILED
             reason = "unrecoverable_failure"
+        elif (
+            self._recovery_sequence_started_s is not None
+            and state_input.now_s - self._recovery_sequence_started_s
+            >= self.config.maximum_recovery_sequence_duration_s
+        ):
+            self.state = RecoveryState.FAILED
+            reason = "recovery_sequence_timeout"
         elif state_input.emergency_stop:
             if self.state is not RecoveryState.EMERGENCY_STOP:
                 self._resume_after_emergency = (
@@ -188,6 +205,8 @@ class RecoveryStateMachine:
                         reason = "recovery_limit"
                     else:
                         self.state = RecoveryState.RECOVERY
+                        if self._recovery_sequence_started_s is None:
+                            self._recovery_sequence_started_s = state_input.now_s
                         self._consecutive_recoveries += 1
                         self._rejoin_retries = 0
                         self._low_frames = 0
@@ -210,6 +229,8 @@ class RecoveryStateMachine:
                         reason = "recovery_limit"
                     else:
                         self.state = RecoveryState.RECOVERY
+                        if self._recovery_sequence_started_s is None:
+                            self._recovery_sequence_started_s = state_input.now_s
                         self._consecutive_recoveries += 1
                         self._rejoin_retries = 0
                         self._low_frames = 0
@@ -249,6 +270,7 @@ class RecoveryStateMachine:
                 self._last_recovery_end_s = state_input.now_s
                 if state_input.meaningful_progress:
                     self._consecutive_recoveries = 0
+                    self._recovery_sequence_started_s = None
                 self._rejoin_retries = 0
                 self._high_frames = 0
                 self._low_frames = 0

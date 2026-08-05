@@ -62,6 +62,7 @@ CATEGORY_ORDER = (
     "timeout_stagnation",
     "timeout_other",
     "timeout_unresolved",
+    "repeated_recovery",
     "planner_abort",
     "excluded_simulator_failure",
     "excluded_invalid_reset",
@@ -73,6 +74,7 @@ CATEGORY_LABELS = {
     "timeout_stagnation": "Timeout / terminal stagnation",
     "timeout_other": "Timeout with terminal progress",
     "timeout_unresolved": "Timeout, terminal progress unavailable",
+    "repeated_recovery": "Repeated recovery exhausted",
     "planner_abort": "Planner abort",
     "excluded_simulator_failure": "Simulator failure (excluded)",
     "excluded_invalid_reset": "Invalid reset (excluded)",
@@ -197,6 +199,12 @@ def classify_episode(
             progress,
         )
     if outcome == "PLANNER_FAILURE":
+        if normalized_detail == "recovery_sequence_timeout":
+            return (
+                "repeated_recovery",
+                "global recovery-sequence duration exhausted without confirmed task progress",
+                None,
+            )
         return "planner_abort", f"terminal PLANNER_FAILURE: {detail or 'empty detail'}", None
     if outcome == "SIMULATOR_FAILURE":
         return (

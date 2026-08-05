@@ -237,3 +237,126 @@ def test_stalled_rejoin_retries_then_respects_recovery_limit() -> None:
     failed = machine.update(StateMachineInput(8.6, 0.8, False))
     assert failed.current is RecoveryState.FAILED
     assert failed.reason == "recovery_limit"
+
+
+def test_recovery_sequence_timeout_spans_emergency_and_rejoin_cycles() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            frames_off=1,
+            cooldown_s=0.0,
+            minimum_action_hold_s=0.0,
+            maximum_recovery_sequence_duration_s=2.0,
+            maximum_rejoin_duration_s=0.5,
+            maximum_rejoin_retries_per_sequence=4,
+        )
+    )
+    assert machine.update(StateMachineInput(0.0, 1.0, False)).current is RecoveryState.RECOVERY
+    assert (
+        machine.update(StateMachineInput(0.1, 1.0, False, emergency_stop=True)).current
+        is RecoveryState.EMERGENCY_STOP
+    )
+    resumed = machine.update(StateMachineInput(0.2, 1.0, False))
+    assert resumed.current is RecoveryState.RECOVERY
+    assert resumed.reason == "safety_clear_resume_recovery"
+    assert (
+        machine.update(StateMachineInput(0.3, 0.0, False, recovery_action_complete=True)).current
+        is RecoveryState.REJOIN
+    )
+    retry = machine.update(StateMachineInput(0.9, 1.0, False))
+    assert retry.current is RecoveryState.RECOVERY
+    assert retry.reason == "rejoin_failure_retry"
+    assert (
+        machine.update(StateMachineInput(1.0, 1.0, False, emergency_stop=True)).current
+        is RecoveryState.EMERGENCY_STOP
+    )
+    failed = machine.update(StateMachineInput(2.0, 1.0, False, emergency_stop=True))
+    assert failed.current is RecoveryState.FAILED
+    assert failed.reason == "recovery_sequence_timeout"
+
+
+def test_weak_rejoin_progress_does_not_clear_recovery_sequence_timeout() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            frames_off=1,
+            cooldown_s=0.0,
+            minimum_action_hold_s=0.0,
+            maximum_recovery_sequence_duration_s=1.0,
+        )
+    )
+    machine.update(StateMachineInput(0.0, 1.0, False))
+    machine.update(StateMachineInput(0.1, 0.0, False, recovery_action_complete=True))
+    restored = machine.update(StateMachineInput(0.2, 0.0, True))
+    assert restored.current is RecoveryState.NORMAL
+    assert restored.reason == "original_goal_restored"
+    failed = machine.update(StateMachineInput(1.0, 0.0, False))
+    assert failed.current is RecoveryState.FAILED
+    assert failed.reason == "recovery_sequence_timeout"
+
+
+def test_meaningful_original_goal_progress_starts_fresh_sequence_budget() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            frames_off=1,
+            cooldown_s=0.0,
+            minimum_action_hold_s=0.0,
+            maximum_recovery_sequence_duration_s=1.0,
+        )
+    )
+    machine.update(StateMachineInput(0.0, 1.0, False))
+    machine.update(StateMachineInput(0.1, 0.0, False, recovery_action_complete=True))
+    restored = machine.update(StateMachineInput(0.2, 0.0, True, meaningful_progress=True))
+    assert restored.current is RecoveryState.NORMAL
+    assert machine.update(StateMachineInput(1.1, 0.0, True)).current is RecoveryState.NORMAL
+
+    assert machine.update(StateMachineInput(1.2, 1.0, False)).current is RecoveryState.RECOVERY
+    failed = machine.update(StateMachineInput(2.2, 1.0, False))
+    assert failed.current is RecoveryState.FAILED
+    assert failed.reason == "recovery_sequence_timeout"
+
+
+def test_goal_and_unrecoverable_failure_precede_recovery_sequence_timeout() -> None:
+    config = RecoveryStateMachineConfig(
+        frames_on=1,
+        cooldown_s=0.0,
+        maximum_recovery_sequence_duration_s=1.0,
+    )
+    reached = RecoveryStateMachine(config)
+    reached.update(StateMachineInput(0.0, 1.0, False))
+    transition = reached.update(StateMachineInput(1.0, 1.0, False, goal_reached=True))
+    assert transition.current is RecoveryState.SUCCEEDED
+    assert transition.reason == "goal_reached"
+
+    unrecoverable = RecoveryStateMachine(config)
+    unrecoverable.update(StateMachineInput(0.0, 1.0, False))
+    transition = unrecoverable.update(
+        StateMachineInput(1.0, 1.0, False, unrecoverable_failure=True)
+    )
+    assert transition.current is RecoveryState.FAILED
+    assert transition.reason == "unrecoverable_failure"
+
+
+def test_reset_clears_recovery_sequence_timeout() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            cooldown_s=0.0,
+            maximum_recovery_sequence_duration_s=1.0,
+        )
+    )
+    machine.update(StateMachineInput(0.0, 1.0, False))
+    machine.reset(now_s=10.0)
+    transition = machine.update(StateMachineInput(20.0, 0.0, True))
+    assert transition.current is RecoveryState.NORMAL
+    assert transition.reason == "no_transition"
+
+
+def test_recovery_sequence_timeout_must_be_finite_and_positive() -> None:
+    for value in (0.0, -0.1, float("nan"), float("inf")):
+        try:
+            RecoveryStateMachineConfig(maximum_recovery_sequence_duration_s=value)
+        except ValueError:
+            continue
+        raise AssertionError(f"invalid recovery sequence duration was accepted: {value}")

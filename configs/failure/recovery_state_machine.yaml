@@ -20,6 +20,7 @@ bc_subgoal_retry_budget_decisions: 4
 bc_subgoal_stall_displacement_m: 0.08
 maximum_recovery_duration_s: 8.0
 maximum_extended_recovery_duration_s: 30.0
+maximum_recovery_sequence_duration_s: 45.0
 maximum_rejoin_duration_s: 5.0
 maximum_rejoin_retries_per_sequence: 2
 maximum_consecutive_recoveries: 4

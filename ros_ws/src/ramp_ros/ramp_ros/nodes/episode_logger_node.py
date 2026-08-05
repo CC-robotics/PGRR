@@ -391,9 +391,10 @@ class EpisodeLoggerNode(Node):
         if self._recovery_state == RecoveryDecision.SUCCEEDED and self._odom is not None:
             self._confirm_goal_reached("recovery manager succeeded with goal-distance verification")
         elif self._recovery_state == RecoveryDecision.FAILED:
+            failure_reason = self._recovery_reason.strip() or "unspecified_recovery_failure"
             self._set_outcome(
                 EpisodeOutcome.PLANNER_FAILURE,
-                "recovery manager exhausted the configured recovery attempts",
+                failure_reason,
             )
 
     def _on_humans(self, message: PoseArray) -> None:
