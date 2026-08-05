@@ -96,6 +96,50 @@ class BoundedBackupOption:
 
 
 @dataclass
+class ObservableGoalProgressBudget:
+    """Emit a reset pulse only after cumulative progress toward the task goal.
+
+    Retreat never moves the reference backward, so returning to a previously
+    reached point cannot repeatedly replenish a bounded recovery budget.
+    """
+
+    reset_progress_m: float = 0.25
+    reference_distance_m: float | None = None
+
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.reset_progress_m) or self.reset_progress_m <= 0.0:
+            raise ValueError("goal-progress reset distance must be finite and positive")
+        if self.reference_distance_m is not None and (
+            not math.isfinite(self.reference_distance_m) or self.reference_distance_m < 0.0
+        ):
+            raise ValueError("goal-progress reference must be finite and non-negative")
+
+    @staticmethod
+    def _validate_distance(distance_to_goal_m: float) -> None:
+        if not math.isfinite(distance_to_goal_m) or distance_to_goal_m < 0.0:
+            raise ValueError("distance to goal must be finite and non-negative")
+
+    def progress_reached(self, distance_to_goal_m: float) -> bool:
+        """Return a level signal without consuming unconfirmed progress."""
+
+        self._validate_distance(distance_to_goal_m)
+        if self.reference_distance_m is None:
+            self.reference_distance_m = distance_to_goal_m
+            return False
+        return self.reference_distance_m - distance_to_goal_m >= self.reset_progress_m
+
+    def acknowledge(self, distance_to_goal_m: float) -> None:
+        """Consume progress only after NORMAL travel or a successful rejoin."""
+
+        self._validate_distance(distance_to_goal_m)
+        if self.reference_distance_m is not None and (
+            self.reference_distance_m - distance_to_goal_m < self.reset_progress_m
+        ):
+            raise ValueError("cannot acknowledge less than the configured goal progress")
+        self.reference_distance_m = distance_to_goal_m
+
+
+@dataclass
 class ObservableNetRetreatGuard:
     """Bound policy-directed retreat relative to achieved task progress.
 

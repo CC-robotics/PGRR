@@ -50,6 +50,7 @@ from ramp_core.planning.online import (
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.options import (
     BoundedBackupOption,
+    ObservableGoalProgressBudget,
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
     PrivilegedYieldOption,
@@ -242,6 +243,9 @@ class RecoveryManagerNode(Node):
         self._bc_backups_without_progress = 0
         self._bc_replans_without_progress = 0
         self._bc_progress_reference_distance_m: float | None = None
+        self._sequence_progress_budget = ObservableGoalProgressBudget(
+            reset_progress_m=self._float("bc_progress_reset_m")
+        )
         self._failure = FailurePrediction(0.0, 0.0, 0.0, 0.0)
         self._planner_status = PlannerStatus.UNKNOWN
         self._armed = False
@@ -1051,7 +1055,7 @@ class RecoveryManagerNode(Node):
         return decision
 
     def _update_bc_progress_budget(self, distance_to_goal_m: float) -> None:
-        """Reset anti-stall budgets only after meaningful cumulative progress."""
+        """Reset learned-option budgets only after cumulative task progress."""
         if not math.isfinite(distance_to_goal_m) or distance_to_goal_m < 0.0:
             raise ValueError("distance to goal must be finite and non-negative")
         if self._bc_progress_reference_distance_m is None:
@@ -1142,6 +1146,7 @@ class RecoveryManagerNode(Node):
         pose = self._world_pose()
         failure = self._effective_failure(pose)
         distance = math.dist((pose.x, pose.y), (self._goal.x, self._goal.y))
+        meaningful_progress = self._sequence_progress_budget.progress_reached(distance)
         linear_velocity = float(self._odom.twist.twist.linear.x)
         stop = self._motion_stop_distance(linear_velocity)
         motion_clearance = self._motion_clearance(linear_velocity)
@@ -1209,12 +1214,18 @@ class RecoveryManagerNode(Node):
                 now_s=now_s,
                 failure_score=failure.score,
                 valid_progress=self._valid_progress(),
+                meaningful_progress=meaningful_progress,
                 emergency_stop=self._emergency,
                 goal_reached=distance <= self._float("goal_tolerance_m"),
                 recovery_action_complete=action_complete and not persistent_failure_followup,
                 recovery_option_active=self._oracle_yield.active,
             )
         )
+        if meaningful_progress and (
+            transition.previous in {RecoveryState.NORMAL, RecoveryState.PENDING_RECOVERY}
+            or transition.reason == "original_goal_restored"
+        ):
+            self._sequence_progress_budget.acknowledge(distance)
         if transition.current is not RecoveryState.RECOVERY:
             self._backup_start_clearance_m = None
         if transition.current is RecoveryState.RECOVERY and (

@@ -14,6 +14,7 @@ from ramp_core.action_space import (
 from ramp_core.observations import HumanState
 from ramp_core.recovery.options import (
     BoundedBackupOption,
+    ObservableGoalProgressBudget,
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
     PrivilegedYieldOption,
@@ -103,6 +104,29 @@ def test_bounded_backup_rejects_motion_beyond_mask_validated_segment() -> None:
 def test_bounded_backup_rejects_invalid_configuration(kwargs: dict[str, float]) -> None:
     with pytest.raises(ValueError):
         BoundedBackupOption(**kwargs)
+
+
+def test_goal_progress_budget_ignores_retreat_and_return_to_high_water_mark() -> None:
+    budget = ObservableGoalProgressBudget(reset_progress_m=0.25)
+    assert not budget.progress_reached(10.0)
+    assert not budget.progress_reached(10.4)
+    assert not budget.progress_reached(9.80)
+    assert budget.progress_reached(9.75)
+    assert budget.reference_distance_m == pytest.approx(10.0)
+    # An unconfirmed recovery excursion remains unconsumed and can disappear
+    # again if the robot retreats before a successful rejoin.
+    assert not budget.progress_reached(10.0)
+    assert budget.progress_reached(9.75)
+    budget.acknowledge(9.75)
+    assert not budget.progress_reached(10.0)
+    assert not budget.progress_reached(9.51)
+    assert budget.progress_reached(9.50)
+
+
+@pytest.mark.parametrize("value", [0.0, -0.1, float("nan"), float("inf")])
+def test_goal_progress_budget_rejects_invalid_threshold(value: float) -> None:
+    with pytest.raises(ValueError):
+        ObservableGoalProgressBudget(reset_progress_m=value)
 
 
 def test_observable_retreat_guard_uses_task_progress_high_water_mark() -> None:

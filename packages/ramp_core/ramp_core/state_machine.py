@@ -61,6 +61,10 @@ class StateMachineInput:
     now_s: float
     failure_score: float
     valid_progress: bool
+    # Short-window progress is sufficient to rejoin NORMAL, but it must not
+    # erase the bounded recovery-attempt budget.  The caller raises this flag
+    # only after meaningful cumulative progress toward the original goal.
+    meaningful_progress: bool = False
     emergency_stop: bool = False
     goal_reached: bool = False
     unrecoverable_failure: bool = False
@@ -121,6 +125,13 @@ class RecoveryStateMachine:
             raise ValueError("failure_score must lie in [0, 1]")
         previous = self.state
         reason = "no_transition"
+
+        if state_input.meaningful_progress and self.state in {
+            RecoveryState.NORMAL,
+            RecoveryState.PENDING_RECOVERY,
+        }:
+            self._consecutive_recoveries = 0
+            self._rejoin_retries = 0
 
         if self.state in {RecoveryState.FAILED, RecoveryState.SUCCEEDED}:
             reason = "terminal_state"
@@ -237,10 +248,8 @@ class RecoveryStateMachine:
             if state_input.valid_progress and state_input.failure_score < self.config.tau_off:
                 self.state = RecoveryState.NORMAL
                 self._last_recovery_end_s = state_input.now_s
-                # This recovery has successfully rejoined the original goal
-                # and produced progress, so a later trigger starts a new
-                # sequence rather than consuming a lifetime episode budget.
-                self._consecutive_recoveries = 0
+                if state_input.meaningful_progress:
+                    self._consecutive_recoveries = 0
                 self._rejoin_retries = 0
                 self._high_frames = 0
                 self._low_frames = 0

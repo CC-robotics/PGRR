@@ -21,9 +21,51 @@ def test_hysteresis_enters_and_exits_recovery() -> None:
     machine.update(StateMachineInput(0.7, 0.2, True))
     transition = machine.update(StateMachineInput(0.8, 0.2, True))
     assert transition.current is RecoveryState.REJOIN
-    transition = machine.update(StateMachineInput(0.9, 0.2, True))
+    transition = machine.update(StateMachineInput(0.9, 0.2, True, meaningful_progress=True))
     assert transition.current is RecoveryState.NORMAL
     assert machine.consecutive_recoveries == 0
+
+
+def test_small_rejoin_progress_does_not_replenish_recovery_budget() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            frames_off=1,
+            cooldown_s=0.0,
+            minimum_action_hold_s=0.0,
+            maximum_consecutive_recoveries=2,
+        )
+    )
+    assert machine.update(StateMachineInput(0.0, 1.0, False)).current is RecoveryState.RECOVERY
+    assert machine.update(StateMachineInput(0.1, 0.0, True)).current is RecoveryState.REJOIN
+    assert machine.update(StateMachineInput(0.2, 0.0, True)).current is RecoveryState.NORMAL
+    assert machine.consecutive_recoveries == 1
+    assert machine.update(StateMachineInput(0.3, 1.0, False)).current is RecoveryState.RECOVERY
+    assert machine.update(StateMachineInput(0.4, 0.0, True)).current is RecoveryState.REJOIN
+    assert machine.update(StateMachineInput(0.5, 0.0, True)).current is RecoveryState.NORMAL
+    failed = machine.update(StateMachineInput(0.6, 1.0, False))
+    assert failed.current is RecoveryState.FAILED
+    assert failed.reason == "recovery_limit"
+
+
+def test_meaningful_progress_replenishes_recovery_budget_while_normal() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            frames_off=1,
+            cooldown_s=0.0,
+            minimum_action_hold_s=0.0,
+            maximum_consecutive_recoveries=1,
+        )
+    )
+    machine.update(StateMachineInput(0.0, 1.0, False))
+    machine.update(StateMachineInput(0.1, 0.0, True))
+    machine.update(StateMachineInput(0.2, 0.0, True))
+    assert machine.consecutive_recoveries == 1
+    transition = machine.update(StateMachineInput(0.3, 0.0, True, meaningful_progress=True))
+    assert transition.current is RecoveryState.NORMAL
+    assert machine.consecutive_recoveries == 0
+    assert machine.update(StateMachineInput(0.4, 1.0, False)).current is RecoveryState.RECOVERY
 
 
 def test_emergency_stop_has_priority() -> None:
