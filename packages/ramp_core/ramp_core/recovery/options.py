@@ -28,7 +28,7 @@ class TemporalClosingSideConfig:
     sector_max_degrees: float = 60.0
     closing_delta_m: float = 0.20
     maximum_current_range_m: float = 4.0
-    minimum_closing_beams: int = 3
+    minimum_closing_beams: int = 6
     maximum_angular_speed_radps: float = 0.20
 
     def __post_init__(self) -> None:
@@ -120,7 +120,7 @@ class ObservableLateralSideCommitment:
     observable task path, and the selected action are used.
     """
 
-    maximum_progress_m: float = 3.0
+    maximum_progress_m: float = 8.0
     maximum_heading_change_rad: float = math.pi / 4.0
     side: int = 0
     reference_distance_m: float | None = None

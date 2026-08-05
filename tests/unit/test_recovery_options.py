@@ -1192,11 +1192,11 @@ def test_temporal_closing_side_low_trace_masks_only_task_right() -> None:
     assert not np.any(result.mask & ~mask)
 
 
-def test_temporal_closing_side_three_beam_boundary_is_conservative() -> None:
+def test_temporal_closing_side_six_beam_boundary_is_conservative() -> None:
     mask = np.ones(ACTION_COUNT, dtype=np.bool_)
-    three = constrain_temporal_closing_side(
+    six = constrain_temporal_closing_side(
         mask,
-        _temporal_closing_stack(right_beams=3, left_beams=0),
+        _temporal_closing_stack(right_beams=6, left_beams=0),
         angle_min_rad=-math.pi,
         angle_max_rad=math.pi,
         pose=Pose2D(0.0, 0.0, 0.0),
@@ -1204,9 +1204,9 @@ def test_temporal_closing_side_three_beam_boundary_is_conservative() -> None:
         angular_speed_radps=0.0,
         minimum_lateral_displacement_m=0.25,
     )
-    two = constrain_temporal_closing_side(
+    five = constrain_temporal_closing_side(
         mask,
-        _temporal_closing_stack(right_beams=2, left_beams=0),
+        _temporal_closing_stack(right_beams=5, left_beams=0),
         angle_min_rad=-math.pi,
         angle_max_rad=math.pi,
         pose=Pose2D(0.0, 0.0, 0.0),
@@ -1215,12 +1215,12 @@ def test_temporal_closing_side_three_beam_boundary_is_conservative() -> None:
         minimum_lateral_displacement_m=0.25,
     )
 
-    assert three.right_occupied and not three.left_occupied
-    assert not two.right_occupied and not two.left_occupied
-    assert np.array_equal(two.mask, mask)
+    assert six.right_occupied and not six.left_occupied
+    assert not five.right_occupied and not five.left_occupied
+    assert np.array_equal(five.mask, mask)
 
 
-@pytest.mark.parametrize(("right_beams", "left_beams"), [(6, 12), (5, 9)])
+@pytest.mark.parametrize(("right_beams", "left_beams"), [(6, 12), (7, 9)])
 def test_temporal_closing_side_medium_and_high_traces_mask_both_sides(
     right_beams: int,
     left_beams: int,
@@ -1276,7 +1276,7 @@ def test_temporal_closing_side_static_forward_motion_below_delta_is_unchanged() 
 
 def test_temporal_closing_side_rotation_gate_is_closed_at_boundary() -> None:
     mask = np.ones(ACTION_COUNT, dtype=np.bool_)
-    stack = _temporal_closing_stack(right_beams=5, left_beams=0)
+    stack = _temporal_closing_stack(right_beams=6, left_beams=0)
     active = constrain_temporal_closing_side(
         mask,
         stack,
@@ -1340,7 +1340,7 @@ def test_temporal_closing_side_preserves_recurrent_safe_fallback() -> None:
     )
     closing = constrain_temporal_closing_side(
         directional,
-        _temporal_closing_stack(right_beams=5, left_beams=9),
+        _temporal_closing_stack(right_beams=6, left_beams=9),
         angle_min_rad=-math.pi,
         angle_max_rad=math.pi,
         pose=pose,
@@ -1427,7 +1427,7 @@ def test_temporal_closing_side_rejects_invalid_config(kwargs: dict[str, float]) 
 
 @pytest.mark.parametrize(
     ("initial_right", "initial_left", "follow_right", "follow_left"),
-    [(11, 11, 2, 2), (5, 8, 2, 1)],
+    [(11, 11, 5, 5), (6, 8, 5, 4)],
 )
 def test_closing_side_latch_retains_both_v3_trace_sides_after_backup(
     initial_right: int,

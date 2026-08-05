@@ -44,12 +44,12 @@ bc_closing_side_sector_min_degrees: 5.0
 bc_closing_side_sector_max_degrees: 60.0
 bc_closing_side_delta_m: 0.20
 bc_closing_side_maximum_range_m: 4.0
-bc_closing_side_minimum_beams: 3
+bc_closing_side_minimum_beams: 6
 bc_closing_side_maximum_angular_speed_radps: 0.20
 # Once a learned yield chooses a task-lateral side, keep that side through
-# short re-trigger cycles. Release after 3 m of original-goal progress or a
+# short re-trigger cycles. Release after 8 m of original-goal progress or a
 # route-tangent change greater than 45 degrees.
-bc_lateral_commitment_progress_m: 3.0
+bc_lateral_commitment_progress_m: 8.0
 bc_lateral_commitment_maximum_heading_change_degrees: 45.0
 bc_wait_budget_decisions: 3
 # Four bounded attempts can realize the 1.4 m observable net-retreat cap when

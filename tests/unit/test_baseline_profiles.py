@@ -330,9 +330,9 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_closing_side_sector_max_degrees"] == 60.0
     assert config["bc_closing_side_delta_m"] == 0.20
     assert config["bc_closing_side_maximum_range_m"] == 4.0
-    assert config["bc_closing_side_minimum_beams"] == 3
+    assert config["bc_closing_side_minimum_beams"] == 6
     assert config["bc_closing_side_maximum_angular_speed_radps"] == 0.20
-    assert config["bc_lateral_commitment_progress_m"] == 3.0
+    assert config["bc_lateral_commitment_progress_m"] == 8.0
     assert config["bc_lateral_commitment_maximum_heading_change_degrees"] == 45.0
     assert '"bc_yield_release_clearance_m": 0.90' in manager
     assert '"bc_near_field_radius_activation_clearance_m": 1.0' in manager
@@ -345,7 +345,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"bc_closing_side_sector_max_degrees": 60.0' in manager
     assert '"bc_closing_side_delta_m": 0.20' in manager
     assert '"bc_closing_side_maximum_range_m": 4.0' in manager
-    assert '"bc_closing_side_minimum_beams": 3' in manager
+    assert '"bc_closing_side_minimum_beams": 6' in manager
     assert '"bc_closing_side_maximum_angular_speed_radps": 0.20' in manager
     assert "ObservableClosingSideLatch()" in manager
     assert "ObservableLateralSideCommitment(" in manager

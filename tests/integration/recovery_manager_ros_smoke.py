@@ -313,7 +313,7 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
 
 def _assert_temporal_closing_side_mask(manager: RecoveryManagerNode) -> None:
     config = manager._bc_closing_side_config
-    expected = (5.0, 60.0, 0.20, 4.0, 3, 0.20)
+    expected = (5.0, 60.0, 0.20, 4.0, 6, 0.20)
     observed = (
         config.sector_min_degrees,
         config.sector_max_degrees,
@@ -384,7 +384,7 @@ def _assert_temporal_closing_side_mask(manager: RecoveryManagerNode) -> None:
     for evidence in (
         "bc_closing_side=right_occupied",
         "right_beams=10 left_beams=1",
-        "minimum_beams=3",
+        "minimum_beams=6",
         "sector_deg=5.0:60.0",
         "delta_m=0.200",
         "maximum_range_m=4.000",
@@ -426,7 +426,7 @@ def _assert_temporal_closing_side_mask(manager: RecoveryManagerNode) -> None:
     )
     both = manager._constrain_bc_temporal_closing_side(
         directional,
-        observation_with_closing(5, 9),
+        observation_with_closing(6, 9),
         pose=pose,
         path_heading_rad=path_heading_rad,
     )
@@ -437,7 +437,7 @@ def _assert_temporal_closing_side_mask(manager: RecoveryManagerNode) -> None:
 
     both_follow = manager._constrain_bc_temporal_closing_side(
         directional,
-        observation_with_closing(2, 2),
+        observation_with_closing(5, 5),
         pose=pose,
         path_heading_rad=path_heading_rad,
     )
