@@ -458,7 +458,7 @@ class RecoveryManagerNode(Node):
             "bc_closing_side_maximum_range_m": 4.0,
             "bc_closing_side_minimum_beams": 6,
             "bc_closing_side_maximum_angular_speed_radps": 0.20,
-            "bc_lateral_commitment_progress_m": 8.0,
+            "bc_lateral_commitment_progress_m": 3.0,
             "bc_lateral_commitment_maximum_heading_change_degrees": 45.0,
             "bc_wait_budget_decisions": 3,
             "bc_backup_budget_decisions": 4,

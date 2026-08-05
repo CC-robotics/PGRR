@@ -120,7 +120,7 @@ class ObservableLateralSideCommitment:
     observable task path, and the selected action are used.
     """
 
-    maximum_progress_m: float = 8.0
+    maximum_progress_m: float = 3.0
     maximum_heading_change_rad: float = math.pi / 4.0
     side: int = 0
     reference_distance_m: float | None = None
