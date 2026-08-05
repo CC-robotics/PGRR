@@ -101,6 +101,7 @@ class ScenarioActorController(Node):
         self.declare_parameter("episode_start_topic", "/ramp/episode_started")
         self.declare_parameter("logger_ready_topic", "/ramp/logger_ready")
         self.declare_parameter("odom_topic", "odom")
+        self.declare_parameter("odometry_is_world_frame", False)
         self.declare_parameter("nav_status_topic", "navigate_to_pose/_action/status")
         self.declare_parameter("wait_for_navigation_active", False)
         self.declare_parameter("update_native_actors", False)
@@ -113,6 +114,10 @@ class ScenarioActorController(Node):
         self.declare_parameter("robot_reset_request_timeout_s", 8.0)
         self.declare_parameter("robot_reset_max_attempts", 3)
         self.declare_parameter("robot_reset_settle_s", 0.50)
+        self.declare_parameter("startup_odom_timeout_s", 1.0)
+        self.declare_parameter("startup_odom_settle_s", 0.50)
+        self.declare_parameter("startup_max_linear_speed_mps", 0.25)
+        self.declare_parameter("startup_max_angular_speed_radps", 0.50)
         self.declare_parameter("costmap_clear_timeout_s", 5.0)
         self.declare_parameter("startup_gate_timeout_s", 45.0)
         self.declare_parameter("robot_avoidance_distance_m", 1.3)
@@ -167,6 +172,9 @@ class ScenarioActorController(Node):
             "robot_reset_yaw_tolerance_rad",
             "robot_reset_retry_interval_s",
             "robot_reset_request_timeout_s",
+            "startup_odom_timeout_s",
+            "startup_max_linear_speed_mps",
+            "startup_max_angular_speed_radps",
             "costmap_clear_timeout_s",
             "startup_gate_timeout_s",
         )
@@ -177,6 +185,9 @@ class ScenarioActorController(Node):
         reset_settle_s = float(self.get_parameter("robot_reset_settle_s").value)
         if not math.isfinite(reset_settle_s) or reset_settle_s < 0.0:
             raise ValueError("robot_reset_settle_s must be finite and non-negative")
+        odom_settle_s = float(self.get_parameter("startup_odom_settle_s").value)
+        if not math.isfinite(odom_settle_s) or odom_settle_s < 0.0:
+            raise ValueError("startup_odom_settle_s must be finite and non-negative")
         yaw_tolerance = float(self.get_parameter("robot_reset_yaw_tolerance_rad").value)
         if not math.isfinite(yaw_tolerance) or yaw_tolerance > math.pi:
             raise ValueError("robot_reset_yaw_tolerance_rad must be finite and at most pi")
@@ -206,6 +217,9 @@ class ScenarioActorController(Node):
         self._task_reset_observed = not self._wait_for_navigation_active
         self._task_reset_generation = 0
         self._robot_at_start_since_wall_s: float | None = None
+        self._latest_odometry: Odometry | None = None
+        self._latest_odometry_received_s: float | None = None
+        self._odom_stable_since_wall_s: float | None = None
         self._robot_reset_pending: Any | None = None
         self._robot_reset_pending_since_wall_s: float | None = None
         self._robot_reset_last_attempt_wall_s: float | None = None
@@ -346,6 +360,64 @@ class ScenarioActorController(Node):
     def _robot_is_at_configured_start(self, now_s: float) -> bool:
         return bool(
             self._robot_pose_is_within_start_tolerance() and self._actual_robot_pose_is_fresh(now_s)
+        )
+
+    def _odometry_world_pose(self, message: Odometry) -> tuple[float, float, float]:
+        local_x = float(message.pose.pose.position.x)
+        local_y = float(message.pose.pose.position.y)
+        local_yaw = self._yaw(message.pose.pose)
+        if bool(self.get_parameter("odometry_is_world_frame").value):
+            return local_x, local_y, local_yaw
+        start_x, start_y, start_yaw = self._robot_start
+        return (
+            start_x + math.cos(start_yaw) * local_x - math.sin(start_yaw) * local_y,
+            start_y + math.sin(start_yaw) * local_x + math.cos(start_yaw) * local_y,
+            start_yaw + local_yaw,
+        )
+
+    def _advance_odometry_settle(self, now_s: float, now_wall_s: float) -> bool:
+        message = self._latest_odometry
+        received_s = self._latest_odometry_received_s
+        timeout_s = float(self.get_parameter("startup_odom_timeout_s").value)
+        if message is None or received_s is None or now_s - received_s > timeout_s:
+            self._odom_stable_since_wall_s = None
+            self.get_logger().warning(
+                "startup gate waiting for fresh ground-truth odometry",
+                throttle_duration_sec=5.0,
+            )
+            return False
+
+        world_x, world_y, world_yaw = self._odometry_world_pose(message)
+        start_x, start_y, start_yaw = self._robot_start
+        position_error = math.hypot(world_x - start_x, world_y - start_y)
+        yaw_error = abs(
+            math.atan2(
+                math.sin(world_yaw - start_yaw),
+                math.cos(world_yaw - start_yaw),
+            )
+        )
+        twist = message.twist.twist
+        linear_speed = math.hypot(float(twist.linear.x), float(twist.linear.y))
+        angular_speed = abs(float(twist.angular.z))
+        stable = bool(
+            position_error <= float(self.get_parameter("robot_reset_position_tolerance_m").value)
+            and yaw_error <= float(self.get_parameter("robot_reset_yaw_tolerance_rad").value)
+            and linear_speed <= float(self.get_parameter("startup_max_linear_speed_mps").value)
+            and angular_speed <= float(self.get_parameter("startup_max_angular_speed_radps").value)
+        )
+        if not stable:
+            self._odom_stable_since_wall_s = None
+            self.get_logger().warning(
+                "startup gate rejecting reset-transient odometry "
+                f"pose_error={position_error:.3f}m/{yaw_error:.3f}rad "
+                f"speed={linear_speed:.3f}mps/{angular_speed:.3f}radps",
+                throttle_duration_sec=2.0,
+            )
+            return False
+        if self._odom_stable_since_wall_s is None:
+            self._odom_stable_since_wall_s = now_wall_s
+        return now_wall_s - self._odom_stable_since_wall_s >= float(
+            self.get_parameter("startup_odom_settle_s").value
         )
 
     def _fail_startup_gate(self, detail: str) -> None:
@@ -520,6 +592,8 @@ class ScenarioActorController(Node):
             return False
         if not self._advance_robot_reset(now_s, now_wall_s):
             return False
+        if not self._advance_odometry_settle(now_s, now_wall_s):
+            return False
         if not self._advance_costmap_clear(now_wall_s):
             return False
         # Re-check after both asynchronous clear responses. No reset can be
@@ -532,6 +606,8 @@ class ScenarioActorController(Node):
         return True
 
     def _on_odom(self, message: Odometry) -> None:
+        self._latest_odometry = message
+        self._latest_odometry_received_s = self.get_clock().now().nanoseconds * 1.0e-9
         if self._actual_robot_pose is not None:
             self._robot_position = (
                 float(self._actual_robot_pose.position.x),
@@ -570,6 +646,9 @@ class ScenarioActorController(Node):
         self._task_reset_generation += 1
         self._startup_gate_started_wall_s = time.monotonic()
         self._robot_at_start_since_wall_s = None
+        self._latest_odometry = None
+        self._latest_odometry_received_s = None
+        self._odom_stable_since_wall_s = None
         for future in self._costmap_clear_pending.values():
             if not future.done():
                 future.cancel()

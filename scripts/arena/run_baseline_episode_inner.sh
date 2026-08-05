@@ -309,6 +309,7 @@ mux_pid=$!
     -p episode_start_topic:=/ramp/episode_started \
     -p logger_ready_topic:=/ramp/logger_ready \
     -p odom_topic:="${odom_topic}" \
+    -p odometry_is_world_frame:=true \
     -p nav_status_topic:="${nav_action}/_action/status" \
     -p wait_for_navigation_active:=true \
     -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \

@@ -433,6 +433,12 @@ class EpisodeLoggerNode(Node):
             )
 
     def _on_episode_start(self, message: Bool) -> None:
+        starting = bool(message.data) and not self._episode_started
+        if starting:
+            # Pre-start truth may still contain Arena's staging pose. The
+            # startup gate has already verified the configured start, so the
+            # first post-handshake truth sample becomes the jump baseline.
+            self._privileged_robot_pose = None
         self._episode_started |= bool(message.data)
 
     def _set_outcome(self, outcome: EpisodeOutcome, detail: str) -> None:

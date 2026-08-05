@@ -128,10 +128,16 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "client.call_async(ClearEntireCostmap.Request())" in actor
     assert "startup gate cleared local and global Nav2 costmaps" in actor
     assert "startup gate failed; actors_healthy=false" in actor
+    assert "if not self._advance_odometry_settle" in actor
+    assert "startup gate rejecting reset-transient odometry" in actor
+    assert 'declare_parameter("startup_odom_settle_s", 0.50)' in actor
     assert '"${ramp_ros_prefix}/lib/ramp_ros/odom_tf_broadcaster"' in runtime
     assert '-p odom_topic:="${odom_topic}"' in runtime
     assert 'stop_pid_bounded "${odom_tf_pid}" INT 10' in runtime
     assert actor.index("if not self._advance_robot_reset") < actor.index(
+        "if not self._advance_odometry_settle"
+    )
+    assert actor.index("if not self._advance_odometry_settle") < actor.index(
         "if not self._advance_costmap_clear"
     )
     assert actor.index("if not self._advance_costmap_clear") < actor.index(
@@ -174,7 +180,7 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "episode start handshake did not complete before the wall-clock deadline" in logger
     assert runtime.count("episode_start_topic:=/ramp/episode_started") == 4
     assert runtime.count("logger_ready_topic:=/ramp/logger_ready") == 2
-    assert runtime.count("odometry_is_world_frame:=true") == 3
+    assert runtime.count("odometry_is_world_frame:=true") == 4
 
 
 def test_known_pose_gazebo_uses_dynamic_odom_base_transform_only() -> None:
@@ -209,6 +215,8 @@ def test_episode_logger_rejects_privileged_robot_pose_jumps() -> None:
     logger = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/episode_logger_node.py").read_text()
     assert 'declare_parameter("maximum_privileged_pose_jump_m", 1.0)' in logger
     assert "Gazebo robot pose jumped during the active episode" in logger
+    assert "if starting:" in logger
+    assert "self._privileged_robot_pose = None" in logger
     assert "math.dist(new_pose[:2], self._privileged_robot_pose[:2])" in logger
     assert 'declare_parameter("physical_goal_tolerance_m", 0.30)' in logger
     assert 'declare_parameter("goal_confirmation_timeout_s", 1.0)' in logger
