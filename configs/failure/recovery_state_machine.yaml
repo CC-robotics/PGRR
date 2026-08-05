@@ -25,8 +25,10 @@ bc_yield_release_frames: 3
 bc_yield_forward_half_width_degrees: 45.0
 # While the yield latch is active, every otherwise-valid translation is
 # projected onto the local global-path tangent.  Only lateral/retreat endpoints
-# with at most this numerical forward tolerance remain selectable.
-bc_yield_maximum_forward_progress_m: 0.05
+# with at most this numerical forward tolerance remain selectable.  The
+# 0.10 m bound admits near-lateral endpoints after small heading errors while
+# continuing to reject the adjacent 60-degree forward-diagonal candidates.
+bc_yield_maximum_forward_progress_m: 0.10
 # Validation-only observable flow thresholds. Compare the oldest and newest
 # samples of the five-frame policy LiDAR stack in task-path side sectors. A
 # side is occupied only when enough beam ranges close by at least the stated

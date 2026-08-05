@@ -274,6 +274,102 @@ def test_directional_yield_masks_forward_motion_without_unmasking() -> None:
     assert not bool(np.any(constrained & ~mask))
 
 
+def test_directional_yield_trace_retains_near_lateral_left_escape_only() -> None:
+    """Reproduce the left-escape mask at the diagnosed failure heading."""
+
+    pose = Pose2D(0.0, 0.0, -0.091962)
+    planning_mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    planning_mask[[5, 6, 12, 13, WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
+
+    constrained = constrain_directional_yield_motion(
+        planning_mask,
+        pose=pose,
+        path_heading_rad=0.0,
+        backup_distance_m=0.45,
+    )
+
+    assert np.flatnonzero(constrained).tolist() == [6, 13, WAIT_ACTION_ID, BACKUP_ACTION_ID]
+    assert not constrained[5] and not constrained[12]
+    assert not bool(np.any(constrained & ~planning_mask))
+
+
+def test_right_occupied_trace_recurrent_escape_keeps_exact_left_pair() -> None:
+    pose = Pose2D(0.0, 0.0, -0.091962)
+    planning_mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    planning_mask[[5, 6, 12, 13, WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
+    directional = constrain_directional_yield_motion(
+        planning_mask,
+        pose=pose,
+        path_heading_rad=0.0,
+        backup_distance_m=0.45,
+    )
+    closing_side = constrain_task_lateral_sides(
+        directional,
+        pose=pose,
+        path_heading_rad=0.0,
+        minimum_lateral_displacement_m=0.25,
+        right_occupied=True,
+        left_occupied=False,
+    )
+    recurrent = constrain_recurrent_yield_escape(
+        closing_side,
+        escape_required=True,
+        pose=pose,
+        path_heading_rad=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+    assert np.flatnonzero(recurrent).tolist() == [6, 13]
+    assert not bool(np.any(recurrent & ~planning_mask))
+
+
+def test_directional_yield_trace_is_mirror_symmetric() -> None:
+    def mirrored_escape(*, yaw: float, candidate_ids: list[int], left_occupied: bool) -> list[int]:
+        pose = Pose2D(0.0, 0.0, yaw)
+        planning_mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+        planning_mask[[*candidate_ids, WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
+        directional = constrain_directional_yield_motion(
+            planning_mask,
+            pose=pose,
+            path_heading_rad=0.0,
+            backup_distance_m=0.45,
+        )
+        open_side = constrain_task_lateral_sides(
+            directional,
+            pose=pose,
+            path_heading_rad=0.0,
+            minimum_lateral_displacement_m=0.25,
+            right_occupied=not left_occupied,
+            left_occupied=left_occupied,
+        )
+        recurrent = constrain_recurrent_yield_escape(
+            open_side,
+            escape_required=True,
+            pose=pose,
+            path_heading_rad=0.0,
+            minimum_lateral_displacement_m=0.25,
+        )
+        assert not bool(np.any(recurrent & ~planning_mask))
+        return np.flatnonzero(recurrent).tolist()
+
+    left_escape = mirrored_escape(
+        yaw=-0.091962,
+        candidate_ids=[5, 6, 12, 13],
+        left_occupied=False,
+    )
+    right_escape = mirrored_escape(
+        yaw=0.091962,
+        candidate_ids=[0, 1, 7, 8],
+        left_occupied=True,
+    )
+
+    assert left_escape == [6, 13]
+    assert right_escape == [0, 7]
+    assert [ACTIONS[action_id].radius for action_id in left_escape] == [
+        ACTIONS[action_id].radius for action_id in right_escape
+    ]
+
+
 def test_directional_yield_uses_path_heading_not_robot_heading() -> None:
     mask = np.ones(ACTION_COUNT, dtype=np.bool_)
     constrained = constrain_directional_yield_motion(

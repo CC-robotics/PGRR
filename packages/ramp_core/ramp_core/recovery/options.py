@@ -663,7 +663,7 @@ def constrain_directional_yield_motion(
     pose: Pose2D,
     path_heading_rad: float,
     backup_distance_m: float,
-    maximum_forward_progress_m: float = 0.05,
+    maximum_forward_progress_m: float = 0.10,
 ) -> npt.NDArray[np.bool_]:
     """During an active yield, retain only non-forward legal translations.
 

@@ -322,7 +322,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_yield_release_clearance_m"] == 1.25
     assert config["bc_yield_release_frames"] == 3
     assert config["bc_yield_forward_half_width_degrees"] == 45.0
-    assert config["bc_yield_maximum_forward_progress_m"] == 0.05
+    assert config["bc_yield_maximum_forward_progress_m"] == 0.10
     assert config["bc_closing_side_sector_min_degrees"] == 5.0
     assert config["bc_closing_side_sector_max_degrees"] == 60.0
     assert config["bc_closing_side_delta_m"] == 0.20
@@ -332,7 +332,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"bc_yield_release_clearance_m": 1.25' in manager
     assert '"bc_yield_release_frames": 3' in manager
     assert '"bc_yield_forward_half_width_degrees": 45.0' in manager
-    assert '"bc_yield_maximum_forward_progress_m": 0.05' in manager
+    assert '"bc_yield_maximum_forward_progress_m": 0.10' in manager
     assert '"bc_closing_side_sector_min_degrees": 5.0' in manager
     assert '"bc_closing_side_sector_max_degrees": 60.0' in manager
     assert '"bc_closing_side_delta_m": 0.20' in manager

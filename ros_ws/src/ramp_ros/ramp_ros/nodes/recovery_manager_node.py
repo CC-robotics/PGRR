@@ -429,7 +429,7 @@ class RecoveryManagerNode(Node):
             "bc_yield_release_clearance_m": 1.25,
             "bc_yield_release_frames": 3,
             "bc_yield_forward_half_width_degrees": 45.0,
-            "bc_yield_maximum_forward_progress_m": 0.05,
+            "bc_yield_maximum_forward_progress_m": 0.10,
             "bc_closing_side_sector_min_degrees": 5.0,
             "bc_closing_side_sector_max_degrees": 60.0,
             "bc_closing_side_delta_m": 0.20,

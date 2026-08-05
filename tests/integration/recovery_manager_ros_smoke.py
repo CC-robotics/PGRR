@@ -25,6 +25,7 @@ from ramp_core.recovery.options import (
     constrain_directional_yield_motion,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
+    constrain_task_lateral_sides,
 )
 from ramp_core.recovery.safety import EmergencyEscapeMode
 from ramp_core.state_machine import RecoveryState, StateTransition
@@ -164,6 +165,9 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     threshold = manager._integer("bc_recurrent_escape_after_recoveries")
     if threshold != 1:
         raise RuntimeError(f"unexpected BC recurrent escape threshold: {threshold}")
+    forward_tolerance_m = manager._float("bc_yield_maximum_forward_progress_m")
+    if not math.isclose(forward_tolerance_m, 0.10):
+        raise RuntimeError(f"unexpected directional-yield forward tolerance: {forward_tolerance_m}")
     minimum_lateral_m = manager._float("recurrent_escape_minimum_lateral_displacement_m")
     pose = Pose2D(0.0, 0.0, 0.0)
     path_heading_rad = 0.0
@@ -233,6 +237,41 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
         raise RuntimeError(f"recurrent escape telemetry omitted masks: {telemetry}")
     if "minimum_lateral_m=0.250" not in telemetry or "lateral_ids=" not in telemetry:
         raise RuntimeError(f"recurrent escape telemetry omitted path-frame evidence: {telemetry}")
+
+    trace_pose = Pose2D(0.0, 0.0, -0.091962)
+    trace_planning = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    trace_planning[[5, 6, 12, 13, WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
+    trace_directional = constrain_directional_yield_motion(
+        trace_planning,
+        pose=trace_pose,
+        path_heading_rad=path_heading_rad,
+        backup_distance_m=manager._float("backup_mask_validated_distance_m"),
+        maximum_forward_progress_m=forward_tolerance_m,
+    )
+    trace_open_side = constrain_task_lateral_sides(
+        trace_directional,
+        pose=trace_pose,
+        path_heading_rad=path_heading_rad,
+        minimum_lateral_displacement_m=minimum_lateral_m,
+        right_occupied=True,
+        left_occupied=False,
+    )
+    trace_recurrent = manager._constrain_bc_recurrent_escape(
+        trace_open_side,
+        pose=trace_pose,
+        path_heading_rad=path_heading_rad,
+    )
+    if np.flatnonzero(trace_directional).tolist() != [
+        6,
+        13,
+        WAIT_ACTION_ID,
+        BACKUP_ACTION_ID,
+    ]:
+        raise RuntimeError(f"diagnosed directional-yield trace mismatch: {trace_directional}")
+    if np.flatnonzero(trace_recurrent).tolist() != [6, 13]:
+        raise RuntimeError(f"diagnosed recurrent escape trace mismatch: {trace_recurrent}")
+    if np.any(trace_recurrent & ~trace_planning):
+        raise RuntimeError("diagnosed recurrent escape weakened the planning mask")
 
     safe_fallback = np.zeros(ACTION_COUNT, dtype=np.bool_)
     safe_fallback[[WAIT_ACTION_ID, BACKUP_ACTION_ID, CONTINUE_ACTION_ID]] = True
