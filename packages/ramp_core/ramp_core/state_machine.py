@@ -72,6 +72,10 @@ class StateMachineInput:
     # erase the bounded recovery-attempt budget.  The caller raises this flag
     # only after meaningful cumulative progress toward the original goal.
     meaningful_progress: bool = False
+    # The recovery manager raises this only after the nominal task goal is the
+    # active planner goal again.  It prevents motion left over from a temporary
+    # subgoal (or an unsuccessful restore request) from completing a sequence.
+    original_goal_active: bool = False
     emergency_stop: bool = False
     goal_reached: bool = False
     unrecoverable_failure: bool = False
@@ -99,6 +103,7 @@ class RecoveryStateMachine:
         self._consecutive_recoveries = 0
         self._rejoin_retries = 0
         self._recovery_sequence_started_s: float | None = None
+        self._original_goal_rejoined_in_sequence = False
         self._resume_after_emergency: RecoveryState | None = None
 
     @property
@@ -127,7 +132,16 @@ class RecoveryStateMachine:
         self._consecutive_recoveries = 0
         self._rejoin_retries = 0
         self._recovery_sequence_started_s = None
+        self._original_goal_rejoined_in_sequence = False
         self._resume_after_emergency = None
+
+    def _complete_recovery_sequence(self) -> None:
+        """Retire the bounded sequence after confirmed nominal-goal progress."""
+
+        self._consecutive_recoveries = 0
+        self._rejoin_retries = 0
+        self._recovery_sequence_started_s = None
+        self._original_goal_rejoined_in_sequence = False
 
     def update(self, state_input: StateMachineInput) -> StateTransition:
         if not 0.0 <= state_input.failure_score <= 1.0:
@@ -135,13 +149,27 @@ class RecoveryStateMachine:
         previous = self.state
         reason = "no_transition"
 
-        if state_input.meaningful_progress and self.state in {
-            RecoveryState.NORMAL,
-            RecoveryState.PENDING_RECOVERY,
-        }:
+        if (
+            self._recovery_sequence_started_s is not None
+            and self.state is RecoveryState.NORMAL
+            and self._original_goal_rejoined_in_sequence
+            and state_input.original_goal_active
+            and state_input.failure_score < self.config.tau_off
+            and (state_input.valid_progress or state_input.meaningful_progress)
+        ):
+            # Reaching NORMAL consumed one progress observation in REJOIN.  A
+            # second positive observation while the restored task goal remains
+            # active confirms sustained nominal navigation and safely retires
+            # the old wall-clock budget.  A momentary detector clear or an
+            # emergency-stop exit cannot reach this branch.
+            self._complete_recovery_sequence()
+        elif (
+            self._recovery_sequence_started_s is None
+            and state_input.meaningful_progress
+            and self.state in {RecoveryState.NORMAL, RecoveryState.PENDING_RECOVERY}
+        ):
             self._consecutive_recoveries = 0
             self._rejoin_retries = 0
-            self._recovery_sequence_started_s = None
 
         if self.state in {RecoveryState.FAILED, RecoveryState.SUCCEEDED}:
             reason = "terminal_state"
@@ -207,6 +235,7 @@ class RecoveryStateMachine:
                         self.state = RecoveryState.RECOVERY
                         if self._recovery_sequence_started_s is None:
                             self._recovery_sequence_started_s = state_input.now_s
+                            self._original_goal_rejoined_in_sequence = False
                         self._consecutive_recoveries += 1
                         self._rejoin_retries = 0
                         self._low_frames = 0
@@ -231,6 +260,7 @@ class RecoveryStateMachine:
                         self.state = RecoveryState.RECOVERY
                         if self._recovery_sequence_started_s is None:
                             self._recovery_sequence_started_s = state_input.now_s
+                            self._original_goal_rejoined_in_sequence = False
                         self._consecutive_recoveries += 1
                         self._rejoin_retries = 0
                         self._low_frames = 0
@@ -265,13 +295,18 @@ class RecoveryStateMachine:
             else:
                 self._low_frames = 0
         elif self.state is RecoveryState.REJOIN:
-            if state_input.valid_progress and state_input.failure_score < self.config.tau_off:
+            if (
+                state_input.original_goal_active
+                and state_input.valid_progress
+                and state_input.failure_score < self.config.tau_off
+            ):
                 self.state = RecoveryState.NORMAL
                 self._last_recovery_end_s = state_input.now_s
+                self._original_goal_rejoined_in_sequence = True
                 if state_input.meaningful_progress:
-                    self._consecutive_recoveries = 0
-                    self._recovery_sequence_started_s = None
-                self._rejoin_retries = 0
+                    self._complete_recovery_sequence()
+                else:
+                    self._rejoin_retries = 0
                 self._high_frames = 0
                 self._low_frames = 0
                 reason = "original_goal_restored"
@@ -287,6 +322,7 @@ class RecoveryStateMachine:
                 else:
                     self.state = RecoveryState.NORMAL
                     self._last_recovery_end_s = state_input.now_s
+                    self._original_goal_rejoined_in_sequence = state_input.original_goal_active
                     self._high_frames = 0
                     self._low_frames = 0
                     reason = "rejoin_retry_exhausted"

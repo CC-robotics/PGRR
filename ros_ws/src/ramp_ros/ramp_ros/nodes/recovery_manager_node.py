@@ -1460,8 +1460,7 @@ class RecoveryManagerNode(Node):
             self._goal_preempted = True
             return temporary
         if action_id in {REPLAN_ACTION_ID, CONTINUE_ACTION_ID}:
-            self._adapter.restore_original_goal()
-            self._goal_preempted = False
+            self._goal_preempted = not self._adapter.restore_original_goal()
         return None
 
     def _publish_decision(
@@ -1611,6 +1610,7 @@ class RecoveryManagerNode(Node):
                 failure_score=control_failure.score,
                 valid_progress=self._valid_progress(),
                 meaningful_progress=meaningful_progress,
+                original_goal_active=not self._goal_preempted,
                 emergency_stop=self._emergency,
                 goal_reached=distance <= self._float("goal_tolerance_m"),
                 recovery_action_complete=action_complete and not persistent_failure_followup,

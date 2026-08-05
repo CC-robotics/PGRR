@@ -21,7 +21,15 @@ def test_hysteresis_enters_and_exits_recovery() -> None:
     machine.update(StateMachineInput(0.7, 0.2, True))
     transition = machine.update(StateMachineInput(0.8, 0.2, True))
     assert transition.current is RecoveryState.REJOIN
-    transition = machine.update(StateMachineInput(0.9, 0.2, True, meaningful_progress=True))
+    transition = machine.update(
+        StateMachineInput(
+            0.9,
+            0.2,
+            True,
+            meaningful_progress=True,
+            original_goal_active=True,
+        )
+    )
     assert transition.current is RecoveryState.NORMAL
     assert machine.consecutive_recoveries == 0
 
@@ -38,11 +46,17 @@ def test_small_rejoin_progress_does_not_replenish_recovery_budget() -> None:
     )
     assert machine.update(StateMachineInput(0.0, 1.0, False)).current is RecoveryState.RECOVERY
     assert machine.update(StateMachineInput(0.1, 0.0, True)).current is RecoveryState.REJOIN
-    assert machine.update(StateMachineInput(0.2, 0.0, True)).current is RecoveryState.NORMAL
+    assert (
+        machine.update(StateMachineInput(0.2, 0.0, True, original_goal_active=True)).current
+        is RecoveryState.NORMAL
+    )
     assert machine.consecutive_recoveries == 1
     assert machine.update(StateMachineInput(0.3, 1.0, False)).current is RecoveryState.RECOVERY
     assert machine.update(StateMachineInput(0.4, 0.0, True)).current is RecoveryState.REJOIN
-    assert machine.update(StateMachineInput(0.5, 0.0, True)).current is RecoveryState.NORMAL
+    assert (
+        machine.update(StateMachineInput(0.5, 0.0, True, original_goal_active=True)).current
+        is RecoveryState.NORMAL
+    )
     failed = machine.update(StateMachineInput(0.6, 1.0, False))
     assert failed.current is RecoveryState.FAILED
     assert failed.reason == "recovery_limit"
@@ -60,9 +74,17 @@ def test_meaningful_progress_replenishes_recovery_budget_while_normal() -> None:
     )
     machine.update(StateMachineInput(0.0, 1.0, False))
     machine.update(StateMachineInput(0.1, 0.0, True))
-    machine.update(StateMachineInput(0.2, 0.0, True))
+    machine.update(StateMachineInput(0.2, 0.0, True, original_goal_active=True))
     assert machine.consecutive_recoveries == 1
-    transition = machine.update(StateMachineInput(0.3, 0.0, True, meaningful_progress=True))
+    transition = machine.update(
+        StateMachineInput(
+            0.3,
+            0.0,
+            True,
+            meaningful_progress=True,
+            original_goal_active=True,
+        )
+    )
     assert transition.current is RecoveryState.NORMAL
     assert machine.consecutive_recoveries == 0
     assert machine.update(StateMachineInput(0.4, 1.0, False)).current is RecoveryState.RECOVERY
@@ -302,7 +324,7 @@ def test_weak_rejoin_progress_does_not_clear_recovery_sequence_timeout() -> None
     )
     machine.update(StateMachineInput(0.0, 1.0, False))
     machine.update(StateMachineInput(0.1, 0.0, False, recovery_action_complete=True))
-    restored = machine.update(StateMachineInput(0.2, 0.0, True))
+    restored = machine.update(StateMachineInput(0.2, 0.0, True, original_goal_active=True))
     assert restored.current is RecoveryState.NORMAL
     assert restored.reason == "original_goal_restored"
     failed = machine.update(StateMachineInput(1.0, 0.0, False))
@@ -322,12 +344,79 @@ def test_meaningful_original_goal_progress_starts_fresh_sequence_budget() -> Non
     )
     machine.update(StateMachineInput(0.0, 1.0, False))
     machine.update(StateMachineInput(0.1, 0.0, False, recovery_action_complete=True))
-    restored = machine.update(StateMachineInput(0.2, 0.0, True, meaningful_progress=True))
+    restored = machine.update(
+        StateMachineInput(
+            0.2,
+            0.0,
+            True,
+            meaningful_progress=True,
+            original_goal_active=True,
+        )
+    )
     assert restored.current is RecoveryState.NORMAL
     assert machine.update(StateMachineInput(1.1, 0.0, True)).current is RecoveryState.NORMAL
 
     assert machine.update(StateMachineInput(1.2, 1.0, False)).current is RecoveryState.RECOVERY
     failed = machine.update(StateMachineInput(2.2, 1.0, False))
+    assert failed.current is RecoveryState.FAILED
+    assert failed.reason == "recovery_sequence_timeout"
+
+
+def test_sustained_progress_after_original_goal_rejoin_retires_old_deadline() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            frames_off=1,
+            cooldown_s=0.0,
+            minimum_action_hold_s=0.0,
+            maximum_recovery_sequence_duration_s=1.0,
+        )
+    )
+    assert machine.update(StateMachineInput(0.0, 1.0, False)).current is RecoveryState.RECOVERY
+    assert (
+        machine.update(StateMachineInput(0.1, 0.0, False, recovery_action_complete=True)).current
+        is RecoveryState.REJOIN
+    )
+    restored = machine.update(StateMachineInput(0.2, 0.0, True, original_goal_active=True))
+    assert restored.current is RecoveryState.NORMAL
+    assert restored.reason == "original_goal_restored"
+
+    # A second progress-bearing decision in NORMAL confirms that Nav2 has
+    # resumed the original task, even if cumulative progress has not yet
+    # crossed the separate 0.25 m meaningful-progress threshold.
+    assert (
+        machine.update(StateMachineInput(0.7, 0.0, True, original_goal_active=True)).current
+        is RecoveryState.NORMAL
+    )
+    beyond_old_deadline = machine.update(
+        StateMachineInput(1.1, 0.0, True, original_goal_active=True)
+    )
+    assert beyond_old_deadline.current is RecoveryState.NORMAL
+    assert beyond_old_deadline.reason == "no_transition"
+
+    # A later failure receives a fresh bounded sequence rather than inheriting
+    # the completed sequence's deadline.
+    assert machine.update(StateMachineInput(1.2, 1.0, False)).current is RecoveryState.RECOVERY
+    failed = machine.update(StateMachineInput(2.2, 1.0, False))
+    assert failed.current is RecoveryState.FAILED
+    assert failed.reason == "recovery_sequence_timeout"
+
+
+def test_rejoin_progress_cannot_complete_sequence_before_original_goal_is_active() -> None:
+    machine = RecoveryStateMachine(
+        RecoveryStateMachineConfig(
+            frames_on=1,
+            frames_off=1,
+            cooldown_s=0.0,
+            minimum_action_hold_s=0.0,
+            maximum_recovery_sequence_duration_s=1.0,
+        )
+    )
+    machine.update(StateMachineInput(0.0, 1.0, False))
+    machine.update(StateMachineInput(0.1, 0.0, False, recovery_action_complete=True))
+    waiting = machine.update(StateMachineInput(0.2, 0.0, True, original_goal_active=False))
+    assert waiting.current is RecoveryState.REJOIN
+    failed = machine.update(StateMachineInput(1.0, 0.0, True, original_goal_active=False))
     assert failed.current is RecoveryState.FAILED
     assert failed.reason == "recovery_sequence_timeout"
 
