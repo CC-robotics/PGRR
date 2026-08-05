@@ -144,6 +144,8 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     before_threshold = manager._constrain_bc_recurrent_escape(ordinary)
     if not np.array_equal(before_threshold, ordinary):
         raise RuntimeError("recurrent escape changed the mask before its threshold")
+    if manager._bc_recurrent_escape_telemetry(ordinary, before_threshold):
+        raise RuntimeError("recurrent escape emitted telemetry before its threshold")
 
     manager._machine._consecutive_recoveries = threshold
     constrained = manager._constrain_bc_recurrent_escape(ordinary)
@@ -155,12 +157,23 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
         )
     if bool(constrained[illegal_lateral]) or bool(np.any(constrained & ~ordinary)):
         raise RuntimeError("recurrent escape unmasked a planning-invalid action")
+    telemetry = manager._bc_recurrent_escape_telemetry(ordinary, constrained)
+    if "bc_recurrent_escape=applied" not in telemetry or f"count={threshold}" not in telemetry:
+        raise RuntimeError(f"recurrent escape telemetry mismatch: {telemetry}")
+    if "pre=" not in telemetry or "final=" not in telemetry:
+        raise RuntimeError(f"recurrent escape telemetry omitted masks: {telemetry}")
 
     safe_fallback = np.zeros(ACTION_COUNT, dtype=np.bool_)
     safe_fallback[[WAIT_ACTION_ID, BACKUP_ACTION_ID, CONTINUE_ACTION_ID]] = True
     observed_fallback = manager._constrain_bc_recurrent_escape(safe_fallback)
     if not np.array_equal(observed_fallback, safe_fallback):
         raise RuntimeError("recurrent escape discarded the original safe fallback mask")
+    fallback_telemetry = manager._bc_recurrent_escape_telemetry(
+        safe_fallback,
+        observed_fallback,
+    )
+    if "bc_recurrent_escape=unavailable" not in fallback_telemetry:
+        raise RuntimeError(f"recurrent escape fallback telemetry mismatch: {fallback_telemetry}")
 
 
 def main() -> int:

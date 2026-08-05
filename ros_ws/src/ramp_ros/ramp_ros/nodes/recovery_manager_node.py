@@ -1006,6 +1006,35 @@ class RecoveryManagerNode(Node):
             ),
         )
 
+    def _bc_recurrent_escape_telemetry(
+        self,
+        before: np.ndarray[Any, np.dtype[np.bool_]],
+        after: np.ndarray[Any, np.dtype[np.bool_]],
+    ) -> str:
+        """Describe an active recurrent-escape constraint for episode logs."""
+
+        recovery_count = self._machine.consecutive_recoveries
+        threshold = self._integer("bc_recurrent_escape_after_recoveries")
+        if recovery_count < threshold:
+            return ""
+        before_ids = np.flatnonzero(before).tolist()
+        after_ids = np.flatnonzero(after).tolist()
+        escape_ids = {
+            action.action_id
+            for action in ACTIONS[:WAIT_ACTION_ID]
+            if action.angle_degrees is not None and action.angle_degrees != 0
+        } | {REPLAN_ACTION_ID}
+        if not np.array_equal(before, after):
+            mode = "applied"
+        elif any(action_id in escape_ids for action_id in after_ids):
+            mode = "already_escape_only"
+        else:
+            mode = "unavailable"
+        return (
+            f"bc_recurrent_escape={mode} count={recovery_count} "
+            f"pre={','.join(map(str, before_ids))} final={','.join(map(str, after_ids))}"
+        )
+
     def _select_decision(
         self,
         observation: RecoveryObservation,
@@ -1014,6 +1043,7 @@ class RecoveryManagerNode(Node):
         *,
         stalled_rejoin: bool = False,
     ) -> CoreRecoveryDecision:
+        recurrent_escape_telemetry = ""
         if self._policy_type == "expert":
             try:
                 return self._expert_decision(pose, failure)
@@ -1066,7 +1096,12 @@ class RecoveryManagerNode(Node):
             # has determined which lateral/replan actions remain legal.  The
             # constraint intersects that final mask and returns it unchanged
             # when no such escape exists, preserving the safe fallback set.
+            pre_recurrent_escape_mask = mask.copy()
             mask = self._constrain_bc_recurrent_escape(mask)
+            recurrent_escape_telemetry = self._bc_recurrent_escape_telemetry(
+                pre_recurrent_escape_mask,
+                mask,
+            )
         # Fail closed after composing all independent restrictions.  WAIT is
         # the sole fallback; this must never re-authorize translation.
         mask = ensure_safe_wait_fallback(mask)
@@ -1079,6 +1114,12 @@ class RecoveryManagerNode(Node):
             elif decision.action_id == REPLAN_ACTION_ID:
                 self._bc_replans_without_progress += 1
             self._bc_subgoal_stall_guard.observe_decision(decision.action_id, pose)
+            if recurrent_escape_telemetry:
+                decision = CoreRecoveryDecision(
+                    decision.action_id,
+                    decision.confidence,
+                    f"{recurrent_escape_telemetry}; {decision.reason}",
+                )
         return decision
 
     def _update_bc_progress_budget(self, distance_to_goal_m: float) -> None:
