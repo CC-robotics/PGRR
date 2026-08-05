@@ -12,8 +12,8 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="RAMP Research",
-    maintainer_email="ramp-local@example.com",
+    maintainer="Charles Chen",
+    maintainer_email="charles.chen@example.invalid",
     description="ROS2 adapters and nodes for failure-triggered recovery",
     license="MIT",
     entry_points={
@@ -21,6 +21,7 @@ setup(
             "episode_logger = ramp_ros.nodes.episode_logger_node:main",
             "failure_detector = ramp_ros.nodes.failure_detector_node:main",
             "goal_mux = ramp_ros.nodes.goal_mux_node:main",
+            "odom_tf_broadcaster = ramp_ros.nodes.odom_tf_broadcaster_node:main",
             "recovery_manager = ramp_ros.nodes.recovery_manager_node:main",
             "scenario_actor_controller = ramp_ros.nodes.scenario_actor_controller_node:main",
         ]

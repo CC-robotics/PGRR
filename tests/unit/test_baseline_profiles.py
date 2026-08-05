@@ -128,6 +128,9 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "client.call_async(ClearEntireCostmap.Request())" in actor
     assert "startup gate cleared local and global Nav2 costmaps" in actor
     assert "startup gate failed; actors_healthy=false" in actor
+    assert '"${ramp_ros_prefix}/lib/ramp_ros/odom_tf_broadcaster"' in runtime
+    assert '-p odom_topic:="${odom_topic}"' in runtime
+    assert 'stop_pid_bounded "${odom_tf_pid}" INT 10' in runtime
     assert actor.index("if not self._advance_robot_reset") < actor.index(
         "if not self._advance_costmap_clear"
     )
@@ -180,7 +183,7 @@ def test_known_pose_gazebo_uses_dynamic_odom_base_transform_only() -> None:
     patch = (root / "third_party/task_generator_known_pose_gazebo_tf.patch").read_text(
         encoding="utf-8"
     )
-    marker = "Known-pose Gazebo publishes the dynamic odom-to-base transform"
+    marker = "ramp_ros publishes the dynamic odom-to-base transform"
     assert "task_generator_known_pose_gazebo_tf.patch" in container
     assert f'grep -q "{marker}" "$robot_manager"' in container
     assert "Arena known-pose Gazebo TF patch is not applied" in container

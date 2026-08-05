@@ -45,7 +45,7 @@ docker run --rm --runtime runc --network host --ipc host \
          patch --forward --silent --reject-file=- "$robot_manager" /workspace/third_party/task_generator_known_pose.patch 2>/dev/null ||
              grep -q "'\''amcl'\'': '\''false'\''" "$robot_manager"
          patch --forward --silent --reject-file=- "$robot_manager" /workspace/third_party/task_generator_known_pose_gazebo_tf.patch 2>/dev/null ||
-             grep -q "Known-pose Gazebo publishes the dynamic odom-to-base transform" "$robot_manager" || {
+             grep -q "ramp_ros publishes the dynamic odom-to-base transform" "$robot_manager" || {
                  printf "ERROR: Arena known-pose Gazebo TF patch is not applied\n" >&2
                  exit 1
              }

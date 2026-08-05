@@ -5,7 +5,7 @@
  
          self._launch_robot()
 -        self._odom_base_transform()
-+        # Known-pose Gazebo publishes the dynamic odom-to-base transform from
++        # ramp_ros publishes the dynamic odom-to-base transform from Gazebo
 +        # ground-truth odometry; a competing static identity corrupts Nav2.
 +        if self.node.conf.Arena.SIM.value not in (Constants.SimSimulator.GAZEBO,):
 +            self._odom_base_transform()

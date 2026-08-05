@@ -39,14 +39,9 @@
     "gz_type": "gz.msgs.PointCloudPacked",
     "direction": "[",
   },
-  # TF Data (Gazebo -> ROS2)
-  {
-    "gz_topic": "/model/{robot_name}/ground_truth_pose",
-    "ros_topic": "/tf",
-    "ros_type": "tf2_msgs/msg/TFMessage",
-    "gz_type": "gz.msgs.Pose_V",
-    "direction": "[",
-  },
+  # The ramp_ros odom_tf_broadcaster converts ground-truth odometry to the
+  # dynamic odom->base TF. Gazebo's Pose_V bridge is intentionally omitted:
+  # it advertises /tf in this Arena/Gazebo release but emits no usable edge.
   {
     "gz_topic": "/model/{robot_name}/tf_static",
     "ros_topic": "/tf_static",

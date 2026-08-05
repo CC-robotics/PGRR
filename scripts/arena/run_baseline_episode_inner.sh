@@ -111,6 +111,7 @@ launch_pid=$!
 logger_pid=""
 actor_pid=""
 pose_bridge_pid=""
+odom_tf_pid=""
 mux_pid=""
 detector_pid=""
 recovery_pid=""
@@ -174,6 +175,7 @@ stop_logger() {
 
 stop_actor_controller() {
     stop_pid_bounded "${actor_pid}" INT 10
+    stop_pid_bounded "${odom_tf_pid}" INT 10
     stop_pid_bounded "${pose_bridge_pid}" INT 10
 }
 
@@ -275,6 +277,11 @@ ros2 run ros_gz_bridge parameter_bridge \
     '/world/default/dynamic_pose/info@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V' \
     >>"${RUNTIME_LOG}" 2>&1 &
 pose_bridge_pid=$!
+"${ramp_ros_prefix}/lib/ramp_ros/odom_tf_broadcaster" --ros-args \
+    -p use_sim_time:=true \
+    -p odom_topic:="${odom_topic}" \
+    >>"${RUNTIME_LOG}" 2>&1 &
+odom_tf_pid=$!
 "${ramp_ros_prefix}/lib/ramp_ros/goal_mux" --ros-args \
     -p use_sim_time:=true \
     -p base_cmd_vel_topic:="${base_cmd_topic}" \
