@@ -53,6 +53,7 @@ from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecov
 from ramp_core.recovery.options import (
     BoundedBackupOption,
     BoundedSubgoalOption,
+    ObservableClosingSideLatch,
     ObservableDirectionalYieldLatch,
     ObservableGoalProgressBudget,
     ObservableNetRetreatGuard,
@@ -69,6 +70,7 @@ from ramp_core.recovery.options import (
     constrain_stalled_rejoin,
     constrain_stalled_subgoals,
     constrain_stalled_wait,
+    constrain_task_lateral_sides,
     constrain_temporal_closing_side,
     effective_recovery_path_deviation,
     ensure_safe_wait_fallback,
@@ -219,6 +221,7 @@ class RecoveryManagerNode(Node):
             minimum_closing_beams=self._integer("bc_closing_side_minimum_beams"),
             maximum_angular_speed_radps=self._float("bc_closing_side_maximum_angular_speed_radps"),
         )
+        self._bc_closing_side_latch = ObservableClosingSideLatch()
         self._bc_subgoal_stall_guard = ObservableSubgoalStallGuard(
             retry_budget=self._integer("bc_subgoal_retry_budget_decisions"),
             minimum_displacement_m=self._float("bc_subgoal_stall_displacement_m"),
@@ -701,6 +704,7 @@ class RecoveryManagerNode(Node):
             and self._failure.score > self._machine.config.tau_on
         )
         if not self._armed and (nominal_ready or startup_failure_ready):
+            self._bc_closing_side_latch.reset()
             self._armed = True
             self._armed_at_s = now_s
             self._distance_history.clear()
@@ -1139,7 +1143,7 @@ class RecoveryManagerNode(Node):
         """Intersect learned lateral choices with observable flow evidence."""
 
         assert self._scan is not None
-        return constrain_temporal_closing_side(
+        raw_result = constrain_temporal_closing_side(
             mask,
             observation.lidar,
             angle_min_rad=float(self._scan.angle_min),
@@ -1155,6 +1159,30 @@ class RecoveryManagerNode(Node):
                 "recurrent_escape_minimum_lateral_displacement_m"
             ),
             config=self._bc_closing_side_config,
+        )
+        right_occupied, left_occupied = self._bc_closing_side_latch.update(
+            yield_active=self._bc_yield_latch.latched,
+            right_occupied=raw_result.right_occupied,
+            left_occupied=raw_result.left_occupied,
+            rotation_gated=raw_result.rotation_gated,
+        )
+        effective_mask = constrain_task_lateral_sides(
+            raw_result.mask,
+            pose=pose,
+            path_heading_rad=path_heading_rad,
+            minimum_lateral_displacement_m=self._float(
+                "recurrent_escape_minimum_lateral_displacement_m"
+            ),
+            right_occupied=right_occupied,
+            left_occupied=left_occupied,
+        )
+        return TemporalClosingSideResult(
+            effective_mask,
+            raw_result.right_closing_beams,
+            raw_result.left_closing_beams,
+            raw_result.right_occupied,
+            raw_result.left_occupied,
+            raw_result.rotation_gated,
         )
 
     def _bc_temporal_closing_side_telemetry(
@@ -1186,6 +1214,9 @@ class RecoveryManagerNode(Node):
             f"maximum_range_m={config.maximum_current_range_m:.3f} "
             f"angular_speed_radps={angular_speed_radps:.3f} "
             f"angular_gate_radps={config.maximum_angular_speed_radps:.3f} "
+            f"raw_right={int(result.right_occupied)} raw_left={int(result.left_occupied)} "
+            f"latched_right={int(self._bc_closing_side_latch.right_occupied)} "
+            f"latched_left={int(self._bc_closing_side_latch.left_occupied)} "
             f"pre={','.join(map(str, np.flatnonzero(before)))} "
             f"post={','.join(map(str, np.flatnonzero(result.mask)))}"
         )
@@ -1458,6 +1489,7 @@ class RecoveryManagerNode(Node):
             RecoveryState.SUCCEEDED,
         }:
             return False
+        self._bc_closing_side_latch.reset()
         self._published_emergency_mode = None
         self._publish_decision(CONTINUE_ACTION_ID, confidence, transition.reason)
         return True
@@ -1482,6 +1514,8 @@ class RecoveryManagerNode(Node):
                 forward_clearance_m=task_forward_clearance,
                 observation_id=scan_observation_id,
             )
+            if not bc_yield_active:
+                self._bc_closing_side_latch.reset()
         control_failure = failure
         if bc_yield_active:
             control_failure = FailurePrediction(

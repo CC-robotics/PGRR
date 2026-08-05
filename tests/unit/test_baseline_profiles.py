@@ -339,6 +339,11 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"bc_closing_side_maximum_range_m": 4.0' in manager
     assert '"bc_closing_side_minimum_beams": 5' in manager
     assert '"bc_closing_side_maximum_angular_speed_radps": 0.20' in manager
+    assert "ObservableClosingSideLatch()" in manager
+    assert "constrain_task_lateral_sides(" in manager
+    assert manager.count("self._bc_closing_side_latch.reset()") >= 3
+    assert "latched_right={int(self._bc_closing_side_latch.right_occupied)}" in manager
+    assert "latched_left={int(self._bc_closing_side_latch.left_occupied)}" in manager
     assert '"emergency_rotation_clearance_m": 0.24' in manager
     assert '"emergency_turn_duration_s": 0.8' in manager
     assert '"emergency_maximum_turn_pulses": 4' in manager

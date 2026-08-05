@@ -67,6 +67,47 @@ class TemporalClosingSideResult:
     rotation_gated: bool
 
 
+@dataclass
+class ObservableClosingSideLatch:
+    """Retain reliable task-side flow evidence for one directional yield.
+
+    A recovery BACKUP changes beam correspondence and can temporarily reduce
+    the five-frame closing count even though the same flow still blocks the
+    corridor. Reliable side observations therefore accumulate by union while
+    the parent directional-yield latch is active. Rotation-gated observations
+    neither add nor remove evidence. The parent latch's independently observed
+    corridor-clear transition is the sole normal release condition.
+    """
+
+    right_occupied: bool = False
+    left_occupied: bool = False
+
+    @property
+    def active(self) -> bool:
+        return self.right_occupied or self.left_occupied
+
+    def reset(self) -> None:
+        self.right_occupied = False
+        self.left_occupied = False
+
+    def update(
+        self,
+        *,
+        yield_active: bool,
+        right_occupied: bool,
+        left_occupied: bool,
+        rotation_gated: bool,
+    ) -> tuple[bool, bool]:
+        """Update and return ``(right, left)`` retained occupancy flags."""
+
+        if not yield_active:
+            self.reset()
+        elif not rotation_gated:
+            self.right_occupied |= right_occupied
+            self.left_occupied |= left_occupied
+        return self.right_occupied, self.left_occupied
+
+
 @dataclass(frozen=True, slots=True)
 class BoundedBackupOption:
     """Closed-loop completion rule for one planning-validated retreat.
@@ -707,18 +748,14 @@ def constrain_temporal_closing_side(
     right_occupied = right_closing_beams >= config.minimum_closing_beams
     left_occupied = left_closing_beams >= config.minimum_closing_beams
 
-    if right_occupied or left_occupied:
-        normal = -math.sin(path_heading_rad), math.cos(path_heading_rad)
-        for action in ACTIONS[:WAIT_ACTION_ID]:
-            endpoint = action.target_pose(pose)
-            assert endpoint is not None
-            lateral_displacement = (endpoint.x - pose.x) * normal[0] + (
-                endpoint.y - pose.y
-            ) * normal[1]
-            toward_right = lateral_displacement <= -minimum_lateral_displacement_m + 1.0e-9
-            toward_left = lateral_displacement >= minimum_lateral_displacement_m - 1.0e-9
-            if (right_occupied and toward_right) or (left_occupied and toward_left):
-                constrained[action.action_id] = False
+    constrained = constrain_task_lateral_sides(
+        constrained,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+        minimum_lateral_displacement_m=minimum_lateral_displacement_m,
+        right_occupied=right_occupied,
+        left_occupied=left_occupied,
+    )
 
     return TemporalClosingSideResult(
         constrained,
@@ -728,6 +765,45 @@ def constrain_temporal_closing_side(
         left_occupied,
         False,
     )
+
+
+def constrain_task_lateral_sides(
+    mask: npt.NDArray[np.bool_],
+    *,
+    pose: Pose2D,
+    path_heading_rad: float,
+    minimum_lateral_displacement_m: float,
+    right_occupied: bool,
+    left_occupied: bool,
+) -> npt.NDArray[np.bool_]:
+    """Intersect subgoals with retained occupancy in the task-path frame.
+
+    Special actions are copied unchanged. In particular, this pure helper
+    cannot remove or introduce WAIT/BACKUP/REPLAN semantics, and it can never
+    re-authorize an action rejected by an earlier planning or LiDAR mask.
+    """
+
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    geometry = (pose.x, pose.y, pose.yaw, path_heading_rad, minimum_lateral_displacement_m)
+    if not all(math.isfinite(value) for value in geometry):
+        raise ValueError("task-lateral side geometry must be finite")
+    if minimum_lateral_displacement_m <= 0.0:
+        raise ValueError("minimum lateral displacement must be positive")
+    if not right_occupied and not left_occupied:
+        return constrained
+
+    normal = -math.sin(path_heading_rad), math.cos(path_heading_rad)
+    for action in ACTIONS[:WAIT_ACTION_ID]:
+        endpoint = action.target_pose(pose)
+        assert endpoint is not None
+        lateral_displacement = (endpoint.x - pose.x) * normal[0] + (endpoint.y - pose.y) * normal[1]
+        toward_right = lateral_displacement <= -minimum_lateral_displacement_m + 1.0e-9
+        toward_left = lateral_displacement >= minimum_lateral_displacement_m - 1.0e-9
+        if (right_occupied and toward_right) or (left_occupied and toward_left):
+            constrained[action.action_id] = False
+    return constrained
 
 
 def constrain_stalled_rejoin(

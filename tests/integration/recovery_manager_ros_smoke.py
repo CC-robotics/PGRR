@@ -97,6 +97,12 @@ def _assert_terminal_publication(
     reason: str,
 ) -> None:
     start = len(driver.decisions)
+    manager._bc_closing_side_latch.update(
+        yield_active=True,
+        right_occupied=True,
+        left_occupied=True,
+        rotation_gated=False,
+    )
     manager._machine.state = current
     manager._published_emergency_mode = EmergencyEscapeMode.BACKUP
     transition = StateTransition(
@@ -107,6 +113,8 @@ def _assert_terminal_publication(
     )
     if not manager._publish_terminal_transition(transition, 1.0):
         raise RuntimeError(f"terminal transition was not published: {transition}")
+    if manager._bc_closing_side_latch.active:
+        raise RuntimeError("terminal transition retained closing-side evidence")
     if manager._published_emergency_mode is not None:
         raise RuntimeError("terminal publication retained stale emergency mode")
 
@@ -272,6 +280,14 @@ def _assert_temporal_closing_side_mask(manager: RecoveryManagerNode) -> None:
     )
     if observed != expected:
         raise RuntimeError(f"unexpected temporal closing-side configuration: {observed}")
+    manager._bc_yield_latch.reset()
+    manager._bc_closing_side_latch.reset()
+    if not manager._bc_yield_latch.update(
+        collision_risk=manager._machine.config.tau_on,
+        forward_clearance_m=0.5,
+        observation_id=100,
+    ):
+        raise RuntimeError("parent directional yield did not activate closing-side latch test")
 
     pose = Pose2D(0.0, 0.0, 0.0)
     path_heading_rad = 0.0
@@ -328,11 +344,33 @@ def _assert_temporal_closing_side_mask(manager: RecoveryManagerNode) -> None:
         "sector_deg=5.0:60.0",
         "delta_m=0.200",
         "maximum_range_m=4.000",
+        "raw_right=1 raw_left=0",
+        "latched_right=1 latched_left=0",
         "pre=",
         "post=",
     ):
         if evidence not in telemetry:
             raise RuntimeError(f"closing-side telemetry omitted {evidence}: {telemetry}")
+
+    low_follow = manager._constrain_bc_temporal_closing_side(
+        ordinary,
+        observation_with_closing(0, 0),
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
+    if low_follow.right_occupied or low_follow.left_occupied:
+        raise RuntimeError(f"low follow-up unexpectedly retained raw evidence: {low_follow}")
+    if low_follow.mask[0] or not low_follow.mask[6]:
+        raise RuntimeError("unilateral closing-side latch lost or masked the wrong side")
+    low_follow_telemetry = manager._bc_temporal_closing_side_telemetry(
+        ordinary,
+        low_follow,
+        angular_speed_radps=0.0,
+    )
+    if "bc_closing_side=clear" not in low_follow_telemetry or (
+        "latched_right=1 latched_left=0" not in low_follow_telemetry
+    ):
+        raise RuntimeError(f"unilateral latch telemetry mismatch: {low_follow_telemetry}")
 
     directional = constrain_directional_yield_motion(
         np.ones(ACTION_COUNT, dtype=np.bool_),
@@ -351,12 +389,22 @@ def _assert_temporal_closing_side_mask(manager: RecoveryManagerNode) -> None:
     if not np.array_equal(both.mask, safe_fallback):
         raise RuntimeError(f"two-sided closing mask mismatch: {both.mask}")
 
-    manager._bc_yield_latch.latched = True
+    both_follow = manager._constrain_bc_temporal_closing_side(
+        directional,
+        observation_with_closing(3, 3),
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
+    if both_follow.right_occupied or both_follow.left_occupied:
+        raise RuntimeError(f"two-sided follow-up unexpectedly met raw threshold: {both_follow}")
+    if not np.array_equal(both_follow.mask, safe_fallback):
+        raise RuntimeError("two-sided closing latch released after BACKUP-like count decay")
+
     manager._machine._consecutive_recoveries = manager._integer(
         "bc_recurrent_escape_after_recoveries"
     )
     recurrent = manager._constrain_bc_recurrent_escape(
-        both.mask,
+        both_follow.mask,
         pose=pose,
         path_heading_rad=path_heading_rad,
     )
@@ -364,13 +412,39 @@ def _assert_temporal_closing_side_mask(manager: RecoveryManagerNode) -> None:
         raise RuntimeError("two-sided closing flow lost the recurrent safe fallback")
 
     gated = manager._constrain_bc_temporal_closing_side(
-        ordinary,
+        directional,
         observation_with_closing(10, 10, 0.201),
         pose=pose,
         path_heading_rad=path_heading_rad,
     )
-    if not gated.rotation_gated or not np.array_equal(gated.mask, ordinary):
-        raise RuntimeError("rotation gate did not preserve the existing action mask")
+    if not gated.rotation_gated or not np.array_equal(gated.mask, safe_fallback):
+        raise RuntimeError("rotation gate set or cleared retained closing-side evidence")
+
+    # BACKUP and emergency transitions cannot clear side evidence while the
+    # independently observed parent yield remains active.
+    if not manager._bc_closing_side_latch.active:
+        raise RuntimeError("closing-side latch was inactive before lifecycle regression")
+    for lifecycle_phase in ("BACKUP", "EMERGENCY_STOP", "RECOVERY"):
+        retained = manager._bc_closing_side_latch.update(
+            yield_active=True,
+            right_occupied=False,
+            left_occupied=False,
+            rotation_gated=False,
+        )
+        if retained != (True, True):
+            raise RuntimeError(f"closing-side latch cleared during {lifecycle_phase}: {retained}")
+
+    active = True
+    for observation_id in (101, 102, 103):
+        active = manager._bc_yield_latch.update(
+            collision_risk=0.0,
+            forward_clearance_m=2.0,
+            observation_id=observation_id,
+        )
+        if not active:
+            manager._bc_closing_side_latch.reset()
+    if active or manager._bc_closing_side_latch.active:
+        raise RuntimeError("closing-side evidence outlived parent directional-yield release")
     manager._bc_yield_latch.reset()
 
 
@@ -422,6 +496,40 @@ def _assert_bc_subgoal_lifecycle(manager: RecoveryManagerNode) -> None:
         manager._active_action = active_action
         manager._action_started_s = action_started_s
         manager._adapter._status = adapter_status
+
+
+def _assert_new_episode_arm_resets_closing_side(manager: RecoveryManagerNode) -> None:
+    armed = manager._armed
+    armed_at_s = manager._armed_at_s
+    movement_observed = manager._movement_observed
+    planner_status = manager._planner_status
+    failure = manager._failure
+    distance_history = tuple(manager._distance_history)
+    angular_history = tuple(manager._angular_history)
+    try:
+        manager._bc_closing_side_latch.update(
+            yield_active=True,
+            right_occupied=True,
+            left_occupied=True,
+            rotation_gated=False,
+        )
+        manager._armed = False
+        manager._movement_observed = True
+        manager._planner_status = PlannerStatus.ACTIVE
+        manager._failure = type(failure)(0.0, 0.0, 0.0, 0.0)
+        manager._try_arm()
+        if not manager._armed or manager._bc_closing_side_latch.active:
+            raise RuntimeError("new episode arming retained closing-side evidence")
+    finally:
+        manager._armed = armed
+        manager._armed_at_s = armed_at_s
+        manager._movement_observed = movement_observed
+        manager._planner_status = planner_status
+        manager._failure = failure
+        manager._distance_history.clear()
+        manager._distance_history.extend(distance_history)
+        manager._angular_history.clear()
+        manager._angular_history.extend(angular_history)
 
 
 def _assert_directional_yield_lifecycle(manager: RecoveryManagerNode) -> None:
@@ -527,6 +635,7 @@ def main() -> int:
         _assert_recurrent_escape_mask(manager)
         _assert_temporal_closing_side_mask(manager)
         _assert_bc_subgoal_lifecycle(manager)
+        _assert_new_episode_arm_resets_closing_side(manager)
         _assert_directional_yield_lifecycle(manager)
         _assert_recurrent_path_envelope(manager)
         nonterminal = StateTransition(
@@ -557,7 +666,8 @@ def main() -> int:
             "PASS recovery manager ROS smoke: "
             f"temporary={temporary}, restored={restored}, decisions={len(driver.decisions)}, "
             "bc_subgoal=bounded, emergency_turn=bounded, directional_yield=observable, "
-            "closing_side=observable, recurrent_escape=planning_safe, recurrent_path=bounded, "
+            "closing_side=latched_observable, recurrent_escape=planning_safe, "
+            "recurrent_path=bounded, "
             "terminal_reasons=preserved"
         )
         return 0
