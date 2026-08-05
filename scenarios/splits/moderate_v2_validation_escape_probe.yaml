@@ -1,0 +1,19 @@
+schema_version: 1
+benchmark_id: moderate_social_navigation_v2_escape_probe
+difficulty: moderate
+manifest_suffix: moderate_v2
+split: validation
+selection_rule: >-
+  Validation-only single-condition probe for the directional-yield escape
+  lifecycle. This manifest is never used for held-out test reporting.
+scenarios:
+- scenario_id: head_on_corridor_low_validation_moderate_v2_r00_s51000
+  family: head_on_corridor
+  density: low
+  map_id: map_empty
+  seed: 51000
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v2/arena/map_empty/head_on_corridor_low_validation_moderate_v2_r00_s51000.json
+  preview: previews/moderate_v2/head_on_corridor_low_validation_moderate_v2_r00_s51000.png
+  sha256: b6a9b9d507eaf843c6e1ee9d4f3c42fb5c881980b50b19bf41de5a1f8503f5a7
