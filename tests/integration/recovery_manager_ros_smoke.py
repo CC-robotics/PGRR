@@ -20,6 +20,7 @@ from ramp_core.action_space import (
 )
 from ramp_core.recovery.safety import EmergencyEscapeMode
 from ramp_core.state_machine import RecoveryState, StateTransition
+from ramp_core.types import PlannerStatus
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from ramp_ros.nodes.recovery_manager_node import RecoveryManagerNode
 from rclpy.action import ActionServer
@@ -176,6 +177,56 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
         raise RuntimeError(f"recurrent escape fallback telemetry mismatch: {fallback_telemetry}")
 
 
+def _assert_bc_subgoal_lifecycle(manager: RecoveryManagerNode) -> None:
+    option = manager._bc_subgoal_option
+    if abs(option.earliest_completion_s - 3.0) > 1.0e-9:
+        raise RuntimeError(
+            f"BC subgoal earliest completion mismatch: {option.earliest_completion_s}"
+        )
+    if abs(option.maximum_duration_s - 6.0) > 1.0e-9:
+        raise RuntimeError(f"BC subgoal hard limit mismatch: {option.maximum_duration_s}")
+    if option.maximum_duration_s >= manager._machine.config.maximum_recovery_duration_s:
+        raise RuntimeError("BC subgoal hard limit does not precede recovery timeout")
+
+    policy_type = manager._policy_type
+    active_action = manager._active_action
+    action_started_s = manager._action_started_s
+    adapter_status = manager._adapter._status
+    try:
+        manager._policy_type = "bc"
+        manager._active_action = 3
+        manager._action_started_s = 10.0
+        manager._adapter._status = PlannerStatus.SUCCEEDED
+        if manager._action_complete(12.999):
+            raise RuntimeError("successful BC subgoal completed before settle plus execution")
+        if not manager._action_complete(13.0):
+            raise RuntimeError("successful BC subgoal did not complete at its earliest boundary")
+        manager._adapter._status = PlannerStatus.ACTIVE
+        if manager._action_complete(15.999):
+            raise RuntimeError("active BC subgoal completed before its hard limit")
+        if not manager._action_complete(16.0):
+            raise RuntimeError("active BC subgoal did not complete at its hard limit")
+
+        # The lifecycle bound applies only to learned subgoals. Preserve the
+        # existing WAIT duration and planner-result completion used by the
+        # heuristic subgoal policy.
+        manager._active_action = WAIT_ACTION_ID
+        manager._action_started_s = 20.0
+        if manager._action_complete(20.499) or not manager._action_complete(20.5):
+            raise RuntimeError("BC subgoal timing changed the WAIT completion boundary")
+        manager._policy_type = "heuristic"
+        manager._active_action = 3
+        manager._action_started_s = 30.0
+        manager._adapter._status = PlannerStatus.SUCCEEDED
+        if not manager._action_complete(30.0):
+            raise RuntimeError("BC subgoal timing changed heuristic planner completion")
+    finally:
+        manager._policy_type = policy_type
+        manager._active_action = active_action
+        manager._action_started_s = action_started_s
+        manager._adapter._status = adapter_status
+
+
 def main() -> int:
     rclpy.init(
         args=[
@@ -216,6 +267,7 @@ def main() -> int:
         if not any(item.has_temporary_goal for item in driver.decisions):
             raise RuntimeError("manager published no temporary-goal recovery decision")
         _assert_recurrent_escape_mask(manager)
+        _assert_bc_subgoal_lifecycle(manager)
         nonterminal = StateTransition(
             previous=RecoveryState.EMERGENCY_STOP,
             current=RecoveryState.NORMAL,
@@ -243,7 +295,7 @@ def main() -> int:
         print(
             "PASS recovery manager ROS smoke: "
             f"temporary={temporary}, restored={restored}, decisions={len(driver.decisions)}, "
-            "recurrent_escape=planning_safe, terminal_reasons=preserved"
+            "bc_subgoal=bounded, recurrent_escape=planning_safe, terminal_reasons=preserved"
         )
         return 0
     finally:

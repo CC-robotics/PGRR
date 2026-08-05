@@ -14,6 +14,7 @@ from ramp_core.action_space import (
 from ramp_core.observations import HumanState
 from ramp_core.recovery.options import (
     BoundedBackupOption,
+    BoundedSubgoalOption,
     ObservableGoalProgressBudget,
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
@@ -104,6 +105,55 @@ def test_bounded_backup_rejects_motion_beyond_mask_validated_segment() -> None:
 def test_bounded_backup_rejects_invalid_configuration(kwargs: dict[str, float]) -> None:
     with pytest.raises(ValueError):
         BoundedBackupOption(**kwargs)
+
+
+def test_bounded_subgoal_requires_settle_plus_execution_before_success() -> None:
+    option = BoundedSubgoalOption()
+    assert option.earliest_completion_s == pytest.approx(3.0)
+    assert not option.is_complete(elapsed_s=2.999, planner_succeeded=True)
+    assert option.is_complete(elapsed_s=3.0, planner_succeeded=True)
+
+
+def test_bounded_subgoal_uses_hard_limit_without_planner_success() -> None:
+    option = BoundedSubgoalOption()
+    assert not option.is_complete(elapsed_s=5.999, planner_succeeded=False)
+    assert option.is_complete(elapsed_s=6.0, planner_succeeded=False)
+    assert option.maximum_duration_s < option.recovery_limit_s
+
+
+def test_legacy_bc_interval_can_only_lengthen_subgoal_lifecycle() -> None:
+    ordinary = BoundedSubgoalOption(legacy_action_interval_s=0.5)
+    extended = BoundedSubgoalOption(
+        legacy_action_interval_s=4.0,
+        maximum_duration_s=6.0,
+    )
+    assert ordinary.earliest_completion_s == pytest.approx(3.0)
+    assert extended.earliest_completion_s == pytest.approx(4.0)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"settle_duration_s": -0.1},
+        {"minimum_execution_duration_s": 0.0},
+        {"legacy_action_interval_s": -0.1},
+        {"maximum_duration_s": 2.99},
+        {"maximum_duration_s": 8.0},
+        {"maximum_duration_s": float("nan")},
+    ],
+)
+def test_bounded_subgoal_rejects_invalid_configuration(kwargs: dict[str, float]) -> None:
+    with pytest.raises(ValueError):
+        BoundedSubgoalOption(**kwargs)
+
+
+@pytest.mark.parametrize("elapsed_s", [-0.1, float("nan"), float("inf")])
+def test_bounded_subgoal_rejects_invalid_elapsed_time(elapsed_s: float) -> None:
+    with pytest.raises(ValueError):
+        BoundedSubgoalOption().is_complete(
+            elapsed_s=elapsed_s,
+            planner_succeeded=False,
+        )
 
 
 def test_goal_progress_budget_ignores_retreat_and_return_to_high_water_mark() -> None:

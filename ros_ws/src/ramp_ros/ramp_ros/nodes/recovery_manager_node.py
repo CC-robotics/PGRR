@@ -50,6 +50,7 @@ from ramp_core.planning.online import (
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
 from ramp_core.recovery.options import (
     BoundedBackupOption,
+    BoundedSubgoalOption,
     ObservableGoalProgressBudget,
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
@@ -162,6 +163,13 @@ class RecoveryManagerNode(Node):
         )
         self._machine = RecoveryStateMachine(state_config)
         self._machine.set_original_goal(self._goal)
+        self._bc_subgoal_option = BoundedSubgoalOption(
+            settle_duration_s=self._float("subgoal_settle_s"),
+            minimum_execution_duration_s=self._float("bc_subgoal_minimum_execution_s"),
+            maximum_duration_s=self._float("bc_subgoal_maximum_duration_s"),
+            recovery_limit_s=self._float("maximum_recovery_duration_s"),
+            legacy_action_interval_s=self._float("bc_action_interval_s"),
+        )
         self._backup_option = BoundedBackupOption(
             minimum_duration_s=self._float("backup_minimum_duration_s"),
             maximum_duration_s=self._float("backup_maximum_duration_s"),
@@ -331,6 +339,8 @@ class RecoveryManagerNode(Node):
             "control_frequency_hz": 10.0,
             "model_lidar_max_m": 6.0,
             "bc_action_interval_s": 0.5,
+            "bc_subgoal_minimum_execution_s": 2.0,
+            "bc_subgoal_maximum_duration_s": 6.0,
             "arming_grace_s": 1.0,
             "startup_failure_arm_s": 4.0,
             "tau_on": 0.65,
@@ -1159,7 +1169,10 @@ class RecoveryManagerNode(Node):
         if self._policy_type == "expert":
             return elapsed >= self._float("expert_replan_interval_s")
         if self._policy_type == "bc":
-            return elapsed >= self._float("bc_action_interval_s")
+            return self._bc_subgoal_option.is_complete(
+                elapsed_s=elapsed,
+                planner_succeeded=self._adapter.get_status() is PlannerStatus.SUCCEEDED,
+            )
         return self._adapter.get_status() is PlannerStatus.SUCCEEDED
 
     def _execute(self, action_id: int, now_s: float) -> Pose2D | None:

@@ -95,6 +95,67 @@ class BoundedBackupOption:
         return current_clearance_m - start_clearance_m >= self.clearance_improvement_m
 
 
+@dataclass(frozen=True, slots=True)
+class BoundedSubgoalOption:
+    """Bound learned temporary-goal execution before policy reconsideration.
+
+    Nav2 goal submission and local replanning consume the initial settle
+    interval.  A learned subgoal must then receive a separate execution
+    interval before a successful planner result may complete the option.  A
+    hard option limit prevents an active or failed planner result from holding
+    recovery until the enclosing state-machine limit.
+
+    ``legacy_action_interval_s`` preserves the former
+    ``bc_action_interval_s`` override as an additional lower bound.  It can
+    lengthen, but never shorten, the settle-plus-execution requirement.
+    """
+
+    settle_duration_s: float = 1.0
+    minimum_execution_duration_s: float = 2.0
+    maximum_duration_s: float = 6.0
+    recovery_limit_s: float = 8.0
+    legacy_action_interval_s: float = 0.5
+
+    def __post_init__(self) -> None:
+        values = (
+            self.settle_duration_s,
+            self.minimum_execution_duration_s,
+            self.maximum_duration_s,
+            self.recovery_limit_s,
+            self.legacy_action_interval_s,
+        )
+        if not all(math.isfinite(value) for value in values):
+            raise ValueError("bounded subgoal durations must be finite")
+        if self.settle_duration_s < 0.0:
+            raise ValueError("subgoal settle duration must be non-negative")
+        if self.minimum_execution_duration_s <= 0.0:
+            raise ValueError("subgoal execution duration must be positive")
+        if self.legacy_action_interval_s < 0.0:
+            raise ValueError("legacy BC action interval must be non-negative")
+        if self.maximum_duration_s < self.earliest_completion_s:
+            raise ValueError("maximum subgoal duration precedes earliest completion")
+        if self.maximum_duration_s >= self.recovery_limit_s:
+            raise ValueError("maximum subgoal duration must precede the recovery limit")
+
+    @property
+    def earliest_completion_s(self) -> float:
+        """First instant at which planner success may complete the option."""
+
+        return max(
+            self.settle_duration_s + self.minimum_execution_duration_s,
+            self.legacy_action_interval_s,
+        )
+
+    def is_complete(self, *, elapsed_s: float, planner_succeeded: bool) -> bool:
+        """Return whether the subgoal may be reconsidered at this instant."""
+
+        if not math.isfinite(elapsed_s) or elapsed_s < 0.0:
+            raise ValueError("elapsed subgoal duration must be finite and non-negative")
+        if elapsed_s < self.earliest_completion_s:
+            return False
+        return planner_succeeded or elapsed_s >= self.maximum_duration_s
+
+
 @dataclass
 class ObservableGoalProgressBudget:
     """Emit a reset pulse only after cumulative progress toward the task goal.

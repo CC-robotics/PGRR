@@ -284,6 +284,15 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_maximum_net_retreat_m"] == 1.4
     assert config["bc_subgoal_retry_budget_decisions"] == 4
     assert config["bc_subgoal_stall_displacement_m"] == 0.08
+    assert config["bc_action_interval_s"] == 0.5
+    assert config["subgoal_settle_s"] == 1.0
+    assert config["bc_subgoal_minimum_execution_s"] == 2.0
+    assert config["bc_subgoal_maximum_duration_s"] == 6.0
+    assert (
+        config["subgoal_settle_s"] + config["bc_subgoal_minimum_execution_s"]
+        < config["bc_subgoal_maximum_duration_s"]
+        < config["maximum_recovery_duration_s"]
+    )
     assert config["bc_rejoin_block_threshold"] == 0.65
     assert '"emergency_rotation_clearance_m": 0.24' in manager
     assert '"collision_latched_stop_clearance_m": 0.85' in manager
@@ -294,6 +303,10 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"backup_maximum_duration_s": 3.0' in manager
     assert '"maximum_recovery_sequence_duration_s": 45.0' in manager
     assert '"bc_recurrent_escape_after_recoveries": 2' in manager
+    assert '"bc_subgoal_minimum_execution_s": 2.0' in manager
+    assert '"bc_subgoal_maximum_duration_s": 6.0' in manager
+    assert "BoundedSubgoalOption(" in manager
+    assert "self._bc_subgoal_option.is_complete(" in manager
     assert "maximum_recovery_sequence_duration_s=self._float(" in manager
     assert "BoundedBackupOption(" in manager
     assert "self._backup_start_clearance_m" in manager

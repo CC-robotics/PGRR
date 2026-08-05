@@ -9,6 +9,11 @@ frames_off: 4
 cooldown_s: 2.0
 minimum_action_hold_s: 0.5
 expert_replan_interval_s: 0.5
+# Retain the historical BC interval as a compatible lower bound. Learned
+# temporary goals use the stricter settle + execution lifecycle below.
+bc_action_interval_s: 0.5
+bc_subgoal_minimum_execution_s: 2.0
+bc_subgoal_maximum_duration_s: 6.0
 expert_wait_budget_decisions: 3
 bc_rejoin_block_threshold: 0.65
 bc_wait_budget_decisions: 3
