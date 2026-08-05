@@ -2,90 +2,88 @@
 
 PGRR is a failure-triggered recovery layer for dynamic social navigation. A
 classical ROS2 navigation stack controls routine PointGoal motion. Learning is
-invoked only near collision risk, freezing, oscillation, deadlock, or planner
-failure, and it chooses an interpretable temporary subgoal or recovery mode
-rather than commanding base velocity continuously.
+invoked only when observable rules indicate collision risk, freezing,
+oscillation, deadlock, or planner failure. The learned policy selects an
+interpretable temporary subgoal or recovery mode; it does not continuously
+replace the local planner or command base velocity.
 
-The repository was developed internally with `ramp_*` package names. PGRR is
-the public project and paper name; see [internal package compatibility](#internal-package-compatibility)
-before integrating it into another ROS workspace.
+The paper title is:
 
-> **Evidence status.** The selected release is the imitation-learning path:
-> privileged rollout expert, behavior cloning, a completed two-round DAgger
-> workflow, and planning/action masking in both labeling and deployment. The
-> second-round candidate was retained as a negative validation result; the
-> selected checkpoint extends the better first-round aggregate with a
-> train-split coverage shard. PPO and the
-> learned detector are not claimed as completed contributions. The locked
-> 64-episode test is complete. The values below are reproduced from the generated
-> [summary CSV](outputs/final/summary.csv) and
-> [statistics JSON](outputs/final/statistics.json).
+> *Planning-Guided Failure-Triggered Recovery via Imitation Learning for
+> Dynamic Social Navigation*
+
+PGRR is introduced in the manuscript as a descriptive project name, not as a
+claim of a unique acronym.
+
+> **Evidence status.** The selected release uses a privileged rollout expert,
+> Uniform BC, two DAgger aggregation rounds, planning/action masking, an
+> observable rule trigger, and an independent safety supervisor. PPO and a
+> learned failure detector are not claimed as completed contributions. Final
+> paper numbers are accepted only from the complete moderate-v4 five-method
+> artifacts under `outputs/moderate/final/`; validation probes and previous
+> evaluations are never copied into the paper.
 
 ## Method
 
-The recovery action set contains 21 robot-relative temporary goals formed from
-three radii and seven bearings, plus `WAIT`, `BACKUP`, `REPLAN`, and `CONTINUE`.
-A planning-derived mask removes occupied, disconnected, occluded, unsafe, or
-otherwise unavailable actions before selection. A hysteretic state machine
-saves the original task goal, executes a bounded recovery option, and rejoins
-the original Nav2 route after progress resumes. An independent stopping layer
-can override both learned and classical commands; it is an empirical safety
-filter, not a formal collision-free guarantee.
+The recovery action set contains 21 robot-relative temporary goals from three
+radii and seven bearings, plus `WAIT`, `BACKUP`, `REPLAN`, and `CONTINUE`. A
+planning-derived mask removes occupied, disconnected, occluded, unsafe, or
+unavailable actions before selection. A hysteretic state machine saves the
+original task goal, executes bounded recovery, and rejoins the original Nav2
+route after progress resumes. A stopping-distance supervisor can override both
+learned and classical commands. It is an empirical safety filter, not a formal
+collision-free guarantee.
 
-During training only, a privileged short-horizon expert rolls out every legal
-candidate using simulator robot/pedestrian state and assigns action costs.
-Behavior cloning learns from these labels, and DAgger adds expert labels on
-states visited by the learned policy. Deployment receives only observable
-LiDAR/history/navigation features.
+During training only, a privileged short-horizon planner rolls out every legal
+candidate using simulator robot/pedestrian state and provides imitation labels.
+Behavior cloning learns those labels, and DAgger adds labels on states visited
+by the learned controller. Deployment uses only LiDAR, path, goal, velocity,
+planner-command, progress, status, and rule-score histories.
 
 ```mermaid
 flowchart LR
-    G[Original PointGoal] --> N[Nav2 DWB nominal planner]
-    N --> X[Goal and command mux]
-    X --> R[Robot and Gazebo world]
-    R --> O[Observable LiDAR, path, velocity and progress history]
-    O --> F[Failure detector and hysteretic state machine]
-    F -->|normal| N
-    F -->|recovery trigger| P[Triggered recovery policy]
-    O --> M[Planning and safety action mask]
-    M --> P
-    P --> A[Temporary subgoal or WAIT / BACKUP / REPLAN / CONTINUE]
-    A --> X
-    X -->|progress restored| G
+    W[Dynamic world and robot] --> O[LiDAR, path and navigation history]
+    O --> F{Persistent failure trigger?}
+    F -->|No| N[Nav2 DWB nominal control]
+    F -->|Yes| P[PGRR policy plus planning mask]
+    P --> G[Temporary goal or recovery mode]
+    G --> M[Goal and command mux]
+    N --> M
+    M --> W
+    M -->|Progress restored| N
 
-    subgraph Training_only
-        T[Privileged simulator truth] --> E[Short-horizon rollout expert]
-        E --> D[Expert HDF5 shards]
-        D --> I[BC and DAgger]
-        I --> P
+    subgraph Training_only[Training only: privileged]
+        T[Simulator state] --> E[Short-horizon planning reference]
+        E --> D[BC plus DAgger data]
+        D --> P
     end
 ```
 
-The paper-quality vector version is available as the
-[system architecture PDF](paper/figures/system_architecture.pdf).
+The vector closed-loop diagram is
+[`paper/figures/system_architecture.pdf`](paper/figures/system_architecture.pdf).
 
-## Supported release profile
+## Environments
 
-The verified runtime is the pinned **Arena ROS2 Humble Gazebo fallback** using
-Jackal, Nav2 DWB, Xvfb, and software rendering. It is not Arena 5.0 and Flatland
-is unavailable in this profile. Exact source commits, image identity, binary
-packages, and local compatibility patches are recorded in
-[the Arena lock](third_party/arena_commits.lock) and the
-[dependency manifest](third_party/dependency_manifest.md).
+The verified online runtime is the pinned Arena ROS2 Humble Gazebo fallback
+with Jackal, Nav2 DWB, Xvfb, and software rendering. The release does not claim
+Flatland, Arena 5, cross-simulator transfer, or hardware validation. Exact
+runtime provenance is in
+[`third_party/arena_commits.lock`](third_party/arena_commits.lock) and
+[`third_party/dependency_manifest.md`](third_party/dependency_manifest.md).
 
-Two Python environments are intentionally kept separate:
+Online and offline environments are deliberately separate:
 
-| Environment | Purpose | Why it is isolated |
-|---|---|---|
-| Arena/ROS2 runtime | Gazebo, Nav2, ROS nodes, online inference and episode execution | Uses Ubuntu 22.04, ROS2 Humble, Python 3.10, and the pinned container/runtime paths. Conda paths can silently mix ROS distributions and ABIs. |
-| `ramp-offline` Conda | Dataset conversion, expert labeling, BC/DAgger training, tests, statistics, figures and paper compilation | Does not import the apt-installed ROS Python environment. Models and data cross the boundary as HDF5, JSON, Parquet, YAML, ONNX, TorchScript, or checkpoints. |
+| Environment | Purpose |
+|---|---|
+| Arena/ROS2 runtime | Gazebo, Nav2, ROS nodes, online inference, and episode execution |
+| `ramp-offline` Conda | Data conversion, expert labeling, BC/DAgger, tests, statistics, figures, and LaTeX |
 
-Never activate Conda while installing or sourcing Arena. Runtime scripts remove
-Conda and foreign ROS variables before launching the Humble container.
+Never install or source Arena from an active Conda environment. Runtime scripts
+remove Conda and foreign ROS variables before starting the pinned Humble stack.
 
 ## Installation and build
 
-Run commands from the checked-out Git root so the repository remains relocatable:
+Run commands from the Git root:
 
 ```bash
 PROJECT_ROOT="$(git rev-parse --show-toplevel)"
@@ -98,38 +96,30 @@ make build
 make test
 ```
 
-- `make preflight` records a non-mutating host report under `docs/` and
-  `outputs/logs/`.
-- `make conda` creates/updates `ramp-offline` from
-  [environment.yml](environment.yml) and records dependency locks.
-- `make arena` discovers or builds the pinned isolated Humble/Gazebo runtime;
-  it does not install ROS into Conda.
-- `make build` installs the local Python packages and builds the three-package
-  ROS2 overlay.
-- `make test` runs Ruff, formatting, mypy, and pytest in the offline environment.
+- `make preflight` writes a non-mutating environment report.
+- `make conda` creates or updates `ramp-offline` and dependency locks.
+- `make arena` discovers or builds the isolated online runtime without Conda.
+- `make build` installs the Python packages and builds the ROS2 overlay.
+- `make test` runs Ruff, formatting, mypy, and pytest.
 
-For offline-only work, the explicit activation helper is
-[`scripts/bootstrap/activate_offline.sh`](scripts/bootstrap/activate_offline.sh).
-For ROS work, use
+Use [`scripts/bootstrap/activate_offline.sh`](scripts/bootstrap/activate_offline.sh)
+for offline work and
 [`scripts/bootstrap/source_runtime.sh`](scripts/bootstrap/source_runtime.sh)
-from a shell without an active Conda environment.
+for ROS work. Do not source both in the same shell.
 
 ## Smoke test
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
 make smoke SEED=0 HEADLESS=1
 ```
 
-The smoke test checks process startup, `/clock`, TF, planar LiDAR, odometry,
-robot spawning, Nav2 goal submission, and bounded cleanup. Goal acceptance in a
-smoke test is not counted as navigation success; algorithm outcomes are produced
-only by the episode runner and logger.
+The smoke test checks bounded startup and cleanup, `/clock`, TF, LiDAR,
+odometry, robot spawning, and Nav2 goal submission. Goal acceptance is not an
+algorithm-success result.
 
-## Scenarios and splits
+## Moderate-v4 benchmark
 
-The deterministic catalog contains eight families:
+The preregistered benchmark contains eight interaction families:
 
 1. head-on corridor;
 2. doorway bottleneck;
@@ -140,237 +130,171 @@ The deterministic catalog contains eight families:
 7. opposite streams;
 8. temporary blockage.
 
-Each family has low, medium, and high density variants in disjoint
-[`train`](scenarios/splits/train.yaml),
-[`validation`](scenarios/splits/validation.yaml), and
-[`test`](scenarios/splits/test.yaml) manifests. Scenario JSON files and preview
-images are generated from the checked-in catalog with explicit seeds:
+Low, medium, and high density contain one, two, and four pedestrians. Train,
+validation, and test use disjoint seed blocks. The held-out
+[`moderate_v4_test.yaml`](scenarios/splits/moderate_v4_test.yaml) manifest has
+five repetitions per family--density cell: 120 conditions per method.
 
-```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
-make scenarios SEED=0
-```
+The publication comparison uses the same 120 conditions for all five methods:
 
-Do not edit test scenarios or hashes after final evaluation is frozen.
+| Runner ID | Paper label | Role |
+|---|---|---|
+| `base` | DWB | Classical planner without recovery subtree |
+| `standard` | Standard | Standard Nav2 recovery behavior |
+| `heuristic` | Heuristic | Rule-triggered deterministic recovery |
+| `bc_uniform` | Uniform BC | Planning-masked behavior cloning |
+| `pgrr` | PGRR | Validation-selected DAgger policy |
+
+The privileged expert is a training and diagnostic planning reference. It is
+not a deployment baseline and no optimality claim is made.
 
 ## Data and training
 
-The principal data path is:
-
 ```text
-Gazebo episode JSONL
-  -> observable/privileged separation and failure labels
+Arena episode JSONL
+  -> observable / privileged field separation
   -> expert-labelled HDF5 shards
-  -> BC or DAgger checkpoint
-  -> ONNX/TorchScript deployment
+  -> Uniform BC and two DAgger rounds
+  -> ONNX / TorchScript deployment
 ```
 
 Representative commands are:
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
-
 make label-expert
 make train-bc
 make train-dagger DAGGER_ITERATION=1
 make train-dagger DAGGER_ITERATION=2
 ```
 
-Inputs and output paths can be overridden through the variables documented by
-`make help`. Dataset manifests record split, scenario, seed, source policy,
-project commit, and source hashes. Five-frame LiDAR stacks are created by the
-dataset loader instead of duplicating frames on disk.
+The selected deployment checkpoint is
+[`checkpoints/dagger/coverage_safety_aligned/best.onnx`](checkpoints/dagger/coverage_safety_aligned/best.onnx).
+Margin weighting is retained as a negative offline ablation, not as a claimed
+gain. PPO is disabled in the selected method.
 
-The frozen learned method is named **Triggered-DAgger** in the paper. Its
-stable release entry point is
-[`checkpoints/final/best.onnx`](checkpoints/final/best.onnx), which links to the
-selected validation checkpoint under `checkpoints/dagger/coverage_safety_aligned`.
-For compatibility with existing launch files and raw logs, its internal
-`source_policy`/runner method is `bc`. Margin weighting is retained as a negative
-ablation, and PPO is disabled in the locked
-[`ei_gazebo.yaml`](configs/final/ei_gazebo.yaml) configuration.
+## Final evaluation
 
-## Locked 64-episode test
-
-The test manifest has 24 scenarios: eight families by three densities. The
-primary comparison runs Base DWB and Triggered-DAgger on all 24 scenarios
-(48 logical episodes). Standard and heuristic recovery run on the eight
-high-density scenarios (16 more), giving **64 logical episodes**. A retry after
-`SIMULATOR_FAILURE` or `INVALID_RESET` is an infrastructure attempt and is not
-silently converted into an additional algorithm episode.
-
-The complete command and resume rules are in
-[REPRODUCIBILITY.md](REPRODUCIBILITY.md). The runner records scenario hashes,
-checkpoint hash, Git commit, worker isolation, outcomes, exclusions, and the
-shared [episode manifest](outputs/final/episode_manifest.parquet).
-
-### Verified final result
-
-| Method and scope | Success | Collision | Timeout |
-|---|---:|---:|---:|
-| DWB, all 24 conditions | 20.8% | 79.2% | 0.0% |
-| PGRR, all 24 conditions | 33.3% | 0.0% | 66.7% |
-| Standard recovery, 8 high-density conditions | 12.5% | 87.5% | 0.0% |
-| Heuristic hierarchy, 8 high-density conditions | 12.5% | 0.0% | 87.5% |
-
-In the 24 paired DWB--PGRR conditions, the collision-rate difference is
--79.2 percentage points (95% paired bootstrap CI [-91.7, -62.5],
-Holm-adjusted exact McNemar `p < 0.001`). The timeout-rate difference is +66.7
-points ([45.8, 83.3], `p < 0.001`). The observed success-rate difference is
-+12.5 points ([0.0, 29.2]) but is not significant after correction
-(`p = 0.750`). PGRR therefore demonstrates a strong empirical
-collision-avoidance effect in this manifest while exposing conservative
-live-lock; it does not establish universal navigation improvement.
-
-The runner executed 67 physical attempts for 64 logical episodes. Two
-`INVALID_RESET` attempts and one `SIMULATOR_FAILURE` attempt are retained in the
-run manifest and excluded from algorithm rates only after successful retries.
-Each family--density cell still has one test seed, so family results are broad
-condition coverage rather than low-variance estimates.
-
-The generated [failure analysis](outputs/final/failure_analysis.md) separates
-human/static contacts from terminal stagnation. A representative successful
-triggered episode is available as
-[telemetry keyframes](outputs/figures/crossing_flow_high_test_s03220_eval_bc_a0_dwb_telemetry_keyframes.png)
-and an [MP4 reconstruction](outputs/videos/crossing_flow_high_test_s03220_eval_bc_a0_dwb_telemetry.mp4).
-These are reconstructed from recorded physical poses and explicitly are not a
-simulator camera feed.
-
-## Statistics, figures, and paper
-
-After every logical episode has one valid algorithm outcome:
+Lock all validation-selected code and configuration before the held-out run.
+Then start the complete five-method test:
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
+make evaluate-flatland \
+  EVALUATION_JOBS=3 \
+  EVALUATION_TIMEOUT_S=240 \
+  MODERATE_ANALYSIS_DIR=outputs/moderate/final
+```
 
+The legacy Make target name is retained for compatibility; it calls the actual
+[`run_experiment.py`](scripts/evaluate/run_experiment.py) runner and the pinned
+runtime profile. It does not call a nonexistent shell wrapper or silently
+switch simulators. The runner refuses overwrite; use its explicit `--resume`
+mode directly only after auditing the retained run manifest.
+
+Once all 600 logical method--episodes have an accepted terminal record:
+
+```bash
 make statistics
 make figures
 make tables
 make paper
 ```
 
-Statistics use paired episodes, bootstrap confidence intervals, McNemar tests
-for paired binary outcomes, Wilcoxon signed-rank tests for continuous outcomes,
-effect sizes, and Holm correction. `SIMULATOR_FAILURE` and `INVALID_RESET` are
-reported separately and excluded only according to the frozen protocol.
+The chain is fail-closed:
 
-The generated paper is [paper/main.pdf](paper/main.pdf). Tables and figures are
-generated from machine-readable results; manuscript claims are traced to files
-in the [claim--evidence matrix](paper/claim_evidence_matrix.md). Do not copy a
-number from a pilot log into the paper or README.
+1. `collect_results.py` verifies the episode and run manifests and retains every
+   terminal outcome;
+2. `summarize_moderate.py` requires identical condition sets for
+   `base standard heuristic bc_uniform pgrr`, with `pgrr` as the main method;
+3. the moderate figure/table generators require exactly 120 conditions per
+   method;
+4. the manuscript imports only `moderate_*` macros, tables, and result figures.
 
-## Result and artifact layout
+`COLLISION`, `TIMEOUT`, and `PLANNER_FAILURE` remain separate algorithm
+outcomes. `SIMULATOR_FAILURE` and `INVALID_RESET` remain counted in the
+artifacts and are excluded only according to the declared protocol.
 
-The authoritative final values are generated, not manually transcribed:
+## Reproduce the paper without simulation
 
-```text
-configs/final/ei_gazebo.yaml             locked experiment definition
-checkpoints/dagger/coverage_safety_aligned/
-checkpoints/final/                         stable links to the frozen checkpoint
-outputs/final/episode_manifest.parquet   shared logical-episode manifest
-outputs/final/run_manifest.json          commit, hashes, retries and completion
-outputs/final/results.parquet            episode-level metrics
-outputs/final/summary.csv                report-ready descriptive summary
-outputs/final/statistics.json            paired tests, CIs and exclusions
-outputs/final/failure_analysis.md        retained failure taxonomy and examples
-outputs/final/artifact_manifest.json      artifact hashes and provenance
-outputs/figures/                          generated analysis figures
-outputs/tables/                           generated LaTeX tables
-paper/generated/                          tables consumed by the manuscript
-paper/main.pdf                            compiled anonymous manuscript
+After the completed run is present:
+
+```bash
+scripts/reproduce_paper.sh
 ```
 
-Use the [summary CSV](outputs/final/summary.csv) for final numerical results and
-the [statistics JSON](outputs/final/statistics.json) for inferential claims. If
-either file is absent, the final evaluation is incomplete; pilot CSVs are not a
-replacement.
+This command never launches Arena. It recollects the locked raw streams,
+recomputes complete-condition summaries and paired statistics, regenerates the
+moderate figures/tables in both publication directories, compiles the anonymous
+IEEEtran paper, and writes a checksummed artifact manifest.
 
-## What has been verified
+Publication figures follow a restrained Robot/Embodied closed-loop style:
+white background, 2D vector graphics, three functional color groups at most,
+shape/hatch redundancy, and double-column-readable typography. Telemetry media
+are explicitly labelled reconstructions; simulator screenshots must come from
+an actual captured run and are never synthesized by the paper scripts.
 
-- The pinned Humble/Gazebo runtime starts headlessly and exposes clock, TF,
-  LiDAR, odometry, Jackal, and Nav2 goal interfaces.
-- Train/validation/test scenario manifests are disjoint and SHA-locked.
-- Rule detection, the recovery state machine, offline/online action masking,
-  privileged expert, BC, and two DAgger aggregation rounds have executable code
-  and regression tests.
-- Selected checkpoints are exported to PyTorch, TorchScript, and ONNX; masked
-  deployment rejects invalid actions by construction while a legal fallback
-  remains.
-- The locked 64-episode Gazebo evaluation is complete. PGRR executes temporary
-  subgoals and rejoins the original goal in successful triggered runs, eliminates
-  observed terminal contacts in the primary manifest, and also produces many
-  timeouts; both sides of that trade-off are retained.
-- Figures, LaTeX tables, bibliography, and the IEEEtran manuscript compile from
-  repository artifacts.
+## Authoritative artifact layout
 
-Current evidence and unresolved gates are maintained in
-[CURRENT_STATUS.md](CURRENT_STATUS.md), while design changes and rejected ideas
-are recorded in [DECISIONS.md](DECISIONS.md).
+```text
+configs/experiments/scenario_catalog_moderate_v4.yaml
+configs/planner/baselines.yaml
+scenarios/splits/moderate_v4_test.yaml
+checkpoints/bc/uniform_scenario/best.onnx
+checkpoints/dagger/coverage_safety_aligned/best.onnx
+outputs/moderate/final/episode_manifest.parquet
+outputs/moderate/final/run_manifest.json
+outputs/moderate/final/results.parquet
+outputs/moderate/final/summary.csv
+outputs/moderate/final/pairwise_statistics.json
+outputs/moderate/final/calibration_report.json
+outputs/moderate/final/failure_analysis.md
+outputs/moderate/final/artifact_manifest.json
+outputs/figures/moderate_*.pdf
+outputs/tables/moderate_*.tex
+paper/generated/moderate_*.tex
+paper/figures/moderate_*.pdf
+paper/main.pdf
+```
+
+If any required moderate artifact is absent or incomplete, `make paper` fails;
+old final tables and pilot CSVs are not a fallback. Manuscript claims are mapped
+to evidence in
+[`paper/claim_evidence_matrix.md`](paper/claim_evidence_matrix.md).
 
 ## Limitations
 
-- The verified platform is the Arena Humble Gazebo fallback, not Flatland,
-  Arena 5.0, or hardware.
-- Pedestrians in the fallback are LiDAR-visible, contactless simulation actors;
-  they do not reproduce the full dynamics and intent of real crowds.
-- The method assumes a known 2D map, planar LiDAR, and simulation pose-derived
-  localization.
-- The privileged expert uses simulator truth and short-horizon motion prediction
-  during training; the discrete action set cannot express arbitrary maneuvers.
-- The selected offline labeler and Heuristic baseline interpret the 180-bin scan
-  with a legacy 270-degree calibration even though the recorded sensor spans
-  360 degrees. The online PGRR mask uses correct scan metadata; this locked
-  mismatch is disclosed in the paper and was not repaired after test inspection.
-- The safety supervisor is empirical and provides no formal collision guarantee.
-- Recurrent flows, blind corners, and narrow bottlenecks can still produce
-  collisions, timeouts, or conservative stagnation.
-- PPO, the learned multi-task detector, broad Gazebo transfer, and real-robot
-  validation are not completed claims in this release.
-- Final effectiveness must be judged from the locked 64-episode artifacts, not
-  from development pilots or individual videos.
-
-## Internal package compatibility
-
-The public rename deliberately does not break import paths, ROS package names,
-recorded topics, checkpoints, or teaching material:
-
-| Public concept | Retained internal identifier |
-|---|---|
-| PGRR core algorithms | `ramp_core` |
-| PGRR learning code | `ramp_ml` |
-| ROS integration | `ramp_ros` |
-| ROS messages/services | `ramp_msgs` |
-| Bringup | `ramp_bringup` |
-| Offline Conda environment | `ramp-offline` |
-| Runtime variables and raw metadata | `RAMP_*` / `ramp_*` |
-
-These identifiers are compatibility interfaces, not a second method name. New
-documentation and paper text should use PGRR; code consuming the release should
-continue importing `ramp_core` and `ramp_ml`.
+- Known 2D maps, planar LiDAR, and simulation localization are assumed.
+- Deterministic actors enable paired replay but do not represent the full
+  dynamics, intent, or social norms of real pedestrians.
+- The finite action set, rule trigger, and empirical supervisor provide no
+  formal collision-avoidance guarantee.
+- Closed-loop outcomes combine the detector, mask, policy, Nav2, and supervisor;
+  they do not identify a causal contribution for one component.
+- PPO, learned failure prediction, cross-simulator transfer, and hardware tests
+  are not completed claims.
 
 ## Repository map
 
 ```text
-configs/       platform, planner, detector, expert, training and final configs
+configs/       platform, planner, failure, training, and experiment definitions
 packages/      ROS-independent ramp_core and ramp_ml Python packages
-ros_ws/src/    ramp_msgs, ramp_ros and ramp_bringup ROS2 packages
-scenarios/     generated scenarios, previews, manifests and split locks
-data/          raw episodes, HDF5 shards and provenance manifests
-checkpoints/   BC and DAgger models and training metadata
-scripts/       bootstrap, Arena, data, training, evaluation and paper commands
-outputs/       pilot/final results, figures, tables, logs and videos
-paper/         IEEEtran manuscript, verified references and generated content
-tests/         unit, integration and deterministic regression tests
+ros_ws/src/    ramp_msgs, ramp_ros, and ramp_bringup
+scenarios/     generated scenarios, previews, and split locks
+data/          raw episodes, HDF5 shards, and provenance manifests
+checkpoints/   BC and DAgger models and metadata
+scripts/       bootstrap, Arena, data, training, evaluation, and paper commands
+outputs/       validation/final results, figures, tables, logs, and videos
+paper/         IEEEtran manuscript, verified references, and generated artifacts
+tests/         unit, integration, and deterministic regression tests
 ```
+
+The retained `ramp_*` package, environment, and metadata identifiers are stable
+compatibility interfaces. New documentation and paper prose use PGRR.
 
 ## Citation and license
 
-Citation metadata are provided in [CITATION.cff](CITATION.cff). The manuscript
-is anonymous and has no fabricated venue or DOI; replace the citation with the
-archival record when one exists. Verified related-work records are in
+Citation metadata are in [`CITATION.cff`](CITATION.cff). The paper is anonymous
+and contains no fabricated venue or DOI; update the citation only after an
+archival record exists. Verified references are in
 [`paper/references.bib`](paper/references.bib).
 
 The software is distributed under the [BSD 3-Clause License](LICENSE). External

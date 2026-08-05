@@ -1,113 +1,102 @@
 \subsection{Closed-Loop Navigation Outcomes}
-Table~\ref{tab:main-results} reports every retained algorithm outcome.  Across
-the \PGRRMainPairCount{} matched family--density conditions, Base DWB reaches
-\PGRRBaseSuccessRate{} of goals and collides in \PGRRBaseCollisionRate{};
-PGRR reaches \PGRRSuccessRate{} and records no collision termination.  Its mean SPL is
-\PGRRMeanSPL{} versus \PGRRBaseMeanSPL{} for Base.  Figure~\ref{fig:outcomes-density}
-retains the density and family structure that a pooled rate can hide.
+Table~\ref{tab:moderate-main-results} reports all retained terminal outcomes for
+the complete five-method protocol.  Of \ModerateEpisodeCount{} logical
+method--episodes, \ModerateValidEpisodeCount{} enter algorithm metrics and
+\ModerateExcludedEpisodeCount{} are retained as simulator/reset exclusions.
+Base DWB reaches \ModerateBaseSuccessRate{} of goals, collides in
+\ModerateBaseCollisionRate{}, and times out in \ModerateBaseTimeoutRate{} of
+its valid episodes.  PGRR reaches \ModeratePGRRSuccessRate{}, collides in
+\ModeratePGRRCollisionRate{}, and times out in \ModeratePGRRTimeoutRate{}.
 
-\input{generated/main_results.tex}
+\input{generated/moderate_main_results.tex}
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{final_outcomes_by_density.pdf}
-  \caption{Goal completion and collision endpoints.  Panel (a) reports goals
-  reached out of three densities for each family.  Panel (b) reports each
-  endpoint separately with Wilson 95\% intervals ($n=8$ per point); the two
-  rates need not sum to one because horizon terminations remain possible.}
-  \label{fig:outcomes-density}
-\end{figure}
-
-The dominant paired effect is the collision reduction,
-\PGRRCollisionDifference{} [\PGRRCollisionCILow{},
-\PGRRCollisionCIHigh{}] ($p_{\mathrm{Holm}}\PGRRCollisionHolmP$).  The success
-difference is \PGRRSuccessDifference{} [\PGRRSuccessCILow{},
-\PGRRSuccessCIHigh{}] and is not statistically resolved
-($p_{\mathrm{Holm}}=\PGRRSuccessHolmP$).  Terminal non-success shifts from
-contact to horizon termination: the timeout difference is
-\PGRRTimeoutDifference{} [\PGRRTimeoutCILow{}, \PGRRTimeoutCIHigh{}]
-($p_{\mathrm{Holm}}\PGRRTimeoutHolmP$).  Thus, this operating point provides a
-statistically supported collision reduction, but not a supported improvement in
-completion.  Table~\ref{tab:statistical-results} reports all paired effects and
-continuous tests with multiplicity correction.
-
-\input{generated/statistical_results.tex}
-
-\subsection{Safety, Efficiency, and Intervention}
-Mean minimum human-centre distance is \PGRRBaseMinHumanDistance{} for Base and
-\PGRRMinHumanDistance{} for PGRR.  Their paired difference is
-\PGRRMinHumanDistanceDifference{} [\PGRRMinHumanDistanceCILow{},
-\PGRRMinHumanDistanceCIHigh{}] with
-$p_{\mathrm{Holm}}=\PGRRMinHumanDistanceHolmP$.  Among episodes where both
-methods reach the goal, the mean PGRR-minus-Base navigation-time difference is
-\PGRRSuccessfulTimeDifference{} [\PGRRSuccessfulTimeCILow{},
-\PGRRSuccessfulTimeCIHigh{}] ($p_{\mathrm{Holm}}=\PGRRSuccessfulTimeHolmP$).
-The raw successful-run means are \PGRRBaseSuccessfulTime{} and
-\PGRRSuccessfulTime{}.  Figure~\ref{fig:safety-efficiency} compares all four
-methods on their common high-density subset, while
-Table~\ref{tab:recovery-metrics} shows the resulting clearance--time trade-off,
-emergency interventions, recovery triggers, and rejoin success.  Neither minimum
-human distance nor discomfort time differs after Holm correction.  PGRR invokes
-more emergency stops and spends more time under recovery control, consistent
-with the hierarchy being active rather than merely reproducing nominal DWB.
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{final_safety_efficiency.pdf}
-  \caption{Safety--efficiency view on the common eight-condition high-density
-  subset.  Marker shape encodes terminal outcome, keeping completion status and
-  episode duration visible alongside geometric clearance.}
-  \label{fig:safety-efficiency}
-\end{figure}
-
-\input{generated/recovery_metrics.tex}
-
-\subsection{Recovery Dynamics and Run Evidence}
-Figure~\ref{fig:recovery-timeline} aligns failure score, goal progress, recovery
-state, and selected actions for a representative final episode chosen by a
-deterministic artifact rule.  Figure~\ref{fig:runtime-sequence} reconstructs
-three instants from that episode's 10-Hz telemetry: robot and pedestrian poses,
-the global path, and recovery state.  It is explicitly a telemetry
-reconstruction rather than a simulator camera image.  Together they verify
-that the policy intervenes transiently and that the original goal is restored;
-they are mechanism evidence, not additional trials.
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{final_recovery_timeline.pdf}
-  \caption{Recorded failure score, goal distance, and recovery state for a
-  representative final episode.  All event times come from the raw JSONL stream.}
-  \label{fig:recovery-timeline}
-\end{figure}
+Figure~\ref{fig:moderate-outcomes-density} preserves each terminal category and
+shows goal-reaching uncertainty by density.  Table~\ref{tab:moderate-density-results}
+provides the corresponding exact percentages.  Timeout and planner failure
+remain explicit in both artifacts, so a lower contact rate cannot be
+misinterpreted as successful recovery.
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=0.98\textwidth]{runtime_sequence.pdf}
-  \caption{Telemetry reconstruction at episode start, first recovery
-  intervention, and termination.  Circles are recorded physical pedestrian
-  centres; the robot pose, path, action, and state are taken from the same raw
-  stream.}
-  \label{fig:runtime-sequence}
+  \includegraphics[width=0.96\textwidth]{moderate_outcomes_and_density.pdf}
+  \caption{Complete moderate-v4 outcomes.  (a) Stacked bars retain goal,
+  collision, timeout, and planner-failure terminations.  (b) Goal-reaching
+  rates by density include Wilson 95\% confidence intervals.  All methods use
+  identical condition keys.}
+  \label{fig:moderate-outcomes-density}
+\end{figure*}
+
+\input{generated/moderate_density_results.tex}
+
+\subsection{Paired Effects Against Four Baselines}
+On the \ModerateBasePGRRValidPairCount{} valid Base--PGRR pairs, the PGRR-minus-DWB
+goal-reaching difference is \ModeratePGRRSuccessDifference{}
+($p_{\mathrm{Holm}}\ModeratePGRRSuccessDifferenceHolmP$), the collision
+difference is \ModeratePGRRCollisionDifference{}
+($p_{\mathrm{Holm}}\ModeratePGRRCollisionDifferenceHolmP$), and the timeout
+difference is \ModeratePGRRTimeoutDifference{}
+($p_{\mathrm{Holm}}\ModeratePGRRTimeoutDifferenceHolmP$).  These endpoints are
+interpreted jointly: goal reaching measures task completion, while collision
+and timeout describe distinct failure modes.
+
+Table~\ref{tab:moderate-pairwise-results} extends the same paired analysis to
+Standard, Heuristic, and Uniform BC and reports raw and globally Holm-adjusted
+tests, confidence intervals, and effect sizes.  Figure~\ref{fig:moderate-paired-effects}
+visualizes the three binary endpoint differences without selecting a favorable
+scenario or seed after evaluation.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.96\textwidth]{moderate_paired_effects.pdf}
+  \caption{Paired PGRR-minus-baseline endpoint differences on the complete
+  manifest.  Points are mean paired differences and bars are 95\% bootstrap
+  intervals; positive is favorable only for goal reaching.}
+  \label{fig:moderate-paired-effects}
+\end{figure*}
+
+\input{generated/moderate_pairwise_statistics.tex}
+
+\subsection{Family Structure, Safety, and Intervention}
+The family matrix in Figure~\ref{fig:moderate-family-success} reports exact
+goal-reaching counts rather than selecting representative successes.  It shows
+whether an aggregate effect is concentrated in one interaction geometry or is
+shared across head-on, bottleneck, crossing, corner, blocking, overtaking,
+opposite-stream, and temporary-blockage conditions.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.90\textwidth]{moderate_family_success.pdf}
+  \caption{Goal-reaching episodes by interaction family, pooled only across
+  the three declared densities and five held-out repetitions.  Each cell gives
+  goals over valid episodes.}
+  \label{fig:moderate-family-success}
+\end{figure*}
+
+Table~\ref{tab:moderate-recovery-results} reports trigger frequency, recovery
+success, recovery duration, intervention ratio, and emergency stops for every
+method.  Undefined recovery rates for methods or episodes with no trigger are
+left undefined rather than imputed as zero.  Figure~\ref{fig:moderate-safety-efficiency}
+places median minimum human distance against successful-run navigation time;
+its two axes are reported alongside, not substituted for, terminal outcomes.
+
+\input{generated/moderate_recovery_metrics.tex}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.88\textwidth]{moderate_safety_efficiency.pdf}
+  \caption{Safety--efficiency view for all five methods.  Horizontal values
+  use successful episodes; vertical values use every valid episode.  Error
+  bars are 95\% percentile-bootstrap intervals.}
+  \label{fig:moderate-safety-efficiency}
 \end{figure*}
 
 \subsection{Imitation and Mask Ablations}
-Table~\ref{tab:offline-ablation} compares Uniform BC, Margin-Weighted BC, and
-DAgger on the same 399 scenario-disjoint validation states.  In this dataset,
-margin weighting does not change the reported decision metrics and is therefore
-not part of the selected method.  DAgger reduces expert-cost regret and improves
-top-$k$ agreement.  Disabling the mask produces many invalid proposals, so the
-no-mask rows are an offline diagnostic and were never executed on the robot.
-These results support distribution aggregation and mask enforcement, but they do
-not isolate the online safety supervisor from the learned policy.
+The separate offline ablation in Table~\ref{tab:offline-ablation} compares
+Uniform BC, margin-weighted BC, and the selected DAgger checkpoint on the same
+scenario-disjoint validation states.  Margin weighting is retained as a
+negative result rather than a selected contribution.  The no-mask rows are
+counterfactual diagnostics and are not executed in simulation.  This ablation
+tests expert agreement and action validity; the complete five-method closed-loop
+evaluation above remains the evidence for navigation performance.
 
 \input{generated/offline_ablation.tex}
-
-\subsection{Interaction-Condition Analysis}
-PGRR completes every crossing-flow and group-blocking condition and two of three
-temporary-blockage conditions.  The remaining horizon-limited runs cluster in
-head-on, doorway, blind-corner, opposite-stream, and overtaking interactions.
-The generated failure taxonomy separates nine terminally stationary runs from
-seven runs that retain short-window progress, including every blind-corner case.
-This split points to two distinct extensions---deadlock resolution and
-horizon-aware progress reasoning---without attributing either behavior to a
-specific action unavailable in the aggregate result table.

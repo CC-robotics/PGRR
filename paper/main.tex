@@ -9,9 +9,9 @@
 \usepackage{url}
 
 \graphicspath{{figures/}}
-\input{generated/result_macros.tex}
+\input{generated/moderate_result_macros.tex}
 
-\title{PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin\\
+\title{Planning-Guided Failure-Triggered Recovery via Imitation Learning\\
 for Dynamic Social Navigation}
 
 \author{\IEEEauthorblockN{Anonymous Authors}}
@@ -21,27 +21,24 @@ for Dynamic Social Navigation}
 
 \begin{abstract}
 Classical navigation is reliable in routine mapped environments yet remains
-brittle under reciprocal pedestrian interactions.  We introduce PGRR, a
-failure-triggered recovery layer that preserves Nav2 DWB for nominal navigation
-and invokes a learned policy only when observable risk or progress rules persist.
-Rather than commanding velocity, the policy selects among 21 temporary subgoals
-and four interpretable recovery modes.  A planning mask rejects infeasible
-decisions, and an independent stopping-distance supervisor may override motion.
-A privileged
+brittle under reciprocal pedestrian interactions.  We present
+planning-guided failure-triggered recovery and rejoin (PGRR), a layer that
+preserves Nav2 DWB for nominal navigation and invokes a learned policy only
+when observable risk or progress rules persist.  Rather than commanding
+velocity, the policy selects among 21 temporary subgoals and four interpretable
+recovery modes.  A planning mask rejects infeasible decisions, and an
+independent stopping-distance supervisor may override motion.  A privileged
 short-horizon planner supplies recovery demonstrations for behavior cloning and
-DAgger; deployment uses only LiDAR and navigation history.  Our locked Gazebo
-evaluation comprises \PGRRTotalEpisodeCount{} episodes across eight interaction
-families and three densities.  On \PGRRMainPairCount{} matched Base--PGRR
-conditions, PGRR records no collision termination, compared with
-\PGRRBaseCollisionRate{} for Base, a paired difference of
-\PGRRCollisionDifference{} (95\% bootstrap interval
-[\PGRRCollisionCILow{}, \PGRRCollisionCIHigh{}], Holm-adjusted
-$p_{\mathrm{Holm}}\PGRRCollisionHolmP$).  Goal success is \PGRRSuccessRate{} versus
-\PGRRBaseSuccessRate{} ($p_{\mathrm{Holm}}=\PGRRSuccessHolmP$).  On held-out
-recovery states, DAgger raises top-1 expert agreement from 88.5\% to 92.2\% and
-reduces expert-cost regret from 0.271 to 0.031.  These results demonstrate an
-auditable route to contact-averse, interpretable recovery while identifying
-persistent reciprocal blockages as the principal remaining challenge.
+two rounds of DAgger; deployment uses only LiDAR and navigation history.  The
+held-out moderate protocol evaluates \ModerateMethodCount{} methods on the same
+\ModeratePairCount{} conditions each (\ModerateEpisodeCount{} method--episodes).
+PGRR reaches \ModeratePGRRSuccessRate{} of goals versus
+\ModerateBaseSuccessRate{} for DWB, with paired PGRR-minus-DWB goal, collision,
+and timeout differences of \ModeratePGRRSuccessDifference{},
+\ModeratePGRRCollisionDifference{}, and \ModeratePGRRTimeoutDifference{},
+respectively.  Reporting all terminal outcomes separately exposes both recovery
+benefits and conservative failure modes rather than collapsing them into a
+single safety score.
 \end{abstract}
 
 \section{Introduction}
@@ -50,9 +47,10 @@ persistent reciprocal blockages as the principal remaining challenge.
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.96\textwidth]{system_architecture.pdf}
-  \caption{PGRR architecture.  Privileged simulator state and expert rollouts
-  are confined to training (dashed region); deployment observes LiDAR and
-  navigation history.  Nav2 retains nominal and temporary-goal execution.}
+  \caption{Observable closed-loop PGRR architecture.  Privileged simulator
+  state and expert rollouts are confined to training (dashed region);
+  deployment closes the sensing--planning--execution loop with LiDAR and
+  navigation history while Nav2 retains nominal and temporary-goal execution.}
   \label{fig:architecture}
 \end{figure*}
 
@@ -74,15 +72,6 @@ persistent reciprocal blockages as the principal remaining challenge.
 
 \section{Experimental Setup}
 \input{sections/experimental_setup.tex}
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.98\textwidth]{final_scenario_montage.pdf}
-  \caption{The eight locked test families.  Each panel is generated from its
-  checked-in scenario definition and shows the static layout, robot start and
-  goal, reference route, and initial pedestrian motion.}
-  \label{fig:scenarios}
-\end{figure*}
 
 \section{Results and Analysis}
 \input{sections/results.tex}

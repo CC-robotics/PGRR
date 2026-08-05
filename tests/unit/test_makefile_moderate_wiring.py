@@ -33,3 +33,30 @@ def test_moderate_targets_forward_expected_condition_count_override() -> None:
         command = _dry_run(target, expected_conditions=72)
         assert '--expected-condition-count "72"' in command
         assert '--expected-condition-count "120"' not in command
+
+
+def test_final_runner_uses_real_python_entrypoint_and_five_methods() -> None:
+    command = _dry_run("evaluate-flatland")
+    assert "scripts/evaluate/run_experiment.py" in command
+    assert "scripts/evaluate/run_experiment.sh" not in command
+    assert '--split-manifest "scenarios/splits/moderate_v4_test.yaml"' in command
+    assert "--methods base standard heuristic bc_uniform pgrr" in command
+    assert '--output-dir "outputs/moderate/final"' in command
+
+
+def test_paper_target_orders_complete_moderate_pipeline() -> None:
+    command = _dry_run("paper")
+    stages = (
+        "scripts/evaluate/collect_results.py",
+        "scripts/evaluate/summarize_moderate.py",
+        "scripts/paper/make_moderate_figures.py",
+        "scripts/paper/make_method_figures.py",
+        "scripts/paper/make_moderate_tables.py",
+        "scripts/paper/build_paper.sh",
+    )
+    offsets = [command.index(stage) for stage in stages]
+    assert offsets == sorted(offsets)
+    assert "--methods base standard heuristic bc_uniform pgrr" in command
+    assert '--main-method "pgrr"' in command
+    assert "scripts/paper/make_figures.py" not in command
+    assert "scripts/paper/make_tables.py" not in command

@@ -21,14 +21,17 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 
-DEFAULT_CONFIG = Path("configs/final/ei_gazebo.yaml")
+DEFAULT_CONFIG = Path("configs/experiments/scenario_catalog_moderate_v4.yaml")
+DEFAULT_BASELINE_CONFIG = Path("configs/planner/baselines.yaml")
+DEFAULT_UNIFORM_CHECKPOINT = Path("checkpoints/bc/uniform_scenario/best.onnx")
 DEFAULT_CHECKPOINT = Path("checkpoints/dagger/coverage_safety_aligned/best.onnx")
-DEFAULT_RESULTS = Path("outputs/final/results.parquet")
-DEFAULT_SUMMARY = Path("outputs/final/summary.csv")
-DEFAULT_STATISTICS = Path("outputs/final/statistics.json")
-DEFAULT_FAILURE_ANALYSIS = Path("outputs/final/failure_analysis.md")
-DEFAULT_EPISODE_MANIFEST = Path("outputs/final/episode_manifest.parquet")
-DEFAULT_RUN_MANIFEST = Path("outputs/final/run_manifest.json")
+DEFAULT_RESULTS = Path("outputs/moderate/final/results.parquet")
+DEFAULT_SUMMARY = Path("outputs/moderate/final/summary.csv")
+DEFAULT_STATISTICS = Path("outputs/moderate/final/pairwise_statistics.json")
+DEFAULT_CALIBRATION_REPORT = Path("outputs/moderate/final/calibration_report.json")
+DEFAULT_FAILURE_ANALYSIS = Path("outputs/moderate/final/failure_analysis.md")
+DEFAULT_EPISODE_MANIFEST = Path("outputs/moderate/final/episode_manifest.parquet")
+DEFAULT_RUN_MANIFEST = Path("outputs/moderate/final/run_manifest.json")
 DEFAULT_OFFLINE_ABLATION_CSV = Path("outputs/final/offline_policy_ablation.csv")
 DEFAULT_OFFLINE_ABLATION_JSON = Path("outputs/final/offline_policy_ablation.json")
 DEFAULT_FIGURES_DIR = Path("paper/figures")
@@ -44,28 +47,27 @@ DEFAULT_ENVIRONMENT_LOCK = Path("environment.lock.yml")
 DEFAULT_REQUIREMENTS_LOCK = Path("requirements-offline.lock.txt")
 DEFAULT_ARENA_LOCK = Path("third_party/arena_commits.lock")
 DEFAULT_DEPENDENCY_MANIFEST = Path("third_party/dependency_manifest.md")
-DEFAULT_TEST_SPLIT = Path("scenarios/splits/test.yaml")
+DEFAULT_TEST_SPLIT = Path("scenarios/splits/moderate_v4_test.yaml")
 DEFAULT_FAILURE_CONFIG = Path("configs/failure/rules.yaml")
 DEFAULT_STATE_MACHINE_CONFIG = Path("configs/failure/recovery_state_machine.yaml")
 DEFAULT_ACTION_CONFIG = Path("configs/planner/recovery_actions.yaml")
-DEFAULT_OUTPUT = Path("outputs/final/artifact_manifest.json")
+DEFAULT_OUTPUT = Path("outputs/moderate/final/artifact_manifest.json")
 
 EXPECTED_FIGURES = (
     "system_architecture.pdf",
     "action_space_expert.pdf",
-    "final_scenario_montage.pdf",
-    "final_outcomes_by_density.pdf",
-    "final_safety_efficiency.pdf",
-    "final_recovery_timeline.pdf",
-    "runtime_sequence.pdf",
+    "moderate_outcomes_and_density.pdf",
+    "moderate_family_success.pdf",
+    "moderate_paired_effects.pdf",
+    "moderate_safety_efficiency.pdf",
 )
 EXPECTED_TABLES = (
-    "main_results.tex",
-    "density_results.tex",
-    "recovery_metrics.tex",
-    "statistical_results.tex",
     "offline_ablation.tex",
-    "result_macros.tex",
+    "moderate_main_results.tex",
+    "moderate_density_results.tex",
+    "moderate_recovery_metrics.tex",
+    "moderate_pairwise_statistics.tex",
+    "moderate_result_macros.tex",
 )
 
 
@@ -141,10 +143,13 @@ def build_manifest(
     project_root: Path,
     *,
     config_path: Path = DEFAULT_CONFIG,
+    baseline_config_path: Path = DEFAULT_BASELINE_CONFIG,
+    uniform_checkpoint_path: Path = DEFAULT_UNIFORM_CHECKPOINT,
     checkpoint_path: Path = DEFAULT_CHECKPOINT,
     results_path: Path = DEFAULT_RESULTS,
     summary_path: Path = DEFAULT_SUMMARY,
     statistics_path: Path = DEFAULT_STATISTICS,
+    calibration_report_path: Path = DEFAULT_CALIBRATION_REPORT,
     failure_analysis_path: Path = DEFAULT_FAILURE_ANALYSIS,
     episode_manifest_path: Path = DEFAULT_EPISODE_MANIFEST,
     run_manifest_path: Path = DEFAULT_RUN_MANIFEST,
@@ -162,12 +167,19 @@ def build_manifest(
     root = project_root.resolve()
     singleton_specs = (
         ("final_config", config_path, "final configuration"),
+        ("final_config", baseline_config_path, "baseline configuration"),
+        ("checkpoint", uniform_checkpoint_path, "Uniform BC checkpoint"),
         ("checkpoint", checkpoint_path, "selected checkpoint"),
         ("episode_manifest", episode_manifest_path, "episode manifest"),
         ("run_manifest", run_manifest_path, "run manifest"),
         ("results", results_path, "episode results"),
         ("summary", summary_path, "result summary"),
         ("statistics", statistics_path, "statistics report"),
+        (
+            "calibration_report",
+            calibration_report_path,
+            "moderate calibration report",
+        ),
         ("failure_analysis", failure_analysis_path, "failure analysis"),
         (
             "offline_ablation",
@@ -318,10 +330,13 @@ def build_manifest(
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser.add_argument("--baseline-config", type=Path, default=DEFAULT_BASELINE_CONFIG)
+    parser.add_argument("--uniform-checkpoint", type=Path, default=DEFAULT_UNIFORM_CHECKPOINT)
     parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
     parser.add_argument("--results", type=Path, default=DEFAULT_RESULTS)
     parser.add_argument("--summary", type=Path, default=DEFAULT_SUMMARY)
     parser.add_argument("--statistics", type=Path, default=DEFAULT_STATISTICS)
+    parser.add_argument("--calibration-report", type=Path, default=DEFAULT_CALIBRATION_REPORT)
     parser.add_argument("--failure-analysis", type=Path, default=DEFAULT_FAILURE_ANALYSIS)
     parser.add_argument("--episode-manifest", type=Path, default=DEFAULT_EPISODE_MANIFEST)
     parser.add_argument("--run-manifest", type=Path, default=DEFAULT_RUN_MANIFEST)
@@ -340,10 +355,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         payload = build_manifest(
             ROOT,
             config_path=args.config,
+            baseline_config_path=args.baseline_config,
+            uniform_checkpoint_path=args.uniform_checkpoint,
             checkpoint_path=args.checkpoint,
             results_path=args.results,
             summary_path=args.summary,
             statistics_path=args.statistics,
+            calibration_report_path=args.calibration_report,
             failure_analysis_path=args.failure_analysis,
             episode_manifest_path=args.episode_manifest,
             run_manifest_path=args.run_manifest,

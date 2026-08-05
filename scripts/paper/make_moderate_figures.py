@@ -46,24 +46,39 @@ except ModuleNotFoundError:  # Imported as a namespace module by pytest.
         wilson_interval,
     )
 
-# Okabe--Ito-derived palette.  Shapes, hatches, and direct labels duplicate
-# the color encoding so the figures remain readable without color.
+# Three functional color groups follow the Robot/Embodied publication profile:
+# neutral gray for classical controls, blue for learned/structured baselines,
+# and orange for the proposed method or adverse terminal events.  Marker shape,
+# hatching, and direct labels duplicate color so printouts remain accessible.
 INK = "#1B1F23"
 MID_GREY = "#59636B"
 LIGHT_GREY = "#F2F4F5"
 GRID_GREY = "#D7DDE1"
 METHOD_COLORS = {
-    "base": "#0072B2",
-    "standard": "#E69F00",
-    "heuristic": "#56B4E9",
-    "bc_uniform": "#CC79A7",
-    "pgrr": "#009E73",
+    "base": "#4D5963",
+    "standard": "#8A959E",
+    "heuristic": "#356E9F",
+    "bc_uniform": "#78A9CC",
+    "pgrr": "#D55E00",
+}
+METHOD_COLOR_GROUPS = {
+    "base": "neutral",
+    "standard": "neutral",
+    "heuristic": "blue",
+    "bc_uniform": "blue",
+    "pgrr": "orange",
 }
 OUTCOME_COLORS = {
-    "GOAL_REACHED": "#009E73",
+    "GOAL_REACHED": "#356E9F",
     "COLLISION": "#D55E00",
-    "TIMEOUT": "#E69F00",
+    "TIMEOUT": "#78A9CC",
     "PLANNER_FAILURE": "#7A7F85",
+}
+OUTCOME_COLOR_GROUPS = {
+    "GOAL_REACHED": "blue",
+    "COLLISION": "orange",
+    "TIMEOUT": "blue",
+    "PLANNER_FAILURE": "neutral",
 }
 OUTCOME_HATCHES = {
     "GOAL_REACHED": "",
@@ -305,7 +320,7 @@ def family_success_figure(results: pd.DataFrame, output: Path) -> None:
     figure.subplots_adjust(left=0.18, right=0.91, top=0.87, bottom=0.20)
     color_map = matplotlib.colors.LinearSegmentedColormap.from_list(
         "moderate_success",
-        [LIGHT_GREY, "#BFE2D8", METHOD_COLORS["pgrr"]],
+        [LIGHT_GREY, "#BCD7EA", "#356E9F"],
     )
     image = axis.imshow(matrix, vmin=0.0, vmax=1.0, cmap=color_map, aspect="auto")
     for row_index in range(len(families)):

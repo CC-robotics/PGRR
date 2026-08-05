@@ -4,10 +4,27 @@ set -euo pipefail
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-ramp-offline}"
 
-env -u PYTHONPATH conda run -n "${CONDA_ENV_NAME}" \
-    python "${PROJECT_ROOT}/scripts/paper/make_figures.py"
-env -u PYTHONPATH conda run -n "${CONDA_ENV_NAME}" \
-    python "${PROJECT_ROOT}/scripts/paper/make_tables.py"
+required_artifacts=(
+    paper/generated/offline_ablation.tex
+    paper/generated/moderate_result_macros.tex
+    paper/generated/moderate_main_results.tex
+    paper/generated/moderate_density_results.tex
+    paper/generated/moderate_recovery_metrics.tex
+    paper/generated/moderate_pairwise_statistics.tex
+    paper/figures/system_architecture.pdf
+    paper/figures/action_space_expert.pdf
+    paper/figures/moderate_outcomes_and_density.pdf
+    paper/figures/moderate_family_success.pdf
+    paper/figures/moderate_paired_effects.pdf
+    paper/figures/moderate_safety_efficiency.pdf
+)
+for artifact in "${required_artifacts[@]}"; do
+    if [[ ! -s "${PROJECT_ROOT}/${artifact}" ]]; then
+        echo "ERROR: missing generated moderate-v4 paper artifact: ${artifact}" >&2
+        echo "Run 'make statistics figures tables' after the complete final run." >&2
+        exit 1
+    fi
+done
 
 cd "${PROJECT_ROOT}/paper"
 if command -v latexmk >/dev/null 2>&1; then

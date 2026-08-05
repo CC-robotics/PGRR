@@ -1,25 +1,21 @@
-The study has several important limits.  First, the sensing interface is planar
-LiDAR on a known two-dimensional map, and simulation localization is more
-accurate than a deployed AMCL stack.  Second, the Gazebo fallback pedestrians
-follow deterministic routes and use a simple yielding rule; they do not capture
-human intent, group norms, perception uncertainty, or the diversity of real
-crowds.  Minimum distance and discomfort time are therefore geometric proxy
-metrics, not validated human-comfort judgments.
+The study uses planar LiDAR, a known two-dimensional map, and simulation
+localization that is more accurate than a deployed AMCL stack.  Its
+deterministic pedestrians are useful for paired replay but do not capture human
+intent, group norms, perception uncertainty, or the diversity of real crowds.
+Minimum distance and discomfort time are therefore geometric proxies rather
+than validated human-comfort judgments.
 
-Third, the current operating point prioritizes contact suppression: 16 of 24
-PGRR primary trials terminate at the evaluation horizon.  Because the detector,
-mask, policy, and supervisor act jointly, this study cannot assign that behavior
-to one component.  The privileged expert also depends on simulator truth and a
-3-s constant-velocity rollout, which cannot represent prolonged reciprocal
-negotiation; the finite action set and safety supervisor provide no formal
-collision-avoidance guarantee.
+The detector, planning mask, learned policy, Nav2 controller, and emergency
+supervisor act jointly in the deployed hierarchy.  Closed-loop outcomes do not
+attribute an effect to any one component, and the stopping supervisor provides
+no formal collision-avoidance guarantee.  The privileged expert depends on
+simulator state and short-horizon motion prediction; its finite 25-action set
+cannot express arbitrary reciprocal negotiation.  The expert is consequently
+a training and diagnostic reference, not a certified optimal controller.
 
-The offline labeler and Heuristic baseline retain a legacy 270-degree angular
-calibration for 180 bins sampled from the 360-degree sensor.  The deployed mask
-uses scan metadata, and the CNN receives identical full-scan resampling during
-training and test, but expert action costs may inherit this distortion.  We
-preserve the frozen evaluation instead of altering the pipeline after test-set
-inspection.  Finally, each family--density cell has one fixed seed.  The 24
-primary pairs support cross-condition paired inference, not a low-variance
-per-scenario estimate.  Real-robot validation, responsive human models, learned
-failure prediction, and PPO refinement remain outside the evaluated scope.
+All final conditions use one pinned simulator/runtime profile.  We do not claim
+cross-simulator transfer, hardware validation, PPO refinement, or a learned
+failure detector.  Although five held-out repetitions improve on single-seed
+cells, the benchmark still covers a limited set of maps, route templates, and
+pedestrian behaviors.  Responsive human models, additional maps and planners,
+formal safety analysis, and real-robot trials are the most important extensions.

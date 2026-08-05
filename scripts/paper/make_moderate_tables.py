@@ -102,6 +102,10 @@ def _p_value(value: float) -> str:
     return "$<0.001$" if value < 0.001 else f"{value:.3f}"
 
 
+def _macro_p_value(value: float) -> str:
+    return r"\ensuremath{<0.001}" if value < 0.001 else rf"\ensuremath{{={value:.3f}}}"
+
+
 def main_results_table(
     results: pd.DataFrame,
     *,
@@ -405,21 +409,32 @@ def result_macros(
 
     valid = _valid(results)
     lines = ["% Automatically generated; do not hand-edit numerical claims.", provenance.rstrip()]
-    condition_count = len(valid.loc[valid["source_policy"] == "pgrr"])
+    condition_count = len(results.loc[results["source_policy"] == "pgrr"])
     lines.append(rf"\providecommand{{\ModeratePairCount}}{{{condition_count}}}")
     lines.append(rf"\providecommand{{\ModerateMethodCount}}{{{len(METHODS)}}}")
     lines.append(rf"\providecommand{{\ModerateEpisodeCount}}{{{len(results)}}}")
+    lines.append(rf"\providecommand{{\ModerateValidEpisodeCount}}{{{len(valid)}}}")
+    lines.append(
+        rf"\providecommand{{\ModerateExcludedEpisodeCount}}{{{len(results) - len(valid)}}}"
+    )
     for method, prefix in (("base", "ModerateBase"), ("pgrr", "ModeratePGRR")):
         selected = valid.loc[valid["source_policy"] == method]
         total = len(selected)
+        lines.append(rf"\providecommand{{\{prefix}ValidEpisodeCount}}{{{total}}}")
         for suffix, outcome in (
             ("SuccessRate", "GOAL_REACHED"),
             ("CollisionRate", "COLLISION"),
             ("TimeoutRate", "TIMEOUT"),
         ):
             count = int((selected["outcome"] == outcome).sum())
-            lines.append(rf"\providecommand{{\{prefix}{suffix}}}{{{100.0 * count / total:.1f}\%}}")
+            rate = 100.0 * count / total if total else math.nan
+            value = "--" if not math.isfinite(rate) else f"{rate:.1f}\\%"
+            lines.append(rf"\providecommand{{\{prefix}{suffix}}}{{{value}}}")
     base_comparison = statistics["comparisons"]["base"]  # type: ignore[index]
+    lines.append(
+        rf"\providecommand{{\ModerateBasePGRRValidPairCount}}"
+        rf"{{{int(base_comparison['valid_pair_count'])}}}"
+    )
     for endpoint, suffix in (
         ("goal_reached", "SuccessDifference"),
         ("collision", "CollisionDifference"),
@@ -433,6 +448,11 @@ def result_macros(
         lines.append(
             rf"\providecommand{{\ModeratePGRR{suffix}}}"
             rf"{{\ensuremath{{{estimate:+.1f}\,[{lower:+.1f},\,{upper:+.1f}]\,\mathrm{{pp}}}}}}"
+        )
+        test = analysis["mcnemar_exact"]
+        lines.append(
+            rf"\providecommand{{\ModeratePGRR{suffix}HolmP}}"
+            rf"{{{_macro_p_value(float(test['pvalue_holm']))}}}"
         )
     _write(output, "\n".join(lines) + "\n")
 

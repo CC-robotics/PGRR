@@ -23,10 +23,13 @@ def _write(path: Path, content: bytes = b"artifact\n") -> None:
 def _complete_fixture(root: Path) -> None:
     for relative in (
         MODULE.DEFAULT_CONFIG,
+        MODULE.DEFAULT_BASELINE_CONFIG,
+        MODULE.DEFAULT_UNIFORM_CHECKPOINT,
         MODULE.DEFAULT_CHECKPOINT,
         MODULE.DEFAULT_RESULTS,
         MODULE.DEFAULT_SUMMARY,
         MODULE.DEFAULT_STATISTICS,
+        MODULE.DEFAULT_CALIBRATION_REPORT,
         MODULE.DEFAULT_FAILURE_ANALYSIS,
         MODULE.DEFAULT_EPISODE_MANIFEST,
         MODULE.DEFAULT_RUN_MANIFEST,
@@ -80,6 +83,7 @@ def test_manifest_has_only_relative_checksummed_artifacts(tmp_path: Path) -> Non
     assert payload["git_worktree_dirty"] is False
     assert payload["category_counts"]["figure"] == len(MODULE.EXPECTED_FIGURES)
     assert payload["category_counts"]["table"] == len(MODULE.EXPECTED_TABLES)
+    assert payload["category_counts"]["checkpoint"] == 2
     assert payload["category_counts"]["video"] == 1
     assert payload["category_counts"]["runtime_keyframe"] == 2
     assert payload["artifact_count"] == len(payload["artifacts"])

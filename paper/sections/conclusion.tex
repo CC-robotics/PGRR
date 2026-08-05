@@ -1,10 +1,12 @@
-We presented PGRR, a recovery interface that retains DWB for nominal control and
-restricts learned intervention to interpretable temporary goals and recovery
-modes.  A privileged rollout planner supplies supervision, DAgger covers
-learner-induced states, and planning masks constrain both labeling and online
-inference.  Across 24 locked Base--PGRR pairs, observed collision terminations
-decrease from 19 to zero while goal completions increase from five to eight; on
-held-out states, DAgger also improves expert agreement and cost regret.  These
-results establish a reproducible foundation for failure-triggered recovery.
-Longer-horizon interaction reasoning, multi-seed replication, richer pedestrian
-models, and hardware validation are the most direct next steps.
+We presented PGRR, a recovery interface that retains DWB for nominal control
+and restricts learned intervention to interpretable temporary goals and
+recovery modes.  A privileged rollout planner supplies supervision, DAgger
+covers learner-induced states, and planning masks constrain labeling and online
+inference.  On the complete moderate-v4 manifest, PGRR reaches
+\ModeratePGRRSuccessRate{} of goals versus \ModerateBaseSuccessRate{} for DWB;
+the paired goal, collision, and timeout differences are
+\ModeratePGRRSuccessDifference{}, \ModeratePGRRCollisionDifference{}, and
+\ModeratePGRRTimeoutDifference{}.  Reporting those endpoints separately keeps
+task completion, contact, and conservative stagnation visible.  Richer
+interaction prediction, additional runtime profiles, and hardware validation
+are the most direct next steps.

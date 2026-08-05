@@ -7,14 +7,15 @@ also changes behavior in routine states where the classical stack is already
 competent.
 
 This work asks whether learning can instead be confined to the short interval in
-which a classical planner is at risk of failure.  PGRR (Planning-Guided
-Failure-Triggered Recovery and Rejoin) leaves Nav2 DWB in control during normal
-PointGoal navigation.  An observable detector and a hysteretic state machine
-invoke recovery only for collision risk, freeze, oscillation, or deadlock.  The
-policy never commands wheel velocity: it selects one of 21 local temporary goals
-or WAIT, BACKUP, REPLAN, and CONTINUE.  Nav2 executes the decision, after which
-PGRR restores the original task goal.  A planning-derived action mask and an
-independent braking supervisor constrain every learned decision.
+which a classical planner is at risk of failure.  Planning-guided
+failure-triggered recovery and rejoin (PGRR) leaves Nav2 DWB in control during
+normal PointGoal navigation.  An observable detector and a hysteretic state
+machine invoke recovery only for collision risk, freeze, oscillation, or
+deadlock.  The policy never commands wheel velocity: it selects one of 21 local
+temporary goals or WAIT, BACKUP, REPLAN, and CONTINUE.  Nav2 executes the
+decision, after which PGRR restores the original task goal.  A planning-derived
+action mask and an independent braking supervisor constrain every learned
+decision.
 
 Training exploits simulator state without leaking it to deployment.  A
 short-horizon expert rolls out every legal recovery action using the map and
@@ -32,11 +33,11 @@ The contributions are:
   \item an automatically labeled BC--DAgger pipeline that aggregates
   learner-induced recovery states, with controlled ablations of aggregation and
   action masking; and
-  \item a reproducible evaluation over eight pedestrian-interaction families,
-  three densities, four recovery mechanisms, immutable raw streams, and paired
-  statistical analysis.
+  \item a reproducible five-method evaluation over eight pedestrian-interaction
+  families, three densities, five held-out repetitions per cell, immutable raw
+  streams, and complete-condition paired statistical analysis.
 \end{itemize}
-Across 24 locked Base--PGRR pairs, PGRR changes the observed collision count from
-19 to zero and the goal-completion count from five to eight.  The evaluation
-separates contact avoidance, task completion, and intervention behavior so that
-these effects are not collapsed into a single score.
+The evaluation reports contact, task completion, timeout, planner failure, and
+intervention behavior separately.  Its numerical claims are generated from the
+same five-method result table used for confidence intervals and paired tests;
+pilot runs do not enter the paper.
