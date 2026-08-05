@@ -27,6 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 HDF5_SUFFIXES = {".h5", ".hdf5"}
 PDF_SUFFIXES = {".pdf"}
+IMAGE_SUFFIXES = {".jpeg", ".jpg", ".png"}
 SKIP_DIRECTORY_NAMES = {".git"}
 
 ABSOLUTE_HOME_RE = re.compile(
@@ -358,6 +359,63 @@ def _scan_pdf_metadata(
     return findings
 
 
+def _scan_image_metadata(
+    path: Path,
+    relative_path: str,
+    *,
+    extra_forbidden: Iterable[str],
+) -> set[Finding]:
+    """Inspect compressed PNG/JPEG metadata, including EXIF text fields."""
+
+    try:
+        from PIL import ExifTags, Image
+    except ImportError:
+        return {
+            Finding(
+                relative_path,
+                "image-metadata",
+                "Pillow unavailable; image metadata was not auditable",
+            )
+        }
+
+    findings: set[Finding] = set()
+    try:
+        with Image.open(path) as image:
+            metadata: list[tuple[str, object]] = [
+                (str(key), value) for key, value in image.info.items()
+            ]
+            metadata.extend(
+                (str(ExifTags.TAGS.get(key, key)), value) for key, value in image.getexif().items()
+            )
+    except (OSError, ValueError):
+        return {Finding(relative_path, "image-metadata", "unreadable image metadata")}
+
+    for key, value in metadata:
+        payload = _printable_strings(value) if isinstance(value, bytes) else _attribute_text(value)
+        metadata_findings = _scan_text(
+            payload,
+            relative_path,
+            "image-metadata",
+            extra_forbidden=extra_forbidden,
+        )
+        if metadata_findings:
+            findings.update(metadata_findings)
+            findings.add(
+                Finding(
+                    relative_path,
+                    "image-metadata",
+                    f"sensitive image metadata field: {key}",
+                )
+            )
+        if key.strip().casefold() in {"artist", "author"} and payload.strip():
+            identity = payload.strip().casefold()
+            if not any(marker in identity for marker in ALLOWED_IDENTITY_MARKERS):
+                findings.add(
+                    Finding(relative_path, "image-metadata", "non-allowlisted image author")
+                )
+    return findings
+
+
 def _git_files(root: Path) -> list[Path] | None:
     completed = subprocess.run(
         [
@@ -453,6 +511,14 @@ def scan_tree(
         if suffix in PDF_SUFFIXES:
             findings.update(
                 _scan_pdf_metadata(
+                    path,
+                    relative_path,
+                    extra_forbidden=extra_forbidden,
+                )
+            )
+        if suffix in IMAGE_SUFFIXES:
+            findings.update(
+                _scan_image_metadata(
                     path,
                     relative_path,
                     extra_forbidden=extra_forbidden,

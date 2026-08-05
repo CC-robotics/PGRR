@@ -52,6 +52,18 @@ EGRESS_EXIT_KEYS = {
     "head_on_corridor": "head_on_exit_x_m",
     "doorway_bottleneck": "doorway_exit_x_m",
 }
+V5_CALIBRATION_KEYS = {
+    "blind_corner_vertical_end_y_m",
+    "blind_corner_horizontal_start_x_m",
+    "group_nearest_actor_offset_m",
+    "overtaking_lane_offset_range_m",
+    "opposite_stream_lane_offset_range_m",
+    "temporary_doorway_center_half_gap_m",
+    "temporary_crossing_half_span_m",
+    "temporary_crossing_x_spacing_m",
+    "temporary_crossing_lead_in_m",
+    "validate_actor_static_clearance",
+}
 
 
 @dataclass(frozen=True)
@@ -174,6 +186,55 @@ def _validate_config(config: dict[str, Any]) -> None:
         head_on_lane_offset = float(moderation["head_on_lane_offset_m"])
         if not lane_min <= head_on_lane_offset <= lane_max:
             raise ValueError("head-on lane offset must lie inside the configured lane range")
+    present_v5_keys = V5_CALIBRATION_KEYS & set(moderation)
+    if present_v5_keys and present_v5_keys != V5_CALIBRATION_KEYS:
+        missing = sorted(V5_CALIBRATION_KEYS - present_v5_keys)
+        raise ValueError(f"v5 calibration configuration is incomplete: {missing}")
+    if present_v5_keys:
+        if not present_dynamics_keys:
+            raise ValueError("v5 calibration requires deterministic actor dynamics")
+        vertical_end = float(moderation["blind_corner_vertical_end_y_m"])
+        horizontal_start = float(moderation["blind_corner_horizontal_start_x_m"])
+        if not 9.5 <= vertical_end <= 11.5:
+            raise ValueError("blind-corner vertical endpoint must be in [9.5, 11.5] m")
+        if not 14.5 <= horizontal_start <= 16.5:
+            raise ValueError("blind-corner horizontal start must be in [14.5, 16.5] m")
+        # These are the closest corners after the 0.40 m robot-footprint
+        # inflation used by this catalog. Requiring positive clearance makes
+        # the chamfer a real center-space route rather than a raster artifact.
+        vertical_right = 13.5 + 0.20 + 0.40
+        vertical_top = vertical_end + 0.45 + 0.40
+        horizontal_left = horizontal_start - 0.45 - 0.40
+        horizontal_bottom = 12.8 - 0.20 - 0.40
+        chamfer_clearance = math.hypot(
+            max(0.0, horizontal_left - vertical_right),
+            max(0.0, horizontal_bottom - vertical_top),
+        )
+        if chamfer_clearance < 0.70:
+            raise ValueError("blind-corner footprint-clear chamfer must be at least 0.70 m")
+        group_offset = float(moderation["group_nearest_actor_offset_m"])
+        if not hard_guard + 0.20 <= group_offset <= 1.30:
+            raise ValueError("group nearest actor must leave at least 0.20 m beyond hard guard")
+        for key in ("overtaking_lane_offset_range_m", "opposite_stream_lane_offset_range_m"):
+            family_min, family_max = (float(value) for value in moderation[key])
+            if not hard_guard + 0.08 <= family_min <= family_max <= 1.20:
+                raise ValueError(f"{key} must remain in [hard_guard + 0.08, 1.20] m")
+        temporary_half_gap = float(moderation["temporary_doorway_center_half_gap_m"])
+        temporary_half_span = float(moderation["temporary_crossing_half_span_m"])
+        temporary_spacing = float(moderation["temporary_crossing_x_spacing_m"])
+        temporary_lead_in = float(moderation["temporary_crossing_lead_in_m"])
+        if not 2.10 <= temporary_half_gap <= 2.35:
+            raise ValueError("temporary doorway center half-gap must be in [2.10, 2.35] m")
+        # Static shelf inner faces are half-gap - 0.45 m from the center.
+        # Keep the pedestrian endpoints a radius-plus-margin inside them.
+        if not 0.75 <= temporary_half_span <= temporary_half_gap - 0.80:
+            raise ValueError("temporary crossing half-span lacks static endpoint clearance")
+        if not 0.72 <= temporary_spacing <= 1.00:
+            raise ValueError("temporary crossing x spacing must exceed two human radii")
+        if not 0.8 <= temporary_lead_in <= 1.8:
+            raise ValueError("temporary crossing lead-in must be in [0.8, 1.8] m")
+        if moderation["validate_actor_static_clearance"] is not True:
+            raise ValueError("v5 must validate complete actor routes against static geometry")
     families_by_id = {str(family["id"]): family for family in families}
     for family_id, key in EGRESS_EXIT_KEYS.items():
         if key not in moderation:
@@ -219,6 +280,10 @@ def _moderate_static_layout(
     base_compiler: ModuleType,
     layout: str,
     offset: float,
+    *,
+    blind_corner_vertical_end_y_m: float | None = None,
+    blind_corner_horizontal_start_x_m: float | None = None,
+    temporary_doorway_center_half_gap_m: float | None = None,
 ) -> list[dict[str, Any]]:
     """Build widened moderate geometry with known footprint-clear widths."""
 
@@ -236,6 +301,11 @@ def _moderate_static_layout(
         return south + north
     if layout in {"doorway", "temporary_blockage"}:
         center = 12.0 + offset
+        center_half_gap = (
+            2.0
+            if layout != "temporary_blockage" or temporary_doorway_center_half_gap_m is None
+            else temporary_doorway_center_half_gap_m
+        )
         # The last/first shelf centers are exactly 4.0 m apart. Accounting for
         # 0.45 m shelf half-length and 0.40 m robot inflation on each side
         # leaves a 2.30 m center-space doorway.
@@ -243,14 +313,14 @@ def _moderate_static_layout(
             list[dict[str, Any]],
             base_compiler._shelves_line(
                 (15.5, 3.0),
-                (15.5, center - 2.0),
+                (15.5, center - center_half_gap),
                 prefix="doorwall_south_moderate",
             ),
         )
         north = cast(
             list[dict[str, Any]],
             base_compiler._shelves_line(
-                (15.5, center + 2.0),
+                (15.5, center + center_half_gap),
                 (15.5, 21.0),
                 prefix="doorwall_north_moderate",
             ),
@@ -260,13 +330,27 @@ def _moderate_static_layout(
         # A finite L creates occlusion without the near-map-boundary detour in
         # the stress catalog. Both the robot and actors have collision-free
         # routes around the exposed right-hand tip.
+        vertical_end_y = (
+            12.8 if blind_corner_vertical_end_y_m is None else blind_corner_vertical_end_y_m
+        )
+        horizontal_start_x = (
+            13.5 if blind_corner_horizontal_start_x_m is None else blind_corner_horizontal_start_x_m
+        )
         vertical = cast(
             list[dict[str, Any]],
-            base_compiler._shelves_line((13.5, 6.0), (13.5, 12.8), prefix="corner_v_moderate"),
+            base_compiler._shelves_line(
+                (13.5, 6.0),
+                (13.5, vertical_end_y),
+                prefix="corner_v_moderate",
+            ),
         )
         horizontal = cast(
             list[dict[str, Any]],
-            base_compiler._shelves_line((13.5, 12.8), (20.5, 12.8), prefix="corner_h_moderate"),
+            base_compiler._shelves_line(
+                (horizontal_start_x, 12.8),
+                (20.5, 12.8),
+                prefix="corner_h_moderate",
+            ),
         )
         return vertical + horizontal
     return []
@@ -286,6 +370,12 @@ def _moderate_routes(
     doorway_exit_x_m: float | None = None,
     doorway_lane_side: int | None = None,
     doorway_lane_offset_m: float | None = None,
+    group_nearest_actor_offset_m: float | None = None,
+    overtaking_lane_offset_range_m: tuple[float, float] | None = None,
+    opposite_stream_lane_offset_range_m: tuple[float, float] | None = None,
+    temporary_crossing_half_span_m: float | None = None,
+    temporary_crossing_x_spacing_m: float | None = None,
+    temporary_crossing_lead_in_m: float | None = None,
 ) -> list[list[list[float]]]:
     """Return separated, longitudinally staggered one-shot actor routes."""
 
@@ -298,6 +388,14 @@ def _moderate_routes(
     if doorway_lane_side is not None and doorway_lane_side not in {-1, 1}:
         raise ValueError("doorway lane side must be -1 or 1")
     lanes = (-lane_min, lane_min, -lane_max, lane_max)
+    overtaking_lanes = lanes
+    if overtaking_lane_offset_range_m is not None:
+        overtaking_min, overtaking_max = overtaking_lane_offset_range_m
+        overtaking_lanes = (-overtaking_min, overtaking_min, -overtaking_max, overtaking_max)
+    opposite_stream_lanes = lanes
+    if opposite_stream_lane_offset_range_m is not None:
+        opposite_min, opposite_max = opposite_stream_lane_offset_range_m
+        opposite_stream_lanes = (-opposite_min, opposite_min, -opposite_max, opposite_max)
     routes: list[list[list[float]]] = []
     for index in range(count):
         lane = lanes[index % len(lanes)] + offset
@@ -349,32 +447,64 @@ def _moderate_routes(
             # Keep the group on the upper half of the corridor, leaving a
             # reproducible lower channel instead of sealing the full path.
             x = 14.8 + 1.15 * (index % 2) + 0.15 * offset
-            y = 12.85 + 0.45 * (index // 2)
+            y = (
+                12.85 + 0.45 * (index // 2)
+                if group_nearest_actor_offset_m is None
+                else 12.0 + offset + group_nearest_actor_offset_m + 0.45 * (index // 2)
+            )
             routes.append([[x, y, 0.0], [x + 0.35, y + (0.12 if index % 2 else -0.12), 0.0]])
         elif layout == "overtaking":
             x = 9.0 + stagger
-            routes.append([[x, 12.0 + lane, 0.0], [27.0, 12.0 + lane, 0.0]])
+            overtaking_lane = overtaking_lanes[index % len(overtaking_lanes)] + offset
+            routes.append([[x, 12.0 + overtaking_lane, 0.0], [27.0, 12.0 + overtaking_lane, 0.0]])
         elif layout == "opposite_streams":
+            opposite_lane = opposite_stream_lanes[index % len(opposite_stream_lanes)] + offset
             if index % 2:
                 routes.append(
                     [
-                        [5.8 + stagger, 12.0 + lane, 0.0],
-                        [25.5, 12.0 + lane, 0.0],
+                        [5.8 + stagger, 12.0 + opposite_lane, 0.0],
+                        [25.5, 12.0 + opposite_lane, 0.0],
                     ]
                 )
             else:
                 routes.append(
                     [
-                        [25.5 - stagger, 12.0 + lane, math.pi],
-                        [5.8, 12.0 + lane, math.pi],
+                        [25.5 - stagger, 12.0 + opposite_lane, math.pi],
+                        [5.8, 12.0 + opposite_lane, math.pi],
                     ]
                 )
         elif layout == "temporary_blockage":
-            x = 15.5 + 0.18 * lane
-            if index % 2:
-                routes.append([[x, 7.8 - 0.55 * index, math.pi / 2], [x, 16.2, math.pi / 2]])
+            if (
+                temporary_crossing_half_span_m is None
+                or temporary_crossing_x_spacing_m is None
+                or temporary_crossing_lead_in_m is None
+            ):
+                x = 15.5 + 0.18 * lane
+                if index % 2:
+                    routes.append([[x, 7.8 - 0.55 * index, math.pi / 2], [x, 16.2, math.pi / 2]])
+                else:
+                    routes.append([[x, 16.2 + 0.55 * index, -math.pi / 2], [x, 7.8, -math.pi / 2]])
             else:
-                routes.append([[x, 16.2 + 0.55 * index, -math.pi / 2], [x, 7.8, -math.pi / 2]])
+                center_y = 12.0 + offset
+                cross_x = 15.5 + (index - (count - 1) / 2.0) * temporary_crossing_x_spacing_m
+                if index % 2:
+                    lower_y = center_y - temporary_crossing_half_span_m
+                    routes.append(
+                        [
+                            [cross_x + temporary_crossing_lead_in_m, lower_y, math.pi],
+                            [cross_x, lower_y, math.pi],
+                            [cross_x, center_y + temporary_crossing_half_span_m, math.pi / 2],
+                        ]
+                    )
+                else:
+                    upper_y = center_y + temporary_crossing_half_span_m
+                    routes.append(
+                        [
+                            [cross_x - temporary_crossing_lead_in_m, upper_y, 0.0],
+                            [cross_x, upper_y, 0.0],
+                            [cross_x, center_y - temporary_crossing_half_span_m, -math.pi / 2],
+                        ]
+                    )
         else:
             raise ValueError(f"unknown scenario layout: {layout}")
     return routes
@@ -411,6 +541,16 @@ def _apply_moderation(
     doorway_lane_offset = (
         float(moderation["doorway_lane_offset_m"]) if doorway_lane_side is not None else None
     )
+    overtaking_lane_range = (
+        tuple(float(value) for value in moderation["overtaking_lane_offset_range_m"])
+        if "overtaking_lane_offset_range_m" in moderation
+        else None
+    )
+    opposite_stream_lane_range = (
+        tuple(float(value) for value in moderation["opposite_stream_lane_offset_range_m"])
+        if "opposite_stream_lane_offset_range_m" in moderation
+        else None
+    )
     routes = _moderate_routes(
         layout,
         len(actors),
@@ -428,8 +568,55 @@ def _apply_moderation(
         ),
         doorway_lane_side=doorway_lane_side,
         doorway_lane_offset_m=doorway_lane_offset,
+        group_nearest_actor_offset_m=(
+            float(moderation["group_nearest_actor_offset_m"])
+            if "group_nearest_actor_offset_m" in moderation
+            else None
+        ),
+        overtaking_lane_offset_range_m=cast(
+            tuple[float, float] | None,
+            overtaking_lane_range,
+        ),
+        opposite_stream_lane_offset_range_m=cast(
+            tuple[float, float] | None,
+            opposite_stream_lane_range,
+        ),
+        temporary_crossing_half_span_m=(
+            float(moderation["temporary_crossing_half_span_m"])
+            if "temporary_crossing_half_span_m" in moderation
+            else None
+        ),
+        temporary_crossing_x_spacing_m=(
+            float(moderation["temporary_crossing_x_spacing_m"])
+            if "temporary_crossing_x_spacing_m" in moderation
+            else None
+        ),
+        temporary_crossing_lead_in_m=(
+            float(moderation["temporary_crossing_lead_in_m"])
+            if "temporary_crossing_lead_in_m" in moderation
+            else None
+        ),
     )
-    scenario["obstacles"]["static"] = _moderate_static_layout(base_compiler, layout, offset)
+    scenario["obstacles"]["static"] = _moderate_static_layout(
+        base_compiler,
+        layout,
+        offset,
+        blind_corner_vertical_end_y_m=(
+            float(moderation["blind_corner_vertical_end_y_m"])
+            if "blind_corner_vertical_end_y_m" in moderation
+            else None
+        ),
+        blind_corner_horizontal_start_x_m=(
+            float(moderation["blind_corner_horizontal_start_x_m"])
+            if "blind_corner_horizontal_start_x_m" in moderation
+            else None
+        ),
+        temporary_doorway_center_half_gap_m=(
+            float(moderation["temporary_doorway_center_half_gap_m"])
+            if "temporary_doorway_center_half_gap_m" in moderation
+            else None
+        ),
+    )
     metadata = scenario["ramp_metadata"]
     metadata["benchmark_id"] = str(config["benchmark_id"])
     metadata["difficulty"] = "moderate"
@@ -448,6 +635,16 @@ def _apply_moderation(
         "robot_avoidance_distance_m": float(moderation["robot_avoidance_distance_m"]),
         "group_clear_channel_width_m": float(moderation["group_clear_channel_width_m"]),
     }
+    for key in sorted(V5_CALIBRATION_KEYS - {"validate_actor_static_clearance"}):
+        if key in moderation:
+            value = moderation[key]
+            metadata["moderation"][key] = (
+                [float(item) for item in value] if isinstance(value, list) else float(value)
+            )
+    if "validate_actor_static_clearance" in moderation:
+        metadata["moderation"]["validate_actor_static_clearance"] = bool(
+            moderation["validate_actor_static_clearance"]
+        )
     for key in EGRESS_EXIT_KEYS.values():
         if key in moderation:
             metadata["moderation"][key] = float(moderation[key])
@@ -526,6 +723,27 @@ def _validate_configured_egress_endpoints(
         grid = _footprint_occupancy(scenario, bounds, resolution, human_radius)
         if not grid.is_free(grid.world_to_grid(endpoint_x, endpoint_y)):
             raise ValueError(f"{family} egress endpoint intersects inflated static geometry")
+
+
+def _validate_actor_routes_against_static_geometry(
+    scenario: dict[str, Any],
+    bounds: list[float],
+    resolution: float,
+    moderation: dict[str, Any],
+) -> None:
+    """Require every actor waypoint and segment to clear inflated shelves."""
+
+    if not bool(moderation.get("validate_actor_static_clearance", False)):
+        return
+    family = str(scenario["ramp_metadata"]["family"])
+    for actor in scenario["obstacles"]["dynamic"]:
+        radius = float(actor.get("radius", 0.35))
+        grid = _footprint_occupancy(scenario, bounds, resolution, radius)
+        points = [(float(point[0]), float(point[1])) for point in actor["waypoints"]]
+        if any(not grid.is_free(grid.world_to_grid(*point)) for point in points):
+            raise ValueError(f"{family} actor waypoint intersects radius-inflated static geometry")
+        if any(not grid.segment_is_free(left, right) for left, right in pairwise(points)):
+            raise ValueError(f"{family} actor segment intersects radius-inflated static geometry")
 
 
 def _validate_single_side_doorway_stream(
@@ -840,6 +1058,12 @@ def compile_benchmark(
                     )
                     base_compiler._validate_scenario(scenario, bounds)
                     _validate_configured_egress_endpoints(
+                        scenario,
+                        bounds,
+                        resolution,
+                        config["moderation"],
+                    )
+                    _validate_actor_routes_against_static_geometry(
                         scenario,
                         bounds,
                         resolution,

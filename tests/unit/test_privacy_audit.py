@@ -165,6 +165,22 @@ def test_pdf_author_metadata_is_audited(tmp_path: Path) -> None:
     assert any(finding.rule == "non-allowlisted PDF author" for finding in findings)
 
 
+def test_compressed_png_metadata_is_audited(tmp_path: Path) -> None:
+    Image = pytest.importorskip("PIL.Image")
+    PngImagePlugin = pytest.importorskip("PIL.PngImagePlugin")
+    metadata = PngImagePlugin.PngInfo()
+    metadata.add_text("Author", "Sensitive Person")
+    metadata.add_text("Source", _runtime_home() + "/private/render.py")
+    image_path = tmp_path / "figure.png"
+    Image.new("RGB", (2, 2), "white").save(image_path, pnginfo=metadata)
+
+    findings, _ = privacy_audit.scan_tree(tmp_path, all_files=True)
+
+    assert any(finding.rule == "non-allowlisted image author" for finding in findings)
+    assert any(finding.source == "image-metadata" for finding in findings)
+    assert any("Source" in finding.rule for finding in findings)
+
+
 def test_generated_provenance_paths_are_portable(tmp_path: Path) -> None:
     internal = ROOT / "data/raw/episode.jsonl"
     external = tmp_path / "episode.jsonl"

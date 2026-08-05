@@ -17,6 +17,7 @@ CONFIG = ROOT / "configs" / "experiments" / "scenario_catalog_moderate.yaml"
 V2_CONFIG = ROOT / "configs" / "experiments" / "scenario_catalog_moderate_v2.yaml"
 V3_CONFIG = ROOT / "configs" / "experiments" / "scenario_catalog_moderate_v3.yaml"
 V4_CONFIG = ROOT / "configs" / "experiments" / "scenario_catalog_moderate_v4.yaml"
+V5_CONFIG = ROOT / "configs" / "experiments" / "scenario_catalog_moderate_v5.yaml"
 SCRIPT = ROOT / "scripts" / "data" / "compile_moderate_benchmark.py"
 FAMILIES = {
     "head_on_corridor",
@@ -68,6 +69,23 @@ def v4_compilation(
     output = tmp_path_factory.mktemp("moderate_v4")
     summary = compiler.compile_benchmark(
         V4_CONFIG,
+        output,
+        train_repetitions=1,
+        validation_repetitions=1,
+        test_repetitions=1,
+        render_previews=False,
+    )
+    return compiler, output, summary
+
+
+@pytest.fixture(scope="module")
+def v5_compilation(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> tuple[Any, Path, dict[str, Any]]:
+    compiler = _compiler()
+    output = tmp_path_factory.mktemp("moderate_v5")
+    summary = compiler.compile_benchmark(
+        V5_CONFIG,
         output,
         train_repetitions=1,
         validation_repetitions=1,
@@ -158,6 +176,37 @@ def test_v4_catalog_declares_single_side_head_on_stream_and_new_split_blocks() -
         "train": 72000,
         "validation": 73000,
         "test": 83000,
+    }
+    assert {split: values["repetitions"] for split, values in config["splits"].items()} == {
+        "train": 3,
+        "validation": 3,
+        "test": 5,
+    }
+
+
+def test_v5_catalog_is_validation_calibrated_and_uses_fresh_split_blocks() -> None:
+    config = yaml.safe_load(V5_CONFIG.read_text(encoding="utf-8"))
+    moderation = config["moderation"]
+    assert config["benchmark_id"] == "moderate_social_navigation_v5"
+    assert moderation["blind_corner_vertical_end_y_m"] == 10.80
+    assert moderation["blind_corner_horizontal_start_x_m"] == 15.50
+    assert moderation["group_nearest_actor_offset_m"] == 1.15
+    assert moderation["overtaking_lane_offset_range_m"] == [0.96, 1.16]
+    assert moderation["opposite_stream_lane_offset_range_m"] == [0.96, 1.16]
+    assert moderation["temporary_doorway_center_half_gap_m"] == 2.20
+    assert moderation["temporary_crossing_half_span_m"] == 1.00
+    assert moderation["temporary_crossing_x_spacing_m"] == 0.80
+    assert moderation["temporary_crossing_lead_in_m"] == 1.40
+    assert moderation["validate_actor_static_clearance"] is True
+    assert config["output"] == {
+        "generated_subdirectory": "moderate_v5/arena",
+        "preview_subdirectory": "moderate_v5",
+        "manifest_suffix": "moderate_v5",
+    }
+    assert {split: values["seed_base"] for split, values in config["splits"].items()} == {
+        "train": 74000,
+        "validation": 75000,
+        "test": 85000,
     }
     assert {split: values["repetitions"] for split, values in config["splits"].items()} == {
         "train": 3,
@@ -590,6 +639,114 @@ def test_v4_compiler_emits_same_side_head_on_stream_with_free_channel(
             assert split_values[left][key].isdisjoint(split_values[right][key])
 
 
+def test_v5_extensions_do_not_modify_committed_v4_r0_hashes(
+    v4_compilation: tuple[Any, Path, dict[str, Any]],
+) -> None:
+    _, output, _ = v4_compilation
+    for split in ("train", "validation", "test"):
+        generated = _manifest(output, split, "moderate_v4")["scenarios"]
+        committed = _manifest(ROOT / "scenarios", split, "moderate_v4")["scenarios"]
+        assert [(row["scenario_id"], row["seed"], row["sha256"]) for row in generated] == [
+            (row["scenario_id"], row["seed"], row["sha256"])
+            for row in committed
+            if row["replicate"] == 0
+        ]
+
+
+def test_v5_compiler_emits_recoverable_clearances_and_static_free_actor_routes(
+    v5_compilation: tuple[Any, Path, dict[str, Any]],
+) -> None:
+    compiler, output, summary = v5_compilation
+    assert summary["benchmark_id"] == "moderate_social_navigation_v5"
+    assert summary["manifest_suffix"] == "moderate_v5"
+    assert summary["counts_by_split"] == {"train": 24, "validation": 24, "test": 24}
+    assert summary["scenario_count"] == 72
+    expected_seed_bases = {"train": 74000, "validation": 75000, "test": 85000}
+    split_values: dict[str, dict[str, set[object]]] = {}
+    for split, seed_floor in expected_seed_bases.items():
+        records = _manifest(output, split, "moderate_v5")["scenarios"]
+        assert len(records) == 24
+        identifiers: set[object] = set()
+        seeds: set[object] = set()
+        hashes: set[object] = set()
+        for record in records:
+            assert seed_floor <= int(record["seed"]) < seed_floor + 1000
+            scenario_path = output / "generated" / record["path"]
+            serialized = scenario_path.read_text(encoding="utf-8")
+            assert hashlib.sha256(serialized.encode()).hexdigest() == record["sha256"]
+            scenario = json.loads(serialized)
+            _, static_path = compiler._footprint_path(
+                scenario,
+                [0.0, 31.28, 0.0, 24.03],
+                0.10,
+                0.40,
+            )
+            assert static_path
+            actors = scenario["obstacles"]["dynamic"]
+            for actor in actors:
+                grid = compiler._footprint_occupancy(
+                    scenario,
+                    [0.0, 31.28, 0.0, 24.03],
+                    0.10,
+                    float(actor["radius"]),
+                )
+                points = [(float(point[0]), float(point[1])) for point in actor["waypoints"]]
+                assert all(grid.is_free(grid.world_to_grid(*point)) for point in points)
+                assert all(grid.segment_is_free(left, right) for left, right in pairwise(points))
+
+            family = str(record["family"])
+            if family == "blind_corner":
+                vertical = [
+                    item
+                    for item in scenario["obstacles"]["static"]
+                    if "corner_v_moderate" in item["name"]
+                ]
+                horizontal = [
+                    item
+                    for item in scenario["obstacles"]["static"]
+                    if "corner_h_moderate" in item["name"]
+                ]
+                assert max(float(item["pos"][1]) for item in vertical) == pytest.approx(10.80)
+                assert min(float(item["pos"][0]) for item in horizontal) == pytest.approx(15.50)
+                inflated_dx = 15.50 - 0.45 - 0.40 - (13.50 + 0.20 + 0.40)
+                inflated_dy = 12.80 - 0.20 - 0.40 - (10.80 + 0.45 + 0.40)
+                assert (inflated_dx**2 + inflated_dy**2) ** 0.5 >= 0.70
+            elif family == "group_blocking":
+                nearest_centerline_offset = min(
+                    abs(float(actor["waypoints"][0][1]) - 12.0) for actor in actors
+                )
+                assert nearest_centerline_offset >= 1.03
+            elif family in {"overtaking", "opposite_streams"}:
+                lane_offsets = [abs(float(actor["waypoints"][0][1]) - 12.0) for actor in actors]
+                assert min(lane_offsets) >= 0.84 - 1.0e-9
+                assert max(lane_offsets) <= 1.28 + 1.0e-9
+            elif family == "temporary_blockage":
+                assert all(len(actor["waypoints"]) == 3 for actor in actors)
+                cross_x = sorted(float(actor["waypoints"][1][0]) for actor in actors)
+                assert all(right - left == pytest.approx(0.80) for left, right in pairwise(cross_x))
+                assert all(
+                    abs(float(actor["waypoints"][0][0]) - float(actor["waypoints"][1][0]))
+                    == pytest.approx(1.40)
+                    for actor in actors
+                )
+                assert all(
+                    abs(float(actor["waypoints"][0][1]) - float(actor["waypoints"][-1][1]))
+                    == pytest.approx(2.00)
+                    for actor in actors
+                )
+            identifiers.add(record["scenario_id"])
+            seeds.add(record["seed"])
+            hashes.add(record["sha256"])
+        assert len(identifiers) == len(records)
+        assert len(seeds) == len(records)
+        assert len(hashes) == len(records)
+        split_values[split] = {"ids": identifiers, "seeds": seeds, "hashes": hashes}
+
+    for left, right in combinations(("train", "validation", "test"), 2):
+        for key in ("ids", "seeds", "hashes"):
+            assert split_values[left][key].isdisjoint(split_values[right][key])
+
+
 def test_committed_v4_full_and_smoke_manifests_are_complete_and_hash_valid() -> None:
     summary = json.loads(
         (ROOT / "scenarios/manifests/scenario_catalog_moderate_v4.json").read_text(encoding="utf-8")
@@ -639,6 +796,63 @@ def test_committed_v4_full_and_smoke_manifests_are_complete_and_hash_valid() -> 
     assert all(validation_rows[row["scenario_id"]] == row for row in smoke["scenarios"])
 
 
+def test_committed_v5_manifests_are_complete_hash_valid_and_smoke_is_predeclared() -> None:
+    summary = json.loads(
+        (ROOT / "scenarios/manifests/scenario_catalog_moderate_v5.json").read_text(encoding="utf-8")
+    )
+    assert summary["counts_by_split"] == {"train": 72, "validation": 72, "test": 120}
+    assert summary["scenario_count"] == 264
+    expected_counts = {"train": 72, "validation": 72, "test": 120}
+    split_values: dict[str, dict[str, set[object]]] = {}
+    validation_rows: dict[str, dict[str, Any]] = {}
+    for split, expected_count in expected_counts.items():
+        records = _manifest(ROOT / "scenarios", split, "moderate_v5")["scenarios"]
+        assert len(records) == expected_count
+        identifiers = {row["scenario_id"] for row in records}
+        seeds = {row["seed"] for row in records}
+        hashes = {row["sha256"] for row in records}
+        assert len(identifiers) == expected_count
+        assert len(seeds) == expected_count
+        assert len(hashes) == expected_count
+        for row in records:
+            scenario_path = ROOT / "scenarios/generated" / row["path"]
+            preview_path = ROOT / "scenarios" / row["preview"]
+            serialized = scenario_path.read_text(encoding="utf-8")
+            assert hashlib.sha256(serialized.encode()).hexdigest() == row["sha256"]
+            assert preview_path.is_file() and preview_path.stat().st_size > 0
+        if split == "validation":
+            validation_rows = {row["scenario_id"]: row for row in records}
+        split_values[split] = {"ids": identifiers, "seeds": seeds, "hashes": hashes}
+
+    for left, right in combinations(("train", "validation", "test"), 2):
+        for key in ("ids", "seeds", "hashes"):
+            assert split_values[left][key].isdisjoint(split_values[right][key])
+
+    smoke = yaml.safe_load(
+        (ROOT / "scenarios/splits/moderate_v5_validation_calibration_smoke.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    expected_conditions = {
+        ("head_on_corridor", "medium"),
+        ("doorway_bottleneck", "high"),
+        ("blind_corner", "low"),
+        ("blind_corner", "high"),
+        ("group_blocking", "high"),
+        ("overtaking", "low"),
+        ("overtaking", "medium"),
+        ("opposite_streams", "low"),
+        ("opposite_streams", "medium"),
+        ("opposite_streams", "high"),
+        ("temporary_blockage", "low"),
+        ("temporary_blockage", "high"),
+    }
+    assert len(smoke["scenarios"]) == 12
+    assert {(row["family"], row["density"]) for row in smoke["scenarios"]} == (expected_conditions)
+    assert all(row["replicate"] == 0 for row in smoke["scenarios"])
+    assert all(validation_rows[row["scenario_id"]] == row for row in smoke["scenarios"])
+
+
 def test_v3_validation_rejects_partial_dynamics_and_seed_block_leakage() -> None:
     compiler = _compiler()
     config = yaml.safe_load(V3_CONFIG.read_text(encoding="utf-8"))
@@ -672,6 +886,26 @@ def test_v4_validation_rejects_partial_or_invalid_head_on_lane_stream() -> None:
     invalid_offset["moderation"]["head_on_lane_offset_m"] = 0.60
     with pytest.raises(ValueError, match="head-on lane offset must lie inside"):
         compiler._validate_config(invalid_offset)
+
+
+def test_v5_validation_rejects_partial_or_zero_margin_calibration() -> None:
+    compiler = _compiler()
+    config = yaml.safe_load(V5_CONFIG.read_text(encoding="utf-8"))
+    incomplete = copy.deepcopy(config)
+    del incomplete["moderation"]["temporary_crossing_lead_in_m"]
+    with pytest.raises(ValueError, match="v5 calibration configuration is incomplete"):
+        compiler._validate_config(incomplete)
+
+    narrow_chamfer = copy.deepcopy(config)
+    narrow_chamfer["moderation"]["blind_corner_vertical_end_y_m"] = 11.50
+    narrow_chamfer["moderation"]["blind_corner_horizontal_start_x_m"] = 14.50
+    with pytest.raises(ValueError, match="footprint-clear chamfer"):
+        compiler._validate_config(narrow_chamfer)
+
+    near_guard_lane = copy.deepcopy(config)
+    near_guard_lane["moderation"]["overtaking_lane_offset_range_m"] = [0.78, 1.10]
+    with pytest.raises(ValueError, match="overtaking_lane_offset_range_m"):
+        compiler._validate_config(near_guard_lane)
 
 
 def test_cli_overrides_are_deterministic_and_isolate_suffix_outputs(tmp_path: Path) -> None:
