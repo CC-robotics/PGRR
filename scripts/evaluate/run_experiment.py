@@ -52,6 +52,7 @@ class EpisodeTask:
     family: str
     density: str
     seed: int
+    replicate: int
     split: str
     map_id: str
     scenario_path: Path
@@ -268,6 +269,17 @@ def load_split_records(
             raise ValueError(f"scenario SHA256 mismatch: {scenario_id}")
         scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
         metadata = scenario.get("ramp_metadata", {})
+        declared_replicate = declared.get("replicate", metadata.get("replicate", 0))
+        if isinstance(declared_replicate, bool) or not isinstance(declared_replicate, int):
+            raise ValueError(f"scenario replicate must be a non-negative integer: {scenario_id}")
+        if declared_replicate < 0:
+            raise ValueError(f"scenario replicate must be a non-negative integer: {scenario_id}")
+        metadata_replicate = metadata.get("replicate")
+        if metadata_replicate is not None and metadata_replicate != declared_replicate:
+            raise ValueError(
+                f"scenario metadata mismatch for {scenario_id}: "
+                f"replicate={metadata_replicate!r}, expected {declared_replicate!r}"
+            )
         expected = {
             "scenario_id": scenario_id,
             "family": str(declared["family"]),
@@ -286,6 +298,7 @@ def load_split_records(
         records.append(
             {
                 **expected,
+                "replicate": declared_replicate,
                 "scenario_path": scenario_path,
                 "scenario_relpath": str(scenario_path.relative_to(root)),
                 "scenario_sha256": actual_sha,
@@ -329,6 +342,7 @@ def experiment_fingerprint(
             {
                 "scenario_id": record["scenario_id"],
                 "scenario_sha256": record["scenario_sha256"],
+                "replicate": int(record.get("replicate", 0)),
             }
             for record in records
         ],
@@ -375,6 +389,7 @@ def build_tasks(
                     family=str(record["family"]),
                     density=str(record["density"]),
                     seed=int(record["seed"]),
+                    replicate=int(record.get("replicate", 0)),
                     split=str(record["split"]),
                     map_id=str(record["map_id"]),
                     scenario_path=Path(record["scenario_path"]),
@@ -418,7 +433,7 @@ def manifest_rows(
             "scenario": task.scenario_id,
             "scenario_id": task.scenario_id,
             "pair_id": f"{task.scenario_id}_seed{task.seed}",
-            "replicate": 0,
+            "replicate": task.replicate,
             "family": task.family,
             "density": task.density,
             "seed": task.seed,
@@ -547,6 +562,7 @@ def run_task(
                 return {
                     "task_index": task.task_index,
                     "scenario_id": task.scenario_id,
+                    "replicate": task.replicate,
                     "method": task.method,
                     "checkpoint_path": task.checkpoint_path,
                     "checkpoint_sha256": task.checkpoint_sha256,
@@ -561,6 +577,7 @@ def run_task(
             {
                 "RAMP_EPISODE_ID": identifier,
                 "RAMP_EPISODE_TIMEOUT_S": str(task.timeout_s),
+                "RAMP_REPLICATE": str(task.replicate),
                 "RAMP_SOURCE_POLICY": task.method,
                 "ROS_DOMAIN_ID": str(domain),
                 "GZ_PARTITION": partition,
@@ -606,6 +623,7 @@ def run_task(
             return {
                 "task_index": task.task_index,
                 "scenario_id": task.scenario_id,
+                "replicate": task.replicate,
                 "method": task.method,
                 "checkpoint_path": task.checkpoint_path,
                 "checkpoint_sha256": task.checkpoint_sha256,
@@ -621,6 +639,7 @@ def run_task(
     return {
         "task_index": task.task_index,
         "scenario_id": task.scenario_id,
+        "replicate": task.replicate,
         "method": task.method,
         "checkpoint_path": task.checkpoint_path,
         "checkpoint_sha256": task.checkpoint_sha256,
@@ -745,9 +764,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if overlap:
         raise ValueError(f"methods repeated across full/high-density groups: {overlap}")
     selected_methods = (*methods, *high_density_methods)
-    recovery_tau_on_override = normalize_recovery_tau_on_override(
-        args.split, args.recovery_tau_on
-    )
+    recovery_tau_on_override = normalize_recovery_tau_on_override(args.split, args.recovery_tau_on)
     method_checkpoints = resolve_method_checkpoints(
         ROOT,
         selected_methods,

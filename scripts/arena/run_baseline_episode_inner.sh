@@ -65,6 +65,7 @@ static_obstacles = scenario.get("obstacles", {}).get("static", [])
 print(len(static_obstacles))
 print(json.dumps(static_obstacles, separators=(",", ":")))
 print(str(all(obstacle.get("model") == "shelf" for obstacle in static_obstacles)).lower())
+print(metadata.get("replicate", 0))
 PY
 )
 scenario_id="${scenario_values[0]}"
@@ -80,6 +81,7 @@ start_yaw="${scenario_values[9]}"
 static_obstacle_count="${scenario_values[10]}"
 static_obstacles_json="${scenario_values[11]}"
 static_geometry_supported="${scenario_values[12]}"
+replicate="${scenario_values[13]}"
 lidar_static_collision_enabled=true
 physical_static_collision_enabled=false
 minimum_valid_lidar_range_m=0.0
@@ -97,6 +99,14 @@ elif [[ "${static_geometry_supported}" == "true" ]]; then
 fi
 if [[ -z "${scenario_id}" || -z "${seed}" || -z "${split}" || -z "${map_id}" ]]; then
     echo "ERROR: scenario is missing required ramp_metadata" >&2
+    exit 2
+fi
+if [[ ! "${replicate}" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: scenario ramp_metadata.replicate must be a non-negative integer" >&2
+    exit 2
+fi
+if [[ -n "${RAMP_REPLICATE:-}" && "${RAMP_REPLICATE}" != "${replicate}" ]]; then
+    echo "ERROR: requested replicate ${RAMP_REPLICATE} does not match scenario ${replicate}" >&2
     exit 2
 fi
 episode_id="${RAMP_EPISODE_ID:-${scenario_id}_base_dwb}"

@@ -15,8 +15,13 @@ sys.modules[_SPEC.name] = _MODULE
 _SPEC.loader.exec_module(_MODULE)
 
 
-def _record(tmp_path: Path, scenario_id: str = "crossing_flow_high_test_s03220") -> dict:
-    return {
+def _record(
+    tmp_path: Path,
+    scenario_id: str = "crossing_flow_high_test_s03220",
+    *,
+    replicate: int | None = None,
+) -> dict:
+    record = {
         "scenario_id": scenario_id,
         "family": "crossing_flow",
         "density": "high",
@@ -30,6 +35,9 @@ def _record(tmp_path: Path, scenario_id: str = "crossing_flow_high_test_s03220")
         "robot_goal": "[26,12,0]",
         "pedestrian_config_hash": "b" * 64,
     }
+    if replicate is not None:
+        record["replicate"] = replicate
+    return record
 
 
 def test_normalize_methods_supports_aliases_and_rejects_duplicates() -> None:
@@ -111,6 +119,7 @@ def test_explicit_split_manifest_still_enforces_declared_split(tmp_path: Path) -
             "family": "crossing_flow",
             "density": "low",
             "seed": 7,
+            "replicate": 3,
             "split": "test",
             "map_id": "map_empty",
         },
@@ -127,6 +136,7 @@ def test_explicit_split_manifest_still_enforces_declared_split(tmp_path: Path) -
                 "family": "crossing_flow",
                 "density": "low",
                 "seed": 7,
+                "replicate": 3,
                 "map_id": "map_empty",
                 "path": "custom.json",
                 "sha256": _MODULE.sha256_file(scenario_path),
@@ -136,10 +146,55 @@ def test_explicit_split_manifest_still_enforces_declared_split(tmp_path: Path) -
     manifest.write_text(yaml.safe_dump(document), encoding="utf-8")
     records = _MODULE.load_split_records(tmp_path, "test", manifest)
     assert [record["scenario_id"] for record in records] == ["custom_test"]
+    assert [record["replicate"] for record in records] == [3]
 
     document["split"] = "validation"
     manifest.write_text(yaml.safe_dump(document), encoding="utf-8")
     with pytest.raises(ValueError, match="invalid split manifest"):
+        _MODULE.load_split_records(tmp_path, "test", manifest)
+
+
+def test_split_manifest_replicate_is_validated_and_legacy_records_default_to_zero(
+    tmp_path: Path,
+) -> None:
+    generated = tmp_path / "scenarios" / "generated"
+    generated.mkdir(parents=True)
+    scenario_path = generated / "custom.json"
+    scenario = {
+        "ramp_metadata": {
+            "scenario_id": "custom_test",
+            "family": "crossing_flow",
+            "density": "low",
+            "seed": 7,
+            "split": "test",
+            "map_id": "map_empty",
+        },
+        "robots": [{"start": [0, 0, 0], "goal": [1, 0, 0]}],
+        "obstacles": {"dynamic": []},
+    }
+    scenario_path.write_text(json.dumps(scenario), encoding="utf-8")
+    record = {
+        "scenario_id": "custom_test",
+        "family": "crossing_flow",
+        "density": "low",
+        "seed": 7,
+        "map_id": "map_empty",
+        "path": "custom.json",
+        "sha256": _MODULE.sha256_file(scenario_path),
+    }
+    manifest = tmp_path / "custom_split.yaml"
+    manifest.write_text(
+        yaml.safe_dump({"split": "test", "scenarios": [record]}),
+        encoding="utf-8",
+    )
+    assert _MODULE.load_split_records(tmp_path, "test", manifest)[0]["replicate"] == 0
+
+    record["replicate"] = -1
+    manifest.write_text(
+        yaml.safe_dump({"split": "test", "scenarios": [record]}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="non-negative integer"):
         _MODULE.load_split_records(tmp_path, "test", manifest)
 
 
@@ -153,7 +208,10 @@ def test_worker_identity_is_fixed_unique_and_bounded() -> None:
 
 
 def test_build_tasks_produces_deterministic_unique_episode_ids(tmp_path: Path) -> None:
-    records = [_record(tmp_path), _record(tmp_path, "group_blocking_high_test_s03420")]
+    records = [
+        _record(tmp_path, replicate=4),
+        _record(tmp_path, "group_blocking_high_test_s03420", replicate=7),
+    ]
     checkpoints = {
         "bc_uniform": _MODULE.CheckpointProvenance(
             "checkpoints/bc/uniform.onnx", "c" * 64, "/workspace/checkpoints/bc/uniform.onnx"
@@ -179,10 +237,12 @@ def test_build_tasks_produces_deterministic_unique_episode_ids(tmp_path: Path) -
     assert any(identifier.endswith("_eval_pgrr_a0_dwb") for identifier in identifiers)
     pgrr_task = next(task for task in tasks if task.method == "pgrr")
     assert pgrr_task.checkpoint_sha256 == "d" * 64
+    assert pgrr_task.replicate == 4
     assert pgrr_task.recovery_tau_on_override == "0.8"
     assert {row["recovery_tau_on_override"] for row in _MODULE.manifest_rows(tasks, "d" * 40)} == {
         "0.8"
     }
+    assert {row["replicate"] for row in _MODULE.manifest_rows(tasks, "d" * 40)} == {4, 7}
 
 
 def test_run_namespace_prevents_cross_commit_raw_artifact_collisions(tmp_path: Path) -> None:
@@ -325,6 +385,8 @@ def test_runtime_maps_new_source_policies_to_bc_without_renaming_logs() -> None:
     assert 'optional_runtime_environment+=("RAMP_TAU_ON=${RAMP_TAU_ON}")' in wrapper
     assert 'recovery_tau_on_overrides=(-p "tau_on:=${RAMP_TAU_ON}")' in runtime
     assert 'detector_trigger_overrides=(-p "trigger_threshold:=${RAMP_TAU_ON}")' in runtime
+    assert 'RAMP_REPLICATE="${RAMP_REPLICATE:-}"' in wrapper
+    assert '"${RAMP_REPLICATE}" != "${replicate}"' in runtime
 
 
 def test_declared_tau_override_reaches_runtime_and_ambient_value_is_removed(
@@ -333,7 +395,7 @@ def test_declared_tau_override_reaches_runtime_and_ambient_value_is_removed(
     monkeypatch.setenv("RAMP_TAU_ON", "0.99")
     assert "RAMP_TAU_ON" not in _MODULE._clean_runtime_environment()
     task = _MODULE.build_tasks(
-        [_record(tmp_path)],
+        [_record(tmp_path, replicate=5)],
         ("base",),
         (),
         1.0,
@@ -374,7 +436,9 @@ def test_declared_tau_override_reaches_runtime_and_ambient_value_is_removed(
         resume=False,
     )
     assert result["status"] == "complete"
+    assert result["replicate"] == 5
     assert captured["RAMP_TAU_ON"] == "0.8"
+    assert captured["RAMP_REPLICATE"] == "5"
 
 
 def test_inspect_attempt_preserves_retryable_outcome_without_stream(tmp_path: Path) -> None:
@@ -395,9 +459,7 @@ def test_inspect_attempt_preserves_retryable_outcome_without_stream(tmp_path: Pa
 def test_run_task_retries_a_classified_logger_artifact_failure(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    task = _MODULE.build_tasks(
-        [_record(tmp_path)], ("base",), (), 1.0, run_namespace="rretry"
-    )[0]
+    task = _MODULE.build_tasks([_record(tmp_path)], ("base",), (), 1.0, run_namespace="rretry")[0]
     attempted: list[str] = []
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
