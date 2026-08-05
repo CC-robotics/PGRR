@@ -16,12 +16,16 @@ bc_subgoal_minimum_execution_s: 2.0
 bc_subgoal_maximum_duration_s: 6.0
 expert_wait_budget_decisions: 3
 bc_rejoin_block_threshold: 0.65
-# A TTC warning remains latched until the task-forward LiDAR corridor is
-# socially clear for consecutive high-level observations.  For the 0.35 m
-# pedestrian proxy, 1.25 m surface clearance also exceeds its 1.5 m centre
-# avoidance boundary, preventing an immediate advance into the same deadlock.
-bc_yield_release_clearance_m: 1.25
+# A TTC warning remains latched until the task-forward LiDAR corridor is clear
+# for consecutive high-level observations.
+# Validation-calibrated narrow-space release: once the deployable collision
+# score is clear, 0.90 m of consecutively observed task-forward clearance is
+# sufficient to rejoin. The independent motion/footprint stop filters remain
+# active at the control rate.
+bc_yield_release_clearance_m: 0.90
 bc_yield_release_frames: 3
+bc_near_field_radius_activation_clearance_m: 1.0
+bc_near_field_max_subgoal_radius_m: 0.6
 bc_yield_forward_half_width_degrees: 45.0
 # While the yield latch is active, every otherwise-valid translation is
 # projected onto the local global-path tangent.  Only lateral/retreat endpoints
@@ -91,6 +95,9 @@ emergency_backup_duration_s: 0.8
 emergency_backup_clearance_m: 0.70
 emergency_release_speed_mps: 0.03
 emergency_release_hysteresis_m: 0.05
+# Do not let a safe static side-wall return sustain an omnidirectional stop;
+# commanded-motion clearance retains the 0.05 m release hysteresis above.
+footprint_release_hysteresis_m: 0.0
 # The effective turn threshold is max(this value,
 # footprint_stop_clearance_m + emergency_release_hysteresis_m). A turn is a
 # bounded observable pulse, never an unbounded in-place command.

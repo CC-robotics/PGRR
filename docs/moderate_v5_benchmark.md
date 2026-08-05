@@ -43,6 +43,8 @@ protocol. This is distribution calibration, not post-selection of episodes.
   2.0 m crossing inside the opening. The 0.07--0.13 m/s speed range phases
   arrivals near the robot's doorway approach instead of spawning people in the
   wall.
+- the vertical shelf terminates at 10.00 m, leaving a footprint-clear
+  diagonal turn instead of making DWB graze the shelf tip;
 - the compiler now rejects every v5 actor waypoint or route segment that
   intersects human-radius-inflated static geometry.
 

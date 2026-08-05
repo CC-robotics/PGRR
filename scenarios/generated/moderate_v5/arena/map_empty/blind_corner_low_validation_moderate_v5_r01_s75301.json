@@ -76,7 +76,7 @@
         "name": "corner_v_moderate_01",
         "pos": [
           13.5,
-          6.96,
+          7.0,
           1.5707963267948966
         ]
       },
@@ -85,7 +85,7 @@
         "name": "corner_v_moderate_02",
         "pos": [
           13.5,
-          7.92,
+          8.0,
           1.5707963267948966
         ]
       },
@@ -94,7 +94,7 @@
         "name": "corner_v_moderate_03",
         "pos": [
           13.5,
-          8.88,
+          9.0,
           1.5707963267948966
         ]
       },
@@ -103,16 +103,7 @@
         "name": "corner_v_moderate_04",
         "pos": [
           13.5,
-          9.84,
-          1.5707963267948966
-        ]
-      },
-      {
-        "model": "shelf",
-        "name": "corner_v_moderate_05",
-        "pos": [
-          13.5,
-          10.8,
+          10.0,
           1.5707963267948966
         ]
       },
@@ -202,7 +193,7 @@
       "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
       "actor_update_frequency_hz": 5.0,
       "blind_corner_horizontal_start_x_m": 15.5,
-      "blind_corner_vertical_end_y_m": 10.8,
+      "blind_corner_vertical_end_y_m": 10.0,
       "corridor_footprint_clear_width_m": 2.6,
       "doorway_exit_x_m": 5.0,
       "doorway_footprint_clear_width_m": 2.3,

@@ -2,10 +2,11 @@
 """Run a locked validation or test manifest with isolated Arena workers.
 
 The controller never edits or deletes raw episode artifacts.  A logical
-episode may have two physical attempts (``a0`` and ``a1``); the second is
-started only when the first is explicitly classified as SIMULATOR_FAILURE or
-INVALID_RESET.  This keeps infrastructure failures auditable while requiring
-exactly one valid algorithm outcome for every manifest row.
+episode may have up to three physical attempts (``a0`` through ``a2``); each
+retry is started only when every preceding attempt is explicitly classified as
+SIMULATOR_FAILURE or INVALID_RESET.  This keeps infrastructure failures
+auditable while requiring exactly one valid algorithm outcome for every
+manifest row.
 """
 
 from __future__ import annotations
@@ -40,7 +41,7 @@ DEFAULT_METHOD_CHECKPOINTS = {
     "pgrr": Path("checkpoints/dagger/coverage_safety_aligned/best.onnx"),
 }
 MAX_ROS_DOMAIN_ID = 232
-MAX_ATTEMPTS = 2
+MAX_ATTEMPTS = 3
 
 
 @dataclass(frozen=True)
@@ -510,14 +511,23 @@ def validate_existing_attempts(tasks: Sequence[EpisodeTask], root: Path, resume:
             raise FileExistsError(
                 f"refusing to overwrite existing episode: {first_existing['episode_id']}"
             )
-        first, second = existing
-        if second is not None and first is None:
-            raise RuntimeError(f"retry exists without primary attempt: {second['episode_id']}")
-        if first is not None and first["outcome"] in ALGORITHM_OUTCOMES and second is not None:
-            raise RuntimeError(
-                "duplicate attempt exists after a valid primary outcome: "
-                f"{first['episode_id']}, {second['episode_id']}"
-            )
+        missing_predecessor = False
+        algorithm_outcome: dict[str, Any] | None = None
+        for record in existing:
+            if record is None:
+                missing_predecessor = True
+                continue
+            if algorithm_outcome is not None:
+                raise RuntimeError(
+                    "duplicate attempt exists after a valid algorithm outcome: "
+                    f"{algorithm_outcome['episode_id']}, {record['episode_id']}"
+                )
+            if missing_predecessor:
+                raise RuntimeError(
+                    f"retry exists without primary/preceding attempt: {record['episode_id']}"
+                )
+            if record["outcome"] in ALGORITHM_OUTCOMES:
+                algorithm_outcome = record
 
 
 def _clean_runtime_environment() -> dict[str, str]:

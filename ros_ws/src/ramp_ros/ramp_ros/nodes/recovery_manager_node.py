@@ -62,6 +62,7 @@ from ramp_core.recovery.options import (
     TemporalClosingSideConfig,
     TemporalClosingSideResult,
     constrain_directional_yield_motion,
+    constrain_near_field_subgoal_radius,
     constrain_net_retreat,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
@@ -426,8 +427,10 @@ class RecoveryManagerNode(Node):
             "expert_replan_interval_s": 0.5,
             "expert_wait_budget_decisions": 3,
             "bc_rejoin_block_threshold": 0.65,
-            "bc_yield_release_clearance_m": 1.25,
+            "bc_yield_release_clearance_m": 0.90,
             "bc_yield_release_frames": 3,
+            "bc_near_field_radius_activation_clearance_m": 1.0,
+            "bc_near_field_max_subgoal_radius_m": 0.6,
             "bc_yield_forward_half_width_degrees": 45.0,
             "bc_yield_maximum_forward_progress_m": 0.10,
             "bc_closing_side_sector_min_degrees": 5.0,
@@ -457,6 +460,7 @@ class RecoveryManagerNode(Node):
             "emergency_backup_clearance_m": 0.70,
             "emergency_release_speed_mps": 0.03,
             "emergency_release_hysteresis_m": 0.05,
+            "footprint_release_hysteresis_m": 0.0,
             # This nominal geometric floor is composed with the stricter
             # footprint stop-and-release boundary before any turn is allowed.
             "emergency_rotation_clearance_m": 0.24,
@@ -1327,6 +1331,23 @@ class RecoveryManagerNode(Node):
                     closing_side_result,
                     angular_speed_radps=float(observation.robot_velocity[1]),
                 )
+                pre_near_field_mask = mask.copy()
+                mask = constrain_near_field_subgoal_radius(
+                    mask,
+                    nearest_clearance_m=self._nearest_clearance(),
+                    activation_clearance_m=self._float(
+                        "bc_near_field_radius_activation_clearance_m"
+                    ),
+                    maximum_radius_m=self._float("bc_near_field_max_subgoal_radius_m"),
+                )
+                if not np.array_equal(pre_near_field_mask, mask):
+                    closing_side_telemetry += (
+                        "; bc_near_field_radius=applied "
+                        f"clearance_m={self._nearest_clearance():.3f} "
+                        f"maximum_radius_m={self._float('bc_near_field_max_subgoal_radius_m'):.3f} "
+                        f"pre={','.join(map(str, np.flatnonzero(pre_near_field_mask)))} "
+                        f"post={','.join(map(str, np.flatnonzero(mask)))}"
+                    )
             mask = constrain_stalled_rejoin(mask, escape_required=stalled_rejoin)
             mask = constrain_stalled_subgoals(
                 mask,
@@ -1565,6 +1586,7 @@ class RecoveryManagerNode(Node):
             footprint_clearance_m=nearest_clearance,
             footprint_stop_distance_m=footprint_stop,
             release_hysteresis_m=self._float("emergency_release_hysteresis_m"),
+            footprint_release_hysteresis_m=self._float("footprint_release_hysteresis_m"),
         )
         rear_clearance = self._observed_laser_clearance(math.pi)
         nearest_angle = self._nearest_obstacle_angle()

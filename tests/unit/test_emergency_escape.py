@@ -74,6 +74,22 @@ def test_emergency_hazard_uses_a_stricter_release_clearance() -> None:
     assert not emergency_hazard_with_hysteresis(emergency_active=True, **values)
 
 
+def test_footprint_release_hysteresis_can_be_separated_from_motion_hysteresis() -> None:
+    values = {
+        "motion_clearance_m": 2.0,
+        "motion_stop_distance_m": 0.85,
+        "footprint_clearance_m": 0.49,
+        "footprint_stop_distance_m": 0.48,
+        "release_hysteresis_m": 0.05,
+    }
+    assert emergency_hazard_with_hysteresis(emergency_active=True, **values)
+    assert not emergency_hazard_with_hysteresis(
+        emergency_active=True,
+        footprint_release_hysteresis_m=0.0,
+        **values,
+    )
+
+
 def test_emergency_hazard_rejects_negative_hysteresis() -> None:
     with pytest.raises(ValueError, match="non-negative"):
         emergency_hazard_with_hysteresis(

@@ -843,6 +843,39 @@ def constrain_task_lateral_sides(
     return constrained
 
 
+def constrain_near_field_subgoal_radius(
+    mask: npt.NDArray[np.bool_],
+    *,
+    nearest_clearance_m: float,
+    activation_clearance_m: float,
+    maximum_radius_m: float,
+) -> npt.NDArray[np.bool_]:
+    """Shorten learned lateral excursions when an obstacle is already near.
+
+    The ordinary occupancy, path-corridor, and LiDAR masks remain
+    authoritative.  This helper only removes long-horizon subgoals from that
+    already-safe set; special actions are unchanged and no action is ever
+    re-enabled.  Bounding the geometric reach avoids a 1.4 m side-step turning
+    a local yield into a wall-facing detour in narrow social encounters.
+    """
+
+    constrained = np.asarray(mask, dtype=np.bool_).copy()
+    if constrained.shape != (ACTION_COUNT,):
+        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+    values = (nearest_clearance_m, activation_clearance_m, maximum_radius_m)
+    if not all(math.isfinite(value) and value >= 0.0 for value in values):
+        raise ValueError("near-field radius thresholds must be finite and non-negative")
+    if activation_clearance_m <= 0.0 or maximum_radius_m <= 0.0:
+        raise ValueError("near-field activation clearance and radius must be positive")
+    if nearest_clearance_m >= activation_clearance_m:
+        return constrained
+    for action in ACTIONS[:WAIT_ACTION_ID]:
+        assert action.radius is not None
+        if action.radius > maximum_radius_m + 1.0e-9:
+            constrained[action.action_id] = False
+    return constrained
+
+
 def constrain_stalled_rejoin(
     mask: npt.NDArray[np.bool_],
     *,

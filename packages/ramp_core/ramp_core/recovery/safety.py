@@ -32,23 +32,39 @@ def emergency_hazard_with_hysteresis(
     footprint_clearance_m: float,
     footprint_stop_distance_m: float,
     release_hysteresis_m: float,
+    footprint_release_hysteresis_m: float | None = None,
 ) -> bool:
-    """Latch a geometric hazard until both clearances exceed release margins."""
+    """Latch a geometric hazard until both clearances exceed release margins.
+
+    The commanded-motion corridor and the omnidirectional footprint guard have
+    different semantics.  A dynamic hazard benefits from release hysteresis in
+    the direction of travel, while applying that same band to every LiDAR ray
+    can make a harmless static side wall hold the robot forever after it has
+    stopped.  Callers may therefore use a smaller footprint-only release band;
+    omitting it preserves the historical shared-hysteresis behaviour.
+    """
+    footprint_hysteresis = (
+        release_hysteresis_m
+        if footprint_release_hysteresis_m is None
+        else footprint_release_hysteresis_m
+    )
     values = (
         motion_clearance_m,
         motion_stop_distance_m,
         footprint_clearance_m,
         footprint_stop_distance_m,
         release_hysteresis_m,
+        footprint_hysteresis,
     )
     if any(not math.isfinite(value) for value in values):
         raise ValueError("emergency clearances and thresholds must be finite")
     if min(values) < 0.0:
         raise ValueError("emergency clearances and thresholds must be non-negative")
-    hysteresis = release_hysteresis_m if emergency_active else 0.0
+    motion_hysteresis = release_hysteresis_m if emergency_active else 0.0
+    footprint_hysteresis = footprint_hysteresis if emergency_active else 0.0
     return bool(
-        motion_clearance_m < motion_stop_distance_m + hysteresis
-        or footprint_clearance_m < footprint_stop_distance_m + hysteresis
+        motion_clearance_m < motion_stop_distance_m + motion_hysteresis
+        or footprint_clearance_m < footprint_stop_distance_m + footprint_hysteresis
     )
 
 

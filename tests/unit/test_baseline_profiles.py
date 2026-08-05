@@ -319,7 +319,10 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         < config["maximum_recovery_duration_s"]
     )
     assert config["bc_rejoin_block_threshold"] == 0.65
-    assert config["bc_yield_release_clearance_m"] == 1.25
+    assert config["bc_yield_release_clearance_m"] == 0.90
+    assert config["bc_near_field_radius_activation_clearance_m"] == 1.0
+    assert config["bc_near_field_max_subgoal_radius_m"] == 0.6
+    assert config["footprint_release_hysteresis_m"] == 0.0
     assert config["bc_yield_release_frames"] == 3
     assert config["bc_yield_forward_half_width_degrees"] == 45.0
     assert config["bc_yield_maximum_forward_progress_m"] == 0.10
@@ -329,7 +332,10 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_closing_side_maximum_range_m"] == 4.0
     assert config["bc_closing_side_minimum_beams"] == 5
     assert config["bc_closing_side_maximum_angular_speed_radps"] == 0.20
-    assert '"bc_yield_release_clearance_m": 1.25' in manager
+    assert '"bc_yield_release_clearance_m": 0.90' in manager
+    assert '"bc_near_field_radius_activation_clearance_m": 1.0' in manager
+    assert '"bc_near_field_max_subgoal_radius_m": 0.6' in manager
+    assert '"footprint_release_hysteresis_m": 0.0' in manager
     assert '"bc_yield_release_frames": 3' in manager
     assert '"bc_yield_forward_half_width_degrees": 45.0' in manager
     assert '"bc_yield_maximum_forward_progress_m": 0.10' in manager

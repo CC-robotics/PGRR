@@ -31,6 +31,7 @@ from ramp_core.recovery.options import (
     TemporalClosingSideConfig,
     TemporalClosingSideResult,
     constrain_directional_yield_motion,
+    constrain_near_field_subgoal_radius,
     constrain_net_retreat,
     constrain_recurrent_yield_escape,
     constrain_rejoin_actions,
@@ -272,6 +273,48 @@ def test_directional_yield_masks_forward_motion_without_unmasking() -> None:
     assert not constrained[REPLAN_ACTION_ID]
     assert not constrained[CONTINUE_ACTION_ID]
     assert not bool(np.any(constrained & ~mask))
+
+
+def test_near_field_radius_bound_only_removes_long_subgoals() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    mask[2] = False
+    constrained = constrain_near_field_subgoal_radius(
+        mask,
+        nearest_clearance_m=0.82,
+        activation_clearance_m=1.0,
+        maximum_radius_m=0.6,
+    )
+    assert constrained[:7].tolist() == [True, True, False, True, True, True, True]
+    assert not bool(constrained[7:WAIT_ACTION_ID].any())
+    assert bool(np.all(constrained[WAIT_ACTION_ID:]))
+    assert not constrained[2]
+
+
+def test_near_field_radius_bound_is_inactive_at_clearance_boundary() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    constrained = constrain_near_field_subgoal_radius(
+        mask,
+        nearest_clearance_m=1.0,
+        activation_clearance_m=1.0,
+        maximum_radius_m=0.6,
+    )
+    assert np.array_equal(constrained, mask)
+
+
+@pytest.mark.parametrize(
+    ("nearest", "activation", "radius"),
+    [(-0.1, 1.0, 0.6), (0.8, 0.0, 0.6), (0.8, 1.0, 0.0), (math.inf, 1.0, 0.6)],
+)
+def test_near_field_radius_bound_rejects_invalid_thresholds(
+    nearest: float, activation: float, radius: float
+) -> None:
+    with pytest.raises(ValueError, match="near-field"):
+        constrain_near_field_subgoal_radius(
+            np.ones(ACTION_COUNT, dtype=np.bool_),
+            nearest_clearance_m=nearest,
+            activation_clearance_m=activation,
+            maximum_radius_m=radius,
+        )
 
 
 def test_directional_yield_trace_retains_near_lateral_left_escape_only() -> None:

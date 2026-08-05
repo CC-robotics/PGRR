@@ -29,7 +29,7 @@ moderation:
   # V5 calibration knobs were declared from v4 validation only. The blind
   # corner receives a footprint-clear chamfer instead of a zero-margin shelf
   # intersection, while its oncoming actor still traverses the occluded turn.
-  blind_corner_vertical_end_y_m: 10.80
+  blind_corner_vertical_end_y_m: 10.00
   blind_corner_horizontal_start_x_m: 15.50
 
   # Keep the nearest stationary group member comfortably outside the 0.73 m

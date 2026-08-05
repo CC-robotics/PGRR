@@ -282,6 +282,9 @@ def test_build_tasks_produces_deterministic_unique_episode_ids(tmp_path: Path) -
     assert len(identifiers) == len(set(identifiers))
     assert identifiers[0].endswith("_eval_base_a0_dwb")
     assert _MODULE.episode_id(tasks[0], 1).endswith("_a1_dwb")
+    assert _MODULE.episode_id(tasks[0], 2).endswith("_a2_dwb")
+    with pytest.raises(ValueError, match="attempt must be"):
+        _MODULE.episode_id(tasks[0], 3)
     assert any(identifier.endswith("_eval_bc_uniform_a0_dwb") for identifier in identifiers)
     assert any(identifier.endswith("_eval_pgrr_a0_dwb") for identifier in identifiers)
     pgrr_task = next(task for task in tasks if task.method == "pgrr")
@@ -565,6 +568,110 @@ def test_run_task_retries_a_classified_logger_artifact_failure(
     assert len(attempted) == 2
 
 
+def test_run_task_survives_two_consecutive_infrastructure_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    task = _MODULE.build_tasks([_record(tmp_path)], ("base",), (), 1.0, run_namespace="rtriple")[0]
+    attempted: list[str] = []
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        identifier = str(environment["RAMP_EPISODE_ID"])
+        attempted.append(identifier)
+        raw = tmp_path / "data" / "raw"
+        raw.mkdir(parents=True, exist_ok=True)
+        attempt = int(identifier.rsplit("_a", maxsplit=1)[1].split("_", maxsplit=1)[0])
+        if attempt < 2:
+            outcome = "SIMULATOR_FAILURE" if attempt == 0 else "INVALID_RESET"
+            (raw / f"{identifier}.outcome.json").write_text(
+                json.dumps(
+                    {
+                        "episode_id": identifier,
+                        "outcome": outcome,
+                        "sample_count": 0,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return subprocess.CompletedProcess(command, 1)
+        (raw / f"{identifier}.jsonl").write_text("{}\n", encoding="utf-8")
+        (raw / f"{identifier}.outcome.json").write_text(
+            json.dumps(
+                {
+                    "episode_id": identifier,
+                    "outcome": "GOAL_REACHED",
+                    "sample_count": 1,
+                }
+            ),
+            encoding="utf-8",
+        )
+        (raw / f"{identifier}.metadata.json").write_text(
+            json.dumps({"episode_id": identifier}), encoding="utf-8"
+        )
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(_MODULE.subprocess, "run", fake_run)
+    result = _MODULE.run_task(
+        task,
+        root=tmp_path,
+        domain=20,
+        partition="ramp_triple_retry_test",
+        resume=False,
+    )
+
+    assert result["status"] == "complete"
+    assert result["episode_id"].endswith("_a2_dwb")
+    assert [attempt["outcome"] for attempt in result["attempts"]] == [
+        "SIMULATOR_FAILURE",
+        "INVALID_RESET",
+        "GOAL_REACHED",
+    ]
+    assert len(attempted) == 3
+
+
+def test_run_task_reports_incomplete_after_three_infrastructure_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    task = _MODULE.build_tasks([_record(tmp_path)], ("base",), (), 1.0, run_namespace="rexhausted")[
+        0
+    ]
+    attempted: list[str] = []
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        identifier = str(environment["RAMP_EPISODE_ID"])
+        attempted.append(identifier)
+        raw = tmp_path / "data" / "raw"
+        raw.mkdir(parents=True, exist_ok=True)
+        (raw / f"{identifier}.outcome.json").write_text(
+            json.dumps(
+                {
+                    "episode_id": identifier,
+                    "outcome": "SIMULATOR_FAILURE",
+                    "sample_count": 0,
+                }
+            ),
+            encoding="utf-8",
+        )
+        return subprocess.CompletedProcess(command, 1)
+
+    monkeypatch.setattr(_MODULE.subprocess, "run", fake_run)
+    result = _MODULE.run_task(
+        task,
+        root=tmp_path,
+        domain=20,
+        partition="ramp_exhausted_retry_test",
+        resume=False,
+    )
+
+    assert result["status"] == "incomplete"
+    assert result["episode_id"] is None
+    assert result["error"] == "exhausted 3 infrastructure attempts"
+    assert len(result["attempts"]) == len(attempted) == 3
+
+
 def test_existing_attempt_preflight_rejects_overwrite_and_orphan_retry(tmp_path: Path) -> None:
     tasks = _MODULE.build_tasks([_record(tmp_path)], ("base",), (), 180.0)
     raw = tmp_path / "data" / "raw"
@@ -585,4 +692,26 @@ def test_existing_attempt_preflight_rejects_overwrite_and_orphan_retry(tmp_path:
         encoding="utf-8",
     )
     with pytest.raises(RuntimeError, match="retry exists without primary"):
+        _MODULE.validate_existing_attempts(tasks, tmp_path, True)
+
+    (raw / f"{retry}.outcome.json").unlink()
+    (raw / f"{primary}.outcome.json").write_text(
+        f'{{"episode_id":"{primary}","outcome":"SIMULATOR_FAILURE","sample_count":0}}\n',
+        encoding="utf-8",
+    )
+    final_retry = _MODULE.episode_id(tasks[0], 2)
+    (raw / f"{final_retry}.outcome.json").write_text(
+        f'{{"episode_id":"{final_retry}","outcome":"INVALID_RESET","sample_count":0}}\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeError, match="without primary/preceding"):
+        _MODULE.validate_existing_attempts(tasks, tmp_path, True)
+
+    (raw / f"{retry}.jsonl").write_text("{}\n", encoding="utf-8")
+    (raw / f"{retry}.outcome.json").write_text(
+        f'{{"episode_id":"{retry}","outcome":"GOAL_REACHED","sample_count":1}}\n',
+        encoding="utf-8",
+    )
+    (raw / f"{retry}.metadata.json").write_text(f'{{"episode_id":"{retry}"}}\n', encoding="utf-8")
+    with pytest.raises(RuntimeError, match="duplicate attempt exists"):
         _MODULE.validate_existing_attempts(tasks, tmp_path, True)
