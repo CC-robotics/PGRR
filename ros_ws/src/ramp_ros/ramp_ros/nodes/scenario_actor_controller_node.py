@@ -234,9 +234,9 @@ class ScenarioActorController(Node):
         self._spawn_attempted: set[str] = set()
         self._spawn_validated: set[str] = set()
         self._actual_proxy_poses: dict[str, Pose] = {}
+        self._actual_proxy_pose_received_s: dict[str, float] = {}
         self._actual_robot_pose: Pose | None = None
         self._actual_robot_pose_received_s: float | None = None
-        self._actual_pose_received_s: float | None = None
         self._actual_pose_wait_since_s: float | None = None
         self._healthy = True
         self._odom_subscription = self.create_subscription(
@@ -346,6 +346,18 @@ class ScenarioActorController(Node):
             self._actual_robot_pose_received_s is not None
             and now_s - self._actual_robot_pose_received_s
             <= float(self.get_parameter("actual_pose_timeout_s").value)
+        )
+
+    def _expected_proxy_names(self) -> tuple[str, ...]:
+        return tuple(self._proxy_name(route.name) for route in self._routes)
+
+    def _actual_pedestrian_poses_are_fresh(self, now_s: float) -> bool:
+        timeout_s = float(self.get_parameter("actual_pose_timeout_s").value)
+        return all(
+            name in self._actual_proxy_poses
+            and name in self._actual_proxy_pose_received_s
+            and now_s - self._actual_proxy_pose_received_s[name] <= timeout_s
+            for name in self._expected_proxy_names()
         )
 
     def _robot_pose_is_within_start_tolerance(self) -> bool:
@@ -586,13 +598,26 @@ class ScenarioActorController(Node):
         ):
             errors = self._robot_pose_errors()
             detail = "fresh Gazebo robot pose unavailable"
-            if errors is not None:
+            if not self._actual_pedestrian_poses_are_fresh(now_s):
+                detail = "Gazebo pedestrian poses remained missing or stale"
+            elif errors is not None:
                 detail = f"robot pose error remained {errors[0]:.3f}m/{errors[1]:.3f}rad"
             self._fail_startup_gate(f"startup timeout: {detail}")
             return False
         if not self._advance_robot_reset(now_s, now_wall_s):
             return False
         if not self._advance_odometry_settle(now_s, now_wall_s):
+            return False
+        # A successful create response only means Gazebo accepted the entity.
+        # The dynamic-pose stream can discover a new proxy later, especially
+        # while several worlds start concurrently.  Keep this discovery inside
+        # the existing bounded startup gate instead of applying the much
+        # shorter active-episode staleness threshold before navigation starts.
+        if not self._actual_pedestrian_poses_are_fresh(now_s):
+            self.get_logger().warning(
+                "startup gate waiting for authoritative Gazebo pedestrian poses",
+                throttle_duration_sec=5.0,
+            )
             return False
         if not self._advance_costmap_clear(now_wall_s):
             return False
@@ -663,9 +688,9 @@ class ScenarioActorController(Node):
         self._logger_ready |= bool(message.data)
 
     def _on_actual_poses(self, message: TFMessage) -> None:
-        expected = {self._proxy_name(route.name) for route in self._routes}
+        expected = set(self._expected_proxy_names())
         robot_name = str(self.get_parameter("actual_robot_name").value)
-        received = False
+        received_s = self.get_clock().now().nanoseconds * 1.0e-9
         for transform in message.transforms:
             name = transform.child_frame_id
             if name not in expected and name != robot_name:
@@ -678,12 +703,10 @@ class ScenarioActorController(Node):
             if name == robot_name:
                 self._actual_robot_pose = pose
                 self._robot_position = (float(pose.position.x), float(pose.position.y))
-                self._actual_robot_pose_received_s = self.get_clock().now().nanoseconds * 1.0e-9
+                self._actual_robot_pose_received_s = received_s
             else:
                 self._actual_proxy_poses[name] = pose
-            received = True
-        if received:
-            self._actual_pose_received_s = self.get_clock().now().nanoseconds * 1.0e-9
+                self._actual_proxy_pose_received_s[name] = received_s
 
     def _release_experiment(self, now_s: float) -> None:
         if self._experiment_started:
@@ -881,16 +904,11 @@ class ScenarioActorController(Node):
                 request.pose = target_pose
                 self._pending[entity_name] = self._client.call_async(request)
                 self._pending_since_s[entity_name] = now
-        expected_proxy_names = tuple(self._proxy_name(route.name) for route in self._routes)
-        actual_ready = self._actual_robot_pose is not None and all(
-            name in self._actual_proxy_poses for name in expected_proxy_names
+        expected_proxy_names = self._expected_proxy_names()
+        actual_ready = bool(
+            self._actual_robot_pose_is_fresh(now) and self._actual_pedestrian_poses_are_fresh(now)
         )
-        actual_fresh = (
-            self._actual_pose_received_s is not None
-            and now - self._actual_pose_received_s
-            <= float(self.get_parameter("actual_pose_timeout_s").value)
-        )
-        if actual_ready and actual_fresh:
+        if actual_ready:
             pose_array.poses = [self._actual_proxy_poses[name] for name in expected_proxy_names]
             self._publisher.publish(pose_array)
             robot_pose = PoseStamped()
@@ -898,7 +916,7 @@ class ScenarioActorController(Node):
             robot_pose.pose = self._actual_robot_pose
             self._robot_pose_publisher.publish(robot_pose)
             self._actual_pose_wait_since_s = None
-        elif len(self._spawn_validated) == len(expected_proxy_names):
+        elif self._experiment_started and len(self._spawn_validated) == len(expected_proxy_names):
             if self._actual_pose_wait_since_s is None:
                 self._actual_pose_wait_since_s = now
             elif now - self._actual_pose_wait_since_s > float(

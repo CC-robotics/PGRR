@@ -134,16 +134,26 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "if not self._advance_odometry_settle" in actor
     assert "startup gate rejecting reset-transient odometry" in actor
     assert 'declare_parameter("startup_odom_settle_s", 0.50)' in actor
+    assert "def _actual_pedestrian_poses_are_fresh" in actor
+    assert "self._actual_proxy_pose_received_s[name] = received_s" in actor
+    assert "startup gate waiting for authoritative Gazebo pedestrian poses" in actor
+    assert "Gazebo pedestrian poses remained missing or stale" in actor
+    assert "elif self._experiment_started and len(self._spawn_validated)" in actor
+    assert "self._actual_pose_received_s" not in actor
     assert '"${ramp_ros_prefix}/lib/ramp_ros/odom_tf_broadcaster"' in runtime
     assert '-p odom_topic:="${odom_topic}"' in runtime
     assert 'stop_pid_bounded "${odom_tf_pid}" INT 10' in runtime
-    assert actor.index("if not self._advance_robot_reset") < actor.index(
+    startup_gate = actor[actor.index("def _advance_startup_gate") : actor.index("def _on_odom")]
+    assert startup_gate.index("if not self._advance_robot_reset") < startup_gate.index(
         "if not self._advance_odometry_settle"
     )
-    assert actor.index("if not self._advance_odometry_settle") < actor.index(
-        "if not self._advance_costmap_clear"
+    odom_gate_index = startup_gate.index("if not self._advance_odometry_settle")
+    actor_gate_index = startup_gate.index(
+        "if not self._actual_pedestrian_poses_are_fresh", odom_gate_index
     )
-    assert actor.index("if not self._advance_costmap_clear") < actor.index(
+    assert odom_gate_index < actor_gate_index
+    assert actor_gate_index < startup_gate.index("if not self._advance_costmap_clear")
+    assert startup_gate.index("if not self._advance_costmap_clear") < startup_gate.index(
         "self._startup_gate_ready = True"
     )
     assert 'robot_nav_namespace="${nav_action%/navigate_to_pose}"' in runtime
