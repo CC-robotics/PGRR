@@ -75,6 +75,7 @@ from ramp_core.recovery.options import (
     constrain_temporal_closing_side,
     effective_recovery_path_deviation,
     ensure_safe_wait_fallback,
+    orient_subgoal_for_rejoin,
     recurrent_yield_lateral_action_ids,
     should_continue_recovery_option,
 )
@@ -1475,8 +1476,13 @@ class RecoveryManagerNode(Node):
         )
         action = ACTIONS[action_id]
         if action.kind is RecoveryActionKind.SUBGOAL:
-            temporary = action.target_pose(self._world_pose())
+            pose = self._world_pose()
+            temporary = action.target_pose(pose)
             assert temporary is not None
+            temporary = orient_subgoal_for_rejoin(
+                temporary,
+                path_heading_rad=self._task_path_heading(pose),
+            )
             self._adapter.set_recovery_goal(temporary)
             self._goal_preempted = True
             return temporary

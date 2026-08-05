@@ -13,7 +13,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_low_test_moderate_v5_r00_s85000.json
   preview: previews/moderate_v5/head_on_corridor_low_test_moderate_v5_r00_s85000.png
-  sha256: 0586d11f4e2a7dd205c82dbc34c2fa781af87b904c8e8b07df4959188e8164f1
+  sha256: 9f48ad284b540630c456484299f02e56a82b41e01dc636f2374783aea4e31cb0
 - scenario_id: head_on_corridor_low_test_moderate_v5_r01_s85001
   family: head_on_corridor
   density: low
@@ -23,7 +23,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_low_test_moderate_v5_r01_s85001.json
   preview: previews/moderate_v5/head_on_corridor_low_test_moderate_v5_r01_s85001.png
-  sha256: 1e1974688bc32f057945c4d7f4308e8dbad7473db54ef7cbcb56a7f0faf429b9
+  sha256: f124969b5dc53c2c91482347e599276e34bc23359a469700580ce340e0971414
 - scenario_id: head_on_corridor_low_test_moderate_v5_r02_s85002
   family: head_on_corridor
   density: low
@@ -33,7 +33,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_low_test_moderate_v5_r02_s85002.json
   preview: previews/moderate_v5/head_on_corridor_low_test_moderate_v5_r02_s85002.png
-  sha256: f78dd2c9ea1b88b7d8052834ece495efb548e59520fefde94026d414c8859e7e
+  sha256: 692213a5fd410a07e1e1eca7ed2968edeab9372c9bbf023f376b5d739c005620
 - scenario_id: head_on_corridor_low_test_moderate_v5_r03_s85003
   family: head_on_corridor
   density: low
@@ -43,7 +43,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_low_test_moderate_v5_r03_s85003.json
   preview: previews/moderate_v5/head_on_corridor_low_test_moderate_v5_r03_s85003.png
-  sha256: 5797f70e1bd01c6eb2d46fa40950f33139de6c341288b543f7e3487653149c9f
+  sha256: 1c5c59ade8a2b15570f3df98951db16e07b7c5fe91b8cc44102111cdcdc46933
 - scenario_id: head_on_corridor_low_test_moderate_v5_r04_s85004
   family: head_on_corridor
   density: low
@@ -53,7 +53,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_low_test_moderate_v5_r04_s85004.json
   preview: previews/moderate_v5/head_on_corridor_low_test_moderate_v5_r04_s85004.png
-  sha256: beb59a977b420cf807a03f7ec2cb46a904358ae6deaff104a4387a80fc812ee6
+  sha256: 7802640cafaed80b41a137c72a1388a13617ebb00cd7aae44e2c43ce50c98496
 - scenario_id: head_on_corridor_medium_test_moderate_v5_r00_s85010
   family: head_on_corridor
   density: medium
@@ -63,7 +63,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_medium_test_moderate_v5_r00_s85010.json
   preview: previews/moderate_v5/head_on_corridor_medium_test_moderate_v5_r00_s85010.png
-  sha256: b2144bae156d8e0d1d4597672539ad4e2c9eb88f44cf1d55fed65d02e688046c
+  sha256: 1593c958ad60dd3b945f510e976137ecee104f67b12f32cc90493233196b053c
 - scenario_id: head_on_corridor_medium_test_moderate_v5_r01_s85011
   family: head_on_corridor
   density: medium
@@ -73,7 +73,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_medium_test_moderate_v5_r01_s85011.json
   preview: previews/moderate_v5/head_on_corridor_medium_test_moderate_v5_r01_s85011.png
-  sha256: 066cdcf75473d97020d811e2f7d5ca99fa014321f2a0a6d2f7cbd05b4f7098c2
+  sha256: 0d9ae048c3ebe1c51e0bb3e2085ce0188f21b0e30693bd9d72903cb60e55d093
 - scenario_id: head_on_corridor_medium_test_moderate_v5_r02_s85012
   family: head_on_corridor
   density: medium
@@ -83,7 +83,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_medium_test_moderate_v5_r02_s85012.json
   preview: previews/moderate_v5/head_on_corridor_medium_test_moderate_v5_r02_s85012.png
-  sha256: 0c8641274383f74d3d0b5312f00fa6d45a84e5c6706d74046b8448ddde5edc19
+  sha256: 39fee9f8b969f5c101fc3df0ab44a2e792883e390e1208bd82ed6af6e153b21a
 - scenario_id: head_on_corridor_medium_test_moderate_v5_r03_s85013
   family: head_on_corridor
   density: medium
@@ -93,7 +93,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_medium_test_moderate_v5_r03_s85013.json
   preview: previews/moderate_v5/head_on_corridor_medium_test_moderate_v5_r03_s85013.png
-  sha256: 6736dcd1b88866b291c157bfc0cca32db00ee6833c6b5fb48fa52ac01d3cccc7
+  sha256: 037638a2900d7a50809ab5c37f2be8c3e8cacf8373c13592f98e2042a92e153d
 - scenario_id: head_on_corridor_medium_test_moderate_v5_r04_s85014
   family: head_on_corridor
   density: medium
@@ -103,7 +103,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_medium_test_moderate_v5_r04_s85014.json
   preview: previews/moderate_v5/head_on_corridor_medium_test_moderate_v5_r04_s85014.png
-  sha256: 65c31791e2f702aec077634ae002b2ba494f1ce84a8332c76d48eb408584884d
+  sha256: b7f4556742582a6d30a68548c31ff281a5615234348fedea00c4485622b9f13d
 - scenario_id: head_on_corridor_high_test_moderate_v5_r00_s85020
   family: head_on_corridor
   density: high
@@ -113,7 +113,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_high_test_moderate_v5_r00_s85020.json
   preview: previews/moderate_v5/head_on_corridor_high_test_moderate_v5_r00_s85020.png
-  sha256: abab2dd226ba0e5f035b09c22b1560661b087425d46eef9748f09aab474474db
+  sha256: 9fdf269e499970fc358f74e916c9bad96a31f575e9e65bd50be5fbee3cbf13d2
 - scenario_id: head_on_corridor_high_test_moderate_v5_r01_s85021
   family: head_on_corridor
   density: high
@@ -123,7 +123,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_high_test_moderate_v5_r01_s85021.json
   preview: previews/moderate_v5/head_on_corridor_high_test_moderate_v5_r01_s85021.png
-  sha256: f17a43648be55b76d8b7254cfc1c904316e26cfbea5c61b9424da4fe204cb41e
+  sha256: 9e495c3f8e39de119b6dda5a44962b1ca7ce949d0c20b368de9f65025b070187
 - scenario_id: head_on_corridor_high_test_moderate_v5_r02_s85022
   family: head_on_corridor
   density: high
@@ -133,7 +133,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_high_test_moderate_v5_r02_s85022.json
   preview: previews/moderate_v5/head_on_corridor_high_test_moderate_v5_r02_s85022.png
-  sha256: 66f60ffda69c5e20cc67713e6dab876851f215fb3551e2010147bad1396b2032
+  sha256: ed262bd295cc7fabaccfead4161774da59e739f5b87a0f6c8a22303da0f77071
 - scenario_id: head_on_corridor_high_test_moderate_v5_r03_s85023
   family: head_on_corridor
   density: high
@@ -143,7 +143,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_high_test_moderate_v5_r03_s85023.json
   preview: previews/moderate_v5/head_on_corridor_high_test_moderate_v5_r03_s85023.png
-  sha256: 7fc5d7e426cb924e13c11c227e55aafb8b8491cca3d7975e835cbf9ac6a5bcb3
+  sha256: fa811e7a2ba11e814af5d098b531f0ddae9a5db5418928c7c0baa26f55afee3e
 - scenario_id: head_on_corridor_high_test_moderate_v5_r04_s85024
   family: head_on_corridor
   density: high
@@ -153,7 +153,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/head_on_corridor_high_test_moderate_v5_r04_s85024.json
   preview: previews/moderate_v5/head_on_corridor_high_test_moderate_v5_r04_s85024.png
-  sha256: 638eb7d9f71d9c4782d2d2c6b6b59034f43c035d526f611425d331ec39267405
+  sha256: 1926e341574d2e092895a2e4184f43a25ab8871cc7e53f603387ad6260cecf86
 - scenario_id: doorway_bottleneck_low_test_moderate_v5_r00_s85100
   family: doorway_bottleneck
   density: low
@@ -163,7 +163,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_low_test_moderate_v5_r00_s85100.json
   preview: previews/moderate_v5/doorway_bottleneck_low_test_moderate_v5_r00_s85100.png
-  sha256: 91c27eddb8fc516cb1080f636a82e54e52a748cf21484c70e874d1d03aa2deea
+  sha256: 0837176305158d0720a54dba832eed97e31556923f4c77fa8c47de3324e671e4
 - scenario_id: doorway_bottleneck_low_test_moderate_v5_r01_s85101
   family: doorway_bottleneck
   density: low
@@ -173,7 +173,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_low_test_moderate_v5_r01_s85101.json
   preview: previews/moderate_v5/doorway_bottleneck_low_test_moderate_v5_r01_s85101.png
-  sha256: 225b4a46551414b3a07ceec68b8a8bc309fcc0a6d05d187d0166b112bd65dbcd
+  sha256: 667b2849263b2a33dcd87cbb01a2c9c58f853a39945ded65635fad672ef2d717
 - scenario_id: doorway_bottleneck_low_test_moderate_v5_r02_s85102
   family: doorway_bottleneck
   density: low
@@ -183,7 +183,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_low_test_moderate_v5_r02_s85102.json
   preview: previews/moderate_v5/doorway_bottleneck_low_test_moderate_v5_r02_s85102.png
-  sha256: 7eed58de0549be3c5906ada9f0ea280e72207f4b7949eff596fc7aa0efe2df3e
+  sha256: a70c227cd903caf4badd9a272422f106cdbd82187e6f283d02d8fff4f42b1027
 - scenario_id: doorway_bottleneck_low_test_moderate_v5_r03_s85103
   family: doorway_bottleneck
   density: low
@@ -193,7 +193,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_low_test_moderate_v5_r03_s85103.json
   preview: previews/moderate_v5/doorway_bottleneck_low_test_moderate_v5_r03_s85103.png
-  sha256: 520f7d3482b2216689dc4b69ef3deef530c42fa2f7aa4f6d34907920114f12b3
+  sha256: dfadc67478e851201937244f660ef3723ef35020e11c8be22b94c4dbf1a687a3
 - scenario_id: doorway_bottleneck_low_test_moderate_v5_r04_s85104
   family: doorway_bottleneck
   density: low
@@ -203,7 +203,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_low_test_moderate_v5_r04_s85104.json
   preview: previews/moderate_v5/doorway_bottleneck_low_test_moderate_v5_r04_s85104.png
-  sha256: 665553d828ed1a0187e47f0a3457830fa78ee0179b0efb0159c2cc1a9d4cc66e
+  sha256: 346465539aa907fe06bc198926e5a38c9d5aa21b87fbd57da3c6cae286d89d28
 - scenario_id: doorway_bottleneck_medium_test_moderate_v5_r00_s85110
   family: doorway_bottleneck
   density: medium
@@ -213,7 +213,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_medium_test_moderate_v5_r00_s85110.json
   preview: previews/moderate_v5/doorway_bottleneck_medium_test_moderate_v5_r00_s85110.png
-  sha256: cf92f8062c926855de049149a49eb1844cb2ec5629146e205cca95f07762e07f
+  sha256: c2af0ae4e5af1e025c6cc96043e512634e8a20e76008b0677b8733817d5ab84f
 - scenario_id: doorway_bottleneck_medium_test_moderate_v5_r01_s85111
   family: doorway_bottleneck
   density: medium
@@ -223,7 +223,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_medium_test_moderate_v5_r01_s85111.json
   preview: previews/moderate_v5/doorway_bottleneck_medium_test_moderate_v5_r01_s85111.png
-  sha256: 78ed4432db75a1c834077e3d301d8d909469eb960132012018dbc1a47188e89e
+  sha256: e5280e4b82afb0f60f921c3d3660fce0e5a5a1e432ce622db583598543b8e4e3
 - scenario_id: doorway_bottleneck_medium_test_moderate_v5_r02_s85112
   family: doorway_bottleneck
   density: medium
@@ -233,7 +233,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_medium_test_moderate_v5_r02_s85112.json
   preview: previews/moderate_v5/doorway_bottleneck_medium_test_moderate_v5_r02_s85112.png
-  sha256: e0be186bcb64bb704c44fb91426375ec42949b2f5cb8b84d14c8277deae9abea
+  sha256: 557d5ac3a7bec6fc83534879a7cf976d5bed24a84d798911992316bbbbffb050
 - scenario_id: doorway_bottleneck_medium_test_moderate_v5_r03_s85113
   family: doorway_bottleneck
   density: medium
@@ -243,7 +243,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_medium_test_moderate_v5_r03_s85113.json
   preview: previews/moderate_v5/doorway_bottleneck_medium_test_moderate_v5_r03_s85113.png
-  sha256: 3e91984fe7d2397c275aefcad4dd4afbe443ae610ccc71c67f897eaae4d295ee
+  sha256: da93cacf4886e79566f3e39f7633617bb468420cd77ece7116b0e113b678dce8
 - scenario_id: doorway_bottleneck_medium_test_moderate_v5_r04_s85114
   family: doorway_bottleneck
   density: medium
@@ -253,7 +253,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_medium_test_moderate_v5_r04_s85114.json
   preview: previews/moderate_v5/doorway_bottleneck_medium_test_moderate_v5_r04_s85114.png
-  sha256: 4afd66a90d954ea2fa05593111c4ba0a381989787f53d66d6a950328b935e1b9
+  sha256: 6a0f2990b57bc4f4d65abb1e6f9bed5e2c996c66a36e97ffa244652bc32403e4
 - scenario_id: doorway_bottleneck_high_test_moderate_v5_r00_s85120
   family: doorway_bottleneck
   density: high
@@ -263,7 +263,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_high_test_moderate_v5_r00_s85120.json
   preview: previews/moderate_v5/doorway_bottleneck_high_test_moderate_v5_r00_s85120.png
-  sha256: 360974b7f512738f19748e10da186e2ac6f4b015ce5cba56733f9dd761c000f8
+  sha256: 6c0a5201a0f293e4806ad9c22fabfd562bb7095ba8aa2038b757cfeb0de4d0c5
 - scenario_id: doorway_bottleneck_high_test_moderate_v5_r01_s85121
   family: doorway_bottleneck
   density: high
@@ -273,7 +273,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_high_test_moderate_v5_r01_s85121.json
   preview: previews/moderate_v5/doorway_bottleneck_high_test_moderate_v5_r01_s85121.png
-  sha256: 1cf6d062f1e1a479bf5296bb9df96e37cef93c7490e1018b45a7fde85e41b161
+  sha256: d87b998e150534807a0bb797a776045301b59aed53eb25d40ab19e43477eaced
 - scenario_id: doorway_bottleneck_high_test_moderate_v5_r02_s85122
   family: doorway_bottleneck
   density: high
@@ -283,7 +283,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_high_test_moderate_v5_r02_s85122.json
   preview: previews/moderate_v5/doorway_bottleneck_high_test_moderate_v5_r02_s85122.png
-  sha256: c3ec60691baad450114c8b0b7e368b0fb2846dd986093b6120addcf25f93f10d
+  sha256: 3b509c4f837480eccd05911fa3596c5587d506461a55c665f737d2bbbe54495c
 - scenario_id: doorway_bottleneck_high_test_moderate_v5_r03_s85123
   family: doorway_bottleneck
   density: high
@@ -293,7 +293,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_high_test_moderate_v5_r03_s85123.json
   preview: previews/moderate_v5/doorway_bottleneck_high_test_moderate_v5_r03_s85123.png
-  sha256: 925b50064ad0875ebe358fa72e473dd5ba410319ce5677f2e124728b7fb29015
+  sha256: 1e029a620e728d06d3d7ff2febed08d577e6ebc7f564efb0a5a09cb27376ac13
 - scenario_id: doorway_bottleneck_high_test_moderate_v5_r04_s85124
   family: doorway_bottleneck
   density: high
@@ -303,7 +303,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/doorway_bottleneck_high_test_moderate_v5_r04_s85124.json
   preview: previews/moderate_v5/doorway_bottleneck_high_test_moderate_v5_r04_s85124.png
-  sha256: 266113506fe92b4e19287d125e9907b08463f2d496f07be29e3ea2bc5578095e
+  sha256: e938eaefbb756154c36e62c89f91e97df2c4be4bf8410938b7c3573e7c684620
 - scenario_id: crossing_flow_low_test_moderate_v5_r00_s85200
   family: crossing_flow
   density: low
@@ -313,7 +313,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_low_test_moderate_v5_r00_s85200.json
   preview: previews/moderate_v5/crossing_flow_low_test_moderate_v5_r00_s85200.png
-  sha256: d46b2b73d18d33edf619e1c834737c66874f309912e90ea9d8a48e2dbea9a732
+  sha256: 6615de96614b82abb116d004a0bc61167ba77f77f458b82dfcf50f4e8b75c648
 - scenario_id: crossing_flow_low_test_moderate_v5_r01_s85201
   family: crossing_flow
   density: low
@@ -323,7 +323,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_low_test_moderate_v5_r01_s85201.json
   preview: previews/moderate_v5/crossing_flow_low_test_moderate_v5_r01_s85201.png
-  sha256: d03e5a3fe55345bced886e8c0c44d254da7e5e6bd61d5bd7a4772a8a5e5d3b3f
+  sha256: faa692bdb8191c1c8d7908ea69f7bb9af62969abc9675b9efc5ee8912676b1fd
 - scenario_id: crossing_flow_low_test_moderate_v5_r02_s85202
   family: crossing_flow
   density: low
@@ -333,7 +333,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_low_test_moderate_v5_r02_s85202.json
   preview: previews/moderate_v5/crossing_flow_low_test_moderate_v5_r02_s85202.png
-  sha256: 9dcae207ec2176d800a3f48c8d62d82addd6e1a26c56c9b6a6427cd945e5a95d
+  sha256: 5c39a768dbf85bb2d449f2a7737439df4cf66e70021ac8e4e1c4f86e04152471
 - scenario_id: crossing_flow_low_test_moderate_v5_r03_s85203
   family: crossing_flow
   density: low
@@ -343,7 +343,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_low_test_moderate_v5_r03_s85203.json
   preview: previews/moderate_v5/crossing_flow_low_test_moderate_v5_r03_s85203.png
-  sha256: baa64466a9a25370c5113967a81c994e94df6d62c61352610a9323b7584042f7
+  sha256: e3f526f8afbb611f067d927a9dc84bc19c8003d02d69dd88eca52901c9bfa5c0
 - scenario_id: crossing_flow_low_test_moderate_v5_r04_s85204
   family: crossing_flow
   density: low
@@ -353,7 +353,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_low_test_moderate_v5_r04_s85204.json
   preview: previews/moderate_v5/crossing_flow_low_test_moderate_v5_r04_s85204.png
-  sha256: cb9345195951c7ea30cf97559e47d186b8206f662baadbb4256d80ae415bff66
+  sha256: 6fdd8547b5abcaafd9b5daad18850d8ae93a6e1f922c162d4a3acd3d2b79ca8d
 - scenario_id: crossing_flow_medium_test_moderate_v5_r00_s85210
   family: crossing_flow
   density: medium
@@ -363,7 +363,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_medium_test_moderate_v5_r00_s85210.json
   preview: previews/moderate_v5/crossing_flow_medium_test_moderate_v5_r00_s85210.png
-  sha256: 99de7ed33bcadcce945f7315570903aad40ca15c9b77da2f4f3f6927a63f1a80
+  sha256: 38d802c21c868d5652113fbd16df860e08d581060bd314c7418e492ff321c6b7
 - scenario_id: crossing_flow_medium_test_moderate_v5_r01_s85211
   family: crossing_flow
   density: medium
@@ -373,7 +373,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_medium_test_moderate_v5_r01_s85211.json
   preview: previews/moderate_v5/crossing_flow_medium_test_moderate_v5_r01_s85211.png
-  sha256: 62cdbc894f722b4c46b7e8bc8139d130aa414b4357e6ddfbf5c8d5304dcd11aa
+  sha256: ccff5b285285e7094e453b4b4941ff60a6dabb0b12a37877db3963ca35b8e740
 - scenario_id: crossing_flow_medium_test_moderate_v5_r02_s85212
   family: crossing_flow
   density: medium
@@ -383,7 +383,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_medium_test_moderate_v5_r02_s85212.json
   preview: previews/moderate_v5/crossing_flow_medium_test_moderate_v5_r02_s85212.png
-  sha256: b00e479f9dcb944503c6f5f8f8b858472f78bc5840f8b99cc856b4b502e3b91b
+  sha256: 491da1f4bc6639a7e43f0c5643bfd153a1163516c7840a60c972b817070fa968
 - scenario_id: crossing_flow_medium_test_moderate_v5_r03_s85213
   family: crossing_flow
   density: medium
@@ -393,7 +393,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_medium_test_moderate_v5_r03_s85213.json
   preview: previews/moderate_v5/crossing_flow_medium_test_moderate_v5_r03_s85213.png
-  sha256: 7a2fa8131abd56abaa549ce6911a40960985acd66c289bb213188d8b8642a31d
+  sha256: acc5c034f3066754e376aa99edb8da73c3c81c98006d60a9c142bd87130df378
 - scenario_id: crossing_flow_medium_test_moderate_v5_r04_s85214
   family: crossing_flow
   density: medium
@@ -403,7 +403,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_medium_test_moderate_v5_r04_s85214.json
   preview: previews/moderate_v5/crossing_flow_medium_test_moderate_v5_r04_s85214.png
-  sha256: dda70563a83e57eb1cf80191965e9a44cb53d12be14409a0033b994be19e1c60
+  sha256: 0a7f943085c8e100ae440e32112135085841885003a91a3e83ccc092babeb475
 - scenario_id: crossing_flow_high_test_moderate_v5_r00_s85220
   family: crossing_flow
   density: high
@@ -413,7 +413,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_high_test_moderate_v5_r00_s85220.json
   preview: previews/moderate_v5/crossing_flow_high_test_moderate_v5_r00_s85220.png
-  sha256: 79b2080545111414c33ba8d5466250baaaabb4c0bbb67ff42bf098f1fc2189f1
+  sha256: d9191ba11f66f09fc498bbe3c045977f9df9438e6b97093e91966c4a8519eca7
 - scenario_id: crossing_flow_high_test_moderate_v5_r01_s85221
   family: crossing_flow
   density: high
@@ -423,7 +423,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_high_test_moderate_v5_r01_s85221.json
   preview: previews/moderate_v5/crossing_flow_high_test_moderate_v5_r01_s85221.png
-  sha256: 3cf7dd1c9a21379791623c541a9b3268913b5d5904dba75e89f049d9c0b72d85
+  sha256: c05a054a8cc68aacb29898557513fa6f93c857a2694688fc13a910f2ffbd5886
 - scenario_id: crossing_flow_high_test_moderate_v5_r02_s85222
   family: crossing_flow
   density: high
@@ -433,7 +433,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_high_test_moderate_v5_r02_s85222.json
   preview: previews/moderate_v5/crossing_flow_high_test_moderate_v5_r02_s85222.png
-  sha256: 2018e4565482241aa252d95f9711f68a652ebe4cc8a3d4d2c07bb2ba02a25b67
+  sha256: c5db851657650fcd5c5a6d7f73a32e3b2633ab8a1ee4ca06d4b0e1adcc1d2547
 - scenario_id: crossing_flow_high_test_moderate_v5_r03_s85223
   family: crossing_flow
   density: high
@@ -443,7 +443,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_high_test_moderate_v5_r03_s85223.json
   preview: previews/moderate_v5/crossing_flow_high_test_moderate_v5_r03_s85223.png
-  sha256: 40c7455b746cbf4db55b0cde4fafdb4995c9434f0da5e332d7043724b9908b78
+  sha256: bbd144641deaa32ba752be5903134336a768a2bbb37d845f0d2c7b8ae877bb98
 - scenario_id: crossing_flow_high_test_moderate_v5_r04_s85224
   family: crossing_flow
   density: high
@@ -453,7 +453,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/crossing_flow_high_test_moderate_v5_r04_s85224.json
   preview: previews/moderate_v5/crossing_flow_high_test_moderate_v5_r04_s85224.png
-  sha256: 323fee723c6cacf123e65f5b40d91eeea834d0f5bd98cfb8073ddd172e039909
+  sha256: 2a28247da8bf80aedc7220a73d93486a8a759b3a0594fe9abd658157fa827245
 - scenario_id: blind_corner_low_test_moderate_v5_r00_s85300
   family: blind_corner
   density: low
@@ -463,7 +463,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_low_test_moderate_v5_r00_s85300.json
   preview: previews/moderate_v5/blind_corner_low_test_moderate_v5_r00_s85300.png
-  sha256: 3490cc41494a6e75fde50a72c5eccf5d741067763c620c4a6bba1182d49ccd85
+  sha256: ddcde9b96ea519625d87a9af0dd92e0b70d6195324f0c82b39c5b0f92ec4a229
 - scenario_id: blind_corner_low_test_moderate_v5_r01_s85301
   family: blind_corner
   density: low
@@ -473,7 +473,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_low_test_moderate_v5_r01_s85301.json
   preview: previews/moderate_v5/blind_corner_low_test_moderate_v5_r01_s85301.png
-  sha256: 3d03eeb329a72547d4eeccdca51b8798460432d77e83210934db7796a32127f3
+  sha256: 23c7c76452b6fc08a9daf07c169701208563da42bd5052100e2d657e143d8c27
 - scenario_id: blind_corner_low_test_moderate_v5_r02_s85302
   family: blind_corner
   density: low
@@ -483,7 +483,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_low_test_moderate_v5_r02_s85302.json
   preview: previews/moderate_v5/blind_corner_low_test_moderate_v5_r02_s85302.png
-  sha256: b9f93f70094e78a95554872e16f51c801c6b2621c27fcc9c746c196abc0df712
+  sha256: 856a2e2831961cd3b5133955545e7a01cc84781c37c8a10eddd3a9f2c140dca8
 - scenario_id: blind_corner_low_test_moderate_v5_r03_s85303
   family: blind_corner
   density: low
@@ -493,7 +493,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_low_test_moderate_v5_r03_s85303.json
   preview: previews/moderate_v5/blind_corner_low_test_moderate_v5_r03_s85303.png
-  sha256: 5bb1d52d795ea750e23afd4f8835736e4a66a322692847e42a317b5b0fbd7c00
+  sha256: 7ec3883aebda506e6bf905e583a66cd4af11e5b9e6087b59d93db605d739559c
 - scenario_id: blind_corner_low_test_moderate_v5_r04_s85304
   family: blind_corner
   density: low
@@ -503,7 +503,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_low_test_moderate_v5_r04_s85304.json
   preview: previews/moderate_v5/blind_corner_low_test_moderate_v5_r04_s85304.png
-  sha256: 73523ea9737c425e416c2db40bf2c27d831c14ba03960da710243d305e9c086e
+  sha256: e3367c7963c72442f3620d0c94e48d63fffd3a72a36e1f35eced051a7218c26a
 - scenario_id: blind_corner_medium_test_moderate_v5_r00_s85310
   family: blind_corner
   density: medium
@@ -513,7 +513,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_medium_test_moderate_v5_r00_s85310.json
   preview: previews/moderate_v5/blind_corner_medium_test_moderate_v5_r00_s85310.png
-  sha256: 822e446f8eaae575db401beeb215ceffd48bea06458c848f59d6d5f946f5403b
+  sha256: 2d5fef24df8dd54cad891714af1cda66d82806c9d9ddab0f9ceb0744dc20207a
 - scenario_id: blind_corner_medium_test_moderate_v5_r01_s85311
   family: blind_corner
   density: medium
@@ -523,7 +523,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_medium_test_moderate_v5_r01_s85311.json
   preview: previews/moderate_v5/blind_corner_medium_test_moderate_v5_r01_s85311.png
-  sha256: 78be01e6b8f5bcea3e118e07a23fa24e829c7595c19dcfe05718dd5690e66df2
+  sha256: 210e3401c1b0b30cff22f76b4a2a650b0e326db9c3ac816677d062a1c7a5a435
 - scenario_id: blind_corner_medium_test_moderate_v5_r02_s85312
   family: blind_corner
   density: medium
@@ -533,7 +533,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_medium_test_moderate_v5_r02_s85312.json
   preview: previews/moderate_v5/blind_corner_medium_test_moderate_v5_r02_s85312.png
-  sha256: 609ede5685775ab87d24eb2301203d8c5db9dae967f7cf05bfb43e120ecf54bb
+  sha256: 507e40ac99654040a8a29a12894773fca7047a4b56dee03e09c9a805636fc161
 - scenario_id: blind_corner_medium_test_moderate_v5_r03_s85313
   family: blind_corner
   density: medium
@@ -543,7 +543,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_medium_test_moderate_v5_r03_s85313.json
   preview: previews/moderate_v5/blind_corner_medium_test_moderate_v5_r03_s85313.png
-  sha256: 16da10a05dea4d5301f0747f2162f0a361819c4a4334ce16dbb122ededc956eb
+  sha256: b7adc63c2857ae9be2d77a76417eb6e6a94613e19808571f009baf422466f37f
 - scenario_id: blind_corner_medium_test_moderate_v5_r04_s85314
   family: blind_corner
   density: medium
@@ -553,7 +553,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_medium_test_moderate_v5_r04_s85314.json
   preview: previews/moderate_v5/blind_corner_medium_test_moderate_v5_r04_s85314.png
-  sha256: c856c66d1263069acbe8ccd9c66ca26705a60fdfec824ba43148afcf31721dc3
+  sha256: 14c454aff85eb19f433a3474cd5214f62d69e22a606fafaf264e2313cce0e346
 - scenario_id: blind_corner_high_test_moderate_v5_r00_s85320
   family: blind_corner
   density: high
@@ -563,7 +563,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_high_test_moderate_v5_r00_s85320.json
   preview: previews/moderate_v5/blind_corner_high_test_moderate_v5_r00_s85320.png
-  sha256: 99a6cf45dd46ed432cefba55e544e6226ad40f2ba6071be4ce6e0c44ccfe8628
+  sha256: 3eb601c03d83137303bb20186fa24975bb455925b7f86b4a9d3361aaee5986f0
 - scenario_id: blind_corner_high_test_moderate_v5_r01_s85321
   family: blind_corner
   density: high
@@ -573,7 +573,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_high_test_moderate_v5_r01_s85321.json
   preview: previews/moderate_v5/blind_corner_high_test_moderate_v5_r01_s85321.png
-  sha256: e57bb5023cab9a053fc0fc50593f27873afa5ed424d6b07893f85a4a4b9afa80
+  sha256: 9d8d7836bfdf8963d5bcaee854b9483f5c8608c2ea5968374868555de30c1cd2
 - scenario_id: blind_corner_high_test_moderate_v5_r02_s85322
   family: blind_corner
   density: high
@@ -583,7 +583,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_high_test_moderate_v5_r02_s85322.json
   preview: previews/moderate_v5/blind_corner_high_test_moderate_v5_r02_s85322.png
-  sha256: d60da47501e7a1e3d6aaf4b7166d07dfd6302edee7c7e994005b5cdefde4c0c6
+  sha256: 6b58a53f868732d126f7db64c489178dce02c333f7460547c14d79f1379a229c
 - scenario_id: blind_corner_high_test_moderate_v5_r03_s85323
   family: blind_corner
   density: high
@@ -593,7 +593,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_high_test_moderate_v5_r03_s85323.json
   preview: previews/moderate_v5/blind_corner_high_test_moderate_v5_r03_s85323.png
-  sha256: 502c1a32ee46196028757f323f377a4b99389311d343fbb500680a1e582a1b03
+  sha256: 204705e3d419fb5886b6743d2ab558a55e98f4dc8e90de2d9a6b1dd23923a7b0
 - scenario_id: blind_corner_high_test_moderate_v5_r04_s85324
   family: blind_corner
   density: high
@@ -603,7 +603,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/blind_corner_high_test_moderate_v5_r04_s85324.json
   preview: previews/moderate_v5/blind_corner_high_test_moderate_v5_r04_s85324.png
-  sha256: 4ebf6d4217e5b96107278f2273e473dfac2793cdb28a429071b33d12208014e2
+  sha256: 22122db2fca751c0c294892664ec0d2e49f53da7d1f55a7a3fb9cfd5c9493f12
 - scenario_id: group_blocking_low_test_moderate_v5_r00_s85400
   family: group_blocking
   density: low
@@ -613,7 +613,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_low_test_moderate_v5_r00_s85400.json
   preview: previews/moderate_v5/group_blocking_low_test_moderate_v5_r00_s85400.png
-  sha256: 6f5839df30453a9a34b7c9fb4279570b171548c2e7f426412439c3594cf76cf2
+  sha256: ab104664fbb7f6e7a6a439099c17404420085d14e4c9b200532d93d6da834711
 - scenario_id: group_blocking_low_test_moderate_v5_r01_s85401
   family: group_blocking
   density: low
@@ -623,7 +623,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_low_test_moderate_v5_r01_s85401.json
   preview: previews/moderate_v5/group_blocking_low_test_moderate_v5_r01_s85401.png
-  sha256: 6da0b6a31b84bf4d6ae06f70b895201ac76f98eee01d1b3d436c0853f0d0d08b
+  sha256: b4c01fa92c164e849af22fb75588bbcd787b2ba64c83e0db3a216dd68a1b3bc1
 - scenario_id: group_blocking_low_test_moderate_v5_r02_s85402
   family: group_blocking
   density: low
@@ -633,7 +633,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_low_test_moderate_v5_r02_s85402.json
   preview: previews/moderate_v5/group_blocking_low_test_moderate_v5_r02_s85402.png
-  sha256: de62a095f86c12a009622ebbab749ea1f64f1d3aa50f3691819564e3ebabd118
+  sha256: eecd74b643cfccc2c2afadb9d08b3548af00004d6195637bb36c598a6cd5ce56
 - scenario_id: group_blocking_low_test_moderate_v5_r03_s85403
   family: group_blocking
   density: low
@@ -643,7 +643,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_low_test_moderate_v5_r03_s85403.json
   preview: previews/moderate_v5/group_blocking_low_test_moderate_v5_r03_s85403.png
-  sha256: 11c5ed73d5826f50989f9e226ec538343d2bc1089b7a041df2f2d8c6048b45ad
+  sha256: b9065d37d544d12b1d02a9bf05da312a51ce3054da8e3887d267e7979cb9042e
 - scenario_id: group_blocking_low_test_moderate_v5_r04_s85404
   family: group_blocking
   density: low
@@ -653,7 +653,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_low_test_moderate_v5_r04_s85404.json
   preview: previews/moderate_v5/group_blocking_low_test_moderate_v5_r04_s85404.png
-  sha256: 0fbc391b149b9d6e4d467c308f9d08acc769b5c77082057a54554df00248229a
+  sha256: 6daa36109f9aba56a019c05ab9c921d251ad205c30e318078b8c3a5a86929260
 - scenario_id: group_blocking_medium_test_moderate_v5_r00_s85410
   family: group_blocking
   density: medium
@@ -663,7 +663,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_medium_test_moderate_v5_r00_s85410.json
   preview: previews/moderate_v5/group_blocking_medium_test_moderate_v5_r00_s85410.png
-  sha256: c25a174ffe1559010d63c5ab41661884f162d1347fcf4a9ca0806db44dfd7ba4
+  sha256: 6368a20cc6ee31baf83fa098daa8bd6b23f312f5f7b60b3ef61dc894d1a810ff
 - scenario_id: group_blocking_medium_test_moderate_v5_r01_s85411
   family: group_blocking
   density: medium
@@ -673,7 +673,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_medium_test_moderate_v5_r01_s85411.json
   preview: previews/moderate_v5/group_blocking_medium_test_moderate_v5_r01_s85411.png
-  sha256: 5e7b6521b15943e1ae3e766a0c840216961fa09abfc8a1bd081e09a2c6eae8de
+  sha256: 7d963046e251cb5fbed517b4895b8dc15db20fea5758c658eacce56940ab17e2
 - scenario_id: group_blocking_medium_test_moderate_v5_r02_s85412
   family: group_blocking
   density: medium
@@ -683,7 +683,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_medium_test_moderate_v5_r02_s85412.json
   preview: previews/moderate_v5/group_blocking_medium_test_moderate_v5_r02_s85412.png
-  sha256: 9bb2ae6f897a45cee0321ffeb00e81c73eda114dc3731e4d0d976e710254574b
+  sha256: 7bad1c1f5e68608bb546ea40532a98539b97117a7f274f4020b713b3ddbfb2a8
 - scenario_id: group_blocking_medium_test_moderate_v5_r03_s85413
   family: group_blocking
   density: medium
@@ -693,7 +693,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_medium_test_moderate_v5_r03_s85413.json
   preview: previews/moderate_v5/group_blocking_medium_test_moderate_v5_r03_s85413.png
-  sha256: 9abec31c36f7cdfbe37a78ab9b57b20a73533a9160fad544576f12e6b2498a86
+  sha256: 3f100a36cc07dff0bb0775b065c81b15a47be391b0dd0b3e247a95d1808059ca
 - scenario_id: group_blocking_medium_test_moderate_v5_r04_s85414
   family: group_blocking
   density: medium
@@ -703,7 +703,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_medium_test_moderate_v5_r04_s85414.json
   preview: previews/moderate_v5/group_blocking_medium_test_moderate_v5_r04_s85414.png
-  sha256: 4ff8ae036e53f0761d906269ca95f7eed704c7edd6c77baa12f806adcbc252ec
+  sha256: c58a709286d60295ffa0d20244a88be846e197791c1f6055dbb6b22f7d006c8c
 - scenario_id: group_blocking_high_test_moderate_v5_r00_s85420
   family: group_blocking
   density: high
@@ -713,7 +713,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_high_test_moderate_v5_r00_s85420.json
   preview: previews/moderate_v5/group_blocking_high_test_moderate_v5_r00_s85420.png
-  sha256: b6ad7e07aa2d13b04d9a7a56f46b003694b30f88f8a38656ec7c25c451b04f64
+  sha256: 8b4deb9da29e6f4facc2ce8f096797861fb16d78fe94ec06e906188f1fa47b9d
 - scenario_id: group_blocking_high_test_moderate_v5_r01_s85421
   family: group_blocking
   density: high
@@ -723,7 +723,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_high_test_moderate_v5_r01_s85421.json
   preview: previews/moderate_v5/group_blocking_high_test_moderate_v5_r01_s85421.png
-  sha256: 37183c31b0556cc241372151054646d89946304809c50cf58e17e3bf04f3a115
+  sha256: 145af6b96a1e65a220cd6af90b40943ae7d1a50a6363fa64c74da6588d0ae135
 - scenario_id: group_blocking_high_test_moderate_v5_r02_s85422
   family: group_blocking
   density: high
@@ -733,7 +733,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_high_test_moderate_v5_r02_s85422.json
   preview: previews/moderate_v5/group_blocking_high_test_moderate_v5_r02_s85422.png
-  sha256: 7c7f2b504a7906a223823b52d277ec6273ff9ff73be8a527f2696461208915ab
+  sha256: c188b0ffb814820b99b9e478410480b732b98fa8627b20c71d0d0033e06274ad
 - scenario_id: group_blocking_high_test_moderate_v5_r03_s85423
   family: group_blocking
   density: high
@@ -743,7 +743,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_high_test_moderate_v5_r03_s85423.json
   preview: previews/moderate_v5/group_blocking_high_test_moderate_v5_r03_s85423.png
-  sha256: b3e6e67044e637ea458c3dcbf9a9fb0c983126468cb3b8ac982f1f28a54ec254
+  sha256: ea8f094493fe4bffd241925190d078ae66f68de34880c1c11a61eec39d390cdf
 - scenario_id: group_blocking_high_test_moderate_v5_r04_s85424
   family: group_blocking
   density: high
@@ -753,7 +753,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/group_blocking_high_test_moderate_v5_r04_s85424.json
   preview: previews/moderate_v5/group_blocking_high_test_moderate_v5_r04_s85424.png
-  sha256: d312ea6f2a37be1dfbf5f11d22f2da3e6487a537f6c0f35dde7872824dcbfa3d
+  sha256: baae17d380d38d32f658169fe05d531ac8e5d20c4f9623d733d5d254d022dd44
 - scenario_id: overtaking_low_test_moderate_v5_r00_s85500
   family: overtaking
   density: low
@@ -763,7 +763,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_low_test_moderate_v5_r00_s85500.json
   preview: previews/moderate_v5/overtaking_low_test_moderate_v5_r00_s85500.png
-  sha256: 4104bd99c7466ac5a98a8ae48fc67b4ce693ba2d7ad800b598a337518af936c2
+  sha256: 45672479eb9be3a24eecef9a65d66bb1386344700eb77a3f510f3a600cd70ecb
 - scenario_id: overtaking_low_test_moderate_v5_r01_s85501
   family: overtaking
   density: low
@@ -773,7 +773,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_low_test_moderate_v5_r01_s85501.json
   preview: previews/moderate_v5/overtaking_low_test_moderate_v5_r01_s85501.png
-  sha256: 2c4c98dab27dbc67810174af8d335eb9b9ee12cd747a407596242d93f08ae64f
+  sha256: ca949df54cda3d422ca9baaa8b35d08dd657732e5ff9200701823280c9732a95
 - scenario_id: overtaking_low_test_moderate_v5_r02_s85502
   family: overtaking
   density: low
@@ -783,7 +783,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_low_test_moderate_v5_r02_s85502.json
   preview: previews/moderate_v5/overtaking_low_test_moderate_v5_r02_s85502.png
-  sha256: c39410d899fe2a4c799e38d893b793ec4849701ebb0fc26f0b4f78efdd270dfc
+  sha256: efbbff5341dde6c2d4576cd74853c5294a45c0c2af1875861ee3b2fe1cbe5b54
 - scenario_id: overtaking_low_test_moderate_v5_r03_s85503
   family: overtaking
   density: low
@@ -793,7 +793,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_low_test_moderate_v5_r03_s85503.json
   preview: previews/moderate_v5/overtaking_low_test_moderate_v5_r03_s85503.png
-  sha256: 6a55c880f965bd8fe40277f98cdd78a7885b29fa49c38d799d7afe45030ddc37
+  sha256: e44ec32da9a54d57743f46f5383c14accfef95245a2a8c6732344a4f45300d5c
 - scenario_id: overtaking_low_test_moderate_v5_r04_s85504
   family: overtaking
   density: low
@@ -803,7 +803,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_low_test_moderate_v5_r04_s85504.json
   preview: previews/moderate_v5/overtaking_low_test_moderate_v5_r04_s85504.png
-  sha256: f2c0fea640730720a5fb68271ab3184e926b2f274d369ef7237684a5476d2a44
+  sha256: ab33fa926f57eeb816ef7106a0a03835fb9ad1d1c15105b3693da013c1acbe04
 - scenario_id: overtaking_medium_test_moderate_v5_r00_s85510
   family: overtaking
   density: medium
@@ -813,7 +813,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_medium_test_moderate_v5_r00_s85510.json
   preview: previews/moderate_v5/overtaking_medium_test_moderate_v5_r00_s85510.png
-  sha256: 38b3e89f3c3ee50bd8e85d32e9c1a5366fe0b6b0ae7ad4b981e01c79fbbdb5cf
+  sha256: 5238e4d221d79dd7640dcdb9ebdedaf21e8b0df26520bdc8e93c4b3a3a49136f
 - scenario_id: overtaking_medium_test_moderate_v5_r01_s85511
   family: overtaking
   density: medium
@@ -823,7 +823,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_medium_test_moderate_v5_r01_s85511.json
   preview: previews/moderate_v5/overtaking_medium_test_moderate_v5_r01_s85511.png
-  sha256: b6800c6677845fc3cb4a97a0f5a4cc97dcf49f6f6d62d1c8c669a0d42ca42df0
+  sha256: b37a3a0919388b1198ea09adc420b10cf4acf56d9f90670d759246f2758cd910
 - scenario_id: overtaking_medium_test_moderate_v5_r02_s85512
   family: overtaking
   density: medium
@@ -833,7 +833,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_medium_test_moderate_v5_r02_s85512.json
   preview: previews/moderate_v5/overtaking_medium_test_moderate_v5_r02_s85512.png
-  sha256: cae89d94d2d4834457e622fe685cda4085a198097c0e952eb3b5392eb31b19b7
+  sha256: 06b00ab11047036b21829331d6881f891993d265712d26579ee89feb09e5d709
 - scenario_id: overtaking_medium_test_moderate_v5_r03_s85513
   family: overtaking
   density: medium
@@ -843,7 +843,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_medium_test_moderate_v5_r03_s85513.json
   preview: previews/moderate_v5/overtaking_medium_test_moderate_v5_r03_s85513.png
-  sha256: cf629788f9f92e169823c37d98758682bf11403223ff16e0be0b918f3ffe5e73
+  sha256: 8b538c1f51c0bb2bd3f7e2cfca9f4a1a8a950dd2e009758ac787f05b86f4f44d
 - scenario_id: overtaking_medium_test_moderate_v5_r04_s85514
   family: overtaking
   density: medium
@@ -853,7 +853,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_medium_test_moderate_v5_r04_s85514.json
   preview: previews/moderate_v5/overtaking_medium_test_moderate_v5_r04_s85514.png
-  sha256: ad82499c52b9774c4edffe387c830057129f0cd550768885ed3a78fab7390e46
+  sha256: d96a5b7816a698b29bf8afc1d4e42e52b248026d422df05368ab19c0ffb92c22
 - scenario_id: overtaking_high_test_moderate_v5_r00_s85520
   family: overtaking
   density: high
@@ -863,7 +863,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_high_test_moderate_v5_r00_s85520.json
   preview: previews/moderate_v5/overtaking_high_test_moderate_v5_r00_s85520.png
-  sha256: 714b74e7ec34d28aa47bbf173b06ef46d999aaebbe5263b30c2e7b26449fddca
+  sha256: a4c6b30916ce0b4d8f6c95a9192eaef2c7afaf040f0dc96fb070317353b9983b
 - scenario_id: overtaking_high_test_moderate_v5_r01_s85521
   family: overtaking
   density: high
@@ -873,7 +873,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_high_test_moderate_v5_r01_s85521.json
   preview: previews/moderate_v5/overtaking_high_test_moderate_v5_r01_s85521.png
-  sha256: fb76980de73760d5f6b051332b0fbc5d563c4710a4601826b51b152a7c77b1aa
+  sha256: 14213e36a509e187556742be21879fe4ecac8b4d10177ef5d0a5c64ee9acd4d5
 - scenario_id: overtaking_high_test_moderate_v5_r02_s85522
   family: overtaking
   density: high
@@ -883,7 +883,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_high_test_moderate_v5_r02_s85522.json
   preview: previews/moderate_v5/overtaking_high_test_moderate_v5_r02_s85522.png
-  sha256: 2d72193b7073124f77656cdbdd01cecd7c4e5bec93a4ebb9f7f0b52fcb28faf9
+  sha256: 73099e84448558c7e71d8a1b9af6e23c9fdcce32c0c81534113f3110d832c77a
 - scenario_id: overtaking_high_test_moderate_v5_r03_s85523
   family: overtaking
   density: high
@@ -893,7 +893,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_high_test_moderate_v5_r03_s85523.json
   preview: previews/moderate_v5/overtaking_high_test_moderate_v5_r03_s85523.png
-  sha256: dfdf78d3c076bc77a4c61f511d68b65647d0c9be081202cf1f7ebe461c520bb4
+  sha256: def598178949cccc53c211a06c703291c21a6345932fbf8573869e8c593ba3ae
 - scenario_id: overtaking_high_test_moderate_v5_r04_s85524
   family: overtaking
   density: high
@@ -903,7 +903,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/overtaking_high_test_moderate_v5_r04_s85524.json
   preview: previews/moderate_v5/overtaking_high_test_moderate_v5_r04_s85524.png
-  sha256: c4e704cc8d6154c123bcf2ad3565bdc7b66f054185e0e6bf4c15bcd517f8224d
+  sha256: a655df71611d936f0311770ecb493f44d0e543b67fb887b4e0c1af3f40759505
 - scenario_id: opposite_streams_low_test_moderate_v5_r00_s85600
   family: opposite_streams
   density: low
@@ -913,7 +913,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_low_test_moderate_v5_r00_s85600.json
   preview: previews/moderate_v5/opposite_streams_low_test_moderate_v5_r00_s85600.png
-  sha256: f7db2422edcb507c1fbbafe669c234c97032216016598a234dbaa9c3844c4ec4
+  sha256: 816c37164591e771adbad84575755da5441f003447fb41aeba533bf773ba64cb
 - scenario_id: opposite_streams_low_test_moderate_v5_r01_s85601
   family: opposite_streams
   density: low
@@ -923,7 +923,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_low_test_moderate_v5_r01_s85601.json
   preview: previews/moderate_v5/opposite_streams_low_test_moderate_v5_r01_s85601.png
-  sha256: 5254c4ef3c12e6ab4ab63a03568ad4978c2a0878ba2c83ffc644bf770c1d8f6e
+  sha256: b508d276405b8fe38bc3b069e33778955d8e1cb8079bf0047a88c84c93d5c594
 - scenario_id: opposite_streams_low_test_moderate_v5_r02_s85602
   family: opposite_streams
   density: low
@@ -933,7 +933,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_low_test_moderate_v5_r02_s85602.json
   preview: previews/moderate_v5/opposite_streams_low_test_moderate_v5_r02_s85602.png
-  sha256: 3fae1aaa23668ac54d9869c08cefc4d4aa0a25493efd31782324051b7e9d2a31
+  sha256: 9f253f84133cbf9358366a8d1a5857a93716e2c0761122c3c1b757ce5ea78b77
 - scenario_id: opposite_streams_low_test_moderate_v5_r03_s85603
   family: opposite_streams
   density: low
@@ -943,7 +943,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_low_test_moderate_v5_r03_s85603.json
   preview: previews/moderate_v5/opposite_streams_low_test_moderate_v5_r03_s85603.png
-  sha256: 6789c47851e73eb3626f34924dca1ebfdb1995fda114e00c7046f13818bfaa23
+  sha256: 929519699c3f0ff9eab30a74cbca166b126d7859ae3c2d50bae7b16df621c9ce
 - scenario_id: opposite_streams_low_test_moderate_v5_r04_s85604
   family: opposite_streams
   density: low
@@ -953,7 +953,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_low_test_moderate_v5_r04_s85604.json
   preview: previews/moderate_v5/opposite_streams_low_test_moderate_v5_r04_s85604.png
-  sha256: 3740ffc22e9f43aa07dff4b1243678935b62eb0509e2f6016005a86887a5bd79
+  sha256: d7d019f23589be9de0c8980f9fc1d1b0d5cb9253962e397556cb5a0a40fa9608
 - scenario_id: opposite_streams_medium_test_moderate_v5_r00_s85610
   family: opposite_streams
   density: medium
@@ -963,7 +963,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_medium_test_moderate_v5_r00_s85610.json
   preview: previews/moderate_v5/opposite_streams_medium_test_moderate_v5_r00_s85610.png
-  sha256: 4dddd84841b0b46d3e4087f9b255df8dcd3cb9367855e34f67cc7e03a68cbabd
+  sha256: 72858a27acb40b86bcac9e81d7058df58470246fbc712fd5a85291bb02c40bcc
 - scenario_id: opposite_streams_medium_test_moderate_v5_r01_s85611
   family: opposite_streams
   density: medium
@@ -973,7 +973,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_medium_test_moderate_v5_r01_s85611.json
   preview: previews/moderate_v5/opposite_streams_medium_test_moderate_v5_r01_s85611.png
-  sha256: 710081b5978b4811ed36b97481bd7f0000f35d6f1177cb1883fa4b3b912028ae
+  sha256: de61f1a42c7ff13969f97571549f696b2055ad1712663f5fe97000f8807e33c6
 - scenario_id: opposite_streams_medium_test_moderate_v5_r02_s85612
   family: opposite_streams
   density: medium
@@ -983,7 +983,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_medium_test_moderate_v5_r02_s85612.json
   preview: previews/moderate_v5/opposite_streams_medium_test_moderate_v5_r02_s85612.png
-  sha256: 6b636d09ebf981ea646141f8e2dbb5eac0c9bcc9fa307021553963364cefa8b5
+  sha256: be7b1fa99fae8f3a25a3f7c713b5534bd3cbd21e5d574cc2789ebbc0563309ce
 - scenario_id: opposite_streams_medium_test_moderate_v5_r03_s85613
   family: opposite_streams
   density: medium
@@ -993,7 +993,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_medium_test_moderate_v5_r03_s85613.json
   preview: previews/moderate_v5/opposite_streams_medium_test_moderate_v5_r03_s85613.png
-  sha256: aabaca3e8465de93d15d46e40c44d9bac26db2d6b533692c364ece45bfeb5750
+  sha256: a6265d7b06fb3447d4d6bf1536233a49be866822ac32128a3b422b1eccbb0723
 - scenario_id: opposite_streams_medium_test_moderate_v5_r04_s85614
   family: opposite_streams
   density: medium
@@ -1003,7 +1003,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_medium_test_moderate_v5_r04_s85614.json
   preview: previews/moderate_v5/opposite_streams_medium_test_moderate_v5_r04_s85614.png
-  sha256: 2b399b8e117bebba5c7c6f0a9504a69d021cb6fbb27c085f9df8def77bf1390e
+  sha256: dca6c3045f32749ce8824d088b4de050d1ef5f68877c924f057b0e2225d14eb2
 - scenario_id: opposite_streams_high_test_moderate_v5_r00_s85620
   family: opposite_streams
   density: high
@@ -1013,7 +1013,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_high_test_moderate_v5_r00_s85620.json
   preview: previews/moderate_v5/opposite_streams_high_test_moderate_v5_r00_s85620.png
-  sha256: eae695ce7b0c11542fbd1c642f73f604a37d48d06daf75f6c1a05a31438368da
+  sha256: 9f8a2e793b80ac61898eb4f93c380beb7a9603cc950ab78d99b3161e75777a56
 - scenario_id: opposite_streams_high_test_moderate_v5_r01_s85621
   family: opposite_streams
   density: high
@@ -1023,7 +1023,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_high_test_moderate_v5_r01_s85621.json
   preview: previews/moderate_v5/opposite_streams_high_test_moderate_v5_r01_s85621.png
-  sha256: 93bec24716ee2bddaad8ccc972e8613030c44c75ca23f56ffc2cc109a2d1f1f0
+  sha256: fab951b3a7878c4af104b08851a0b60bcbeda22b8c255508e69a6b6b35e6ef29
 - scenario_id: opposite_streams_high_test_moderate_v5_r02_s85622
   family: opposite_streams
   density: high
@@ -1033,7 +1033,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_high_test_moderate_v5_r02_s85622.json
   preview: previews/moderate_v5/opposite_streams_high_test_moderate_v5_r02_s85622.png
-  sha256: 2a4359ae513e04c770c216414e839cf796de38ec1bccd10fe00c57807a1ae3b9
+  sha256: 70e8aba17349c22cad01c2e2d0ee2a033f89c87b60d64b0bb57af9cc6dcc3a57
 - scenario_id: opposite_streams_high_test_moderate_v5_r03_s85623
   family: opposite_streams
   density: high
@@ -1043,7 +1043,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_high_test_moderate_v5_r03_s85623.json
   preview: previews/moderate_v5/opposite_streams_high_test_moderate_v5_r03_s85623.png
-  sha256: 4bb64fc80bb27ce9ced8543022999dd5d9d86f76392a13a7ed5d3ff8720cfb9b
+  sha256: aadd33e3acdce54694019b34b93660b21c06c5c84008fcd38638aec50caf782f
 - scenario_id: opposite_streams_high_test_moderate_v5_r04_s85624
   family: opposite_streams
   density: high
@@ -1053,7 +1053,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/opposite_streams_high_test_moderate_v5_r04_s85624.json
   preview: previews/moderate_v5/opposite_streams_high_test_moderate_v5_r04_s85624.png
-  sha256: 65313a6b152fcd209bd3291081656955d438c7c268a918023b30a80d439e1cf9
+  sha256: 6da50db7293b57f658eb3e23d427c2fa3b72d31f5911b43f127038743ac3cd51
 - scenario_id: temporary_blockage_low_test_moderate_v5_r00_s85700
   family: temporary_blockage
   density: low
@@ -1063,7 +1063,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_low_test_moderate_v5_r00_s85700.json
   preview: previews/moderate_v5/temporary_blockage_low_test_moderate_v5_r00_s85700.png
-  sha256: a16bc740f490f0f0029ad281896a916f8720e160f43605b536a1141d2b14c5c9
+  sha256: 46b733806f4a783d59ebd8d852f3351b65f414f635d6ccba442f9cd8a996606f
 - scenario_id: temporary_blockage_low_test_moderate_v5_r01_s85701
   family: temporary_blockage
   density: low
@@ -1073,7 +1073,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_low_test_moderate_v5_r01_s85701.json
   preview: previews/moderate_v5/temporary_blockage_low_test_moderate_v5_r01_s85701.png
-  sha256: 909e344b37d51c89163c77198e54a34c95c8697d7f4626c29e0e43872b1fef7b
+  sha256: a648a430e3a109ab0f307f2b4aebc9628ed6c15ecb72b2d509cf9a175bcf6251
 - scenario_id: temporary_blockage_low_test_moderate_v5_r02_s85702
   family: temporary_blockage
   density: low
@@ -1083,7 +1083,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_low_test_moderate_v5_r02_s85702.json
   preview: previews/moderate_v5/temporary_blockage_low_test_moderate_v5_r02_s85702.png
-  sha256: d17520a352b41a3b069efa93d08aeec2bfa518b237fb81437da344d94db59b17
+  sha256: 5c03eb37f09522723256b0912e5451ba68724611a579c17919075d0582a17cc7
 - scenario_id: temporary_blockage_low_test_moderate_v5_r03_s85703
   family: temporary_blockage
   density: low
@@ -1093,7 +1093,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_low_test_moderate_v5_r03_s85703.json
   preview: previews/moderate_v5/temporary_blockage_low_test_moderate_v5_r03_s85703.png
-  sha256: 67793222bf3a1b87eba61d87f0af01975dca1cd8e2a5669cd64d8a06c89dacdb
+  sha256: f674431561b3600a7f9c720ed6bb5dcc7f0603586be27bbe7ee099bd8e06c6bd
 - scenario_id: temporary_blockage_low_test_moderate_v5_r04_s85704
   family: temporary_blockage
   density: low
@@ -1103,7 +1103,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_low_test_moderate_v5_r04_s85704.json
   preview: previews/moderate_v5/temporary_blockage_low_test_moderate_v5_r04_s85704.png
-  sha256: 87da570f3bb958f6476659e1f0c00b3c1ddd69002d7744ebfe85db1bd33f8be9
+  sha256: a3ff88443083323774cc844ee16732b1094d2dc7d4aad4042ea65179e978f0a4
 - scenario_id: temporary_blockage_medium_test_moderate_v5_r00_s85710
   family: temporary_blockage
   density: medium
@@ -1113,7 +1113,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_medium_test_moderate_v5_r00_s85710.json
   preview: previews/moderate_v5/temporary_blockage_medium_test_moderate_v5_r00_s85710.png
-  sha256: 82591b7c1ef3c5b6b48609e59fdac0ae6105413a82c6bcc58058ef7a4b240741
+  sha256: ab722c14dcc40b8357a0814fa1f721b3634fa0786dc8edafe2850c14ba464e76
 - scenario_id: temporary_blockage_medium_test_moderate_v5_r01_s85711
   family: temporary_blockage
   density: medium
@@ -1123,7 +1123,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_medium_test_moderate_v5_r01_s85711.json
   preview: previews/moderate_v5/temporary_blockage_medium_test_moderate_v5_r01_s85711.png
-  sha256: f7e4737de7fff4c35f5732fc17013d5efa38c64c60957221e5533929dc8aedbb
+  sha256: f42c6001ea2c439775b3fd88ba2de71827fa314880390d18bbed0d86281d1ece
 - scenario_id: temporary_blockage_medium_test_moderate_v5_r02_s85712
   family: temporary_blockage
   density: medium
@@ -1133,7 +1133,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_medium_test_moderate_v5_r02_s85712.json
   preview: previews/moderate_v5/temporary_blockage_medium_test_moderate_v5_r02_s85712.png
-  sha256: 34b42f9888966670e89b63a3b56cbbf9bdf765786eb415eb5a7f12522daf5227
+  sha256: c64dc2e07e84c3d3882f299b4f63a5800295ef770396c98d4534720a5454da86
 - scenario_id: temporary_blockage_medium_test_moderate_v5_r03_s85713
   family: temporary_blockage
   density: medium
@@ -1143,7 +1143,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_medium_test_moderate_v5_r03_s85713.json
   preview: previews/moderate_v5/temporary_blockage_medium_test_moderate_v5_r03_s85713.png
-  sha256: 6cd9e1bdf4de540887991249e118da35228cca42548d3d8f750670c3745ab5a9
+  sha256: e9d3aca62df4aff25f88e7159704989457fedbb94e4a23fbd0e6ee4a73e558bb
 - scenario_id: temporary_blockage_medium_test_moderate_v5_r04_s85714
   family: temporary_blockage
   density: medium
@@ -1153,7 +1153,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_medium_test_moderate_v5_r04_s85714.json
   preview: previews/moderate_v5/temporary_blockage_medium_test_moderate_v5_r04_s85714.png
-  sha256: c20f11f5e95421011bd5b175b8321a9367ffef9b90959a30125bd8c20789d077
+  sha256: 0360d5d8dbe97361b63e06bebbb504d1bb371cf3bff55ad69f070a9982b38d0a
 - scenario_id: temporary_blockage_high_test_moderate_v5_r00_s85720
   family: temporary_blockage
   density: high
@@ -1163,7 +1163,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_high_test_moderate_v5_r00_s85720.json
   preview: previews/moderate_v5/temporary_blockage_high_test_moderate_v5_r00_s85720.png
-  sha256: aaad6324dbd83fcfcdbb29ef78bf0dfc1b667ff141948356ec5882a7ed2a8ec8
+  sha256: 4462ff1d0f5bb6a3d1ec46bd5862b9b244d2d3344b7c60459bc209c3ce7f23e1
 - scenario_id: temporary_blockage_high_test_moderate_v5_r01_s85721
   family: temporary_blockage
   density: high
@@ -1173,7 +1173,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_high_test_moderate_v5_r01_s85721.json
   preview: previews/moderate_v5/temporary_blockage_high_test_moderate_v5_r01_s85721.png
-  sha256: 7d96a9668f45c8064d1ef0058bbfa8cb768eb8ca6cb282853b4216316b2495c6
+  sha256: 5b6165f727d38989a63caaaf5ac6c1323d759180d206b8795c717d93ce115f2b
 - scenario_id: temporary_blockage_high_test_moderate_v5_r02_s85722
   family: temporary_blockage
   density: high
@@ -1183,7 +1183,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_high_test_moderate_v5_r02_s85722.json
   preview: previews/moderate_v5/temporary_blockage_high_test_moderate_v5_r02_s85722.png
-  sha256: 507b14389282c9a9973747b946910d473d9a54667cffe4fd66323cbca778bb68
+  sha256: 920fdf9c8d98297907db4ff98e34a6f24548de6be023b9c4fab8a8e968bd4f17
 - scenario_id: temporary_blockage_high_test_moderate_v5_r03_s85723
   family: temporary_blockage
   density: high
@@ -1193,7 +1193,7 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_high_test_moderate_v5_r03_s85723.json
   preview: previews/moderate_v5/temporary_blockage_high_test_moderate_v5_r03_s85723.png
-  sha256: 167351bac78781eb97e8a1f82653d298496cdf3f3b3def092730cc2115cb753e
+  sha256: cc909f7b449a6ad4b44bee81b73d5bd9a34477d9c7906063f82a620597516fc8
 - scenario_id: temporary_blockage_high_test_moderate_v5_r04_s85724
   family: temporary_blockage
   density: high
@@ -1203,4 +1203,4 @@ scenarios:
   difficulty: moderate
   path: moderate_v5/arena/map_empty/temporary_blockage_high_test_moderate_v5_r04_s85724.json
   preview: previews/moderate_v5/temporary_blockage_high_test_moderate_v5_r04_s85724.png
-  sha256: aac0fbf8f9f5ee36bf6787ab3d20e8b4b81ca918417d3f4b750ed1822047ec91
+  sha256: 9d501ddd5021c00a98faf085cca87774290ac599a160508ac0b0f0863df0f2bf

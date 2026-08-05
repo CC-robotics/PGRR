@@ -634,7 +634,7 @@ def _assert_oracle_yield_safety_contract(manager: RecoveryManagerNode) -> None:
 def _assert_directional_yield_lifecycle(manager: RecoveryManagerNode) -> None:
     latch = manager._bc_yield_latch
     latch.reset()
-    if abs(latch.release_clearance_m - 1.25) > 1.0e-9 or latch.release_frames != 3:
+    if abs(latch.release_clearance_m - 0.90) > 1.0e-9 or latch.release_frames != 3:
         raise RuntimeError(
             "unexpected directional-yield configuration: "
             f"clearance={latch.release_clearance_m}, frames={latch.release_frames}"

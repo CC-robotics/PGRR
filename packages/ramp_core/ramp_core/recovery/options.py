@@ -876,6 +876,24 @@ def constrain_near_field_subgoal_radius(
     return constrained
 
 
+def orient_subgoal_for_rejoin(target: Pose2D, *, path_heading_rad: float) -> Pose2D:
+    """Keep a temporary endpoint aligned with the task path at completion.
+
+    The discrete action angle defines where the recovery endpoint lies, not a
+    persistent sideways heading.  Ending a lateral option at its radial angle
+    can make DWB continue rotating toward a wall after reaching the useful
+    offset.  Aligning only the terminal yaw with the observable path tangent
+    preserves the selected position while preparing the nominal planner to
+    rejoin.
+    """
+
+    values = (target.x, target.y, target.yaw, path_heading_rad)
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("subgoal pose and path heading must be finite")
+    heading = math.atan2(math.sin(path_heading_rad), math.cos(path_heading_rad))
+    return Pose2D(target.x, target.y, heading)
+
+
 def constrain_stalled_rejoin(
     mask: npt.NDArray[np.bool_],
     *,

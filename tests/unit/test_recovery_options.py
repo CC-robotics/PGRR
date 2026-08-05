@@ -44,6 +44,7 @@ from ramp_core.recovery.options import (
     constrain_temporal_closing_side,
     effective_recovery_path_deviation,
     ensure_safe_wait_fallback,
+    orient_subgoal_for_rejoin,
     should_continue_recovery_option,
 )
 from ramp_core.types import Pose2D
@@ -315,6 +316,18 @@ def test_near_field_radius_bound_rejects_invalid_thresholds(
             activation_clearance_m=activation,
             maximum_radius_m=radius,
         )
+
+
+def test_recovery_subgoal_retains_position_and_uses_wrapped_path_heading() -> None:
+    target = Pose2D(2.5, -1.0, -math.pi / 2)
+    oriented = orient_subgoal_for_rejoin(target, path_heading_rad=2.0 * math.pi + 0.25)
+    assert (oriented.x, oriented.y) == (2.5, -1.0)
+    assert oriented.yaw == pytest.approx(0.25)
+
+
+def test_recovery_subgoal_heading_rejects_non_finite_geometry() -> None:
+    with pytest.raises(ValueError, match="finite"):
+        orient_subgoal_for_rejoin(Pose2D(0.0, 0.0, 0.0), path_heading_rad=math.inf)
 
 
 def test_directional_yield_trace_retains_near_lateral_left_escape_only() -> None:
