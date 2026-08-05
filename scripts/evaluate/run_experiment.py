@@ -321,11 +321,14 @@ def build_tasks(
     high_density_methods: Sequence[str],
     timeout_s: float,
     method_checkpoints: Mapping[str, CheckpointProvenance] | None = None,
+    run_namespace: str = "",
 ) -> list[EpisodeTask]:
     """Expand scenario records into a deterministic, duplicate-free task list."""
 
     if timeout_s <= 0.0:
         raise ValueError("timeout must be positive")
+    if run_namespace and (not run_namespace.replace("_", "").isalnum() or len(run_namespace) > 32):
+        raise ValueError("run namespace must be at most 32 alphanumeric/underscore characters")
     checkpoints = method_checkpoints or {}
     tasks: list[EpisodeTask] = []
     stems: set[str] = set()
@@ -338,6 +341,8 @@ def build_tasks(
             if method in LEARNED_METHODS and method_checkpoints is not None and checkpoint is None:
                 raise ValueError(f"no checkpoint provenance supplied for learned method {method!r}")
             stem = f"{record['scenario_id']}_eval_{method}"
+            if run_namespace:
+                stem = f"{stem}_{run_namespace}"
             if stem in stems:
                 raise ValueError(f"duplicate logical episode stem: {stem}")
             stems.add(stem)
@@ -729,6 +734,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         high_density_methods,
         args.timeout,
         method_checkpoints,
+        run_namespace=f"r{run_id}",
     )
     validate_existing_attempts(tasks, ROOT, args.resume)
     output_dir = args.output_dir.resolve()

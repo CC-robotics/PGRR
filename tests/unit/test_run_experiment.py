@@ -169,6 +169,16 @@ def test_build_tasks_produces_deterministic_unique_episode_ids(tmp_path: Path) -
     assert pgrr_task.checkpoint_sha256 == "d" * 64
 
 
+def test_run_namespace_prevents_cross_commit_raw_artifact_collisions(tmp_path: Path) -> None:
+    record = _record(tmp_path)
+    first = _MODULE.build_tasks([record], ("base",), (), 180.0, run_namespace="rabc123")[0]
+    second = _MODULE.build_tasks([record], ("base",), (), 180.0, run_namespace="rdef456")[0]
+    assert _MODULE.episode_id(first, 0) != _MODULE.episode_id(second, 0)
+    assert _MODULE.episode_id(first, 0).endswith("_eval_base_rabc123_a0_dwb")
+    with pytest.raises(ValueError, match="run namespace"):
+        _MODULE.build_tasks([record], ("base",), (), 180.0, run_namespace="not/a/namespace")
+
+
 def test_validate_completed_results_rejects_missing_and_duplicate_tasks(tmp_path: Path) -> None:
     tasks = _MODULE.build_tasks([_record(tmp_path)], ("base", "bc"), (), 180.0)
     complete = [
