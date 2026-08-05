@@ -4,6 +4,11 @@ import math
 
 import numpy as np
 import pytest
+from ramp_core.action_mask import (
+    apply_observable_scan_mask,
+    apply_path_corridor_mask,
+    compute_action_mask,
+)
 from ramp_core.action_space import (
     ACTION_COUNT,
     ACTIONS,
@@ -13,6 +18,7 @@ from ramp_core.action_space import (
     WAIT_ACTION_ID,
 )
 from ramp_core.observations import HumanState
+from ramp_core.occupancy import OccupancyGrid
 from ramp_core.recovery.options import (
     BoundedBackupOption,
     BoundedSubgoalOption,
@@ -30,10 +36,99 @@ from ramp_core.recovery.options import (
     constrain_stalled_rejoin,
     constrain_stalled_subgoals,
     constrain_stalled_wait,
+    effective_recovery_path_deviation,
     ensure_safe_wait_fallback,
     should_continue_recovery_option,
 )
 from ramp_core.types import Pose2D
+
+
+def _path_deviation(*, policy_type: str, latched: bool, recoveries: int) -> float:
+    return effective_recovery_path_deviation(
+        policy_type=policy_type,
+        directional_yield_latched=latched,
+        consecutive_recoveries=recoveries,
+        recurrent_escape_after_recoveries=1,
+        normal_maximum_deviation_m=0.6,
+        recurrent_maximum_deviation_m=1.5,
+    )
+
+
+@pytest.mark.parametrize(
+    ("policy_type", "latched", "recoveries"),
+    [
+        ("bc", False, 1),
+        ("bc", True, 0),
+        ("heuristic", True, 1),
+        ("expert", True, 1),
+    ],
+)
+def test_recurrent_path_envelope_requires_latched_bc_recovery(
+    policy_type: str,
+    latched: bool,
+    recoveries: int,
+) -> None:
+    assert _path_deviation(
+        policy_type=policy_type,
+        latched=latched,
+        recoveries=recoveries,
+    ) == pytest.approx(0.6)
+
+
+def test_recurrent_path_envelope_makes_only_existing_lateral_action_eligible() -> None:
+    pose = Pose2D(2.0, 0.8, 0.0)
+    path = ((0.0, 0.0), (10.0, 0.0))
+    planning_safe = np.ones(ACTION_COUNT, dtype=np.bool_)
+    normal = apply_path_corridor_mask(
+        planning_safe,
+        pose,
+        path,
+        maximum_deviation_m=_path_deviation(policy_type="bc", latched=False, recoveries=1),
+    )
+    recurrent = apply_path_corridor_mask(
+        planning_safe,
+        pose,
+        path,
+        maximum_deviation_m=_path_deviation(policy_type="bc", latched=True, recoveries=1),
+    )
+    assert not normal[6]
+    assert recurrent[6]
+
+
+def test_recurrent_path_envelope_cannot_unmask_scan_or_map_invalid_action() -> None:
+    pose = Pose2D(2.0, 0.8, 0.0)
+    path = ((0.0, 0.0), (10.0, 0.0))
+    occupied = np.zeros((40, 40), dtype=np.bool_)
+    occupied[14, 20] = True  # action 6 endpoint at (2.0, 1.4)
+    map_mask = compute_action_mask(
+        pose,
+        OccupancyGrid(occupied, resolution=0.1),
+        replan_available=True,
+    )
+    assert not map_mask[6]
+
+    ranges = np.full(180, 6.0, dtype=np.float64)
+    angle_min = -3.0 * np.pi / 4.0
+    angle_increment = 3.0 * np.pi / 2.0 / 179.0
+    left = round((np.pi / 2.0 - angle_min) / angle_increment)
+    ranges[left] = 0.4
+    scan_mask = apply_observable_scan_mask(
+        np.ones(ACTION_COUNT, dtype=np.bool_),
+        ranges,
+        angle_min=angle_min,
+        angle_increment=angle_increment,
+    )
+    assert not scan_mask[6]
+
+    for safety_mask in (map_mask, scan_mask):
+        still_invalid = apply_path_corridor_mask(
+            safety_mask,
+            pose,
+            path,
+            maximum_deviation_m=_path_deviation(policy_type="bc", latched=True, recoveries=1),
+        )
+        assert not still_invalid[6]
+        assert not bool(np.any(still_invalid & ~safety_mask))
 
 
 def test_directional_yield_requires_consecutive_observable_clearance() -> None:

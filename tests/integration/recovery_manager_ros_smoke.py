@@ -335,6 +335,38 @@ def _assert_directional_yield_lifecycle(manager: RecoveryManagerNode) -> None:
         raise RuntimeError("directional yield did not release at its evidence boundary")
 
 
+def _assert_recurrent_path_envelope(manager: RecoveryManagerNode) -> None:
+    policy_type = manager._policy_type
+    recovery_count = manager._machine._consecutive_recoveries
+    latch = manager._bc_yield_latch
+    latched = latch.latched
+    clear_frames = latch.clear_frames
+    observation_id = latch.last_observation_id
+    try:
+        manager._policy_type = "bc"
+        latch.latched = False
+        latch.clear_frames = 0
+        manager._machine._consecutive_recoveries = 1
+        if abs(manager._effective_recovery_path_deviation() - 0.6) > 1.0e-9:
+            raise RuntimeError("unlatched BC unexpectedly used recurrent path envelope")
+        latch.latched = True
+        manager._machine._consecutive_recoveries = 0
+        if abs(manager._effective_recovery_path_deviation() - 0.6) > 1.0e-9:
+            raise RuntimeError("first BC attempt unexpectedly used recurrent path envelope")
+        manager._machine._consecutive_recoveries = 1
+        if abs(manager._effective_recovery_path_deviation() - 1.5) > 1.0e-9:
+            raise RuntimeError("latched recurrent BC did not use wider path envelope")
+        manager._policy_type = "expert"
+        if abs(manager._effective_recovery_path_deviation() - 0.6) > 1.0e-9:
+            raise RuntimeError("expert unexpectedly used learned recurrent path envelope")
+    finally:
+        manager._policy_type = policy_type
+        manager._machine._consecutive_recoveries = recovery_count
+        latch.latched = latched
+        latch.clear_frames = clear_frames
+        latch.last_observation_id = observation_id
+
+
 def main() -> int:
     rclpy.init(
         args=[
@@ -378,6 +410,7 @@ def main() -> int:
         _assert_recurrent_escape_mask(manager)
         _assert_bc_subgoal_lifecycle(manager)
         _assert_directional_yield_lifecycle(manager)
+        _assert_recurrent_path_envelope(manager)
         nonterminal = StateTransition(
             previous=RecoveryState.EMERGENCY_STOP,
             current=RecoveryState.NORMAL,
@@ -406,7 +439,8 @@ def main() -> int:
             "PASS recovery manager ROS smoke: "
             f"temporary={temporary}, restored={restored}, decisions={len(driver.decisions)}, "
             "bc_subgoal=bounded, emergency_turn=bounded, directional_yield=observable, "
-            "recurrent_escape=planning_safe, terminal_reasons=preserved"
+            "recurrent_escape=planning_safe, recurrent_path=bounded, "
+            "terminal_reasons=preserved"
         )
         return 0
     finally:

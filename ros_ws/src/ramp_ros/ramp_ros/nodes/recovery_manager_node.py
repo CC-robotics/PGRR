@@ -67,6 +67,7 @@ from ramp_core.recovery.options import (
     constrain_stalled_rejoin,
     constrain_stalled_subgoals,
     constrain_stalled_wait,
+    effective_recovery_path_deviation,
     ensure_safe_wait_fallback,
     recurrent_yield_lateral_action_ids,
     should_continue_recovery_option,
@@ -145,6 +146,14 @@ class RecoveryManagerNode(Node):
         )
         if not math.isfinite(recurrent_lateral_displacement) or recurrent_lateral_displacement <= 0:
             raise ValueError("recurrent escape minimum lateral displacement must be positive")
+        effective_recovery_path_deviation(
+            policy_type=self._policy_type,
+            directional_yield_latched=False,
+            consecutive_recoveries=0,
+            recurrent_escape_after_recoveries=self._integer("bc_recurrent_escape_after_recoveries"),
+            normal_maximum_deviation_m=self._float("maximum_recovery_path_deviation_m"),
+            recurrent_maximum_deviation_m=self._float("recurrent_escape_maximum_path_deviation_m"),
+        )
         self._goal = Pose2D(self._float("goal_x"), self._float("goal_y"), self._float("goal_yaw"))
         self._start = Pose2D(
             self._float("robot_start_x"),
@@ -392,6 +401,7 @@ class RecoveryManagerNode(Node):
             "deadlock_replan_after_decisions": 4,
             "robot_clearance_m": 0.25,
             "maximum_recovery_path_deviation_m": 0.6,
+            "recurrent_escape_maximum_path_deviation_m": 1.5,
             "backup_speed_mps": 0.15,
             "backup_minimum_duration_s": 0.8,
             "backup_maximum_duration_s": 3.0,
@@ -843,7 +853,7 @@ class RecoveryManagerNode(Node):
                 (pose.x, pose.y),
                 target,
                 corridor_path,
-                maximum_deviation_m=self._float("maximum_recovery_path_deviation_m"),
+                maximum_deviation_m=self._effective_recovery_path_deviation(),
             ):
                 return 0.0
         if not scan_segment_is_free(
@@ -902,6 +912,18 @@ class RecoveryManagerNode(Node):
             maximum_forward_angle_rad=math.radians(
                 self._float("footprint_backup_forward_angle_degrees")
             ),
+        )
+
+    def _effective_recovery_path_deviation(self) -> float:
+        """Return the active path regularizer without weakening safety masks."""
+
+        return effective_recovery_path_deviation(
+            policy_type=self._policy_type,
+            directional_yield_latched=self._bc_yield_latch.latched,
+            consecutive_recoveries=self._machine.consecutive_recoveries,
+            recurrent_escape_after_recoveries=self._integer("bc_recurrent_escape_after_recoveries"),
+            normal_maximum_deviation_m=self._float("maximum_recovery_path_deviation_m"),
+            recurrent_maximum_deviation_m=self._float("recurrent_escape_maximum_path_deviation_m"),
         )
 
     def _action_mask(
@@ -963,7 +985,7 @@ class RecoveryManagerNode(Node):
                 mask,
                 pose,
                 corridor_path,
-                maximum_deviation_m=self._float("maximum_recovery_path_deviation_m"),
+                maximum_deviation_m=self._effective_recovery_path_deviation(),
                 backup_distance_m=self._float("backup_mask_validated_distance_m"),
             )
         mask[REPLAN_ACTION_ID] &= self._adapter.ready

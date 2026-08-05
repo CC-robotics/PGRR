@@ -267,6 +267,11 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         config["collision_latched_stop_clearance_m"] + config["emergency_release_hysteresis_m"]
     )
     assert config["maximum_recovery_path_deviation_m"] == 0.6
+    assert config["recurrent_escape_maximum_path_deviation_m"] == 1.5
+    assert (
+        config["recurrent_escape_maximum_path_deviation_m"]
+        > config["maximum_recovery_path_deviation_m"]
+    )
     assert config["maximum_recovery_sequence_duration_s"] == 45.0
     assert config["backup_minimum_duration_s"] == 0.8
     assert config["backup_maximum_duration_s"] == 3.0
@@ -334,6 +339,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"backup_maximum_duration_s": 3.0' in manager
     assert '"maximum_recovery_sequence_duration_s": 45.0' in manager
     assert '"bc_recurrent_escape_after_recoveries": 1' in manager
+    assert '"recurrent_escape_maximum_path_deviation_m": 1.5' in manager
+    assert manager.count("self._effective_recovery_path_deviation()") == 2
     assert "self._bc_yield_latch.latched" in manager
     assert '"recurrent_escape_minimum_lateral_displacement_m": 0.25' in manager
     assert '"bc_subgoal_minimum_execution_s": 2.0' in manager

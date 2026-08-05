@@ -63,10 +63,11 @@ backup_maximum_duration_s: 3.0
 backup_clearance_improvement_m: 0.25
 backup_mask_validated_distance_m: 0.45
 robot_clearance_m: 0.25
-# The corridor starts with about 1.6 m centre-to-wall LiDAR clearance.
-# Limiting recovery endpoints to 0.6 m preserves roughly 1.0 m at the wall,
-# above the 0.90 m collision-latched planning margin even with tracking error.
+# Ordinary recovery remains close to the task path. A learned directional
+# yield may use the wider envelope only after its configured recurrence count;
+# static-map and observable-LiDAR masks remain authoritative in both modes.
 maximum_recovery_path_deviation_m: 0.6
+recurrent_escape_maximum_path_deviation_m: 1.5
 braking_acceleration_mps2: 0.8
 control_latency_s: 0.15
 stopping_margin_m: 0.45

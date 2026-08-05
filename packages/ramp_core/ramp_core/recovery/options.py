@@ -608,6 +608,42 @@ def constrain_stalled_rejoin(
     return constrained
 
 
+def effective_recovery_path_deviation(
+    *,
+    policy_type: str,
+    directional_yield_latched: bool,
+    consecutive_recoveries: int,
+    recurrent_escape_after_recoveries: int,
+    normal_maximum_deviation_m: float,
+    recurrent_maximum_deviation_m: float,
+) -> float:
+    """Select the wider path envelope only for recurrent learned yielding.
+
+    The returned value controls only the path-corridor regularizer. Static-map
+    occupancy, observable LiDAR clearance, directional no-forward motion, and
+    net-retreat constraints remain independent intersections of the action
+    mask and therefore cannot be relaxed by this helper.
+    """
+
+    if policy_type not in {"heuristic", "expert", "bc"}:
+        raise ValueError("policy_type must be heuristic, expert, or bc")
+    if consecutive_recoveries < 0:
+        raise ValueError("consecutive recoveries must be non-negative")
+    if recurrent_escape_after_recoveries <= 0:
+        raise ValueError("recurrent escape threshold must be positive")
+    deviations = (normal_maximum_deviation_m, recurrent_maximum_deviation_m)
+    if not all(math.isfinite(value) and value > 0.0 for value in deviations):
+        raise ValueError("recovery path deviations must be finite and positive")
+    if recurrent_maximum_deviation_m < normal_maximum_deviation_m:
+        raise ValueError("recurrent recovery path deviation must not be smaller than normal")
+    recurrent_learned_yield = (
+        policy_type == "bc"
+        and directional_yield_latched
+        and consecutive_recoveries >= recurrent_escape_after_recoveries
+    )
+    return recurrent_maximum_deviation_m if recurrent_learned_yield else normal_maximum_deviation_m
+
+
 def recurrent_yield_lateral_action_ids(
     *,
     pose: Pose2D,
