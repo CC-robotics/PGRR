@@ -14,6 +14,9 @@ bc_rejoin_block_threshold: 0.65
 bc_wait_budget_decisions: 3
 bc_backup_budget_decisions: 2
 bc_replan_budget_decisions: 1
+# On the second no-progress recovery, prefer a planning-valid lateral escape
+# or REPLAN; retain the ordinary safe mask when neither remains valid.
+bc_recurrent_escape_after_recoveries: 2
 bc_progress_reset_m: 0.25
 bc_maximum_net_retreat_m: 1.4
 bc_subgoal_retry_budget_decisions: 4

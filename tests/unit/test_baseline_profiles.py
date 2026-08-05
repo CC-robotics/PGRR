@@ -279,6 +279,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_wait_budget_decisions"] == 3
     assert config["bc_backup_budget_decisions"] == 2
     assert config["bc_replan_budget_decisions"] == 1
+    assert config["bc_recurrent_escape_after_recoveries"] == 2
     assert config["bc_progress_reset_m"] == 0.25
     assert config["bc_maximum_net_retreat_m"] == 1.4
     assert config["bc_subgoal_retry_budget_decisions"] == 4
@@ -292,7 +293,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"emergency_minimum_retreat_pulses": 3' in manager
     assert '"backup_maximum_duration_s": 3.0' in manager
     assert '"maximum_recovery_sequence_duration_s": 45.0' in manager
-    assert 'maximum_recovery_sequence_duration_s=self._float(' in manager
+    assert '"bc_recurrent_escape_after_recoveries": 2' in manager
+    assert "maximum_recovery_sequence_duration_s=self._float(" in manager
     assert "BoundedBackupOption(" in manager
     assert "self._backup_start_clearance_m" in manager
     assert 'backup_distance_m=self._float("backup_mask_validated_distance_m")' in manager
@@ -312,6 +314,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         manager.index("mask = constrain_repeated_backup(", learned_selection),
         manager.index("mask = constrain_net_retreat(", learned_selection),
         manager.index("mask = constrain_stalled_wait(", learned_selection),
+        manager.index("mask = self._constrain_bc_recurrent_escape(mask)", learned_selection),
         manager.index("mask = ensure_safe_wait_fallback(mask)", learned_selection),
     )
     assert budget_constraint_order == tuple(sorted(budget_constraint_order))

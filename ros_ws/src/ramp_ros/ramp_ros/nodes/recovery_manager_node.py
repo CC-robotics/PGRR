@@ -132,6 +132,8 @@ class RecoveryManagerNode(Node):
             <= self._float("oracle_trigger_horizon_s")
         ):
             raise ValueError("Oracle intervention horizon must lie inside prediction horizon")
+        if self._integer("bc_recurrent_escape_after_recoveries") <= 0:
+            raise ValueError("BC recurrent escape threshold must be positive")
         self._goal = Pose2D(self._float("goal_x"), self._float("goal_y"), self._float("goal_yaw"))
         self._start = Pose2D(
             self._float("robot_start_x"),
@@ -377,6 +379,7 @@ class RecoveryManagerNode(Node):
             "bc_wait_budget_decisions": 3,
             "bc_backup_budget_decisions": 2,
             "bc_replan_budget_decisions": 1,
+            "bc_recurrent_escape_after_recoveries": 2,
             "bc_progress_reset_m": 0.25,
             "bc_maximum_net_retreat_m": 1.4,
             "bc_subgoal_retry_budget_decisions": 4,
@@ -989,6 +992,20 @@ class RecoveryManagerNode(Node):
             ),
         )
 
+    def _constrain_bc_recurrent_escape(
+        self,
+        mask: np.ndarray[Any, np.dtype[np.bool_]],
+    ) -> np.ndarray[Any, np.dtype[np.bool_]]:
+        """Require an already-legal lateral escape after recurrent BC recovery."""
+
+        return constrain_recurrent_yield_escape(
+            mask,
+            escape_required=(
+                self._machine.consecutive_recoveries
+                >= self._integer("bc_recurrent_escape_after_recoveries")
+            ),
+        )
+
     def _select_decision(
         self,
         observation: RecoveryObservation,
@@ -1045,6 +1062,11 @@ class RecoveryManagerNode(Node):
                 consecutive_waits=self._bc_waits_without_progress,
                 wait_budget=bc_wait_budget,
             )
+            # Escalate only after every ordinary planning and repetition bound
+            # has determined which lateral/replan actions remain legal.  The
+            # constraint intersects that final mask and returns it unchanged
+            # when no such escape exists, preserving the safe fallback set.
+            mask = self._constrain_bc_recurrent_escape(mask)
         # Fail closed after composing all independent restrictions.  WAIT is
         # the sole fallback; this must never re-authorize translation.
         mask = ensure_safe_wait_fallback(mask)

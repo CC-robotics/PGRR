@@ -5,10 +5,19 @@ from __future__ import annotations
 
 import time
 
+import numpy as np
 import rclpy
 from action_msgs.msg import GoalStatus, GoalStatusArray
 from nav2_msgs.action import NavigateToPose
 from nav_msgs.msg import Odometry
+from ramp_core.action_space import (
+    ACTION_COUNT,
+    ACTIONS,
+    BACKUP_ACTION_ID,
+    CONTINUE_ACTION_ID,
+    REPLAN_ACTION_ID,
+    WAIT_ACTION_ID,
+)
 from ramp_core.recovery.safety import EmergencyEscapeMode
 from ramp_core.state_machine import RecoveryState, StateTransition
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
@@ -114,6 +123,46 @@ def _assert_terminal_publication(
     )
 
 
+def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
+    threshold = manager._integer("bc_recurrent_escape_after_recoveries")
+    if threshold != 2:
+        raise RuntimeError(f"unexpected BC recurrent escape threshold: {threshold}")
+    lateral_ids = [
+        action.action_id
+        for action in ACTIONS[:WAIT_ACTION_ID]
+        if action.angle_degrees is not None and action.angle_degrees != 0
+    ]
+    straight_id = next(
+        action.action_id for action in ACTIONS[:WAIT_ACTION_ID] if action.angle_degrees == 0
+    )
+    legal_lateral, illegal_lateral = lateral_ids[:2]
+    ordinary = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    ordinary[[legal_lateral, straight_id, WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
+    ordinary[[REPLAN_ACTION_ID, CONTINUE_ACTION_ID]] = True
+
+    manager._machine._consecutive_recoveries = threshold - 1
+    before_threshold = manager._constrain_bc_recurrent_escape(ordinary)
+    if not np.array_equal(before_threshold, ordinary):
+        raise RuntimeError("recurrent escape changed the mask before its threshold")
+
+    manager._machine._consecutive_recoveries = threshold
+    constrained = manager._constrain_bc_recurrent_escape(ordinary)
+    expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    expected[[legal_lateral, REPLAN_ACTION_ID]] = True
+    if not np.array_equal(constrained, expected):
+        raise RuntimeError(
+            f"recurrent escape mask mismatch: expected={expected}, observed={constrained}"
+        )
+    if bool(constrained[illegal_lateral]) or bool(np.any(constrained & ~ordinary)):
+        raise RuntimeError("recurrent escape unmasked a planning-invalid action")
+
+    safe_fallback = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    safe_fallback[[WAIT_ACTION_ID, BACKUP_ACTION_ID, CONTINUE_ACTION_ID]] = True
+    observed_fallback = manager._constrain_bc_recurrent_escape(safe_fallback)
+    if not np.array_equal(observed_fallback, safe_fallback):
+        raise RuntimeError("recurrent escape discarded the original safe fallback mask")
+
+
 def main() -> int:
     rclpy.init(
         args=[
@@ -153,6 +202,7 @@ def main() -> int:
             raise RuntimeError(f"original goal was not restored: {restored}")
         if not any(item.has_temporary_goal for item in driver.decisions):
             raise RuntimeError("manager published no temporary-goal recovery decision")
+        _assert_recurrent_escape_mask(manager)
         nonterminal = StateTransition(
             previous=RecoveryState.EMERGENCY_STOP,
             current=RecoveryState.NORMAL,
@@ -180,7 +230,7 @@ def main() -> int:
         print(
             "PASS recovery manager ROS smoke: "
             f"temporary={temporary}, restored={restored}, decisions={len(driver.decisions)}, "
-            "terminal_reasons=preserved"
+            "recurrent_escape=planning_safe, terminal_reasons=preserved"
         )
         return 0
     finally:
