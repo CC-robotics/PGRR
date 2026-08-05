@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import math
 import time
 
 import numpy as np
@@ -128,10 +129,16 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     threshold = manager._integer("bc_recurrent_escape_after_recoveries")
     if threshold != 2:
         raise RuntimeError(f"unexpected BC recurrent escape threshold: {threshold}")
+    minimum_lateral_m = manager._float("recurrent_escape_minimum_lateral_displacement_m")
+    pose = Pose2D(0.0, 0.0, 0.0)
+    path_heading_rad = 0.0
     lateral_ids = [
         action.action_id
         for action in ACTIONS[:WAIT_ACTION_ID]
-        if action.angle_degrees is not None and action.angle_degrees != 0
+        if (
+            (target := action.target_pose(pose)) is not None
+            and abs(target.y - pose.y) >= minimum_lateral_m - 1.0e-9
+        )
     ]
     straight_id = next(
         action.action_id for action in ACTIONS[:WAIT_ACTION_ID] if action.angle_degrees == 0
@@ -142,14 +149,27 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     ordinary[[REPLAN_ACTION_ID, CONTINUE_ACTION_ID]] = True
 
     manager._machine._consecutive_recoveries = threshold - 1
-    before_threshold = manager._constrain_bc_recurrent_escape(ordinary)
+    before_threshold = manager._constrain_bc_recurrent_escape(
+        ordinary,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
     if not np.array_equal(before_threshold, ordinary):
         raise RuntimeError("recurrent escape changed the mask before its threshold")
-    if manager._bc_recurrent_escape_telemetry(ordinary, before_threshold):
+    if manager._bc_recurrent_escape_telemetry(
+        ordinary,
+        before_threshold,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    ):
         raise RuntimeError("recurrent escape emitted telemetry before its threshold")
 
     manager._machine._consecutive_recoveries = threshold
-    constrained = manager._constrain_bc_recurrent_escape(ordinary)
+    constrained = manager._constrain_bc_recurrent_escape(
+        ordinary,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
     expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
     expected[[legal_lateral, REPLAN_ACTION_ID]] = True
     if not np.array_equal(constrained, expected):
@@ -158,23 +178,54 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
         )
     if bool(constrained[illegal_lateral]) or bool(np.any(constrained & ~ordinary)):
         raise RuntimeError("recurrent escape unmasked a planning-invalid action")
-    telemetry = manager._bc_recurrent_escape_telemetry(ordinary, constrained)
+    telemetry = manager._bc_recurrent_escape_telemetry(
+        ordinary,
+        constrained,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
     if "bc_recurrent_escape=applied" not in telemetry or f"count={threshold}" not in telemetry:
         raise RuntimeError(f"recurrent escape telemetry mismatch: {telemetry}")
     if "pre=" not in telemetry or "final=" not in telemetry:
         raise RuntimeError(f"recurrent escape telemetry omitted masks: {telemetry}")
+    if "minimum_lateral_m=0.250" not in telemetry or "lateral_ids=" not in telemetry:
+        raise RuntimeError(f"recurrent escape telemetry omitted path-frame evidence: {telemetry}")
 
     safe_fallback = np.zeros(ACTION_COUNT, dtype=np.bool_)
     safe_fallback[[WAIT_ACTION_ID, BACKUP_ACTION_ID, CONTINUE_ACTION_ID]] = True
-    observed_fallback = manager._constrain_bc_recurrent_escape(safe_fallback)
+    observed_fallback = manager._constrain_bc_recurrent_escape(
+        safe_fallback,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
     if not np.array_equal(observed_fallback, safe_fallback):
         raise RuntimeError("recurrent escape discarded the original safe fallback mask")
     fallback_telemetry = manager._bc_recurrent_escape_telemetry(
         safe_fallback,
         observed_fallback,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
     )
     if "bc_recurrent_escape=unavailable" not in fallback_telemetry:
         raise RuntimeError(f"recurrent escape fallback telemetry mismatch: {fallback_telemetry}")
+
+    rotated_pose = Pose2D(0.0, 0.0, math.pi / 2.0)
+    rotated = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    # Action 3 is robot-frame straight but path-lateral when facing north.
+    # Action 0 has a non-zero robot-frame angle but points along the eastbound path.
+    rotated[[0, 3, WAIT_ACTION_ID]] = True
+    rotated_constrained = manager._constrain_bc_recurrent_escape(
+        rotated,
+        pose=rotated_pose,
+        path_heading_rad=0.0,
+    )
+    rotated_expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    rotated_expected[3] = True
+    if not np.array_equal(rotated_constrained, rotated_expected):
+        raise RuntimeError(
+            "rotated path-frame recurrent escape mismatch: "
+            f"expected={rotated_expected}, observed={rotated_constrained}"
+        )
 
 
 def _assert_bc_subgoal_lifecycle(manager: RecoveryManagerNode) -> None:

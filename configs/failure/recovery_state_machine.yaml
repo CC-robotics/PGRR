@@ -35,6 +35,10 @@ bc_replan_budget_decisions: 1
 # On the second no-progress recovery, prefer a planning-valid lateral escape
 # or REPLAN; retain the ordinary safe mask when neither remains valid.
 bc_recurrent_escape_after_recoveries: 2
+# Robot-frame action angles cease to describe task-lateral motion after a
+# recovery turn. Require this observable endpoint displacement normal to the
+# local global-path tangent before classifying a subgoal as a lateral escape.
+recurrent_escape_minimum_lateral_displacement_m: 0.25
 bc_progress_reset_m: 0.25
 bc_maximum_net_retreat_m: 1.4
 bc_subgoal_retry_budget_decisions: 4

@@ -608,16 +608,52 @@ def constrain_stalled_rejoin(
     return constrained
 
 
+def recurrent_yield_lateral_action_ids(
+    *,
+    pose: Pose2D,
+    path_heading_rad: float,
+    minimum_lateral_displacement_m: float,
+) -> tuple[int, ...]:
+    """Return subgoals with sufficient displacement normal to the task path.
+
+    Recovery actions are expressed in the robot frame, so a non-zero action
+    angle is not necessarily lateral to the navigation path once the robot has
+    turned during an earlier recovery.  Classifying the endpoint in the local
+    path frame keeps recurrent-yield escalation tied to observable geometry.
+    """
+
+    if not math.isfinite(path_heading_rad):
+        raise ValueError("path heading must be finite")
+    if not math.isfinite(minimum_lateral_displacement_m) or minimum_lateral_displacement_m <= 0.0:
+        raise ValueError("minimum lateral displacement must be finite and positive")
+    normal = -math.sin(path_heading_rad), math.cos(path_heading_rad)
+    lateral_ids: list[int] = []
+    for action in ACTIONS[:WAIT_ACTION_ID]:
+        endpoint = action.target_pose(pose)
+        assert endpoint is not None
+        lateral_displacement = abs(
+            (endpoint.x - pose.x) * normal[0] + (endpoint.y - pose.y) * normal[1]
+        )
+        if lateral_displacement + 1.0e-9 >= minimum_lateral_displacement_m:
+            lateral_ids.append(action.action_id)
+    return tuple(lateral_ids)
+
+
 def constrain_recurrent_yield_escape(
     mask: npt.NDArray[np.bool_],
     *,
     escape_required: bool,
+    pose: Pose2D,
+    path_heading_rad: float,
+    minimum_lateral_displacement_m: float,
 ) -> npt.NDArray[np.bool_]:
     """Escalate a recurrent yield loop to a masked lateral escape or REPLAN.
 
-    The restriction is applied only when at least one already-valid lateral
-    subgoal or REPLAN exists. Otherwise the original mask is returned so the
-    caller retains a safe WAIT/BACKUP fallback.
+    Lateral subgoals are classified by endpoint displacement normal to the
+    observable local path tangent, not by their robot-frame action angle.  The
+    restriction is applied only when at least one such already-valid subgoal
+    or REPLAN exists. Otherwise the original mask is returned so the caller
+    retains a safe WAIT/BACKUP fallback.
     """
     constrained = np.asarray(mask, dtype=np.bool_).copy()
     if constrained.shape != (ACTION_COUNT,):
@@ -625,10 +661,10 @@ def constrain_recurrent_yield_escape(
     if not escape_required:
         return constrained
     escape_ids = (
-        *(
-            action.action_id
-            for action in ACTIONS[:WAIT_ACTION_ID]
-            if action.angle_degrees is not None and action.angle_degrees != 0
+        *recurrent_yield_lateral_action_ids(
+            pose=pose,
+            path_heading_rad=path_heading_rad,
+            minimum_lateral_displacement_m=minimum_lateral_displacement_m,
         ),
         REPLAN_ACTION_ID,
     )

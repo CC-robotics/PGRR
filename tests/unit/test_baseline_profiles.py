@@ -290,6 +290,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_backup_budget_decisions"] == 4
     assert config["bc_replan_budget_decisions"] == 1
     assert config["bc_recurrent_escape_after_recoveries"] == 2
+    assert config["recurrent_escape_minimum_lateral_displacement_m"] == 0.25
     assert config["bc_progress_reset_m"] == 0.25
     assert config["bc_maximum_net_retreat_m"] == 1.4
     assert config["bc_subgoal_retry_budget_decisions"] == 4
@@ -321,6 +322,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"backup_maximum_duration_s": 3.0' in manager
     assert '"maximum_recovery_sequence_duration_s": 45.0' in manager
     assert '"bc_recurrent_escape_after_recoveries": 2' in manager
+    assert '"recurrent_escape_minimum_lateral_displacement_m": 0.25' in manager
     assert '"bc_subgoal_minimum_execution_s": 2.0' in manager
     assert '"bc_subgoal_maximum_duration_s": 6.0' in manager
     assert "BoundedSubgoalOption(" in manager
@@ -345,7 +347,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         manager.index("mask = constrain_repeated_backup(", learned_selection),
         manager.index("mask = constrain_net_retreat(", learned_selection),
         manager.index("mask = constrain_stalled_wait(", learned_selection),
-        manager.index("mask = self._constrain_bc_recurrent_escape(mask)", learned_selection),
+        manager.index("mask = self._constrain_bc_recurrent_escape(", learned_selection),
         manager.index("mask = ensure_safe_wait_fallback(mask)", learned_selection),
     )
     assert budget_constraint_order == tuple(sorted(budget_constraint_order))

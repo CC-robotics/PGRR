@@ -11,7 +11,6 @@ from ramp_core.action_space import (
     CONTINUE_ACTION_ID,
     REPLAN_ACTION_ID,
     WAIT_ACTION_ID,
-    RecoveryActionKind,
 )
 from ramp_core.observations import HumanState
 from ramp_core.recovery.options import (
@@ -674,18 +673,69 @@ def test_privileged_yield_does_not_escalate_after_robot_clears_window() -> None:
 
 def test_recurrent_yield_escape_preserves_only_lateral_and_replan_actions() -> None:
     mask = np.ones(ACTION_COUNT, dtype=np.bool_)
-    constrained = constrain_recurrent_yield_escape(mask, escape_required=True)
+    pose = Pose2D(2.0, 1.0, 0.0)
+    constrained = constrain_recurrent_yield_escape(
+        mask,
+        escape_required=True,
+        pose=pose,
+        path_heading_rad=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
     for action in ACTIONS:
+        target = action.target_pose(pose)
         expected = (
-            action.kind is RecoveryActionKind.SUBGOAL and action.angle_degrees != 0
+            target is not None and abs(target.y - pose.y) >= 0.25 - 1.0e-9
         ) or action.action_id == REPLAN_ACTION_ID
         assert bool(constrained[action.action_id]) is expected
+
+
+def test_recurrent_yield_escape_uses_path_frame_after_robot_turns() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    pose = Pose2D(0.0, 0.0, math.pi / 2.0)
+    constrained = constrain_recurrent_yield_escape(
+        mask,
+        escape_required=True,
+        pose=pose,
+        path_heading_rad=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+    # Facing north on an eastbound path, robot-frame straight actions are
+    # genuinely path-lateral and must remain available.
+    assert constrained[3]
+    assert constrained[10]
+    assert constrained[17]
+    # Robot-frame +/-90-degree actions point east/west along the task path and
+    # must not be misclassified as lateral merely because their angle is nonzero.
+    assert not constrained[0]
+    assert not constrained[6]
+    assert constrained[REPLAN_ACTION_ID]
+    assert not constrained[WAIT_ACTION_ID]
+    assert not constrained[BACKUP_ACTION_ID]
 
 
 def test_recurrent_yield_escape_keeps_safe_fallback_without_escape_action() -> None:
     mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
     mask[WAIT_ACTION_ID] = True
     assert np.array_equal(
-        constrain_recurrent_yield_escape(mask, escape_required=True),
+        constrain_recurrent_yield_escape(
+            mask,
+            escape_required=True,
+            pose=Pose2D(0.0, 0.0, 0.0),
+            path_heading_rad=0.0,
+            minimum_lateral_displacement_m=0.25,
+        ),
         mask,
     )
+
+
+@pytest.mark.parametrize("minimum", [0.0, -0.1, float("inf"), float("nan")])
+def test_recurrent_yield_escape_rejects_invalid_lateral_threshold(minimum: float) -> None:
+    with pytest.raises(ValueError, match="minimum lateral displacement"):
+        constrain_recurrent_yield_escape(
+            np.ones(ACTION_COUNT, dtype=np.bool_),
+            escape_required=True,
+            pose=Pose2D(0.0, 0.0, 0.0),
+            path_heading_rad=0.0,
+            minimum_lateral_displacement_m=minimum,
+        )

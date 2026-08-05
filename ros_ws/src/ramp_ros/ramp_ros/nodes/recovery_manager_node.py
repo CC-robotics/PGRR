@@ -68,6 +68,7 @@ from ramp_core.recovery.options import (
     constrain_stalled_subgoals,
     constrain_stalled_wait,
     ensure_safe_wait_fallback,
+    recurrent_yield_lateral_action_ids,
     should_continue_recovery_option,
 )
 from ramp_core.recovery.safety import (
@@ -139,6 +140,11 @@ class RecoveryManagerNode(Node):
             raise ValueError("Oracle intervention horizon must lie inside prediction horizon")
         if self._integer("bc_recurrent_escape_after_recoveries") <= 0:
             raise ValueError("BC recurrent escape threshold must be positive")
+        recurrent_lateral_displacement = self._float(
+            "recurrent_escape_minimum_lateral_displacement_m"
+        )
+        if not math.isfinite(recurrent_lateral_displacement) or recurrent_lateral_displacement <= 0:
+            raise ValueError("recurrent escape minimum lateral displacement must be positive")
         self._goal = Pose2D(self._float("goal_x"), self._float("goal_y"), self._float("goal_yaw"))
         self._start = Pose2D(
             self._float("robot_start_x"),
@@ -403,6 +409,7 @@ class RecoveryManagerNode(Node):
             "bc_backup_budget_decisions": 4,
             "bc_replan_budget_decisions": 1,
             "bc_recurrent_escape_after_recoveries": 2,
+            "recurrent_escape_minimum_lateral_displacement_m": 0.25,
             "bc_progress_reset_m": 0.25,
             "bc_maximum_net_retreat_m": 1.4,
             "bc_subgoal_retry_budget_decisions": 4,
@@ -995,6 +1002,11 @@ class RecoveryManagerNode(Node):
         mask = constrain_recurrent_yield_escape(
             mask,
             escape_required=self._oracle_yield.escape_required,
+            pose=pose,
+            path_heading_rad=self._task_path_heading(pose),
+            minimum_lateral_displacement_m=self._float(
+                "recurrent_escape_minimum_lateral_displacement_m"
+            ),
         )
         mask = ensure_safe_wait_fallback(mask)
         if self._oracle_yield.active and not self._oracle_yield.escape_required:
@@ -1046,6 +1058,9 @@ class RecoveryManagerNode(Node):
     def _constrain_bc_recurrent_escape(
         self,
         mask: np.ndarray[Any, np.dtype[np.bool_]],
+        *,
+        pose: Pose2D,
+        path_heading_rad: float,
     ) -> np.ndarray[Any, np.dtype[np.bool_]]:
         """Require an already-legal lateral escape after recurrent BC recovery."""
 
@@ -1055,12 +1070,20 @@ class RecoveryManagerNode(Node):
                 self._machine.consecutive_recoveries
                 >= self._integer("bc_recurrent_escape_after_recoveries")
             ),
+            pose=pose,
+            path_heading_rad=path_heading_rad,
+            minimum_lateral_displacement_m=self._float(
+                "recurrent_escape_minimum_lateral_displacement_m"
+            ),
         )
 
     def _bc_recurrent_escape_telemetry(
         self,
         before: np.ndarray[Any, np.dtype[np.bool_]],
         after: np.ndarray[Any, np.dtype[np.bool_]],
+        *,
+        pose: Pose2D,
+        path_heading_rad: float,
     ) -> str:
         """Describe an active recurrent-escape constraint for episode logs."""
 
@@ -1070,11 +1093,15 @@ class RecoveryManagerNode(Node):
             return ""
         before_ids = np.flatnonzero(before).tolist()
         after_ids = np.flatnonzero(after).tolist()
-        escape_ids = {
-            action.action_id
-            for action in ACTIONS[:WAIT_ACTION_ID]
-            if action.angle_degrees is not None and action.angle_degrees != 0
-        } | {REPLAN_ACTION_ID}
+        minimum_lateral_displacement_m = self._float(
+            "recurrent_escape_minimum_lateral_displacement_m"
+        )
+        lateral_ids = recurrent_yield_lateral_action_ids(
+            pose=pose,
+            path_heading_rad=path_heading_rad,
+            minimum_lateral_displacement_m=minimum_lateral_displacement_m,
+        )
+        escape_ids = {*lateral_ids, REPLAN_ACTION_ID}
         if not np.array_equal(before, after):
             mode = "applied"
         elif any(action_id in escape_ids for action_id in after_ids):
@@ -1083,6 +1110,8 @@ class RecoveryManagerNode(Node):
             mode = "unavailable"
         return (
             f"bc_recurrent_escape={mode} count={recovery_count} "
+            f"minimum_lateral_m={minimum_lateral_displacement_m:.3f} "
+            f"lateral_ids={','.join(map(str, lateral_ids))} "
             f"pre={','.join(map(str, before_ids))} final={','.join(map(str, after_ids))}"
         )
 
@@ -1104,6 +1133,7 @@ class RecoveryManagerNode(Node):
                 return CoreRecoveryDecision(WAIT_ACTION_ID, 0.0, "oracle_error_wait")
         mask = self._action_mask(pose, collision_risk=failure.collision_risk)
         if self._policy_type == "bc":
+            path_heading_rad = self._task_path_heading(pose)
             self._update_bc_progress_budget(float(observation.goal_polar[0]))
             # Observe every learned decision so the cap is relative to the
             # furthest task progress achieved, not to a retreating local cycle.
@@ -1118,7 +1148,7 @@ class RecoveryManagerNode(Node):
                 mask = constrain_directional_yield_motion(
                     mask,
                     pose=pose,
-                    path_heading_rad=self._task_path_heading(pose),
+                    path_heading_rad=path_heading_rad,
                     backup_distance_m=self._float("backup_mask_validated_distance_m"),
                     maximum_forward_progress_m=self._float("bc_yield_maximum_forward_progress_m"),
                 )
@@ -1163,10 +1193,16 @@ class RecoveryManagerNode(Node):
             # constraint intersects that final mask and returns it unchanged
             # when no such escape exists, preserving the safe fallback set.
             pre_recurrent_escape_mask = mask.copy()
-            mask = self._constrain_bc_recurrent_escape(mask)
+            mask = self._constrain_bc_recurrent_escape(
+                mask,
+                pose=pose,
+                path_heading_rad=path_heading_rad,
+            )
             recurrent_escape_telemetry = self._bc_recurrent_escape_telemetry(
                 pre_recurrent_escape_mask,
                 mask,
+                pose=pose,
+                path_heading_rad=path_heading_rad,
             )
         # Fail closed after composing all independent restrictions.  WAIT is
         # the sole fallback; this must never re-authorize translation.
