@@ -441,17 +441,25 @@ class ScenarioActorController(Node):
         else:
             self._robot_at_start_since_wall_s = None
 
-        retry_interval_s = float(self.get_parameter("robot_reset_retry_interval_s").value)
-        if self._robot_reset_last_attempt_wall_s is None or (
-            now_wall_s - self._robot_reset_last_attempt_wall_s >= retry_interval_s
-        ):
-            if self._actual_robot_pose is None or not self._actual_robot_pose_is_fresh(now_s):
-                self.get_logger().warning(
-                    "startup gate waiting for fresh Gazebo robot pose",
-                    throttle_duration_sec=5.0,
-                )
-            else:
-                self._request_robot_reset(now_wall_s)
+        # Once TaskGenerator has published its authoritative reset event, this
+        # node is a validator only.  Issuing a second reset here tears down and
+        # recreates Nav2 while its first goal is becoming active, which can
+        # leave the local costmap and odometry frame out of sync.  An invalid
+        # Arena reset therefore fails through the startup timeout instead of
+        # being silently retried during the same episode.
+        if self._actual_robot_pose is None or not self._actual_robot_pose_is_fresh(now_s):
+            self.get_logger().warning(
+                "startup gate waiting for fresh Gazebo robot pose",
+                throttle_duration_sec=5.0,
+            )
+        else:
+            errors = self._robot_pose_errors()
+            assert errors is not None
+            self.get_logger().warning(
+                "startup gate waiting for authoritative TaskGenerator pose convergence "
+                f"position_error={errors[0]:.3f}m yaw_error={errors[1]:.3f}rad",
+                throttle_duration_sec=5.0,
+            )
         return False
 
     def _advance_costmap_clear(self, now_wall_s: float) -> bool:
