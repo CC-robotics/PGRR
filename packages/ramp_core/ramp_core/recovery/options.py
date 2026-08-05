@@ -108,6 +108,130 @@ class ObservableClosingSideLatch:
         return self.right_occupied, self.left_occupied
 
 
+@dataclass
+class ObservableLateralSideCommitment:
+    """Prevent short-horizon recovery from reversing a chosen task side.
+
+    The first sufficiently lateral learned subgoal establishes a side in the
+    local task-path frame. The commitment survives recovery/rejoin cycles
+    until the robot makes configured progress toward the original goal. A
+    large task-path heading change releases it as well, so left/right semantics
+    are not carried through a genuine route corner. Only odometry, the
+    observable task path, and the selected action are used.
+    """
+
+    maximum_progress_m: float = 3.0
+    maximum_heading_change_rad: float = math.pi / 4.0
+    side: int = 0
+    reference_distance_m: float | None = None
+    reference_path_heading_rad: float | None = None
+
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.maximum_progress_m) or self.maximum_progress_m <= 0.0:
+            raise ValueError("side-commitment progress must be finite and positive")
+        if (
+            not math.isfinite(self.maximum_heading_change_rad)
+            or not 0.0 < self.maximum_heading_change_rad <= math.pi
+        ):
+            raise ValueError("side-commitment heading change must lie in (0, pi]")
+        if self.side not in {-1, 0, 1}:
+            raise ValueError("committed side must be -1, 0, or 1")
+        references = (self.reference_distance_m, self.reference_path_heading_rad)
+        if self.side == 0 and any(reference is not None for reference in references):
+            raise ValueError("inactive side commitment cannot retain references")
+        if self.side != 0 and any(reference is None for reference in references):
+            raise ValueError("active side commitment requires distance and heading references")
+        if self.reference_distance_m is not None and (
+            not math.isfinite(self.reference_distance_m) or self.reference_distance_m < 0.0
+        ):
+            raise ValueError("side-commitment distance reference must be finite and non-negative")
+        if self.reference_path_heading_rad is not None and not math.isfinite(
+            self.reference_path_heading_rad
+        ):
+            raise ValueError("side-commitment heading reference must be finite")
+
+    @property
+    def active(self) -> bool:
+        return self.side != 0
+
+    @property
+    def side_name(self) -> str:
+        return {0: "none", -1: "right", 1: "left"}[self.side]
+
+    def reset(self) -> None:
+        self.side = 0
+        self.reference_distance_m = None
+        self.reference_path_heading_rad = None
+
+    def update(self, *, distance_to_goal_m: float, path_heading_rad: float) -> bool:
+        """Release after enough task progress or a genuine path-direction turn."""
+
+        if not math.isfinite(distance_to_goal_m) or distance_to_goal_m < 0.0:
+            raise ValueError("distance to goal must be finite and non-negative")
+        if not math.isfinite(path_heading_rad):
+            raise ValueError("path heading must be finite")
+        if not self.active:
+            return False
+        assert self.reference_distance_m is not None
+        assert self.reference_path_heading_rad is not None
+        progress_m = self.reference_distance_m - distance_to_goal_m
+        heading_change = abs(
+            math.atan2(
+                math.sin(path_heading_rad - self.reference_path_heading_rad),
+                math.cos(path_heading_rad - self.reference_path_heading_rad),
+            )
+        )
+        if (
+            progress_m >= self.maximum_progress_m - 1.0e-9
+            or heading_change > self.maximum_heading_change_rad + 1.0e-9
+        ):
+            self.reset()
+            return True
+        return False
+
+    def commit_action(
+        self,
+        action_id: int,
+        *,
+        pose: Pose2D,
+        path_heading_rad: float,
+        distance_to_goal_m: float,
+        minimum_lateral_displacement_m: float,
+    ) -> bool:
+        """Commit the first task-lateral subgoal and return whether it was set."""
+
+        if not 0 <= action_id < ACTION_COUNT:
+            raise ValueError(f"action_id must lie in [0, {ACTION_COUNT - 1}]")
+        values = (
+            pose.x,
+            pose.y,
+            pose.yaw,
+            path_heading_rad,
+            distance_to_goal_m,
+            minimum_lateral_displacement_m,
+        )
+        if not all(math.isfinite(value) for value in values):
+            raise ValueError("side-commitment geometry must be finite")
+        if distance_to_goal_m < 0.0 or minimum_lateral_displacement_m <= 0.0:
+            raise ValueError("side-commitment distance and lateral threshold must be positive")
+        self.update(
+            distance_to_goal_m=distance_to_goal_m,
+            path_heading_rad=path_heading_rad,
+        )
+        if self.active or action_id >= WAIT_ACTION_ID:
+            return False
+        endpoint = ACTIONS[action_id].target_pose(pose)
+        assert endpoint is not None
+        normal = -math.sin(path_heading_rad), math.cos(path_heading_rad)
+        lateral_displacement = (endpoint.x - pose.x) * normal[0] + (endpoint.y - pose.y) * normal[1]
+        if abs(lateral_displacement) + 1.0e-9 < minimum_lateral_displacement_m:
+            return False
+        self.side = 1 if lateral_displacement > 0.0 else -1
+        self.reference_distance_m = distance_to_goal_m
+        self.reference_path_heading_rad = path_heading_rad
+        return True
+
+
 @dataclass(frozen=True, slots=True)
 class BoundedBackupOption:
     """Closed-loop completion rule for one planning-validated retreat.
@@ -705,32 +829,6 @@ def constrain_directional_yield_motion(
     return constrained
 
 
-def constrain_ambiguous_yield_motion(
-    mask: npt.NDArray[np.bool_],
-    *,
-    side_evidence_available: bool,
-) -> npt.NDArray[np.bool_]:
-    """Fail closed when a directional yield has no reliable side evidence.
-
-    A learned lateral subgoal is interpretable only after the temporal LiDAR
-    observation has identified at least one occupied task side.  Without that
-    evidence, choosing either side can turn a conservative yield into an
-    unsupported crossing manoeuvre.  The helper therefore intersects the
-    existing mask with non-translating WAIT/REPLAN and the independently
-    validated BACKUP action.  It never enables an action and leaves a mask
-    unchanged once the per-yield side-evidence latch is active.
-    """
-
-    constrained = np.asarray(mask, dtype=np.bool_).copy()
-    if constrained.shape != (ACTION_COUNT,):
-        raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
-    if side_evidence_available:
-        return constrained
-    constrained[:WAIT_ACTION_ID] = False
-    constrained[CONTINUE_ACTION_ID] = False
-    return constrained
-
-
 def constrain_temporal_closing_side(
     mask: npt.NDArray[np.bool_],
     lidar_stack: npt.ArrayLike,
@@ -867,6 +965,33 @@ def constrain_task_lateral_sides(
         if (right_occupied and toward_right) or (left_occupied and toward_left):
             constrained[action.action_id] = False
     return constrained
+
+
+def constrain_committed_lateral_side(
+    mask: npt.NDArray[np.bool_],
+    *,
+    committed_side: int,
+    pose: Pose2D,
+    path_heading_rad: float,
+    minimum_lateral_displacement_m: float,
+) -> npt.NDArray[np.bool_]:
+    """Mask only the side opposite a short-horizon recovery commitment."""
+
+    if committed_side not in {-1, 0, 1}:
+        raise ValueError("committed side must be -1, 0, or 1")
+    if committed_side == 0:
+        constrained = np.asarray(mask, dtype=np.bool_).copy()
+        if constrained.shape != (ACTION_COUNT,):
+            raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
+        return constrained
+    return constrain_task_lateral_sides(
+        mask,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+        minimum_lateral_displacement_m=minimum_lateral_displacement_m,
+        right_occupied=committed_side > 0,
+        left_occupied=committed_side < 0,
+    )
 
 
 def constrain_near_field_subgoal_radius(

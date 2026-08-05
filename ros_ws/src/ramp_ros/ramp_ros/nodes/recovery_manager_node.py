@@ -56,12 +56,13 @@ from ramp_core.recovery.options import (
     ObservableClosingSideLatch,
     ObservableDirectionalYieldLatch,
     ObservableGoalProgressBudget,
+    ObservableLateralSideCommitment,
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
     PrivilegedYieldOption,
     TemporalClosingSideConfig,
     TemporalClosingSideResult,
-    constrain_ambiguous_yield_motion,
+    constrain_committed_lateral_side,
     constrain_directional_yield_motion,
     constrain_near_field_subgoal_radius,
     constrain_net_retreat,
@@ -225,6 +226,12 @@ class RecoveryManagerNode(Node):
             maximum_angular_speed_radps=self._float("bc_closing_side_maximum_angular_speed_radps"),
         )
         self._bc_closing_side_latch = ObservableClosingSideLatch()
+        self._bc_lateral_side_commitment = ObservableLateralSideCommitment(
+            maximum_progress_m=self._float("bc_lateral_commitment_progress_m"),
+            maximum_heading_change_rad=math.radians(
+                self._float("bc_lateral_commitment_maximum_heading_change_degrees")
+            ),
+        )
         self._bc_subgoal_stall_guard = ObservableSubgoalStallGuard(
             retry_budget=self._integer("bc_subgoal_retry_budget_decisions"),
             minimum_displacement_m=self._float("bc_subgoal_stall_displacement_m"),
@@ -441,6 +448,8 @@ class RecoveryManagerNode(Node):
             "bc_closing_side_maximum_range_m": 4.0,
             "bc_closing_side_minimum_beams": 3,
             "bc_closing_side_maximum_angular_speed_radps": 0.20,
+            "bc_lateral_commitment_progress_m": 3.0,
+            "bc_lateral_commitment_maximum_heading_change_degrees": 45.0,
             "bc_wait_budget_decisions": 3,
             "bc_backup_budget_decisions": 4,
             "bc_replan_budget_decisions": 1,
@@ -710,6 +719,7 @@ class RecoveryManagerNode(Node):
         )
         if not self._armed and (nominal_ready or startup_failure_ready):
             self._bc_closing_side_latch.reset()
+            self._bc_lateral_side_commitment.reset()
             self._oracle_yield.reset()
             self._armed = True
             self._armed_at_s = now_s
@@ -1288,6 +1298,7 @@ class RecoveryManagerNode(Node):
         recurrent_escape_telemetry = ""
         directional_yield_telemetry = ""
         closing_side_telemetry = ""
+        side_commitment_telemetry = ""
         if self._policy_type == "expert":
             try:
                 return self._expert_decision(pose, failure)
@@ -1297,6 +1308,12 @@ class RecoveryManagerNode(Node):
         mask = self._action_mask(pose, collision_risk=failure.collision_risk)
         if self._policy_type == "bc":
             path_heading_rad = self._task_path_heading(pose)
+            distance_to_goal_m = float(observation.goal_polar[0])
+            side_commitment_progress_m = self._bc_lateral_side_commitment.maximum_progress_m
+            self._bc_lateral_side_commitment.update(
+                distance_to_goal_m=distance_to_goal_m,
+                path_heading_rad=path_heading_rad,
+            )
             self._update_bc_progress_budget(float(observation.goal_polar[0]))
             # Observe every learned decision so the cap is relative to the
             # furthest task progress achieved, not to a retreating local cycle.
@@ -1350,15 +1367,21 @@ class RecoveryManagerNode(Node):
                         f"pre={','.join(map(str, np.flatnonzero(pre_near_field_mask)))} "
                         f"post={','.join(map(str, np.flatnonzero(mask)))}"
                     )
-                pre_ambiguous_yield_mask = mask.copy()
-                mask = constrain_ambiguous_yield_motion(
+                pre_side_commitment_mask = mask.copy()
+                mask = constrain_committed_lateral_side(
                     mask,
-                    side_evidence_available=self._bc_closing_side_latch.active,
+                    committed_side=self._bc_lateral_side_commitment.side,
+                    pose=pose,
+                    path_heading_rad=path_heading_rad,
+                    minimum_lateral_displacement_m=self._float(
+                        "recurrent_escape_minimum_lateral_displacement_m"
+                    ),
                 )
-                if not self._bc_closing_side_latch.active:
-                    closing_side_telemetry += (
-                        "; bc_ambiguous_yield=applied side_evidence=0 "
-                        f"pre={','.join(map(str, np.flatnonzero(pre_ambiguous_yield_mask)))} "
+                if self._bc_lateral_side_commitment.active:
+                    side_commitment_telemetry = (
+                        f"bc_side_commitment={self._bc_lateral_side_commitment.side_name} "
+                        f"progress_window_m={side_commitment_progress_m:.3f} "
+                        f"pre={','.join(map(str, np.flatnonzero(pre_side_commitment_mask)))} "
                         f"post={','.join(map(str, np.flatnonzero(mask)))}"
                     )
             mask = constrain_stalled_rejoin(mask, escape_required=stalled_rejoin)
@@ -1413,6 +1436,19 @@ class RecoveryManagerNode(Node):
         mask = ensure_safe_wait_fallback(mask)
         decision = self._policy.select_action(observation, mask)
         if self._policy_type == "bc":
+            if self._bc_yield_latch.latched and self._bc_lateral_side_commitment.commit_action(
+                decision.action_id,
+                pose=pose,
+                path_heading_rad=path_heading_rad,
+                distance_to_goal_m=distance_to_goal_m,
+                minimum_lateral_displacement_m=self._float(
+                    "recurrent_escape_minimum_lateral_displacement_m"
+                ),
+            ):
+                side_commitment_telemetry = (
+                    f"bc_side_commitment=set_{self._bc_lateral_side_commitment.side_name} "
+                    f"progress_window_m={side_commitment_progress_m:.3f}"
+                )
             if decision.action_id == WAIT_ACTION_ID:
                 self._bc_waits_without_progress += 1
             elif decision.action_id == BACKUP_ACTION_ID:
@@ -1425,6 +1461,7 @@ class RecoveryManagerNode(Node):
                 for item in (
                     directional_yield_telemetry,
                     closing_side_telemetry,
+                    side_commitment_telemetry,
                     recurrent_escape_telemetry,
                 )
                 if item
@@ -1540,6 +1577,7 @@ class RecoveryManagerNode(Node):
         }:
             return False
         self._bc_closing_side_latch.reset()
+        self._bc_lateral_side_commitment.reset()
         self._oracle_yield.reset()
         self._published_emergency_mode = None
         self._publish_decision(CONTINUE_ACTION_ID, confidence, transition.reason)

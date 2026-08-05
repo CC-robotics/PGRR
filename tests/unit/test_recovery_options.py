@@ -25,12 +25,13 @@ from ramp_core.recovery.options import (
     ObservableClosingSideLatch,
     ObservableDirectionalYieldLatch,
     ObservableGoalProgressBudget,
+    ObservableLateralSideCommitment,
     ObservableNetRetreatGuard,
     ObservableSubgoalStallGuard,
     PrivilegedYieldOption,
     TemporalClosingSideConfig,
     TemporalClosingSideResult,
-    constrain_ambiguous_yield_motion,
+    constrain_committed_lateral_side,
     constrain_directional_yield_motion,
     constrain_near_field_subgoal_radius,
     constrain_net_retreat,
@@ -277,37 +278,63 @@ def test_directional_yield_masks_forward_motion_without_unmasking() -> None:
     assert not bool(np.any(constrained & ~mask))
 
 
-def test_ambiguous_yield_retains_only_existing_non_lateral_actions() -> None:
-    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
-    mask[BACKUP_ACTION_ID] = False
-    constrained = constrain_ambiguous_yield_motion(
-        mask,
-        side_evidence_available=False,
+def test_lateral_side_commitment_holds_until_cumulative_goal_progress() -> None:
+    commitment = ObservableLateralSideCommitment(maximum_progress_m=3.0)
+    assert commitment.commit_action(
+        6,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        distance_to_goal_m=12.0,
+        minimum_lateral_displacement_m=0.25,
     )
+    assert commitment.side == 1 and commitment.side_name == "left"
+    assert not commitment.update(distance_to_goal_m=12.5, path_heading_rad=0.0)
+    assert not commitment.update(distance_to_goal_m=9.0001, path_heading_rad=0.0)
+    assert commitment.update(distance_to_goal_m=9.0, path_heading_rad=0.0)
+    assert not commitment.active
 
-    expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
-    expected[[WAIT_ACTION_ID, REPLAN_ACTION_ID]] = True
-    assert np.array_equal(constrained, expected)
-    assert not np.any(constrained & ~mask)
 
-
-def test_ambiguous_yield_is_inactive_after_side_evidence() -> None:
-    mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
-    mask[[0, WAIT_ACTION_ID, BACKUP_ACTION_ID, REPLAN_ACTION_ID]] = True
-    constrained = constrain_ambiguous_yield_motion(
-        mask,
-        side_evidence_available=True,
+def test_lateral_side_commitment_releases_after_route_turn() -> None:
+    commitment = ObservableLateralSideCommitment(maximum_heading_change_rad=math.pi / 4.0)
+    assert commitment.commit_action(
+        0,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        distance_to_goal_m=10.0,
+        minimum_lateral_displacement_m=0.25,
     )
-    assert np.array_equal(constrained, mask)
-    assert constrained is not mask
+    assert commitment.side == -1
+    assert not commitment.update(distance_to_goal_m=9.9, path_heading_rad=math.pi / 4.0)
+    assert commitment.update(distance_to_goal_m=9.9, path_heading_rad=math.radians(45.1))
 
 
-def test_ambiguous_yield_rejects_invalid_mask_shape() -> None:
-    with pytest.raises(ValueError, match="mask must have shape"):
-        constrain_ambiguous_yield_motion(
-            np.ones(ACTION_COUNT - 1, dtype=np.bool_),
-            side_evidence_available=False,
+def test_lateral_side_commitment_ignores_nonlateral_and_special_actions() -> None:
+    commitment = ObservableLateralSideCommitment()
+    for action_id in (3, WAIT_ACTION_ID, BACKUP_ACTION_ID, REPLAN_ACTION_ID):
+        assert not commitment.commit_action(
+            action_id,
+            pose=Pose2D(0.0, 0.0, 0.0),
+            path_heading_rad=0.0,
+            distance_to_goal_m=10.0,
+            minimum_lateral_displacement_m=0.25,
         )
+    assert not commitment.active
+
+
+def test_committed_lateral_side_masks_only_the_opposite_side() -> None:
+    mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+    mask[4] = False
+    constrained = constrain_committed_lateral_side(
+        mask,
+        committed_side=1,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+    assert not constrained[[0, 1, 2, 7, 8, 9, 14, 15, 16]].any()
+    assert constrained[[5, 6, 11, 12, 13, 18, 19, 20]].all()
+    assert constrained[WAIT_ACTION_ID:].tolist() == mask[WAIT_ACTION_ID:].tolist()
+    assert not np.any(constrained & ~mask)
 
 
 def test_near_field_radius_bound_only_removes_long_subgoals() -> None:
