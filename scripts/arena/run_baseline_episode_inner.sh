@@ -10,6 +10,20 @@ SCENARIO="${RAMP_SCENARIO:?RAMP_SCENARIO is required}"
 TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}"
 SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}"
 TTC_THRESHOLD_S="${RAMP_TTC_THRESHOLD_S:-1.5}"
+recovery_tau_on_overrides=()
+detector_trigger_overrides=()
+if [[ -n "${RAMP_TAU_ON:-}" ]]; then
+    python3 - "${RAMP_TAU_ON}" <<'PY'
+import math
+import sys
+
+value = float(sys.argv[1])
+if not math.isfinite(value) or not 0.35 < value < 1.0:
+    raise SystemExit("ERROR: RAMP_TAU_ON must be finite and satisfy 0.35 < value < 1.0")
+PY
+    recovery_tau_on_overrides=(-p "tau_on:=${RAMP_TAU_ON}")
+    detector_trigger_overrides=(-p "trigger_threshold:=${RAMP_TAU_ON}")
+fi
 case "${SOURCE_POLICY}" in
     base)
         INTER_PLANNER="navigate_w_replanning_time"
@@ -336,6 +350,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || \
         -p odom_topic:="${odom_topic}" -p scan_topic:="${scan_topic}" \
         -p base_cmd_vel_topic:="${base_cmd_topic}" \
         -p ttc_threshold_s:="${TTC_THRESHOLD_S}" \
+        "${detector_trigger_overrides[@]}" \
         -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
         -p collision_omnidirectional_absolute_distance_m:="${collision_omnidirectional_absolute_distance_m}" \
         -p nav_status_topic:="${nav_action}/_action/status" \
@@ -381,6 +396,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || \
         -p failure_status_topic:=/ramp/failure_status \
         -p recovery_decision_topic:=/ramp/recovery_decision \
         -p policy_type:="${recovery_policy_type}" \
+        "${recovery_tau_on_overrides[@]}" \
         -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
         -p model_path:="${model_path}" \
         -p privileged_humans_topic:=/ramp/privileged/humans \

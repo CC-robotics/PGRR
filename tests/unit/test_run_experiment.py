@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -46,6 +47,16 @@ def test_normalize_methods_supports_aliases_and_rejects_duplicates() -> None:
         "mwbc",
         "pgrr",
     )
+
+
+def test_recovery_tau_override_is_validation_only_and_stably_serialized() -> None:
+    assert _MODULE.normalize_recovery_tau_on_override("validation", None) == ""
+    assert _MODULE.normalize_recovery_tau_on_override("validation", 0.8) == "0.8"
+    for invalid in (0.35, 1.0, float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="finite"):
+            _MODULE.normalize_recovery_tau_on_override("validation", invalid)
+    with pytest.raises(ValueError, match="validation-only"):
+        _MODULE.normalize_recovery_tau_on_override("test", 0.8)
 
 
 def test_method_checkpoint_defaults_overrides_and_provenance(tmp_path: Path) -> None:
@@ -157,6 +168,7 @@ def test_build_tasks_produces_deterministic_unique_episode_ids(tmp_path: Path) -
         (),
         180.0,
         checkpoints,
+        recovery_tau_on_override="0.8",
     )
     assert len(tasks) == 6
     identifiers = [_MODULE.episode_id(task, 0) for task in tasks]
@@ -167,6 +179,10 @@ def test_build_tasks_produces_deterministic_unique_episode_ids(tmp_path: Path) -
     assert any(identifier.endswith("_eval_pgrr_a0_dwb") for identifier in identifiers)
     pgrr_task = next(task for task in tasks if task.method == "pgrr")
     assert pgrr_task.checkpoint_sha256 == "d" * 64
+    assert pgrr_task.recovery_tau_on_override == "0.8"
+    assert {row["recovery_tau_on_override"] for row in _MODULE.manifest_rows(tasks, "d" * 40)} == {
+        "0.8"
+    }
 
 
 def test_run_namespace_prevents_cross_commit_raw_artifact_collisions(tmp_path: Path) -> None:
@@ -258,6 +274,16 @@ def test_fingerprint_includes_complete_method_checkpoint_map(tmp_path: Path) -> 
         "d" * 40,
     )
     assert first != changed
+    threshold_changed = _MODULE.experiment_fingerprint(
+        records,
+        ("bc_uniform", "pgrr"),
+        (),
+        180.0,
+        {"bc_uniform": uniform, "pgrr": pgrr},
+        "d" * 40,
+        "0.8",
+    )
+    assert first != threshold_changed
 
 
 def test_parse_args_accepts_repeatable_method_checkpoints_and_split_manifest() -> None:
@@ -274,6 +300,8 @@ def test_parse_args_accepts_repeatable_method_checkpoints_and_split_manifest() -
             "bc_uniform=checkpoints/bc/uniform_scenario/best.onnx",
             "--method-checkpoint",
             "pgrr=checkpoints/dagger/coverage_safety_aligned/best.onnx",
+            "--recovery-tau-on",
+            "0.8",
         ]
     )
     assert args.split_manifest == Path("scenarios/splits/validation.yaml")
@@ -281,6 +309,7 @@ def test_parse_args_accepts_repeatable_method_checkpoints_and_split_manifest() -
         "bc_uniform=checkpoints/bc/uniform_scenario/best.onnx",
         "pgrr=checkpoints/dagger/coverage_safety_aligned/best.onnx",
     ]
+    assert args.recovery_tau_on == 0.8
 
 
 def test_runtime_maps_new_source_policies_to_bc_without_renaming_logs() -> None:
@@ -293,6 +322,59 @@ def test_runtime_maps_new_source_policies_to_bc_without_renaming_logs() -> None:
     assert '-p source_policy:="${SOURCE_POLICY}"' in runtime
     assert 'recovery_policy_type="bc"' in runtime
     assert "checkpoints/dagger/coverage_safety_aligned/best.onnx" in wrapper
+    assert 'optional_runtime_environment+=("RAMP_TAU_ON=${RAMP_TAU_ON}")' in wrapper
+    assert 'recovery_tau_on_overrides=(-p "tau_on:=${RAMP_TAU_ON}")' in runtime
+    assert 'detector_trigger_overrides=(-p "trigger_threshold:=${RAMP_TAU_ON}")' in runtime
+
+
+def test_declared_tau_override_reaches_runtime_and_ambient_value_is_removed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("RAMP_TAU_ON", "0.99")
+    assert "RAMP_TAU_ON" not in _MODULE._clean_runtime_environment()
+    task = _MODULE.build_tasks(
+        [_record(tmp_path)],
+        ("base",),
+        (),
+        1.0,
+        run_namespace="rthreshold",
+        recovery_tau_on_override="0.8",
+    )[0]
+    captured: dict[str, str] = {}
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        captured.update(environment)
+        identifier = _MODULE.episode_id(task, 0)
+        raw = tmp_path / "data" / "raw"
+        raw.mkdir(parents=True)
+        (raw / f"{identifier}.jsonl").write_text("{}\n", encoding="utf-8")
+        (raw / f"{identifier}.outcome.json").write_text(
+            json.dumps(
+                {
+                    "episode_id": identifier,
+                    "outcome": "GOAL_REACHED",
+                    "sample_count": 1,
+                }
+            ),
+            encoding="utf-8",
+        )
+        (raw / f"{identifier}.metadata.json").write_text(
+            json.dumps({"episode_id": identifier}), encoding="utf-8"
+        )
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(_MODULE.subprocess, "run", fake_run)
+    result = _MODULE.run_task(
+        task,
+        root=tmp_path,
+        domain=20,
+        partition="ramp_threshold_test",
+        resume=False,
+    )
+    assert result["status"] == "complete"
+    assert captured["RAMP_TAU_ON"] == "0.8"
 
 
 def test_inspect_attempt_preserves_retryable_outcome_without_stream(tmp_path: Path) -> None:

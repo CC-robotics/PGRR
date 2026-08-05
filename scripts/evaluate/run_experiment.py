@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import subprocess
 import sys
@@ -65,6 +66,7 @@ class EpisodeTask:
     robot_start: str
     robot_goal: str
     pedestrian_config_hash: str
+    recovery_tau_on_override: str
 
 
 @dataclass(frozen=True)
@@ -110,6 +112,23 @@ def normalize_methods(values: Sequence[str]) -> tuple[str, ...]:
     if not parsed:
         raise ValueError("at least one method is required")
     return tuple(parsed)
+
+
+def normalize_recovery_tau_on_override(split: str, value: float | None) -> str:
+    """Validate a declared validation-only trigger-threshold override.
+
+    The empty string is the stable, Parquet-safe representation of "use the
+    checked-in runtime default".  Test runs intentionally reject overrides so
+    that validation choices must be committed before held-out evaluation.
+    """
+
+    if value is None:
+        return ""
+    if split != "validation":
+        raise ValueError("--recovery-tau-on is validation-only; commit the selected default")
+    if not math.isfinite(value) or not 0.35 < value < 1.0:
+        raise ValueError("--recovery-tau-on must be finite and satisfy 0.35 < value < 1.0")
+    return format(value, ".12g")
 
 
 def _normalize_method(value: str) -> str:
@@ -289,6 +308,7 @@ def experiment_fingerprint(
     timeout_s: float,
     method_checkpoints: Mapping[str, CheckpointProvenance],
     project_commit: str,
+    recovery_tau_on_override: str = "",
 ) -> str:
     """Identify exactly one frozen experiment configuration."""
 
@@ -297,6 +317,7 @@ def experiment_fingerprint(
         "methods": list(methods),
         "high_density_methods": list(high_density_methods),
         "timeout_s": timeout_s,
+        "recovery_tau_on_override": recovery_tau_on_override,
         "method_checkpoints": {
             method: {
                 "path": checkpoint.relative_path,
@@ -322,6 +343,7 @@ def build_tasks(
     timeout_s: float,
     method_checkpoints: Mapping[str, CheckpointProvenance] | None = None,
     run_namespace: str = "",
+    recovery_tau_on_override: str = "",
 ) -> list[EpisodeTask]:
     """Expand scenario records into a deterministic, duplicate-free task list."""
 
@@ -367,6 +389,7 @@ def build_tasks(
                     robot_start=str(record["robot_start"]),
                     robot_goal=str(record["robot_goal"]),
                     pedestrian_config_hash=str(record["pedestrian_config_hash"]),
+                    recovery_tau_on_override=recovery_tau_on_override,
                 )
             )
     return tasks
@@ -412,6 +435,7 @@ def manifest_rows(
             "checkpoint_sha256": task.checkpoint_sha256,
             "project_commit": project_commit,
             "timeout_s": task.timeout_s,
+            "recovery_tau_on_override": task.recovery_tau_on_override,
         }
         for task in tasks
     ]
@@ -495,6 +519,7 @@ def _clean_runtime_environment() -> dict[str, str]:
         "ROS_DISTRO",
         "ROS_VERSION",
         "ROS_PYTHON_VERSION",
+        "RAMP_TAU_ON",
     ):
         environment.pop(name, None)
     return environment
@@ -547,6 +572,8 @@ def run_task(
                 raise RuntimeError(f"method {task.method} requires checkpoint provenance")
             environment["RAMP_BC_MODEL_PATH"] = task.checkpoint_container_path
             environment["RAMP_CHECKPOINT_SHA256"] = task.checkpoint_sha256
+        if task.recovery_tau_on_override:
+            environment["RAMP_TAU_ON"] = task.recovery_tau_on_override
         print(
             f"[worker domain={domain}] RUN task={task.task_index} "
             f"attempt={attempt} episode={identifier}",
@@ -678,6 +705,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--jobs", type=int, default=4)
     parser.add_argument("--timeout", type=float, default=180.0)
     parser.add_argument(
+        "--recovery-tau-on",
+        type=float,
+        help=(
+            "Validation-only recovery trigger threshold. The declared value is hashed "
+            "into all run provenance; test runs must use the checked-in default."
+        ),
+    )
+    parser.add_argument(
         "--checkpoint",
         type=Path,
         default=ROOT / "checkpoints" / "dagger" / "coverage_safety_aligned" / "best.onnx",
@@ -710,6 +745,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if overlap:
         raise ValueError(f"methods repeated across full/high-density groups: {overlap}")
     selected_methods = (*methods, *high_density_methods)
+    recovery_tau_on_override = normalize_recovery_tau_on_override(
+        args.split, args.recovery_tau_on
+    )
     method_checkpoints = resolve_method_checkpoints(
         ROOT,
         selected_methods,
@@ -727,6 +765,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.timeout,
         method_checkpoints,
         project_commit,
+        recovery_tau_on_override,
     )
     tasks = build_tasks(
         records,
@@ -735,6 +774,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.timeout,
         method_checkpoints,
         run_namespace=f"r{run_id}",
+        recovery_tau_on_override=recovery_tau_on_override,
     )
     validate_existing_attempts(tasks, ROOT, args.resume)
     output_dir = args.output_dir.resolve()
@@ -805,6 +845,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "requested_jobs": args.jobs,
         "effective_jobs": jobs,
         "timeout_s": args.timeout,
+        "recovery_tau_on_override": recovery_tau_on_override,
         "project_commit": project_commit,
         "method_checkpoints": checkpoint_payload,
         "checkpoint": legacy_checkpoint.relative_path if legacy_checkpoint else None,

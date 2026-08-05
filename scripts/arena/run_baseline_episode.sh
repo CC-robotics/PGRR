@@ -38,6 +38,10 @@ case "${source_policy}" in
         default_model_path="/workspace/checkpoints/bc/mwbc_scenario/best.onnx"
         ;;
 esac
+optional_runtime_environment=()
+if [[ -n "${RAMP_TAU_ON:-}" ]]; then
+    optional_runtime_environment+=("RAMP_TAU_ON=${RAMP_TAU_ON}")
+fi
 exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     env \
     RAMP_SCENARIO="/workspace/${relative}" \
@@ -45,6 +49,7 @@ exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     RAMP_EPISODE_TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}" \
     RAMP_ACTOR_UPDATE_HZ="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
     RAMP_TTC_THRESHOLD_S="${RAMP_TTC_THRESHOLD_S:-1.5}" \
+    "${optional_runtime_environment[@]}" \
     RAMP_SOURCE_POLICY="${source_policy}" \
     RAMP_BC_MODEL_PATH="${RAMP_BC_MODEL_PATH:-${default_model_path}}" \
     RAMP_CHECKPOINT_SHA256="${RAMP_CHECKPOINT_SHA256:-}" \
