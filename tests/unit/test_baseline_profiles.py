@@ -178,7 +178,7 @@ def test_runtime_synchronizes_actor_and_logger_to_navigation_activation() -> Non
     assert "self._robot_position = (float(pose.position.x), float(pose.position.y))" in actor
     assert "if self._actual_robot_pose is not None:" in actor
     assert "<static>true</static>" not in actor
-    assert "Gazebo rejected a deterministic pedestrian proxy pose update" in logger
+    assert "deterministic simulator startup/actor health check failed" in logger
     assert "NavigateToPose did not activate within the startup deadline" in logger
     assert "episode start handshake did not complete before the wall-clock deadline" in logger
     assert runtime.count("episode_start_topic:=/ramp/episode_started") == 4

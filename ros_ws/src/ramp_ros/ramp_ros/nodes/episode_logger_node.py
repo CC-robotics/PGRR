@@ -430,7 +430,7 @@ class EpisodeLoggerNode(Node):
         if not bool(message.data):
             self._set_outcome(
                 EpisodeOutcome.SIMULATOR_FAILURE,
-                "Gazebo rejected a deterministic pedestrian proxy pose update",
+                "deterministic simulator startup/actor health check failed",
             )
 
     def _on_episode_start(self, message: Bool) -> None:

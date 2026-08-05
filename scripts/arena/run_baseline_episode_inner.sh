@@ -112,7 +112,9 @@ fi
 mkdir -p "${output_directory}" "$(dirname "${RUNTIME_LOG}")"
 : >"${RUNTIME_LOG}"
 : >"${STATUS_LOG}"
-cp "${SCENARIO}" "${SCENARIO_TARGET}"
+python3 /workspace/scripts/arena/materialize_runtime_scenario.py \
+    --source "${SCENARIO}" \
+    --output "${SCENARIO_TARGET}"
 
 export LIBGL_ALWAYS_SOFTWARE=1
 setsid xvfb-run -a -s '-screen 0 1280x720x24' \
