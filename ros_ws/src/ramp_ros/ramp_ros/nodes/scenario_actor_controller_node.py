@@ -31,7 +31,7 @@ from std_srvs.srv import Empty
 from tf2_msgs.msg import TFMessage
 
 LEGACY_DYNAMICS_VERSION = "legacy_endpoint_yield_v1"
-SWEPT_GUARD_DYNAMICS_VERSION = "swept_guard_v1"
+SWEPT_GUARD_DYNAMICS_VERSION = "deterministic_one_shot_swept_guard_v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -885,21 +885,12 @@ class ScenarioActorController(Node):
 
             version = str(
                 setting(
-                    "dynamics_version",
-                    actor_dynamics.get(
-                        "version",
-                        scenario_dynamics.get(
-                            "version",
-                            metadata.get(
-                                "actor_dynamics_version",
-                                LEGACY_DYNAMICS_VERSION,
-                            ),
-                        ),
-                    ),
+                    "actor_dynamics_version",
+                    metadata.get("actor_dynamics_version", LEGACY_DYNAMICS_VERSION),
                 )
             )
             default_frequency = 5.0 if version == SWEPT_GUARD_DYNAMICS_VERSION else None
-            update_frequency = setting("update_frequency_hz", default_frequency)
+            update_frequency = setting("actor_update_frequency_hz", default_frequency)
             routes.append(
                 ActorRoute(
                     name=str(actor["name"]),
@@ -908,8 +899,8 @@ class ScenarioActorController(Node):
                     cyclic=bool(actor.get("cyclic_goals", True)),
                     robot_avoidance_distance_m=float(actor.get("robot_avoidance_distance_m", 1.3)),
                     dynamics_version=version,
-                    soft_yield_distance_m=float(setting("soft_yield_distance_m", 0.90)),
-                    hard_collision_guard_m=float(setting("hard_collision_guard_m", 0.73)),
+                    soft_yield_distance_m=float(setting("robot_soft_yield_distance_m", 0.90)),
+                    hard_collision_guard_m=float(setting("robot_hard_guard_distance_m", 0.73)),
                     maximum_soft_hold_s=float(setting("maximum_soft_hold_s", 1.0)),
                     update_frequency_hz=(
                         None if update_frequency is None else float(update_frequency)
