@@ -221,6 +221,26 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     if not np.array_equal(first_recovery, ordinary):
         raise RuntimeError("first directional yield discarded the learned safe fallback")
 
+    manager._bc_closing_side_latch.left_occupied = True
+    unilateral = manager._constrain_bc_recurrent_escape(
+        ordinary,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
+    expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    expected[[legal_lateral, REPLAN_ACTION_ID]] = True
+    if not np.array_equal(unilateral, expected):
+        raise RuntimeError("reliable unilateral flow did not trigger first-attempt escape")
+    unilateral_telemetry = manager._bc_recurrent_escape_telemetry(
+        ordinary,
+        unilateral,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
+    if "cause=unilateral_flow" not in unilateral_telemetry:
+        raise RuntimeError(f"unilateral-flow telemetry mismatch: {unilateral_telemetry}")
+    manager._bc_closing_side_latch.reset()
+
     manager._machine._consecutive_recoveries = threshold
     constrained = manager._constrain_bc_recurrent_escape(
         ordinary,

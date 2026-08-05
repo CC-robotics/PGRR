@@ -1149,16 +1149,26 @@ class RecoveryManagerNode(Node):
 
         return constrain_recurrent_yield_escape(
             mask,
-            escape_required=(
-                self._bc_yield_latch.latched
-                and self._machine.consecutive_recoveries
-                >= self._integer("bc_recurrent_escape_after_recoveries")
-            ),
+            escape_required=self._bc_recurrent_escape_required(),
             pose=pose,
             path_heading_rad=path_heading_rad,
             minimum_lateral_displacement_m=self._float(
                 "recurrent_escape_minimum_lateral_displacement_m"
             ),
+        )
+
+    def _bc_recurrent_escape_required(self) -> bool:
+        """Escalate on a retry, or immediately for reliable unilateral flow."""
+
+        if not self._bc_yield_latch.latched or self._machine.consecutive_recoveries <= 0:
+            return False
+        unilateral_flow = (
+            self._bc_closing_side_latch.right_occupied != self._bc_closing_side_latch.left_occupied
+        )
+        return bool(
+            unilateral_flow
+            or self._machine.consecutive_recoveries
+            >= self._integer("bc_recurrent_escape_after_recoveries")
         )
 
     def _constrain_bc_temporal_closing_side(
@@ -1262,8 +1272,9 @@ class RecoveryManagerNode(Node):
 
         recovery_count = self._machine.consecutive_recoveries
         threshold = self._integer("bc_recurrent_escape_after_recoveries")
-        if not self._bc_yield_latch.latched or recovery_count < threshold:
+        if not self._bc_recurrent_escape_required():
             return ""
+        cause = "retry" if recovery_count >= threshold else "unilateral_flow"
         before_ids = np.flatnonzero(before).tolist()
         after_ids = np.flatnonzero(after).tolist()
         minimum_lateral_displacement_m = self._float(
@@ -1282,7 +1293,7 @@ class RecoveryManagerNode(Node):
         else:
             mode = "unavailable"
         return (
-            f"bc_recurrent_escape={mode} count={recovery_count} "
+            f"bc_recurrent_escape={mode} cause={cause} count={recovery_count} "
             f"minimum_lateral_m={minimum_lateral_displacement_m:.3f} "
             f"lateral_ids={','.join(map(str, lateral_ids))} "
             f"pre={','.join(map(str, before_ids))} final={','.join(map(str, after_ids))}"

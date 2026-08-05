@@ -351,6 +351,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert "ObservableLateralSideCommitment(" in manager
     assert "release_if_committed_side_is_occupied(" in manager
     assert "commitment_blocks_all_safe_escape(" in manager
+    assert "_bc_recurrent_escape_required(" in manager
+    assert 'cause = "retry" if recovery_count >= threshold else "unilateral_flow"' in manager
     assert "constrain_task_lateral_sides(" in manager
     assert "constrain_committed_lateral_side(" in manager
     assert manager.count("self._bc_closing_side_latch.reset()") >= 3
