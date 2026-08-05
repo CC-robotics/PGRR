@@ -408,7 +408,7 @@ class RecoveryManagerNode(Node):
             "bc_wait_budget_decisions": 3,
             "bc_backup_budget_decisions": 4,
             "bc_replan_budget_decisions": 1,
-            "bc_recurrent_escape_after_recoveries": 2,
+            "bc_recurrent_escape_after_recoveries": 1,
             "recurrent_escape_minimum_lateral_displacement_m": 0.25,
             "bc_progress_reset_m": 0.25,
             "bc_maximum_net_retreat_m": 1.4,
@@ -1062,12 +1062,13 @@ class RecoveryManagerNode(Node):
         pose: Pose2D,
         path_heading_rad: float,
     ) -> np.ndarray[Any, np.dtype[np.bool_]]:
-        """Require an already-legal lateral escape after recurrent BC recovery."""
+        """Require an already-legal lateral escape during a latched BC yield."""
 
         return constrain_recurrent_yield_escape(
             mask,
             escape_required=(
-                self._machine.consecutive_recoveries
+                self._bc_yield_latch.latched
+                and self._machine.consecutive_recoveries
                 >= self._integer("bc_recurrent_escape_after_recoveries")
             ),
             pose=pose,
@@ -1089,7 +1090,7 @@ class RecoveryManagerNode(Node):
 
         recovery_count = self._machine.consecutive_recoveries
         threshold = self._integer("bc_recurrent_escape_after_recoveries")
-        if recovery_count < threshold:
+        if not self._bc_yield_latch.latched or recovery_count < threshold:
             return ""
         before_ids = np.flatnonzero(before).tolist()
         after_ids = np.flatnonzero(after).tolist()

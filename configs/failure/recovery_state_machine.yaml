@@ -32,9 +32,11 @@ bc_wait_budget_decisions: 3
 # individual backups terminate early; the geometric guard remains authoritative.
 bc_backup_budget_decisions: 4
 bc_replan_budget_decisions: 1
-# On the second no-progress recovery, prefer a planning-valid lateral escape
-# or REPLAN; retain the ordinary safe mask when neither remains valid.
-bc_recurrent_escape_after_recoveries: 2
+# From the first confirmed recovery during a latched directional yield, prefer
+# an already-planning-valid lateral escape or REPLAN.  The latch guard leaves
+# freeze/oscillation recovery unchanged, and the ordinary safe mask is retained
+# when no planning-valid escape exists.
+bc_recurrent_escape_after_recoveries: 1
 # Robot-frame action angles cease to describe task-lateral motion after a
 # recovery turn. Require this observable endpoint displacement normal to the
 # local global-path tangent before classifying a subgoal as a lateral escape.

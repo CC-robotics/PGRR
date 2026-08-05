@@ -127,7 +127,7 @@ def _assert_terminal_publication(
 
 def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     threshold = manager._integer("bc_recurrent_escape_after_recoveries")
-    if threshold != 2:
+    if threshold != 1:
         raise RuntimeError(f"unexpected BC recurrent escape threshold: {threshold}")
     minimum_lateral_m = manager._float("recurrent_escape_minimum_lateral_displacement_m")
     pose = Pose2D(0.0, 0.0, 0.0)
@@ -148,23 +148,31 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     ordinary[[legal_lateral, straight_id, WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
     ordinary[[REPLAN_ACTION_ID, CONTINUE_ACTION_ID]] = True
 
-    manager._machine._consecutive_recoveries = threshold - 1
-    before_threshold = manager._constrain_bc_recurrent_escape(
+    # A first recovery for freeze/oscillation must retain the ordinary mask;
+    # only an observable directional-yield latch authorizes this escalation.
+    manager._machine._consecutive_recoveries = threshold
+    manager._bc_yield_latch.reset()
+    unlatched = manager._constrain_bc_recurrent_escape(
         ordinary,
         pose=pose,
         path_heading_rad=path_heading_rad,
     )
-    if not np.array_equal(before_threshold, ordinary):
-        raise RuntimeError("recurrent escape changed the mask before its threshold")
+    if not np.array_equal(unlatched, ordinary):
+        raise RuntimeError("recurrent escape changed an unlatched first-recovery mask")
     if manager._bc_recurrent_escape_telemetry(
         ordinary,
-        before_threshold,
+        unlatched,
         pose=pose,
         path_heading_rad=path_heading_rad,
     ):
-        raise RuntimeError("recurrent escape emitted telemetry before its threshold")
+        raise RuntimeError("recurrent escape emitted telemetry without a directional yield")
 
-    manager._machine._consecutive_recoveries = threshold
+    manager._bc_yield_latch.update(
+        collision_risk=manager._machine.config.tau_on,
+        forward_clearance_m=0.5,
+    )
+    if not manager._bc_yield_latch.latched:
+        raise RuntimeError("directional-yield latch did not activate for first recovery")
     constrained = manager._constrain_bc_recurrent_escape(
         ordinary,
         pose=pose,
@@ -226,6 +234,7 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
             "rotated path-frame recurrent escape mismatch: "
             f"expected={rotated_expected}, observed={rotated_constrained}"
         )
+    manager._bc_yield_latch.reset()
 
 
 def _assert_bc_subgoal_lifecycle(manager: RecoveryManagerNode) -> None:
