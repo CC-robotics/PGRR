@@ -387,7 +387,7 @@ class RecoveryManagerNode(Node):
             "expert_wait_budget_decisions": 3,
             "bc_rejoin_block_threshold": 0.65,
             "bc_wait_budget_decisions": 3,
-            "bc_backup_budget_decisions": 2,
+            "bc_backup_budget_decisions": 4,
             "bc_replan_budget_decisions": 1,
             "bc_recurrent_escape_after_recoveries": 2,
             "bc_progress_reset_m": 0.25,

@@ -17,7 +17,9 @@ bc_subgoal_maximum_duration_s: 6.0
 expert_wait_budget_decisions: 3
 bc_rejoin_block_threshold: 0.65
 bc_wait_budget_decisions: 3
-bc_backup_budget_decisions: 2
+# Four bounded attempts can realize the 1.4 m observable net-retreat cap when
+# individual backups terminate early; the geometric guard remains authoritative.
+bc_backup_budget_decisions: 4
 bc_replan_budget_decisions: 1
 # On the second no-progress recovery, prefer a planning-valid lateral escape
 # or REPLAN; retain the ordinary safe mask when neither remains valid.

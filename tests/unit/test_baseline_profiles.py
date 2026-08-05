@@ -277,7 +277,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["emergency_backup_progress_m"] == 0.05
     assert config["emergency_translation_clearance_m"] == 0.36
     assert config["bc_wait_budget_decisions"] == 3
-    assert config["bc_backup_budget_decisions"] == 2
+    assert config["bc_backup_budget_decisions"] == 4
     assert config["bc_replan_budget_decisions"] == 1
     assert config["bc_recurrent_escape_after_recoveries"] == 2
     assert config["bc_progress_reset_m"] == 0.25
