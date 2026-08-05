@@ -17,7 +17,7 @@ import json
 import math
 import re
 from dataclasses import dataclass
-from itertools import combinations
+from itertools import combinations, pairwise
 from pathlib import Path
 from types import ModuleType
 from typing import Any, cast
@@ -163,6 +163,17 @@ def _validate_config(config: dict[str, Any]) -> None:
         doorway_lane_offset = float(moderation["doorway_lane_offset_m"])
         if not lane_min <= doorway_lane_offset <= lane_max:
             raise ValueError("doorway lane offset must lie inside the configured lane range")
+    head_on_keys = {"head_on_single_side_lane_stream", "head_on_lane_offset_m"}
+    present_head_on_keys = head_on_keys & set(moderation)
+    if present_head_on_keys and present_head_on_keys != head_on_keys:
+        missing = sorted(head_on_keys - present_head_on_keys)
+        raise ValueError(f"head-on lane-stream configuration is incomplete: {missing}")
+    if present_head_on_keys:
+        if moderation["head_on_single_side_lane_stream"] is not True:
+            raise ValueError("configured head-on lane stream must be single-sided")
+        head_on_lane_offset = float(moderation["head_on_lane_offset_m"])
+        if not lane_min <= head_on_lane_offset <= lane_max:
+            raise ValueError("head-on lane offset must lie inside the configured lane range")
     families_by_id = {str(family["id"]): family for family in families}
     for family_id, key in EGRESS_EXIT_KEYS.items():
         if key not in moderation:
@@ -270,12 +281,18 @@ def _moderate_routes(
     lane_max: float,
     longitudinal_stagger: float,
     head_on_exit_x_m: float | None = None,
+    head_on_lane_side: int | None = None,
+    head_on_lane_offset_m: float | None = None,
     doorway_exit_x_m: float | None = None,
     doorway_lane_side: int | None = None,
     doorway_lane_offset_m: float | None = None,
 ) -> list[list[list[float]]]:
     """Return separated, longitudinally staggered one-shot actor routes."""
 
+    if (head_on_lane_side is None) != (head_on_lane_offset_m is None):
+        raise ValueError("head-on lane side and offset must be configured together")
+    if head_on_lane_side is not None and head_on_lane_side not in {-1, 1}:
+        raise ValueError("head-on lane side must be -1 or 1")
     if (doorway_lane_side is None) != (doorway_lane_offset_m is None):
         raise ValueError("doorway lane side and offset must be configured together")
     if doorway_lane_side is not None and doorway_lane_side not in {-1, 1}:
@@ -287,10 +304,15 @@ def _moderate_routes(
         stagger = longitudinal_stagger * index
         if layout == "horizontal_corridor":
             exit_x = 5.8 + 0.25 * index if head_on_exit_x_m is None else head_on_exit_x_m
+            lane_y = (
+                12.0 + lane
+                if head_on_lane_side is None
+                else 12.0 + offset + head_on_lane_side * float(head_on_lane_offset_m)
+            )
             routes.append(
                 [
-                    [25.2 - stagger, 12.0 + lane, math.pi],
-                    [exit_x, 12.0 + lane, math.pi],
+                    [25.2 - stagger, lane_y, math.pi],
+                    [exit_x, lane_y, math.pi],
                 ]
             )
         elif layout == "doorway":
@@ -372,6 +394,15 @@ def _apply_moderation(
     actors = scenario["obstacles"]["dynamic"]
     lane_min, lane_max = (float(value) for value in moderation["lane_offset_range_m"])
     single_side_doorway = bool(moderation.get("doorway_single_side_lane_stream", False))
+    single_side_head_on = bool(moderation.get("head_on_single_side_lane_stream", False))
+    head_on_lane_side = (
+        _seeded_doorway_lane_side(int(scenario["ramp_metadata"]["seed"]))
+        if layout == "horizontal_corridor" and single_side_head_on
+        else None
+    )
+    head_on_lane_offset = (
+        float(moderation["head_on_lane_offset_m"]) if head_on_lane_side is not None else None
+    )
     doorway_lane_side = (
         _seeded_doorway_lane_side(int(scenario["ramp_metadata"]["seed"]))
         if layout == "doorway" and single_side_doorway
@@ -390,6 +421,8 @@ def _apply_moderation(
         head_on_exit_x_m=(
             float(moderation["head_on_exit_x_m"]) if "head_on_exit_x_m" in moderation else None
         ),
+        head_on_lane_side=head_on_lane_side,
+        head_on_lane_offset_m=head_on_lane_offset,
         doorway_exit_x_m=(
             float(moderation["doorway_exit_x_m"]) if "doorway_exit_x_m" in moderation else None
         ),
@@ -437,6 +470,17 @@ def _apply_moderation(
             "lane_y_m": doorway_center_y + doorway_lane_side * doorway_lane_offset,
             "recovery_channel_y_m": doorway_center_y - doorway_lane_side * doorway_lane_offset,
             "lane_preserving": True,
+        }
+    if head_on_lane_side is not None:
+        assert head_on_lane_offset is not None
+        head_on_center_y = 12.0 + offset
+        metadata["head_on_stream"] = {
+            "lane_side": head_on_lane_side,
+            "lane_offset_m": head_on_lane_offset,
+            "lane_y_m": head_on_center_y + head_on_lane_side * head_on_lane_offset,
+            "recovery_channel_y_m": head_on_center_y - head_on_lane_side * head_on_lane_offset,
+            "lane_preserving": True,
+            "seed_deterministic": True,
         }
     for actor, route in zip(actors, routes, strict=True):
         actor["pos"] = route[0]
@@ -513,6 +557,51 @@ def _validate_single_side_doorway_stream(
     channel_goal = (float(robot["goal"][0]), recovery_y)
     if not grid.segment_is_free(channel_start, channel_goal):
         raise ValueError("doorway opposite-side recovery channel intersects static geometry")
+
+
+def _validate_single_side_head_on_stream(
+    scenario: dict[str, Any],
+    bounds: list[float],
+    resolution: float,
+    footprint_inflation_m: float,
+    moderation: dict[str, Any],
+) -> None:
+    """Validate the seed-selected, lane-preserving v4 head-on stream."""
+
+    if not bool(moderation.get("head_on_single_side_lane_stream", False)):
+        return
+    if str(scenario["ramp_metadata"]["family"]) != "head_on_corridor":
+        return
+    stream = scenario["ramp_metadata"].get("head_on_stream")
+    if not isinstance(stream, dict) or stream.get("lane_preserving") is not True:
+        raise ValueError("single-side head-on stream metadata is missing")
+    if stream.get("seed_deterministic") is not True:
+        raise ValueError("head-on stream side must be seed-deterministic")
+    seed = int(scenario["ramp_metadata"]["seed"])
+    if int(stream["lane_side"]) != _seeded_doorway_lane_side(seed):
+        raise ValueError("head-on stream side does not match its seed")
+    lane_y = float(stream["lane_y_m"])
+    recovery_y = float(stream["recovery_channel_y_m"])
+    if abs(lane_y - recovery_y) <= COMBINED_COLLISION_RADIUS_M:
+        raise ValueError("head-on actor lane does not leave a collision-clear recovery channel")
+    actors = scenario["obstacles"]["dynamic"]
+    for actor in actors:
+        waypoint_y = [float(point[1]) for point in actor["waypoints"]]
+        if any(not math.isclose(value, lane_y, abs_tol=1.0e-9) for value in waypoint_y):
+            raise ValueError("head-on actor routes must remain on one shared lane")
+    starts = sorted(float(actor["waypoints"][0][0]) for actor in actors)
+    expected_stagger = float(moderation["pedestrian_longitudinal_stagger_m"])
+    if any(
+        not math.isclose(right - left, expected_stagger, abs_tol=1.0e-9)
+        for left, right in pairwise(starts)
+    ):
+        raise ValueError("head-on stream does not preserve longitudinal staggering")
+    robot = scenario["robots"][0]
+    grid = _footprint_occupancy(scenario, bounds, resolution, footprint_inflation_m)
+    channel_start = (float(robot["start"][0]), recovery_y)
+    channel_goal = (float(robot["goal"][0]), recovery_y)
+    if not grid.segment_is_free(channel_start, channel_goal):
+        raise ValueError("head-on opposite-side recovery channel intersects static geometry")
 
 
 def _footprint_occupancy(
@@ -757,6 +846,13 @@ def compile_benchmark(
                         config["moderation"],
                     )
                     _validate_single_side_doorway_stream(
+                        scenario,
+                        bounds,
+                        resolution,
+                        footprint_inflation,
+                        config["moderation"],
+                    )
+                    _validate_single_side_head_on_stream(
                         scenario,
                         bounds,
                         resolution,
