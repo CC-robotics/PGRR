@@ -68,16 +68,10 @@ NOMINAL_TRANSITIONS: Final = frozenset(
         ("REJOIN", "NORMAL"),
     }
 )
-SAFETY_PREEMPT_SOURCES: Final = frozenset(
-    {"NORMAL", "PENDING_RECOVERY", "RECOVERY", "REJOIN"}
-)
-SAFETY_CLEAR_TARGETS: Final = frozenset(
-    {"NORMAL", "PENDING_RECOVERY", "RECOVERY", "REJOIN"}
-)
+SAFETY_PREEMPT_SOURCES: Final = frozenset({"NORMAL", "PENDING_RECOVERY", "RECOVERY", "REJOIN"})
+SAFETY_CLEAR_TARGETS: Final = frozenset({"NORMAL", "PENDING_RECOVERY", "RECOVERY", "REJOIN"})
 GLOBAL_TERMINAL_TARGETS: Final = frozenset({"FAILED", "SUCCEEDED"})
-GLOBAL_FAILURE_GUARDS: Final = frozenset(
-    {"unrecoverable_failure", "recovery_sequence_timeout"}
-)
+GLOBAL_FAILURE_GUARDS: Final = frozenset({"unrecoverable_failure", "recovery_sequence_timeout"})
 
 
 @dataclass(frozen=True)
