@@ -15,7 +15,11 @@ from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Quaternion
 from nav2_msgs.srv import ClearEntireCostmap
 from nav_msgs.msg import Odometry
 from ramp_core.evaluation.navigation import navigation_status_is_active
-from ramp_core.planning.rollout import yielding_human_step
+from ramp_core.planning.rollout import (
+    CollisionGuardedHumanStep,
+    collision_guarded_human_step,
+    yielding_human_step,
+)
 from rclpy.clock import Clock, ClockType
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
@@ -26,6 +30,9 @@ from std_msgs.msg import Bool, Int16
 from std_srvs.srv import Empty
 from tf2_msgs.msg import TFMessage
 
+LEGACY_DYNAMICS_VERSION = "legacy_endpoint_yield_v1"
+SWEPT_GUARD_DYNAMICS_VERSION = "swept_guard_v1"
+
 
 @dataclass(frozen=True, slots=True)
 class ActorRoute:
@@ -34,10 +41,48 @@ class ActorRoute:
     speed: float
     cyclic: bool = True
     robot_avoidance_distance_m: float = 1.3
+    dynamics_version: str = LEGACY_DYNAMICS_VERSION
+    soft_yield_distance_m: float = 0.90
+    hard_collision_guard_m: float = 0.73
+    maximum_soft_hold_s: float = 1.0
+    update_frequency_hz: float | None = None
 
     def __post_init__(self) -> None:
+        if not self.points:
+            raise ValueError("actor route must contain at least one point")
+        if self.speed <= 0.0 or not math.isfinite(self.speed):
+            raise ValueError("actor route speed must be finite and positive")
+        if self.dynamics_version not in {
+            LEGACY_DYNAMICS_VERSION,
+            SWEPT_GUARD_DYNAMICS_VERSION,
+        }:
+            raise ValueError(f"unsupported actor dynamics version: {self.dynamics_version}")
         if self.robot_avoidance_distance_m <= 0.71:
             raise ValueError("robot avoidance distance must exceed combined collision radii")
+        if self.dynamics_version == SWEPT_GUARD_DYNAMICS_VERSION:
+            values = (
+                self.soft_yield_distance_m,
+                self.hard_collision_guard_m,
+                self.maximum_soft_hold_s,
+            )
+            if any(not math.isfinite(value) for value in values):
+                raise ValueError("swept-guard actor parameters must be finite")
+            if self.hard_collision_guard_m <= 0.71:
+                raise ValueError("hard collision guard must exceed combined collision radii")
+            if self.soft_yield_distance_m <= self.hard_collision_guard_m:
+                raise ValueError("soft yield distance must exceed hard collision guard")
+            if self.maximum_soft_hold_s < 0.0:
+                raise ValueError("maximum soft hold must be non-negative")
+            if self.update_frequency_hz is None:
+                raise ValueError("swept-guard actors require an update frequency")
+        if self.update_frequency_hz is not None and (
+            not math.isfinite(self.update_frequency_hz) or self.update_frequency_hz <= 0.0
+        ):
+            raise ValueError("actor update frequency must be finite and positive")
+
+    @property
+    def uses_swept_guard(self) -> bool:
+        return self.dynamics_version == SWEPT_GUARD_DYNAMICS_VERSION
 
     @property
     def segment_lengths(self) -> tuple[float, ...]:
@@ -153,9 +198,21 @@ class ScenarioActorController(Node):
         self._start_publisher = self.create_publisher(
             Bool, str(self.get_parameter("episode_start_topic").value), 10
         )
-        frequency = float(self.get_parameter("update_frequency_hz").value)
+        swept_routes = tuple(route for route in self._routes if route.uses_swept_guard)
+        if swept_routes and len(swept_routes) != len(self._routes):
+            raise ValueError("a scenario must not mix legacy and swept-guard actor dynamics")
+        if swept_routes:
+            route_frequencies = {
+                route.update_frequency_hz for route in swept_routes if route.update_frequency_hz
+            }
+            if len(route_frequencies) != 1:
+                raise ValueError("all swept-guard actors must use one update frequency")
+            frequency = float(next(iter(route_frequencies)))
+        else:
+            frequency = float(self.get_parameter("update_frequency_hz").value)
         if frequency <= 0.0:
             raise ValueError("update_frequency_hz must be positive")
+        self._actor_update_frequency_hz = frequency
         if float(self.get_parameter("robot_avoidance_distance_m").value) <= 0.71:
             raise ValueError("robot_avoidance_distance_m must exceed combined collision radii")
         self._robot_start = (
@@ -227,9 +284,13 @@ class ScenarioActorController(Node):
         self._costmap_clear_pending: dict[str, Any] = {}
         self._costmap_clear_started_wall_s: float | None = None
         self._route_elapsed = {route.name: 0.0 for route in self._routes}
+        self._soft_hold_elapsed = {route.name: 0.0 for route in self._routes}
         self._pending: dict[str, Any] = {}
         self._pending_since_s: dict[str, float] = {}
         self._pending_target_elapsed: dict[str, float] = {}
+        self._pending_soft_hold_elapsed: dict[str, float] = {}
+        self._last_dynamics_event: dict[str, str] = {}
+        self._dynamics_event_counts: dict[str, int] = {}
         self._spawn_pending: dict[str, Any] = {}
         self._spawn_attempted: set[str] = set()
         self._spawn_validated: set[str] = set()
@@ -281,6 +342,7 @@ class ScenarioActorController(Node):
         )
         self.get_logger().info(
             f"loaded {len(self._routes)} deterministic actor routes; service={service_name}; "
+            f"dynamics={self._routes[0].dynamics_version}; update_hz={frequency:.3f}; "
             f"task_reset=({task_reset_service}, "
             f"{self.get_parameter('task_reset_topic').value}); "
             f"startup_costmaps=({local_clear_service}, {global_clear_service})"
@@ -659,6 +721,7 @@ class ScenarioActorController(Node):
             return
         self._navigation_active = True
         self._route_elapsed = {route.name: 0.0 for route in self._routes}
+        self._soft_hold_elapsed = {route.name: 0.0 for route in self._routes}
         self._last_update_s = self.get_clock().now().nanoseconds * 1.0e-9
         self.get_logger().info("navigation activated; waiting for episode logger handshake")
 
@@ -674,6 +737,7 @@ class ScenarioActorController(Node):
         self._latest_odometry = None
         self._latest_odometry_received_s = None
         self._odom_stable_since_wall_s = None
+        self._soft_hold_elapsed = {route.name: 0.0 for route in self._routes}
         for future in self._costmap_clear_pending.values():
             if not future.done():
                 future.cancel()
@@ -713,6 +777,7 @@ class ScenarioActorController(Node):
             return
         self._experiment_started = True
         self._route_elapsed = {route.name: 0.0 for route in self._routes}
+        self._soft_hold_elapsed = {route.name: 0.0 for route in self._routes}
         self._last_update_s = now_s
         self.get_logger().info("episode handshake complete; released actor routes")
 
@@ -742,14 +807,99 @@ class ScenarioActorController(Node):
             self._release_experiment(now_s)
         self._publish_startup_state()
 
+    def _robot_velocity_world(self) -> tuple[float, float]:
+        """Return observable odometry velocity rotated into the map frame."""
+
+        message = self._latest_odometry
+        if message is None:
+            return 0.0, 0.0
+        linear_x = float(message.twist.twist.linear.x)
+        linear_y = float(message.twist.twist.linear.y)
+        if not math.isfinite(linear_x) or not math.isfinite(linear_y):
+            return 0.0, 0.0
+        pose = self._actual_robot_pose
+        yaw = self._yaw(pose) if pose is not None else self._robot_start[2]
+        return (
+            math.cos(yaw) * linear_x - math.sin(yaw) * linear_y,
+            math.sin(yaw) * linear_x + math.cos(yaw) * linear_y,
+        )
+
+    def _log_dynamics_decision(
+        self,
+        route: ActorRoute,
+        decision: CollisionGuardedHumanStep,
+    ) -> None:
+        event = decision.reason
+        previous = self._last_dynamics_event.get(route.name)
+        noteworthy = decision.guard_intervened or decision.soft_yielded
+        if noteworthy:
+            key = f"{route.name}:{event}"
+            count = self._dynamics_event_counts.get(key, 0) + 1
+            self._dynamics_event_counts[key] = count
+            if event != previous:
+                self.get_logger().info(
+                    "actor_dynamics_event "
+                    f"actor={route.name} version={route.dynamics_version} event={event} "
+                    f"count={count} swept_clearance_m={decision.swept_clearance_m:.3f} "
+                    f"progress_fraction={decision.progress_fraction:.3f} "
+                    f"soft_hold_elapsed_s={decision.soft_hold_elapsed_s:.3f}"
+                )
+        elif previous is not None and previous not in {
+            "guard_safe_motion",
+            "soft_yield_budget_exhausted",
+        }:
+            self.get_logger().info(
+                "actor_dynamics_event "
+                f"actor={route.name} version={route.dynamics_version} event={event} "
+                f"swept_clearance_m={decision.swept_clearance_m:.3f}"
+            )
+        self._last_dynamics_event[route.name] = event
+
     @staticmethod
     def _load_routes(path: Path) -> tuple[ActorRoute, ...]:
         scenario = json.loads(path.read_text(encoding="utf-8"))
+        metadata = scenario.get("ramp_metadata", {})
+        scenario_dynamics = metadata.get("actor_dynamics", {})
+        if not isinstance(scenario_dynamics, dict):
+            raise ValueError("ramp_metadata.actor_dynamics must be a mapping")
         routes: list[ActorRoute] = []
         for actor in scenario.get("obstacles", {}).get("dynamic", []):
             points = tuple((float(point[0]), float(point[1])) for point in actor["waypoints"])
             if not points:
                 continue
+            actor_dynamics = actor.get("actor_dynamics", {})
+            if not isinstance(actor_dynamics, dict):
+                raise ValueError("actor_dynamics must be a mapping")
+
+            def setting(
+                key: str,
+                default: Any,
+                actor_values: dict[str, Any] = actor,
+                dynamics_values: dict[str, Any] = actor_dynamics,
+            ) -> Any:
+                if key in actor_values:
+                    return actor_values[key]
+                if key in dynamics_values:
+                    return dynamics_values[key]
+                return scenario_dynamics.get(key, default)
+
+            version = str(
+                setting(
+                    "dynamics_version",
+                    actor_dynamics.get(
+                        "version",
+                        scenario_dynamics.get(
+                            "version",
+                            metadata.get(
+                                "actor_dynamics_version",
+                                LEGACY_DYNAMICS_VERSION,
+                            ),
+                        ),
+                    ),
+                )
+            )
+            default_frequency = 5.0 if version == SWEPT_GUARD_DYNAMICS_VERSION else None
+            update_frequency = setting("update_frequency_hz", default_frequency)
             routes.append(
                 ActorRoute(
                     name=str(actor["name"]),
@@ -757,6 +907,13 @@ class ScenarioActorController(Node):
                     speed=float(actor.get("max_vel", 0.4)),
                     cyclic=bool(actor.get("cyclic_goals", True)),
                     robot_avoidance_distance_m=float(actor.get("robot_avoidance_distance_m", 1.3)),
+                    dynamics_version=version,
+                    soft_yield_distance_m=float(setting("soft_yield_distance_m", 0.90)),
+                    hard_collision_guard_m=float(setting("hard_collision_guard_m", 0.73)),
+                    maximum_soft_hold_s=float(setting("maximum_soft_hold_s", 1.0)),
+                    update_frequency_hz=(
+                        None if update_frequency is None else float(update_frequency)
+                    ),
                 )
             )
         return tuple(routes)
@@ -851,6 +1008,10 @@ class ScenarioActorController(Node):
                 self._route_elapsed[route.name] = self._pending_target_elapsed.pop(
                     proxy_name, self._route_elapsed[route.name]
                 )
+                self._soft_hold_elapsed[route.name] = self._pending_soft_hold_elapsed.pop(
+                    proxy_name,
+                    self._soft_hold_elapsed[route.name],
+                )
                 self._pending.pop(proxy_name, None)
                 self._pending_since_s.pop(proxy_name, None)
                 current = route.pose_at(self._route_elapsed[route.name])
@@ -858,18 +1019,34 @@ class ScenarioActorController(Node):
 
             candidate_elapsed = self._route_elapsed[route.name] + step_s
             candidate = route.pose_at(candidate_elapsed)
-            blocked_by_robot = False
-            if self._robot_position is not None:
+            target_elapsed = candidate_elapsed
+            target_soft_hold_elapsed = self._soft_hold_elapsed[route.name]
+            if route.uses_swept_guard and self._robot_position is not None and step_s > 1.0e-9:
+                decision = collision_guarded_human_step(
+                    self._robot_position,
+                    self._robot_velocity_world(),
+                    current[:2],
+                    candidate[:2],
+                    step_s,
+                    soft_yield_distance_m=route.soft_yield_distance_m,
+                    hard_collision_guard_m=route.hard_collision_guard_m,
+                    maximum_soft_hold_s=route.maximum_soft_hold_s,
+                    soft_hold_elapsed_s=self._soft_hold_elapsed[route.name],
+                )
+                target_elapsed = self._route_elapsed[route.name] + (
+                    decision.progress_fraction * step_s
+                )
+                target_soft_hold_elapsed = decision.soft_hold_elapsed_s
+                self._log_dynamics_decision(route, decision)
+            elif not route.uses_swept_guard and self._robot_position is not None:
                 permitted = yielding_human_step(
                     self._robot_position,
                     current[:2],
                     candidate[:2],
                     route.robot_avoidance_distance_m,
                 )
-                blocked_by_robot = permitted == current[:2]
-            target_elapsed = (
-                self._route_elapsed[route.name] if blocked_by_robot else candidate_elapsed
-            )
+                if permitted == current[:2]:
+                    target_elapsed = self._route_elapsed[route.name]
             x, y, yaw = route.pose_at(target_elapsed)
             target_pose = make_pose((x, y, yaw))
             pose_array.poses.append(current_pose)
@@ -881,6 +1058,7 @@ class ScenarioActorController(Node):
             self._pending[proxy_name] = self._client.call_async(request)
             self._pending_since_s[proxy_name] = now
             self._pending_target_elapsed[proxy_name] = target_elapsed
+            self._pending_soft_hold_elapsed[proxy_name] = target_soft_hold_elapsed
 
             if bool(self.get_parameter("update_native_actors").value):
                 entity_name = route.name
