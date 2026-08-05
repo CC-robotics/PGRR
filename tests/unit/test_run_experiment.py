@@ -437,6 +437,18 @@ def test_runtime_maps_new_source_policies_to_bc_without_renaming_logs() -> None:
     assert 'optional_runtime_environment+=("RAMP_TAU_ON=${RAMP_TAU_ON}")' in wrapper
     assert 'recovery_tau_on_overrides=(-p "tau_on:=${RAMP_TAU_ON}")' in runtime
     assert 'detector_trigger_overrides=(-p "trigger_threshold:=${RAMP_TAU_ON}")' in runtime
+    assert 'RAMP_RECOVERY_CONFIG="${recovery_config}"' in wrapper
+    assert 'RAMP_FAILURE_RULES_CONFIG="${failure_rules_config}"' in wrapper
+    assert 'python3 "${parameter_renderer}" "${RECOVERY_CONFIG}"' in runtime
+    assert 'python3 "${parameter_renderer}" "${FAILURE_RULES_CONFIG}"' in runtime
+    assert runtime.index('"${failure_rules_overrides[@]}"') < runtime.index(
+        '-p ttc_threshold_s:="${TTC_THRESHOLD_S}"'
+    )
+    assert runtime.index('"${recovery_config_overrides[@]}"') < runtime.index(
+        '"${recovery_tau_on_overrides[@]}"'
+    )
+    assert "recovery_config=%s sha256=%s" in runtime
+    assert "failure_rules_config=%s sha256=%s" in runtime
     assert 'RAMP_REPLICATE="${RAMP_REPLICATE:-}"' in wrapper
     assert '"${RAMP_REPLICATE}" != "${replicate}"' in runtime
 

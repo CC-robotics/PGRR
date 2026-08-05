@@ -10,6 +10,9 @@ SCENARIO="${RAMP_SCENARIO:?RAMP_SCENARIO is required}"
 TIMEOUT_S="${RAMP_EPISODE_TIMEOUT_S:-180}"
 SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}"
 TTC_THRESHOLD_S="${RAMP_TTC_THRESHOLD_S:-1.5}"
+RECOVERY_CONFIG="${RAMP_RECOVERY_CONFIG:-/workspace/configs/failure/recovery_state_machine.yaml}"
+FAILURE_RULES_CONFIG="${RAMP_FAILURE_RULES_CONFIG:-/workspace/configs/failure/rules.yaml}"
+recovery_enabled=false
 recovery_tau_on_overrides=()
 detector_trigger_overrides=()
 if [[ -n "${RAMP_TAU_ON:-}" ]]; then
@@ -36,12 +39,36 @@ case "${SOURCE_POLICY}" in
     heuristic|bc|bc_uniform|mwbc|pgrr|oracle)
         INTER_PLANNER="navigate_w_replanning_time"
         TERMINATE_ON_PLANNER_ABORT="false"
+        recovery_enabled=true
         ;;
     *)
         echo "ERROR: RAMP_SOURCE_POLICY must be base, standard, heuristic, bc, bc_uniform, mwbc, pgrr, or oracle" >&2
         exit 2
         ;;
 esac
+recovery_config_overrides=()
+failure_rules_overrides=()
+recovery_config_sha256=""
+failure_rules_config_sha256=""
+if [[ "${recovery_enabled}" == "true" ]]; then
+    parameter_renderer="/workspace/scripts/arena/render_ros_scalar_parameters.py"
+    if [[ ! -f "${parameter_renderer}" ]]; then
+        echo "ERROR: ROS parameter renderer is missing: ${parameter_renderer}" >&2
+        exit 2
+    fi
+    readarray -t recovery_config_overrides < <(
+        python3 "${parameter_renderer}" "${RECOVERY_CONFIG}"
+    )
+    readarray -t failure_rules_overrides < <(
+        python3 "${parameter_renderer}" "${FAILURE_RULES_CONFIG}"
+    )
+    if (( ${#recovery_config_overrides[@]} == 0 || ${#failure_rules_overrides[@]} == 0 )); then
+        echo "ERROR: runtime parameter rendering produced no arguments" >&2
+        exit 2
+    fi
+    recovery_config_sha256="$(sha256sum "${RECOVERY_CONFIG}" | awk '{print $1}')"
+    failure_rules_config_sha256="$(sha256sum "${FAILURE_RULES_CONFIG}" | awk '{print $1}')"
+fi
 SCENARIO_TARGET="/opt/arena_ws/install/arena_simulation_setup/share/arena_simulation_setup/worlds/map_empty/scenarios/default.json"
 
 readarray -t scenario_values < <(python3 - "${SCENARIO}" <<'PY'
@@ -122,6 +149,12 @@ fi
 mkdir -p "${output_directory}" "$(dirname "${RUNTIME_LOG}")"
 : >"${RUNTIME_LOG}"
 : >"${STATUS_LOG}"
+if [[ "${recovery_enabled}" == "true" ]]; then
+    printf '[RAMP_BASELINE] recovery_config=%s sha256=%s\n' \
+        "${RECOVERY_CONFIG}" "${recovery_config_sha256}" >>"${RUNTIME_LOG}"
+    printf '[RAMP_BASELINE] failure_rules_config=%s sha256=%s\n' \
+        "${FAILURE_RULES_CONFIG}" "${failure_rules_config_sha256}" >>"${RUNTIME_LOG}"
+fi
 python3 /workspace/scripts/arena/materialize_runtime_scenario.py \
     --source "${SCENARIO}" \
     --output "${SCENARIO_TARGET}"
@@ -361,6 +394,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || \
         -p odometry_is_world_frame:=true \
         -p odom_topic:="${odom_topic}" -p scan_topic:="${scan_topic}" \
         -p base_cmd_vel_topic:="${base_cmd_topic}" \
+        "${failure_rules_overrides[@]}" \
         -p ttc_threshold_s:="${TTC_THRESHOLD_S}" \
         "${detector_trigger_overrides[@]}" \
         -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
@@ -408,6 +442,7 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || \
         -p failure_status_topic:=/ramp/failure_status \
         -p recovery_decision_topic:=/ramp/recovery_decision \
         -p policy_type:="${recovery_policy_type}" \
+        "${recovery_config_overrides[@]}" \
         "${recovery_tau_on_overrides[@]}" \
         -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
         -p model_path:="${model_path}" \

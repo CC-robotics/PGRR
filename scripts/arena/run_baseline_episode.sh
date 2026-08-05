@@ -29,6 +29,31 @@ fi
 export RAMP_ENABLE_CMD_MUX=1
 export RAMP_DISABLE_AUTO_RESET=1
 source_policy="${RAMP_SOURCE_POLICY:-base}"
+project_root_resolved="$(readlink -f -- "${PROJECT_ROOT}")"
+
+runtime_config_path() {
+    local configured_path="${1:?configured config path is required}"
+    local resolved_path=""
+    if [[ "${configured_path}" != /* ]]; then
+        configured_path="${PROJECT_ROOT}/${configured_path}"
+    fi
+    resolved_path="$(readlink -f -- "${configured_path}")"
+    if [[ ! -f "${resolved_path}" ]]; then
+        echo "ERROR: runtime config does not exist: ${configured_path}" >&2
+        return 2
+    fi
+    case "${resolved_path}" in
+        "${project_root_resolved}"/*) ;;
+        *)
+            echo "ERROR: runtime config must be inside PROJECT_ROOT: ${resolved_path}" >&2
+            return 2
+            ;;
+    esac
+    printf '/workspace/%s\n' "${resolved_path#"${project_root_resolved}"/}"
+}
+
+recovery_config="$(runtime_config_path "${RAMP_RECOVERY_CONFIG:-configs/failure/recovery_state_machine.yaml}")"
+failure_rules_config="$(runtime_config_path "${RAMP_FAILURE_RULES_CONFIG:-configs/failure/rules.yaml}")"
 default_model_path="/workspace/checkpoints/bc/uniform_scenario/best.onnx"
 case "${source_policy}" in
     pgrr)
@@ -50,6 +75,8 @@ exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     RAMP_REPLICATE="${RAMP_REPLICATE:-}" \
     RAMP_ACTOR_UPDATE_HZ="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
     RAMP_TTC_THRESHOLD_S="${RAMP_TTC_THRESHOLD_S:-1.5}" \
+    RAMP_RECOVERY_CONFIG="${recovery_config}" \
+    RAMP_FAILURE_RULES_CONFIG="${failure_rules_config}" \
     "${optional_runtime_environment[@]}" \
     RAMP_SOURCE_POLICY="${source_policy}" \
     RAMP_BC_MODEL_PATH="${RAMP_BC_MODEL_PATH:-${default_model_path}}" \
