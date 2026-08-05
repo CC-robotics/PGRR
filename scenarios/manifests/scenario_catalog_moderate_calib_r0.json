@@ -1,0 +1,20 @@
+{
+  "benchmark_id": "moderate_social_navigation_v1",
+  "counts_by_split": {
+    "test": 24,
+    "validation": 24
+  },
+  "difficulty": "moderate",
+  "footprint_inflation_m": 0.39999999999999997,
+  "manifest_paths": {
+    "test": "splits/moderate_calib_r0_test.yaml",
+    "validation": "splits/moderate_calib_r0_validation.yaml"
+  },
+  "manifest_suffix": "moderate_calib_r0",
+  "scenario_count": 48,
+  "scenario_ids_sha256": "4da2abcc29f0eece10dad0d221b97844046798970a5ad1a83281d08626356ed8",
+  "schema_version": 1,
+  "source_config": "configs/experiments/scenario_catalog_moderate.yaml",
+  "test_seed_base": 61000,
+  "validation_seed_base": 51000
+}
