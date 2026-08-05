@@ -48,6 +48,19 @@ from ramp_core.recovery.options import (
 from ramp_core.types import Pose2D
 
 
+def _task_side_indices(
+    *, pose_yaw_rad: float = 0.0, path_heading_rad: float = 0.0
+) -> tuple[np.ndarray, np.ndarray]:
+    beam_angles = np.linspace(-math.pi, math.pi, 180)
+    relative = np.arctan2(
+        np.sin(pose_yaw_rad + beam_angles - path_heading_rad),
+        np.cos(pose_yaw_rad + beam_angles - path_heading_rad),
+    )
+    right = np.flatnonzero((relative >= -math.radians(60.0)) & (relative <= -math.radians(5.0)))
+    left = np.flatnonzero((relative >= math.radians(5.0)) & (relative <= math.radians(60.0)))
+    return right, left
+
+
 def _temporal_closing_stack(
     *,
     right_beams: int,
@@ -60,23 +73,41 @@ def _temporal_closing_stack(
     """Construct exact task-frame closing evidence for option regressions."""
 
     stack = np.full((5, 180), 6.0, dtype=np.float64)
-    beam_angles = np.linspace(-math.pi, math.pi, 180)
-    relative = np.arctan2(
-        np.sin(pose_yaw_rad + beam_angles - path_heading_rad),
-        np.cos(pose_yaw_rad + beam_angles - path_heading_rad),
+    right_sector, left_sector = _task_side_indices(
+        pose_yaw_rad=pose_yaw_rad,
+        path_heading_rad=path_heading_rad,
     )
-    right_indices = np.flatnonzero(
-        (relative >= -math.radians(60.0)) & (relative <= -math.radians(5.0))
-    )[:right_beams]
-    left_indices = np.flatnonzero(
-        (relative >= math.radians(5.0)) & (relative <= math.radians(60.0))
-    )[:left_beams]
+    right_indices = right_sector[:right_beams]
+    left_indices = left_sector[:left_beams]
     assert len(right_indices) == right_beams
     assert len(left_indices) == left_beams
     for frame_index, fraction in enumerate(np.linspace(1.0, 0.0, 5)):
         stack[frame_index, right_indices] = current_range_m + closing_delta_m * fraction
         stack[frame_index, left_indices] = current_range_m + closing_delta_m * fraction
     return stack
+
+
+def _set_task_side_minimum_trace(
+    stack: np.ndarray,
+    *,
+    right_minima_m: tuple[float, float, float, float, float],
+    left_minima_m: tuple[float, float, float, float, float],
+    pose_yaw_rad: float = 0.0,
+    path_heading_rad: float = 0.0,
+) -> np.ndarray:
+    """Set one non-closing beam to the observed per-frame side minimum."""
+
+    traced = stack.copy()
+    right_sector, left_sector = _task_side_indices(
+        pose_yaw_rad=pose_yaw_rad,
+        path_heading_rad=path_heading_rad,
+    )
+    for frame, (right_minimum, left_minimum) in enumerate(
+        zip(right_minima_m, left_minima_m, strict=True)
+    ):
+        traced[frame, right_sector[-1]] = right_minimum
+        traced[frame, left_sector[-1]] = left_minimum
+    return traced
 
 
 def _apply_closing_side_latch(
@@ -103,11 +134,14 @@ def _apply_closing_side_latch(
         path_heading_rad=path_heading_rad,
         angular_speed_radps=angular_speed_radps,
         minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
     )
     right_occupied, left_occupied = latch.update(
         yield_active=True,
         right_occupied=raw.right_occupied,
         left_occupied=raw.left_occupied,
+        right_clear_for_release=raw.right_clear_for_release,
+        left_clear_for_release=raw.left_clear_for_release,
         rotation_gated=raw.rotation_gated,
     )
     effective = constrain_task_lateral_sides(
@@ -927,11 +961,15 @@ def test_temporal_closing_side_low_trace_masks_only_task_right() -> None:
         path_heading_rad=0.0,
         angular_speed_radps=0.0,
         minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
     )
 
     assert result.right_closing_beams == 10
     assert result.left_closing_beams == 1
     assert result.right_occupied and not result.left_occupied
+    assert result.right_stack_minimum_clearance_m == 2.0
+    assert result.left_stack_minimum_clearance_m == 2.0
+    assert result.right_clear_for_release and result.left_clear_for_release
     assert not result.rotation_gated
     assert not result.mask[[0, 1, 2, 7, 8, 9, 14, 15, 16]].any()
     assert result.mask[[5, 6, 11, 12, 13, 18, 19, 20]].all()
@@ -957,6 +995,7 @@ def test_temporal_closing_side_medium_and_high_traces_mask_both_sides(
         path_heading_rad=0.0,
         angular_speed_radps=0.0,
         minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
     )
 
     assert (result.right_closing_beams, result.left_closing_beams) == (
@@ -990,6 +1029,7 @@ def test_temporal_closing_side_static_forward_motion_below_delta_is_unchanged() 
         path_heading_rad=0.0,
         angular_speed_radps=0.0,
         minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
     )
 
     assert (result.right_closing_beams, result.left_closing_beams) == (0, 0)
@@ -1008,6 +1048,7 @@ def test_temporal_closing_side_rotation_gate_is_closed_at_boundary() -> None:
         path_heading_rad=0.0,
         angular_speed_radps=-0.20,
         minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
     )
     gated = constrain_temporal_closing_side(
         mask,
@@ -1018,6 +1059,7 @@ def test_temporal_closing_side_rotation_gate_is_closed_at_boundary() -> None:
         path_heading_rad=0.0,
         angular_speed_radps=0.2001,
         minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
     )
 
     assert active.right_occupied and not active.rotation_gated
@@ -1043,6 +1085,7 @@ def test_temporal_closing_side_uses_task_frame_after_robot_turn() -> None:
         path_heading_rad=0.0,
         angular_speed_radps=0.0,
         minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
     )
 
     assert result.left_occupied and not result.right_occupied
@@ -1067,6 +1110,7 @@ def test_temporal_closing_side_preserves_recurrent_safe_fallback() -> None:
         path_heading_rad=0.0,
         angular_speed_radps=0.0,
         minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
     ).mask
     recurrent = constrain_recurrent_yield_escape(
         closing,
@@ -1094,6 +1138,7 @@ def test_temporal_closing_side_rejects_invalid_stack_shape(shape: tuple[int, ...
             path_heading_rad=0.0,
             angular_speed_radps=0.0,
             minimum_lateral_displacement_m=0.25,
+            release_clearance_m=1.25,
         )
 
 
@@ -1124,6 +1169,71 @@ def test_temporal_closing_side_rejects_invalid_geometry(
             path_heading_rad=path_heading,
             angular_speed_radps=angular_speed,
             minimum_lateral_displacement_m=0.25,
+            release_clearance_m=1.25,
+        )
+
+
+@pytest.mark.parametrize(
+    ("bad_value", "expected_minimum"),
+    [(1.249, 1.249), (0.0, 0.0), (float("nan"), 0.0), (float("inf"), 0.0)],
+)
+def test_temporal_closing_side_release_requires_every_valid_sector_beam(
+    bad_value: float,
+    expected_minimum: float,
+) -> None:
+    stack = np.full((5, 180), 2.0, dtype=np.float64)
+    right_sector, _ = _task_side_indices()
+    stack[2, right_sector[3]] = bad_value
+    result = constrain_temporal_closing_side(
+        np.ones(ACTION_COUNT, dtype=np.bool_),
+        stack,
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        angular_speed_radps=0.0,
+        minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
+    )
+
+    assert result.right_stack_minimum_clearance_m == pytest.approx(expected_minimum)
+    assert not result.right_clear_for_release
+    assert result.left_clear_for_release
+
+
+def test_temporal_closing_side_release_clearance_is_inclusive() -> None:
+    stack = np.full((5, 180), 2.0, dtype=np.float64)
+    right_sector, _ = _task_side_indices()
+    stack[3, right_sector[0]] = 1.25
+    result = constrain_temporal_closing_side(
+        np.ones(ACTION_COUNT, dtype=np.bool_),
+        stack,
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        angular_speed_radps=0.0,
+        minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
+    )
+
+    assert result.right_stack_minimum_clearance_m == 1.25
+    assert result.right_clear_for_release
+
+
+@pytest.mark.parametrize("clearance", [0.0, -1.0, float("nan"), float("inf")])
+def test_temporal_closing_side_rejects_invalid_release_clearance(clearance: float) -> None:
+    with pytest.raises(ValueError, match="release clearance"):
+        constrain_temporal_closing_side(
+            np.ones(ACTION_COUNT, dtype=np.bool_),
+            np.ones((5, 180), dtype=np.float64),
+            angle_min_rad=-math.pi,
+            angle_max_rad=math.pi,
+            pose=Pose2D(0.0, 0.0, 0.0),
+            path_heading_rad=0.0,
+            angular_speed_radps=0.0,
+            minimum_lateral_displacement_m=0.25,
+            release_clearance_m=clearance,
         )
 
 
@@ -1146,50 +1256,106 @@ def test_temporal_closing_side_rejects_invalid_config(kwargs: dict[str, float]) 
 
 
 @pytest.mark.parametrize(
-    ("initial_right", "initial_left", "follow_right", "follow_left"),
-    [(11, 11, 3, 3), (5, 8, 4, 3)],
+    (
+        "pose_yaw_rad",
+        "right_beams",
+        "left_beams",
+        "right_minima_m",
+        "left_minima_m",
+    ),
+    [
+        (
+            -0.076012,
+            3,
+            8,
+            (1.902408, 1.908256, 1.810544, 1.806894, 1.713327),
+            (0.626195, 0.644023, 0.564395, 0.561581, 0.555899),
+        ),
+        (
+            0.0,
+            3,
+            1,
+            (2.090449, 1.986316, 1.986381, 1.894095, 1.899606),
+            (0.707373, 0.646258, 0.637139, 0.586104, 0.573440),
+        ),
+    ],
 )
-def test_closing_side_latch_retains_both_v3_trace_sides_after_backup(
-    initial_right: int,
-    initial_left: int,
-    follow_right: int,
-    follow_left: int,
+def test_closing_side_latch_releases_only_clear_side_in_medium_high_traces(
+    pose_yaw_rad: float,
+    right_beams: int,
+    left_beams: int,
+    right_minima_m: tuple[float, float, float, float, float],
+    left_minima_m: tuple[float, float, float, float, float],
 ) -> None:
-    pose = Pose2D(0.0, 0.0, 0.0)
-    directional = constrain_directional_yield_motion(
-        np.ones(ACTION_COUNT, dtype=np.bool_),
+    pose = Pose2D(0.0, 0.0, pose_yaw_rad)
+    stack = _set_task_side_minimum_trace(
+        _temporal_closing_stack(
+            right_beams=right_beams,
+            left_beams=left_beams,
+            pose_yaw_rad=pose_yaw_rad,
+        ),
+        right_minima_m=right_minima_m,
+        left_minima_m=left_minima_m,
+        pose_yaw_rad=pose_yaw_rad,
+    )
+    planning_mask = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    planning_mask[[0, 6, WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
+    raw = constrain_temporal_closing_side(
+        planning_mask,
+        stack,
+        angle_min_rad=-math.pi,
+        angle_max_rad=math.pi,
         pose=pose,
         path_heading_rad=0.0,
-        backup_distance_m=0.45,
+        angular_speed_radps=0.0,
+        minimum_lateral_displacement_m=0.25,
+        release_clearance_m=1.25,
     )
-    latch = ObservableClosingSideLatch()
-    initial, initial_mask = _apply_closing_side_latch(
-        latch,
-        directional,
+    latch = ObservableClosingSideLatch(right_occupied=True, left_occupied=True)
+    before = latch.right_occupied, latch.left_occupied
+    after = latch.update(
+        yield_active=True,
+        right_occupied=raw.right_occupied,
+        left_occupied=raw.left_occupied,
+        right_clear_for_release=raw.right_clear_for_release,
+        left_clear_for_release=raw.left_clear_for_release,
+        rotation_gated=raw.rotation_gated,
+    )
+    effective = constrain_task_lateral_sides(
+        raw.mask,
         pose=pose,
         path_heading_rad=0.0,
-        right_beams=initial_right,
-        left_beams=initial_left,
+        minimum_lateral_displacement_m=0.25,
+        right_occupied=after[0],
+        left_occupied=after[1],
     )
-    follow, follow_mask = _apply_closing_side_latch(
-        latch,
-        directional,
+    recurrent = constrain_recurrent_yield_escape(
+        effective,
+        escape_required=True,
         pose=pose,
         path_heading_rad=0.0,
-        right_beams=follow_right,
-        left_beams=follow_left,
+        minimum_lateral_displacement_m=0.25,
     )
 
-    assert initial.right_occupied and initial.left_occupied
-    assert not follow.right_occupied and not follow.left_occupied
-    assert latch.right_occupied and latch.left_occupied
-    safe_fallback = np.zeros(ACTION_COUNT, dtype=np.bool_)
-    safe_fallback[[WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
-    assert np.array_equal(initial_mask, safe_fallback)
-    assert np.array_equal(follow_mask, safe_fallback)
+    assert (raw.right_closing_beams, raw.left_closing_beams) == (
+        right_beams,
+        left_beams,
+    )
+    assert raw.right_stack_minimum_clearance_m == pytest.approx(min(right_minima_m))
+    assert raw.left_stack_minimum_clearance_m == pytest.approx(min(left_minima_m))
+    assert raw.right_clear_for_release and not raw.left_clear_for_release
+    assert before == (True, True)
+    assert after == (False, True)
+    expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    expected[[0, WAIT_ACTION_ID, BACKUP_ACTION_ID]] = True
+    assert np.array_equal(effective, expected)
+    recurrent_expected = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    recurrent_expected[0] = True
+    assert np.array_equal(recurrent, recurrent_expected)
+    assert not np.any(effective & ~planning_mask)
 
 
-def test_closing_side_latch_retains_unilateral_low_trace_without_masking_open_side() -> None:
+def test_closing_side_latch_releases_unilateral_side_after_full_stack_clearance() -> None:
     pose = Pose2D(0.0, 0.0, 0.0)
     directional = constrain_directional_yield_motion(
         np.ones(ACTION_COUNT, dtype=np.bool_),
@@ -1217,9 +1383,9 @@ def test_closing_side_latch_retains_unilateral_low_trace_without_masking_open_si
 
     assert initial.right_occupied and not initial.left_occupied
     assert not follow.right_occupied and not follow.left_occupied
-    assert latch.right_occupied and not latch.left_occupied
+    assert not latch.active
     assert not initial_mask[0] and initial_mask[6]
-    assert not follow_mask[0] and follow_mask[6]
+    assert follow_mask[0] and follow_mask[6]
 
 
 def test_closing_side_latch_unions_new_reliable_side_evidence() -> None:
@@ -1228,14 +1394,30 @@ def test_closing_side_latch_unions_new_reliable_side_evidence() -> None:
         yield_active=True,
         right_occupied=True,
         left_occupied=False,
+        right_clear_for_release=False,
+        left_clear_for_release=False,
         rotation_gated=False,
     ) == (True, False)
     assert latch.update(
         yield_active=True,
         right_occupied=False,
         left_occupied=True,
+        right_clear_for_release=False,
+        left_clear_for_release=False,
         rotation_gated=False,
     ) == (True, True)
+
+
+def test_closing_side_latch_raw_set_wins_over_same_frame_clearance() -> None:
+    latch = ObservableClosingSideLatch()
+    assert latch.update(
+        yield_active=True,
+        right_occupied=True,
+        left_occupied=False,
+        right_clear_for_release=True,
+        left_clear_for_release=True,
+        rotation_gated=False,
+    ) == (True, False)
 
 
 def test_closing_side_latch_rotation_gate_neither_sets_nor_clears() -> None:
@@ -1244,9 +1426,23 @@ def test_closing_side_latch_rotation_gate_neither_sets_nor_clears() -> None:
         yield_active=True,
         right_occupied=False,
         left_occupied=True,
+        right_clear_for_release=True,
+        left_clear_for_release=True,
         rotation_gated=True,
     ) == (True, False)
     assert latch.active
+
+
+def test_closing_side_latch_parent_inactive_resets_even_with_raw_evidence() -> None:
+    latch = ObservableClosingSideLatch(right_occupied=True, left_occupied=True)
+    assert latch.update(
+        yield_active=False,
+        right_occupied=True,
+        left_occupied=True,
+        right_clear_for_release=False,
+        left_clear_for_release=False,
+        rotation_gated=False,
+    ) == (False, False)
 
 
 def test_closing_side_latch_survives_recovery_lifecycle_while_parent_active() -> None:
@@ -1256,6 +1452,8 @@ def test_closing_side_latch_survives_recovery_lifecycle_while_parent_active() ->
             yield_active=True,
             right_occupied=False,
             left_occupied=False,
+            right_clear_for_release=False,
+            left_clear_for_release=False,
             rotation_gated=False,
         )
         for phase in ("BACKUP", "EMERGENCY_STOP", "RECOVERY")
@@ -1275,6 +1473,8 @@ def test_closing_side_latch_releases_with_parent_directional_clearance() -> None
         yield_active=active,
         right_occupied=True,
         left_occupied=True,
+        right_clear_for_release=True,
+        left_clear_for_release=True,
         rotation_gated=False,
     ) == (True, True)
 
@@ -1289,6 +1489,8 @@ def test_closing_side_latch_releases_with_parent_directional_clearance() -> None
             yield_active=active,
             right_occupied=False,
             left_occupied=False,
+            right_clear_for_release=False,
+            left_clear_for_release=False,
             rotation_gated=False,
         ) == (True, True)
     # A duplicate scan cannot advance the parent's release evidence.
@@ -1300,6 +1502,8 @@ def test_closing_side_latch_releases_with_parent_directional_clearance() -> None
         yield_active=active,
         right_occupied=False,
         left_occupied=False,
+        right_clear_for_release=False,
+        left_clear_for_release=False,
         rotation_gated=False,
     ) == (False, False)
     assert not side.active
