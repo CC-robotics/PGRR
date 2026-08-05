@@ -41,7 +41,8 @@
   },
   # The ramp_ros odom_tf_broadcaster converts ground-truth odometry to the
   # dynamic odom->base TF. Gazebo's Pose_V bridge is intentionally omitted:
-  # it advertises /tf in this Arena/Gazebo release but emits no usable edge.
+  # during diagnostics it advertised /tf but did not provide a stable,
+  # verifiably continuous odom->base edge in this Arena/Gazebo release.
   {
     "gz_topic": "/model/{robot_name}/tf_static",
     "ros_topic": "/tf_static",

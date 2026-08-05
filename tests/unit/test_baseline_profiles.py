@@ -210,6 +210,18 @@ def test_episode_cleanup_is_bounded_for_every_auxiliary_process() -> None:
     assert 'RAMP_DISABLE_AUTO_RESET:-0}" != "1"' in runtime
 
 
+def test_tf_diagnostic_uses_authoritative_odometry_broadcaster() -> None:
+    root = Path(__file__).resolve().parents[2]
+    diagnostic = (root / "scripts/arena/diagnose_tf_inner.sh").read_text(encoding="utf-8")
+    assert 'ramp_ros_prefix="$(ros2 pkg prefix ramp_ros)"' in diagnostic
+    assert '"${ramp_ros_prefix}/lib/ramp_ros/odom_tf_broadcaster"' in diagnostic
+    assert "-p odom_topic:=/task_generator_node/jackal/odom" in diagnostic
+    assert "grep -Fq 'broadcast first odometry transform'" in diagnostic
+    assert 'stop_pid_bounded "${odom_tf_pid}" INT 10' in diagnostic
+    assert 'kill -KILL "${pid}"' in diagnostic
+    assert diagnostic.index("odom_tf_broadcaster") < diagnostic.index("printf 'TF_ODOM_BASE")
+
+
 def test_episode_logger_rejects_privileged_robot_pose_jumps() -> None:
     root = Path(__file__).resolve().parents[2]
     logger = (root / "ros_ws/src/ramp_ros/ramp_ros/nodes/episode_logger_node.py").read_text()

@@ -21,13 +21,42 @@ setsid xvfb-run -a -s '-screen 0 1280x720x24' \
     tm_robots:=scenario tm_obstacles:=scenario use_sim_time:=true \
     >>"${runtime_log}" 2>&1 &
 launch_pid=$!
+odom_tf_pid=""
 cleanup_started=0
+
+stop_pid_bounded() {
+    local pid="${1:-}"
+    local signal="${2:-INT}"
+    local attempts="${3:-10}"
+    [[ -n "${pid}" ]] || return 0
+    kill -0 "${pid}" 2>/dev/null || {
+        wait "${pid}" 2>/dev/null || true
+        return 0
+    }
+    kill -"${signal}" "${pid}" 2>/dev/null || true
+    for _ in $(seq 1 "${attempts}"); do
+        kill -0 "${pid}" 2>/dev/null || break
+        sleep 1
+    done
+    if kill -0 "${pid}" 2>/dev/null; then
+        kill -TERM "${pid}" 2>/dev/null || true
+        for _ in $(seq 1 5); do
+            kill -0 "${pid}" 2>/dev/null || break
+            sleep 1
+        done
+    fi
+    if kill -0 "${pid}" 2>/dev/null; then
+        kill -KILL "${pid}" 2>/dev/null || true
+    fi
+    wait "${pid}" 2>/dev/null || true
+}
 
 cleanup() {
     if (( cleanup_started )); then
         return
     fi
     cleanup_started=1
+    stop_pid_bounded "${odom_tf_pid}" INT 10
     if kill -0 "${launch_pid}" 2>/dev/null; then
         kill -INT -- "-${launch_pid}" 2>/dev/null || true
         for _ in $(seq 1 20); do
@@ -54,6 +83,36 @@ while (( SECONDS < deadline )); do
 done
 if ! ros2 topic list 2>/dev/null | grep -qx '/task_generator_node/jackal/odom'; then
     echo "ERROR: odometry topic did not become available" >&2
+    exit 1
+fi
+
+ramp_ros_prefix="$(ros2 pkg prefix ramp_ros)"
+"${ramp_ros_prefix}/lib/ramp_ros/odom_tf_broadcaster" --ros-args \
+    -p use_sim_time:=true \
+    -p odom_topic:=/task_generator_node/jackal/odom \
+    >>"${runtime_log}" 2>&1 &
+odom_tf_pid=$!
+
+tf_deadline=$((SECONDS + 30))
+while (( SECONDS < tf_deadline )); do
+    if grep -Fq 'broadcast first odometry transform' "${runtime_log}"; then
+        break
+    fi
+    if ! kill -0 "${launch_pid}" 2>/dev/null; then
+        echo "ERROR: Arena exited before the odometry TF broadcaster became ready" >&2
+        tail -120 "${runtime_log}" >&2
+        exit 1
+    fi
+    if ! kill -0 "${odom_tf_pid}" 2>/dev/null; then
+        echo "ERROR: odometry TF broadcaster exited before publishing a transform" >&2
+        tail -120 "${runtime_log}" >&2
+        exit 1
+    fi
+    sleep 1
+done
+if ! grep -Fq 'broadcast first odometry transform' "${runtime_log}"; then
+    echo "ERROR: odometry TF broadcaster did not publish within 30 seconds" >&2
+    tail -120 "${runtime_log}" >&2
     exit 1
 fi
 
