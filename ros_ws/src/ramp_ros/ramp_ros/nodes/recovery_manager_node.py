@@ -79,6 +79,7 @@ from ramp_core.state_machine import (
     RecoveryStateMachine,
     RecoveryStateMachineConfig,
     StateMachineInput,
+    StateTransition,
 )
 from ramp_core.types import (
     FailurePrediction,
@@ -1141,6 +1142,22 @@ class RecoveryManagerNode(Node):
             message.temporary_goal.pose.orientation.w = math.cos(temporary.yaw / 2.0)
         self._decision_publisher.publish(message)
 
+    def _publish_terminal_transition(
+        self,
+        transition: StateTransition,
+        confidence: float,
+    ) -> bool:
+        """Publish terminal state and reason before any source-state-specific branch."""
+
+        if not transition.changed or transition.current not in {
+            RecoveryState.FAILED,
+            RecoveryState.SUCCEEDED,
+        }:
+            return False
+        self._published_emergency_mode = None
+        self._publish_decision(CONTINUE_ACTION_ID, confidence, transition.reason)
+        return True
+
     def _decision_step(self) -> None:
         if not self._armed or self._odom is None or self._scan is None or not self._lidar_stack:
             return
@@ -1232,6 +1249,8 @@ class RecoveryManagerNode(Node):
             self._sequence_progress_budget.acknowledge(distance)
         if transition.current is not RecoveryState.RECOVERY:
             self._backup_start_clearance_m = None
+        if self._publish_terminal_transition(transition, failure.score):
+            return
         if transition.current is RecoveryState.RECOVERY and (
             transition.changed or persistent_failure_followup
         ):

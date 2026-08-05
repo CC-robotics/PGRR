@@ -9,6 +9,8 @@ import rclpy
 from action_msgs.msg import GoalStatus, GoalStatusArray
 from nav2_msgs.action import NavigateToPose
 from nav_msgs.msg import Odometry
+from ramp_core.recovery.safety import EmergencyEscapeMode
+from ramp_core.state_machine import RecoveryState, StateTransition
 from ramp_msgs.msg import FailureStatus, RecoveryDecision
 from ramp_ros.nodes.recovery_manager_node import RecoveryManagerNode
 from rclpy.action import ActionServer
@@ -72,6 +74,46 @@ class RecoveryDriver(Node):
         self.status_publisher.publish(status)
 
 
+def _assert_terminal_publication(
+    manager: RecoveryManagerNode,
+    driver: RecoveryDriver,
+    executor: SingleThreadedExecutor,
+    *,
+    current: RecoveryState,
+    expected_state: int,
+    reason: str,
+) -> None:
+    start = len(driver.decisions)
+    manager._machine.state = current
+    manager._published_emergency_mode = EmergencyEscapeMode.BACKUP
+    transition = StateTransition(
+        previous=RecoveryState.EMERGENCY_STOP,
+        current=current,
+        changed=True,
+        reason=reason,
+    )
+    if not manager._publish_terminal_transition(transition, 1.0):
+        raise RuntimeError(f"terminal transition was not published: {transition}")
+    if manager._published_emergency_mode is not None:
+        raise RuntimeError("terminal publication retained stale emergency mode")
+
+    deadline = time.monotonic() + 3.0
+    while time.monotonic() < deadline:
+        executor.spin_once(timeout_sec=0.05)
+        matches = [item for item in driver.decisions[start:] if item.reason == reason]
+        if matches:
+            decision = matches[-1]
+            if int(decision.recovery_state) != expected_state:
+                raise RuntimeError(
+                    f"terminal state mismatch for {reason}: {decision.recovery_state}"
+                )
+            return
+    raise RuntimeError(
+        f"terminal decision was not received: reason={reason}, "
+        f"decisions={[(item.recovery_state, item.reason) for item in driver.decisions[start:]]}"
+    )
+
+
 def main() -> int:
     rclpy.init(
         args=[
@@ -111,9 +153,34 @@ def main() -> int:
             raise RuntimeError(f"original goal was not restored: {restored}")
         if not any(item.has_temporary_goal for item in driver.decisions):
             raise RuntimeError("manager published no temporary-goal recovery decision")
+        nonterminal = StateTransition(
+            previous=RecoveryState.EMERGENCY_STOP,
+            current=RecoveryState.NORMAL,
+            changed=True,
+            reason="safety_clear",
+        )
+        if manager._publish_terminal_transition(nonterminal, 1.0):
+            raise RuntimeError("nonterminal transition was consumed by terminal publisher")
+        _assert_terminal_publication(
+            manager,
+            driver,
+            executor,
+            current=RecoveryState.FAILED,
+            expected_state=RecoveryDecision.FAILED,
+            reason="recovery_sequence_timeout",
+        )
+        _assert_terminal_publication(
+            manager,
+            driver,
+            executor,
+            current=RecoveryState.SUCCEEDED,
+            expected_state=RecoveryDecision.SUCCEEDED,
+            reason="goal_reached",
+        )
         print(
             "PASS recovery manager ROS smoke: "
-            f"temporary={temporary}, restored={restored}, decisions={len(driver.decisions)}"
+            f"temporary={temporary}, restored={restored}, decisions={len(driver.decisions)}, "
+            "terminal_reasons=preserved"
         )
         return 0
     finally:

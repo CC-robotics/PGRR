@@ -194,6 +194,21 @@ def test_terminal_states_are_sticky_even_if_emergency_signal_changes() -> None:
     assert not transition.changed
 
 
+def test_goal_reached_from_emergency_preserves_terminal_reason() -> None:
+    machine = RecoveryStateMachine()
+    assert (
+        machine.update(StateMachineInput(1.0, 0.0, False, emergency_stop=True)).current
+        is RecoveryState.EMERGENCY_STOP
+    )
+    transition = machine.update(
+        StateMachineInput(1.1, 0.0, False, emergency_stop=True, goal_reached=True)
+    )
+    assert transition.previous is RecoveryState.EMERGENCY_STOP
+    assert transition.current is RecoveryState.SUCCEEDED
+    assert transition.changed
+    assert transition.reason == "goal_reached"
+
+
 def test_stalled_rejoin_retries_then_respects_recovery_limit() -> None:
     machine = RecoveryStateMachine(
         RecoveryStateMachineConfig(
