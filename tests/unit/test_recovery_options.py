@@ -31,6 +31,7 @@ from ramp_core.recovery.options import (
     PrivilegedYieldOption,
     TemporalClosingSideConfig,
     TemporalClosingSideResult,
+    commitment_blocks_all_safe_escape,
     constrain_committed_lateral_side,
     constrain_directional_yield_motion,
     constrain_near_field_subgoal_radius,
@@ -308,6 +309,32 @@ def test_lateral_side_commitment_releases_after_route_turn() -> None:
     assert commitment.update(distance_to_goal_m=9.9, path_heading_rad=math.radians(45.1))
 
 
+def test_lateral_side_commitment_releases_for_new_flow_on_escape_side() -> None:
+    commitment = ObservableLateralSideCommitment()
+    assert commitment.commit_action(
+        6,
+        pose=Pose2D(0.0, 0.0, 0.0),
+        path_heading_rad=0.0,
+        distance_to_goal_m=10.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+    assert not commitment.release_if_committed_side_is_occupied(
+        right_occupied=True,
+        left_occupied=False,
+    )
+    assert commitment.active
+    assert not commitment.release_if_committed_side_is_occupied(
+        right_occupied=True,
+        left_occupied=True,
+    )
+    assert commitment.active
+    assert commitment.release_if_committed_side_is_occupied(
+        right_occupied=False,
+        left_occupied=True,
+    )
+    assert not commitment.active
+
+
 def test_lateral_side_commitment_ignores_nonlateral_and_special_actions() -> None:
     commitment = ObservableLateralSideCommitment()
     for action_id in (3, WAIT_ACTION_ID, BACKUP_ACTION_ID, REPLAN_ACTION_ID):
@@ -335,6 +362,51 @@ def test_committed_lateral_side_masks_only_the_opposite_side() -> None:
     assert constrained[[5, 6, 11, 12, 13, 18, 19, 20]].all()
     assert constrained[WAIT_ACTION_ID:].tolist() == mask[WAIT_ACTION_ID:].tolist()
     assert not np.any(constrained & ~mask)
+
+
+def test_infeasible_commitment_detects_only_loss_of_existing_safe_escape() -> None:
+    pose = Pose2D(0.0, 0.0, 0.0)
+    before = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    before[[0, WAIT_ACTION_ID]] = True
+    committed = constrain_committed_lateral_side(
+        before,
+        committed_side=1,
+        pose=pose,
+        path_heading_rad=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+    assert commitment_blocks_all_safe_escape(
+        before,
+        committed,
+        pose=pose,
+        path_heading_rad=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+    no_escape = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    no_escape[WAIT_ACTION_ID] = True
+    assert not commitment_blocks_all_safe_escape(
+        no_escape,
+        no_escape,
+        pose=pose,
+        path_heading_rad=0.0,
+        minimum_lateral_displacement_m=0.25,
+    )
+
+
+def test_infeasible_commitment_rejects_action_reenabling() -> None:
+    before = np.zeros(ACTION_COUNT, dtype=np.bool_)
+    before[WAIT_ACTION_ID] = True
+    after = before.copy()
+    after[0] = True
+    with pytest.raises(ValueError, match="must not enable"):
+        commitment_blocks_all_safe_escape(
+            before,
+            after,
+            pose=Pose2D(0.0, 0.0, 0.0),
+            path_heading_rad=0.0,
+            minimum_lateral_displacement_m=0.25,
+        )
 
 
 def test_near_field_radius_bound_only_removes_long_subgoals() -> None:

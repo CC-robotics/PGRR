@@ -163,7 +163,7 @@ def _assert_emergency_rotation_bounds(manager: RecoveryManagerNode) -> None:
 
 def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     threshold = manager._integer("bc_recurrent_escape_after_recoveries")
-    if threshold != 1:
+    if threshold != 2:
         raise RuntimeError(f"unexpected BC recurrent escape threshold: {threshold}")
     forward_tolerance_m = manager._float("bc_yield_maximum_forward_progress_m")
     if not math.isclose(forward_tolerance_m, 0.10):
@@ -212,6 +212,16 @@ def _assert_recurrent_escape_mask(manager: RecoveryManagerNode) -> None:
     )
     if not manager._bc_yield_latch.latched:
         raise RuntimeError("directional-yield latch did not activate for first recovery")
+    manager._machine._consecutive_recoveries = threshold - 1
+    first_recovery = manager._constrain_bc_recurrent_escape(
+        ordinary,
+        pose=pose,
+        path_heading_rad=path_heading_rad,
+    )
+    if not np.array_equal(first_recovery, ordinary):
+        raise RuntimeError("first directional yield discarded the learned safe fallback")
+
+    manager._machine._consecutive_recoveries = threshold
     constrained = manager._constrain_bc_recurrent_escape(
         ordinary,
         pose=pose,
@@ -670,16 +680,17 @@ def _assert_recurrent_path_envelope(manager: RecoveryManagerNode) -> None:
     observation_id = latch.last_observation_id
     try:
         manager._policy_type = "bc"
+        threshold = manager._integer("bc_recurrent_escape_after_recoveries")
         latch.latched = False
         latch.clear_frames = 0
-        manager._machine._consecutive_recoveries = 1
+        manager._machine._consecutive_recoveries = threshold
         if abs(manager._effective_recovery_path_deviation() - 0.6) > 1.0e-9:
             raise RuntimeError("unlatched BC unexpectedly used recurrent path envelope")
         latch.latched = True
-        manager._machine._consecutive_recoveries = 0
+        manager._machine._consecutive_recoveries = threshold - 1
         if abs(manager._effective_recovery_path_deviation() - 0.6) > 1.0e-9:
             raise RuntimeError("first BC attempt unexpectedly used recurrent path envelope")
-        manager._machine._consecutive_recoveries = 1
+        manager._machine._consecutive_recoveries = threshold
         if abs(manager._effective_recovery_path_deviation() - 1.5) > 1.0e-9:
             raise RuntimeError("latched recurrent BC did not use wider path envelope")
         manager._policy_type = "expert"

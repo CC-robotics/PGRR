@@ -303,7 +303,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_wait_budget_decisions"] == 3
     assert config["bc_backup_budget_decisions"] == 4
     assert config["bc_replan_budget_decisions"] == 1
-    assert config["bc_recurrent_escape_after_recoveries"] == 1
+    assert config["bc_recurrent_escape_after_recoveries"] == 2
     assert config["recurrent_escape_minimum_lateral_displacement_m"] == 0.25
     assert config["bc_progress_reset_m"] == 0.25
     assert config["bc_maximum_net_retreat_m"] == 1.4
@@ -324,7 +324,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert config["bc_near_field_max_subgoal_radius_m"] == 0.6
     assert config["footprint_release_hysteresis_m"] == 0.0
     assert config["bc_yield_release_frames"] == 3
-    assert config["bc_yield_forward_half_width_degrees"] == 45.0
+    assert config["bc_yield_forward_half_width_degrees"] == 15.0
     assert config["bc_yield_maximum_forward_progress_m"] == 0.10
     assert config["bc_closing_side_sector_min_degrees"] == 5.0
     assert config["bc_closing_side_sector_max_degrees"] == 60.0
@@ -339,7 +339,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"bc_near_field_max_subgoal_radius_m": 0.6' in manager
     assert '"footprint_release_hysteresis_m": 0.0' in manager
     assert '"bc_yield_release_frames": 3' in manager
-    assert '"bc_yield_forward_half_width_degrees": 45.0' in manager
+    assert '"bc_yield_forward_half_width_degrees": 15.0' in manager
     assert '"bc_yield_maximum_forward_progress_m": 0.10' in manager
     assert '"bc_closing_side_sector_min_degrees": 5.0' in manager
     assert '"bc_closing_side_sector_max_degrees": 60.0' in manager
@@ -349,6 +349,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"bc_closing_side_maximum_angular_speed_radps": 0.20' in manager
     assert "ObservableClosingSideLatch()" in manager
     assert "ObservableLateralSideCommitment(" in manager
+    assert "release_if_committed_side_is_occupied(" in manager
+    assert "commitment_blocks_all_safe_escape(" in manager
     assert "constrain_task_lateral_sides(" in manager
     assert "constrain_committed_lateral_side(" in manager
     assert manager.count("self._bc_closing_side_latch.reset()") >= 3
@@ -365,7 +367,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"emergency_minimum_retreat_pulses": 3' in manager
     assert '"backup_maximum_duration_s": 3.0' in manager
     assert '"maximum_recovery_sequence_duration_s": 45.0' in manager
-    assert '"bc_recurrent_escape_after_recoveries": 1' in manager
+    assert '"bc_recurrent_escape_after_recoveries": 2' in manager
     assert '"recurrent_escape_maximum_path_deviation_m": 1.5' in manager
     assert manager.count("self._effective_recovery_path_deviation()") == 2
     assert "self._bc_yield_latch.latched" in manager

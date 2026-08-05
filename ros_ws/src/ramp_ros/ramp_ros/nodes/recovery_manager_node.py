@@ -62,6 +62,7 @@ from ramp_core.recovery.options import (
     PrivilegedYieldOption,
     TemporalClosingSideConfig,
     TemporalClosingSideResult,
+    commitment_blocks_all_safe_escape,
     constrain_committed_lateral_side,
     constrain_directional_yield_motion,
     constrain_near_field_subgoal_radius,
@@ -440,7 +441,7 @@ class RecoveryManagerNode(Node):
             "bc_yield_release_frames": 3,
             "bc_near_field_radius_activation_clearance_m": 1.0,
             "bc_near_field_max_subgoal_radius_m": 0.6,
-            "bc_yield_forward_half_width_degrees": 45.0,
+            "bc_yield_forward_half_width_degrees": 15.0,
             "bc_yield_maximum_forward_progress_m": 0.10,
             "bc_closing_side_sector_min_degrees": 5.0,
             "bc_closing_side_sector_max_degrees": 60.0,
@@ -453,7 +454,7 @@ class RecoveryManagerNode(Node):
             "bc_wait_budget_decisions": 3,
             "bc_backup_budget_decisions": 4,
             "bc_replan_budget_decisions": 1,
-            "bc_recurrent_escape_after_recoveries": 1,
+            "bc_recurrent_escape_after_recoveries": 2,
             "recurrent_escape_minimum_lateral_displacement_m": 0.25,
             "bc_progress_reset_m": 0.25,
             "bc_maximum_net_retreat_m": 1.4,
@@ -1350,6 +1351,14 @@ class RecoveryManagerNode(Node):
                     closing_side_result,
                     angular_speed_radps=float(observation.robot_velocity[1]),
                 )
+                committed_side_name = self._bc_lateral_side_commitment.side_name
+                if self._bc_lateral_side_commitment.release_if_committed_side_is_occupied(
+                    right_occupied=self._bc_closing_side_latch.right_occupied,
+                    left_occupied=self._bc_closing_side_latch.left_occupied,
+                ):
+                    side_commitment_telemetry = (
+                        f"bc_side_commitment=released_{committed_side_name}_occupied"
+                    )
                 pre_near_field_mask = mask.copy()
                 mask = constrain_near_field_subgoal_radius(
                     mask,
@@ -1368,7 +1377,7 @@ class RecoveryManagerNode(Node):
                         f"post={','.join(map(str, np.flatnonzero(mask)))}"
                     )
                 pre_side_commitment_mask = mask.copy()
-                mask = constrain_committed_lateral_side(
+                committed_mask = constrain_committed_lateral_side(
                     mask,
                     committed_side=self._bc_lateral_side_commitment.side,
                     pose=pose,
@@ -1377,12 +1386,38 @@ class RecoveryManagerNode(Node):
                         "recurrent_escape_minimum_lateral_displacement_m"
                     ),
                 )
+                if self._bc_lateral_side_commitment.active and commitment_blocks_all_safe_escape(
+                    pre_side_commitment_mask,
+                    committed_mask,
+                    pose=pose,
+                    path_heading_rad=path_heading_rad,
+                    minimum_lateral_displacement_m=self._float(
+                        "recurrent_escape_minimum_lateral_displacement_m"
+                    ),
+                ):
+                    infeasible_side_name = self._bc_lateral_side_commitment.side_name
+                    self._bc_lateral_side_commitment.reset()
+                    mask = pre_side_commitment_mask
+                    infeasible_commitment_telemetry = (
+                        f"bc_side_commitment=released_{infeasible_side_name}_infeasible"
+                    )
+                    side_commitment_telemetry = "; ".join(
+                        filter(
+                            None,
+                            (side_commitment_telemetry, infeasible_commitment_telemetry),
+                        )
+                    )
+                else:
+                    mask = committed_mask
                 if self._bc_lateral_side_commitment.active:
-                    side_commitment_telemetry = (
+                    active_commitment_telemetry = (
                         f"bc_side_commitment={self._bc_lateral_side_commitment.side_name} "
                         f"progress_window_m={side_commitment_progress_m:.3f} "
                         f"pre={','.join(map(str, np.flatnonzero(pre_side_commitment_mask)))} "
                         f"post={','.join(map(str, np.flatnonzero(mask)))}"
+                    )
+                    side_commitment_telemetry = "; ".join(
+                        filter(None, (side_commitment_telemetry, active_commitment_telemetry))
                     )
             mask = constrain_stalled_rejoin(mask, escape_required=stalled_rejoin)
             mask = constrain_stalled_subgoals(
@@ -1445,9 +1480,12 @@ class RecoveryManagerNode(Node):
                     "recurrent_escape_minimum_lateral_displacement_m"
                 ),
             ):
-                side_commitment_telemetry = (
+                new_commitment_telemetry = (
                     f"bc_side_commitment=set_{self._bc_lateral_side_commitment.side_name} "
                     f"progress_window_m={side_commitment_progress_m:.3f}"
+                )
+                side_commitment_telemetry = "; ".join(
+                    filter(None, (side_commitment_telemetry, new_commitment_telemetry))
                 )
             if decision.action_id == WAIT_ACTION_ID:
                 self._bc_waits_without_progress += 1

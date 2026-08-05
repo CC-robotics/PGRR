@@ -163,6 +163,33 @@ class ObservableLateralSideCommitment:
         self.reference_distance_m = None
         self.reference_path_heading_rad = None
 
+    def release_if_committed_side_is_occupied(
+        self,
+        *,
+        right_occupied: bool,
+        left_occupied: bool,
+    ) -> bool:
+        """Release a stale preference when new flow closes the chosen side.
+
+        A side commitment stabilizes repeated decisions for one interaction,
+        but a later pedestrian stream can approach from that escape side. The
+        temporal closing-side estimate is fully observable and already masks
+        motion toward that stream. Releasing only this persistence preference
+        lets the policy use the remaining planning-safe side without restoring
+        any action removed by geometry, LiDAR, or dynamic-flow constraints.
+        """
+
+        # Switch only when the newly blocked side has an observed alternative.
+        # With bilateral closing flow there is no evidence-backed escape side,
+        # so retaining the preference avoids churn while both sides stay masked.
+        conflict = (self.side == -1 and right_occupied and not left_occupied) or (
+            self.side == 1 and left_occupied and not right_occupied
+        )
+        if not conflict:
+            return False
+        self.reset()
+        return True
+
     def update(self, *, distance_to_goal_m: float, path_heading_rad: float) -> bool:
         """Release after enough task progress or a genuine path-direction turn."""
 
@@ -1138,6 +1165,41 @@ def recurrent_yield_lateral_action_ids(
         if lateral_displacement + 1.0e-9 >= minimum_lateral_displacement_m:
             lateral_ids.append(action.action_id)
     return tuple(lateral_ids)
+
+
+def commitment_blocks_all_safe_escape(
+    before: npt.NDArray[np.bool_],
+    after: npt.NDArray[np.bool_],
+    *,
+    pose: Pose2D,
+    path_heading_rad: float,
+    minimum_lateral_displacement_m: float,
+) -> bool:
+    """Detect when a side preference alone removes every lateral escape.
+
+    ``before`` and ``after`` are masks immediately around the commitment
+    constraint. Returning true never authorizes a new action: callers may only
+    restore ``before``, whose actions already passed occupancy, LiDAR, flow,
+    path-corridor, and near-field checks.
+    """
+
+    before_mask = np.asarray(before, dtype=np.bool_)
+    after_mask = np.asarray(after, dtype=np.bool_)
+    if before_mask.shape != (ACTION_COUNT,) or after_mask.shape != (ACTION_COUNT,):
+        raise ValueError(f"masks must have shape ({ACTION_COUNT},)")
+    if bool(np.any(after_mask & ~before_mask)):
+        raise ValueError("commitment mask must not enable an action")
+    escape_ids = (
+        *recurrent_yield_lateral_action_ids(
+            pose=pose,
+            path_heading_rad=path_heading_rad,
+            minimum_lateral_displacement_m=minimum_lateral_displacement_m,
+        ),
+        REPLAN_ACTION_ID,
+    )
+    return any(bool(before_mask[action_id]) for action_id in escape_ids) and not any(
+        bool(after_mask[action_id]) for action_id in escape_ids
+    )
 
 
 def constrain_recurrent_yield_escape(

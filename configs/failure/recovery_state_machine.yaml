@@ -26,7 +26,10 @@ bc_yield_release_clearance_m: 0.90
 bc_yield_release_frames: 3
 bc_near_field_radius_activation_clearance_m: 1.0
 bc_near_field_max_subgoal_radius_m: 0.6
-bc_yield_forward_half_width_degrees: 45.0
+# Release checks use a path-centred corridor rather than a wide frontal fan:
+# the 15-degree sector excludes doorway side walls while the independent
+# swept-footprint and motion-stop guards remain omnidirectional.
+bc_yield_forward_half_width_degrees: 15.0
 # While the yield latch is active, every otherwise-valid translation is
 # projected onto the local global-path tangent.  Only lateral/retreat endpoints
 # with at most this numerical forward tolerance remain selectable.  The
@@ -56,11 +59,10 @@ bc_wait_budget_decisions: 3
 # individual backups terminate early; the geometric guard remains authoritative.
 bc_backup_budget_decisions: 4
 bc_replan_budget_decisions: 1
-# From the first confirmed recovery during a latched directional yield, prefer
-# an already-planning-valid lateral escape or REPLAN.  The latch guard leaves
-# freeze/oscillation recovery unchanged, and the ordinary safe mask is retained
-# when no planning-valid escape exists.
-bc_recurrent_escape_after_recoveries: 1
+# Preserve the learned WAIT/BACKUP preference on the first safe yield. Require
+# an already-planning-valid lateral escape or REPLAN only after the interaction
+# re-triggers without resolution. The ordinary safety mask remains authoritative.
+bc_recurrent_escape_after_recoveries: 2
 # Robot-frame action angles cease to describe task-lateral motion after a
 # recovery turn. Require this observable endpoint displacement normal to the
 # local global-path tangent before classifying a subgoal as a lateral escape.
