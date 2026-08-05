@@ -45,6 +45,11 @@ EXPECTED_FAMILIES = (
 )
 EXPECTED_DENSITIES = {"low": 1, "medium": 2, "high": 4}
 SUFFIX_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+COMBINED_COLLISION_RADIUS_M = 0.71
+EGRESS_EXIT_KEYS = {
+    "head_on_corridor": "head_on_exit_x_m",
+    "doorway_bottleneck": "doorway_exit_x_m",
+}
 
 
 @dataclass(frozen=True)
@@ -110,8 +115,18 @@ def _validate_config(config: dict[str, Any]) -> None:
     if not 0.65 <= lane_min <= lane_max <= 0.90:
         raise ValueError("lane offsets must remain in [0.65, 0.90] m")
     avoidance = float(moderation["robot_avoidance_distance_m"])
-    if not 1.4 <= avoidance <= 1.6:
-        raise ValueError("robot avoidance distance must remain in [1.4, 1.6] m")
+    if not math.isfinite(avoidance) or avoidance <= COMBINED_COLLISION_RADIUS_M:
+        raise ValueError("robot avoidance distance must exceed the 0.71 m combined collision radii")
+    families_by_id = {str(family["id"]): family for family in families}
+    for family_id, key in EGRESS_EXIT_KEYS.items():
+        if key not in moderation:
+            continue
+        exit_x = float(moderation[key])
+        if not math.isfinite(exit_x):
+            raise ValueError(f"{key} must be finite")
+        robot_start_x = float(families_by_id[family_id]["robot_start"][0])
+        if exit_x >= robot_start_x:
+            raise ValueError(f"{key} must lie behind the {family_id} robot start")
     splits = config.get("splits")
     if not isinstance(splits, dict) or set(splits) != {"validation", "test"}:
         raise ValueError("moderate benchmark must contain validation and test splits only")
@@ -197,6 +212,8 @@ def _moderate_routes(
     lane_min: float,
     lane_max: float,
     longitudinal_stagger: float,
+    head_on_exit_x_m: float | None = None,
+    doorway_exit_x_m: float | None = None,
 ) -> list[list[list[float]]]:
     """Return separated, longitudinally staggered one-shot actor routes."""
 
@@ -206,17 +223,19 @@ def _moderate_routes(
         lane = lanes[index % len(lanes)] + offset
         stagger = longitudinal_stagger * index
         if layout == "horizontal_corridor":
+            exit_x = 5.8 + 0.25 * index if head_on_exit_x_m is None else head_on_exit_x_m
             routes.append(
                 [
                     [25.2 - stagger, 12.0 + lane, math.pi],
-                    [5.8 + 0.25 * index, 12.0 + lane, math.pi],
+                    [exit_x, 12.0 + lane, math.pi],
                 ]
             )
         elif layout == "doorway":
+            exit_x = 12.0 - 0.35 * index if doorway_exit_x_m is None else doorway_exit_x_m
             routes.append(
                 [
                     [19.0 + stagger, 12.0 + lane, math.pi],
-                    [12.0 - 0.35 * index, 12.0 - 0.45 * lane, math.pi],
+                    [exit_x, 12.0 - 0.45 * lane, math.pi],
                 ]
             )
         elif layout == "crossing":
@@ -286,6 +305,12 @@ def _apply_moderation(
         lane_min=lane_min,
         lane_max=lane_max,
         longitudinal_stagger=float(moderation["pedestrian_longitudinal_stagger_m"]),
+        head_on_exit_x_m=(
+            float(moderation["head_on_exit_x_m"]) if "head_on_exit_x_m" in moderation else None
+        ),
+        doorway_exit_x_m=(
+            float(moderation["doorway_exit_x_m"]) if "doorway_exit_x_m" in moderation else None
+        ),
     )
     scenario["obstacles"]["static"] = _moderate_static_layout(base_compiler, layout, offset)
     metadata = scenario["ramp_metadata"]
@@ -301,12 +326,40 @@ def _apply_moderation(
         "robot_avoidance_distance_m": float(moderation["robot_avoidance_distance_m"]),
         "group_clear_channel_width_m": float(moderation["group_clear_channel_width_m"]),
     }
+    for key in EGRESS_EXIT_KEYS.values():
+        if key in moderation:
+            metadata["moderation"][key] = float(moderation[key])
     for actor, route in zip(actors, routes, strict=True):
         actor["pos"] = route[0]
         actor["waypoints"] = route
         actor["cyclic_goals"] = False
         actor["robot_avoidance_distance_m"] = float(moderation["robot_avoidance_distance_m"])
         actor["behavior"]["once"] = True
+
+
+def _validate_configured_egress_endpoints(
+    scenario: dict[str, Any],
+    bounds: list[float],
+    resolution: float,
+    moderation: dict[str, Any],
+) -> None:
+    """Validate optional one-shot egress endpoints without changing v1 routes."""
+
+    family = str(scenario["ramp_metadata"]["family"])
+    key = EGRESS_EXIT_KEYS.get(family)
+    if key is None or key not in moderation:
+        return
+    robot_start_x = float(scenario["robots"][0]["start"][0])
+    for actor in scenario["obstacles"]["dynamic"]:
+        endpoint = actor["waypoints"][-1]
+        endpoint_x = float(endpoint[0])
+        endpoint_y = float(endpoint[1])
+        if endpoint_x >= robot_start_x:
+            raise ValueError(f"{family} egress endpoint must lie behind the robot start")
+        human_radius = float(actor.get("radius", 0.35))
+        grid = _footprint_occupancy(scenario, bounds, resolution, human_radius)
+        if not grid.is_free(grid.world_to_grid(endpoint_x, endpoint_y)):
+            raise ValueError(f"{family} egress endpoint intersects inflated static geometry")
 
 
 def _footprint_occupancy(
@@ -530,6 +583,12 @@ def compile_benchmark(
                         repeat=repeat,
                     )
                     base_compiler._validate_scenario(scenario, bounds)
+                    _validate_configured_egress_endpoints(
+                        scenario,
+                        bounds,
+                        resolution,
+                        config["moderation"],
+                    )
                     _, path_cells = _footprint_path(
                         scenario,
                         bounds,

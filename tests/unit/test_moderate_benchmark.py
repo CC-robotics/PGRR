@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import importlib.util
 import json
@@ -11,6 +12,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "configs" / "experiments" / "scenario_catalog_moderate.yaml"
+V2_CONFIG = ROOT / "configs" / "experiments" / "scenario_catalog_moderate_v2.yaml"
 SCRIPT = ROOT / "scripts" / "data" / "compile_moderate_benchmark.py"
 FAMILIES = {
     "head_on_corridor",
@@ -61,6 +63,125 @@ def test_moderate_catalog_has_declared_scale_and_disjoint_seed_blocks() -> None:
     assert config["moderation"]["robot_avoidance_distance_m"] == 1.50
     assert 8 * 3 * config["splits"]["validation"]["repetitions"] == 72
     assert 8 * 3 * config["splits"]["test"]["repetitions"] == 120
+
+
+def test_v2_catalog_preserves_scale_and_declares_recoverable_egress() -> None:
+    config = yaml.safe_load(V2_CONFIG.read_text(encoding="utf-8"))
+    assert config["benchmark_id"] == "moderate_social_navigation_v2"
+    assert config["moderation"]["robot_avoidance_distance_m"] == 0.90
+    assert config["moderation"]["head_on_exit_x_m"] == 3.00
+    assert config["moderation"]["doorway_exit_x_m"] == 5.00
+    assert config["output"] == {
+        "generated_subdirectory": "moderate_v2/arena",
+        "preview_subdirectory": "moderate_v2",
+        "manifest_suffix": "moderate_v2",
+    }
+    assert config["densities"] == {"low": 1, "medium": 2, "high": 4}
+    assert config["splits"]["validation"]["repetitions"] == 3
+    assert config["splits"]["test"]["repetitions"] == 5
+
+
+def test_route_parameter_defaults_preserve_v1_endpoints() -> None:
+    compiler = _compiler()
+    head_routes = compiler._moderate_routes(
+        "horizontal_corridor",
+        2,
+        0.0,
+        lane_min=0.65,
+        lane_max=0.90,
+        longitudinal_stagger=1.50,
+    )
+    doorway_routes = compiler._moderate_routes(
+        "doorway",
+        2,
+        0.0,
+        lane_min=0.65,
+        lane_max=0.90,
+        longitudinal_stagger=1.50,
+    )
+    assert [route[-1][0] for route in head_routes] == [5.8, 6.05]
+    assert [route[-1][0] for route in doorway_routes] == [12.0, 11.65]
+
+
+def test_v2_compiler_emits_safe_behind_start_egress_without_overwriting_v1(
+    tmp_path: Path,
+) -> None:
+    compiler = _compiler()
+    output = tmp_path / "moderate_v2"
+    summary = compiler.compile_benchmark(
+        V2_CONFIG,
+        output,
+        validation_repetitions=1,
+        test_repetitions=1,
+        render_previews=False,
+    )
+    assert summary["benchmark_id"] == "moderate_social_navigation_v2"
+    assert summary["manifest_suffix"] == "moderate_v2"
+    assert summary["scenario_count"] == 48
+    assert not (output / "splits/moderate_validation.yaml").exists()
+
+    for split in ("validation", "test"):
+        manifest = _manifest(output, split, "moderate_v2")
+        for record in manifest["scenarios"]:
+            scenario_path = output / "generated" / record["path"]
+            scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
+            actors = scenario["obstacles"]["dynamic"]
+            assert all(actor["robot_avoidance_distance_m"] == 0.90 for actor in actors)
+            family = record["family"]
+            if family not in {"head_on_corridor", "doorway_bottleneck"}:
+                continue
+            expected_exit = 3.0 if family == "head_on_corridor" else 5.0
+            robot_start_x = float(scenario["robots"][0]["start"][0])
+            assert all(float(actor["waypoints"][-1][0]) == expected_exit for actor in actors)
+            assert all(float(actor["waypoints"][-1][0]) < robot_start_x for actor in actors)
+            moderation = scenario["ramp_metadata"]["moderation"]
+            exit_key = "head_on_exit_x_m" if family == "head_on_corridor" else "doorway_exit_x_m"
+            assert moderation[exit_key] == expected_exit
+
+
+def test_v2_validation_rejects_unsafe_clearance_and_egress() -> None:
+    compiler = _compiler()
+    config = yaml.safe_load(V2_CONFIG.read_text(encoding="utf-8"))
+    unsafe_clearance = copy.deepcopy(config)
+    unsafe_clearance["moderation"]["robot_avoidance_distance_m"] = 0.71
+    with pytest.raises(ValueError, match=r"must exceed the 0\.71 m combined collision radii"):
+        compiler._validate_config(unsafe_clearance)
+
+    forward_exit = copy.deepcopy(config)
+    forward_exit["moderation"]["head_on_exit_x_m"] = 5.0
+    with pytest.raises(ValueError, match="must lie behind the head_on_corridor robot start"):
+        compiler._validate_config(forward_exit)
+
+
+def test_configured_egress_endpoint_must_be_free_of_static_geometry() -> None:
+    compiler = _compiler()
+    scenario = {
+        "ramp_metadata": {"family": "head_on_corridor"},
+        "robots": [{"start": [5.0, 12.0, 0.0]}],
+        "obstacles": {
+            "static": [
+                {
+                    "name": "blocking_shelf",
+                    "model": "shelf",
+                    "pos": [3.0, 12.0, 0.0],
+                }
+            ],
+            "dynamic": [
+                {
+                    "name": "ped_00",
+                    "radius": 0.35,
+                    "waypoints": [[10.0, 12.0, 0.0], [3.0, 12.0, 0.0]],
+                }
+            ],
+        },
+    }
+    with pytest.raises(ValueError, match="egress endpoint intersects inflated static geometry"):
+        compiler._validate_configured_egress_endpoints(
+            scenario,
+            [0.0, 31.28, 0.0, 24.03],
+            0.10,
+            {"head_on_exit_x_m": 3.0},
+        )
 
 
 def test_compiler_generates_split_safe_one_shot_scenarios_and_previews(
