@@ -287,7 +287,7 @@ an atomic rename rather than copied or reconstructed. Host and previously broken
 symlink caches and the non-relocatable inference venv were moved to a recoverable
 external backup. The active Docker-built `ros_ws/build`, `install`, and `log` trees are
 root-owned because colcon ran inside the container, but an audit found no
-`/home/diy/RAMP` or `/home/diy/bonus_track/PGRR` references and only stable
+`${HOME}/RAMP` or `${PROJECT_ROOT}` references and only stable
 `/workspace` symlinks. They are retained and must be managed through the pinned Docker
 profile, not mixed with a host colcon build.
 
@@ -321,3 +321,14 @@ Wilson 95% intervals and their per-point sample size. Tables use `booktabs`, no 
 rules, explicit units and sample sizes, restrained bolding of only the proposed method
 name, and named effect-size estimators. These choices improve CVPR/IEEE-style readability
 without changing the locked data or selectively marking favorable cells.
+
+## D-066: Freeze blind-corner clearance after two validation-only rounds
+
+Two bounded geometry calibrations used only the validation split. Commit `a52804c`
+moved the blind-corner shelf coordinates from `9.50/15.50` to `9.00/16.00`; commit
+`3406c08` moved them to `8.75/16.25` to meet the catalog's 2.85 m
+inflated-corner diagonal-clearance check. Each fixed five-case probe ended with three `GOAL_REACHED` outcomes,
+zero collisions, and `PLANNER_FAILURE` in both blind-corner cases. The two hard
+blind-corner outcomes are retained rather than concealed by another difficulty
+change. The catalog, splits, and state-machine hashes are frozen at `3406c08`, and
+the held-out test remains unseen.

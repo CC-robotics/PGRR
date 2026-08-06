@@ -5,8 +5,11 @@ JSONL streams by `scripts/evaluate/collect_results.py`.  Time integrals use the
 observed simulated-time intervals, not an assumed logging frequency.  An
 episode has exactly one retained terminal class: `GOAL_REACHED`, `COLLISION`,
 `TIMEOUT`, or `PLANNER_FAILURE`. `SIMULATOR_FAILURE` and `INVALID_RESET` are
-counted and reported separately, then retried once; they are never silently
-converted into an algorithm outcome.
+counted and reported separately. A logical task permits the initial physical
+attempt plus at most two retries, and only either of those two infrastructure
+classes authorizes a retry. They are never silently converted into an
+algorithm outcome; `COLLISION`, `TIMEOUT`, and `PLANNER_FAILURE` are accepted
+without retry.
 
 ## Navigation outcomes
 
@@ -48,18 +51,23 @@ pedestrians. They are not a validated model of human comfort.
   `PENDING_RECOVERY`, `RECOVERY`, or `EMERGENCY_STOP`.
 - **Recovery duration** integrates time spent in states 1--4.
 - **Intervention ratio** is recovery duration divided by episode duration.
-- **Recovery success count** counts transitions into `REJOIN` or `SUCCEEDED`
-  that follow an active recovery sequence. Because logger termination may
-  occur before the final state publication, this is reported alongside, and
-  never substituted for, the terminal navigation outcome.
+- **Recovery success count** counts logged `REJOIN -> NORMAL` transitions.
+  The state machine permits that transition only after the original task goal
+  is active again, the failure score is below `tau_off`, and valid goal
+  progress is observed. `SUCCEEDED` is the terminal navigation-success state
+  and is deliberately not counted as a recovery success. No additional
+  post-transition protection window is imposed by this metric. Recovery
+  success is reported alongside, and never substituted for, the terminal
+  navigation outcome.
 
 ## Paired inference
 
-The Base and Triggered-DAgger rows are paired by the same scenario ID, density,
-map, and seed from `outputs/final/episode_manifest.parquet`. Binary outcomes use
-the exact McNemar test. Continuous paired differences use a two-sided Wilcoxon
+PGRR is paired separately with DWB, Standard recovery, Heuristic recovery, and
+Uniform BC by the same scenario ID, density, map, and seed from
+`outputs/moderate/final/episode_manifest.parquet`. Binary outcomes use the exact
+McNemar test. Continuous paired differences use a two-sided Wilcoxon
 signed-rank test; all-tie cases return a statistic of zero and p-value one.
 Mean paired effects receive percentile bootstrap 95% confidence intervals with
-10,000 resamples. Families of p-values use Holm correction. Effect sizes and
-confidence intervals are reported with p-values; no test-set parameter tuning
-is permitted.
+10,000 resamples and a recorded seed. One global Holm correction covers the
+predeclared comparator--endpoint family. Effect sizes and confidence intervals
+are reported with p-values; no test-set parameter tuning is permitted.

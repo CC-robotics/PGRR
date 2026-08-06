@@ -16,12 +16,15 @@ PGRR is introduced in the manuscript as a descriptive project name, not as a
 claim of a unique acronym.
 
 > **Evidence status.** The selected release uses a privileged rollout expert,
-> Uniform BC, two DAgger aggregation rounds, planning/action masking, an
-> observable rule trigger, and an independent safety supervisor. PPO and a
-> learned failure detector are not claimed as completed contributions. Final
-> paper numbers are accepted only from the complete moderate-v4 five-method
-> artifacts under `outputs/moderate/final/`; validation probes and previous
-> evaluations are never copied into the paper.
+> Uniform BC, a completed two-round DAgger workflow, planning/action masking,
+> an observable rule trigger, and an independent safety supervisor. The
+> validation-selected deployment checkpoint retrains the accepted DAgger
+> aggregate with a train-only coverage shard; the second-round candidate was
+> evaluated but not selected. PPO and a learned failure detector are not
+> claimed as completed contributions. Final paper numbers are accepted only
+> from the complete moderate-v5 five-method artifacts under
+> `outputs/moderate/final/`; validation probes and previous evaluations are
+> never copied into the paper.
 
 ## Method
 
@@ -33,6 +36,47 @@ original task goal, executes bounded recovery, and rejoins the original Nav2
 route after progress resumes. A stopping-distance supervisor can override both
 learned and classical commands. It is an empirical safety filter, not a formal
 collision-free guarantee.
+
+The collision trigger applies immediate absolute/TTC checks in the narrow
+task-forward sector. Off-axis returns require 0.5 s of bearing-consistent
+closing evidence after accounting for ego motion, avoiding a persistent false
+trigger from a static corner shelf. The independent control-rate supervisor is
+unchanged by that rule: translation uses a 0.48 m footprint stop threshold,
+while bounded in-place turns use a separate 0.40 m swept-radius threshold for
+the 0.36 m circular evaluation footprint.
+
+The selected timing is fully bounded: decisions run at 2 Hz and control at
+10 Hz; minimum hold and cooldown are 0.5 s and 2 s. Ordinary recovery, an
+active directional-yield option, and one unresolved recovery--rejoin sequence
+are capped at 8 s, 30 s, and 45 s, respectively. REJOIN is capped at 5 s with
+at most two retries into RECOVERY, and at most four consecutive recovery
+activations are allowed. The state-machine diagram is
+[`paper/figures/recovery_state_machine.pdf`](paper/figures/recovery_state_machine.pdf).
+
+During an active learned directional-yield latch, the mask also uses observable
+flow in the local task-path frame. It compares the oldest and newest scans in
+the five-frame LiDAR stack: a side is marked as closing only when at least six
+valid returns in the 5--60 degree sector decrease by at least 0.20 m and their
+current ranges are no greater than 4.0 m. Evidence updates pause while the
+robot's angular speed exceeds 0.20 rad/s. The directional-yield latch releases
+only after three distinct scans observe at least 0.90 m of clearance in the
+15-degree half-width sector centred on the local task-path tangent while the
+collision score is clear. Once the policy chooses a subgoal with at least
+0.25 m task-normal displacement, a route-consistent side commitment suppresses
+opposite-side subgoals on later active-yield retriggers. Its progress horizon
+is configuration controlled; a path-tangent change over 45 degrees, newly
+observed flow on the committed side, or loss of every planning-safe escape on
+that side releases the preference.
+
+On the second activation of an unresolved recovery sequence, the mask
+escalates to an already-legal lateral subgoal or `REPLAN` whenever either is
+available. Reliable unilateral closing-flow evidence applies the same rule on
+the first activation. When no such escape is legal and `BACKUP` remains the
+safe selected action, the unilateral-flow backup is a 1 s pulse followed by a
+fresh mask decision; ordinary backup is capped at 3 s. These observable guards
+only remove otherwise legal actions and retain `WAIT` as the fail-closed
+fallback. They do not re-enable motion or provide a formal safety guarantee,
+and no isolated causal claim is made for an individual guard.
 
 During training only, a privileged short-horizon planner rolls out every legal
 candidate using simulator robot/pedestrian state and provides imitation labels.
@@ -61,6 +105,8 @@ flowchart LR
 
 The vector closed-loop diagram is
 [`paper/figures/system_architecture.pdf`](paper/figures/system_architecture.pdf).
+The expert/action illustration is explicitly schematic and is available at
+[`paper/figures/action_space_expert.pdf`](paper/figures/action_space_expert.pdf).
 
 ## Environments
 
@@ -117,9 +163,9 @@ The smoke test checks bounded startup and cleanup, `/clock`, TF, LiDAR,
 odometry, robot spawning, and Nav2 goal submission. Goal acceptance is not an
 algorithm-success result.
 
-## Moderate-v4 benchmark
+## Moderate-v5 benchmark
 
-The preregistered benchmark contains eight interaction families:
+The test-frozen benchmark contains eight interaction families:
 
 1. head-on corridor;
 2. doorway bottleneck;
@@ -130,10 +176,24 @@ The preregistered benchmark contains eight interaction families:
 7. opposite streams;
 8. temporary blockage.
 
-Low, medium, and high density contain one, two, and four pedestrians. Train,
-validation, and test use disjoint seed blocks. The held-out
-[`moderate_v4_test.yaml`](scenarios/splits/moderate_v4_test.yaml) manifest has
-five repetitions per family--density cell: 120 conditions per method.
+Low, medium, and high density contain one, two, and four pedestrians. All three
+splits share the same map and eight family templates; train, validation, and
+test use disjoint seed blocks, scenario IDs, and compiled physical
+realizations. This is held-out-interaction evaluation, not unseen-map or
+unseen-template generalization. The scenario overview is
+[`paper/figures/scenario_overview.pdf`](paper/figures/scenario_overview.pdf).
+
+Validation has three repetitions per family--density cell: 72 conditions per
+method and 360 logical method--episodes across the five compared methods. It is
+the only split used for checkpoint and configuration selection. The planned held-out
+[`moderate_v5_test.yaml`](scenarios/splits/moderate_v5_test.yaml) manifest has
+five repetitions per family--density cell: 120 conditions per method and 600
+logical method--episodes total across five methods.
+Moderate-v5 was constructed only from moderate-v4 validation evidence to repair
+invalid static overlaps and preserve physically recoverable interactions. Its
+test seeds and hashes were held out until the code and configuration were
+frozen; the complete rationale is in
+[`docs/moderate_v5_benchmark.md`](docs/moderate_v5_benchmark.md).
 
 The publication comparison uses the same 120 conditions for all five methods:
 
@@ -154,7 +214,8 @@ not a deployment baseline and no optimality claim is made.
 Arena episode JSONL
   -> observable / privileged field separation
   -> expert-labelled HDF5 shards
-  -> Uniform BC and two DAgger rounds
+  -> Uniform BC and a two-round DAgger workflow
+  -> selected DAgger aggregate plus a train-only coverage shard
   -> ONNX / TorchScript deployment
 ```
 
@@ -169,6 +230,10 @@ make train-dagger DAGGER_ITERATION=2
 
 The selected deployment checkpoint is
 [`checkpoints/dagger/coverage_safety_aligned/best.onnx`](checkpoints/dagger/coverage_safety_aligned/best.onnx).
+The second-round DAgger candidate remains a recorded negative selection result;
+it is not the deployed checkpoint. The selected checkpoint instead extends the
+accepted DAgger aggregate with a train-only head-on coverage shard, with model
+selection performed on validation data only.
 Margin weighting is retained as a negative offline ablation, not as a claimed
 gain. PPO is disabled in the selected method.
 
@@ -179,7 +244,7 @@ Then start the complete five-method test:
 
 ```bash
 make evaluate-flatland \
-  EVALUATION_JOBS=3 \
+  EVALUATION_JOBS=6 \
   EVALUATION_TIMEOUT_S=240 \
   MODERATE_ANALYSIS_DIR=outputs/moderate/final
 ```
@@ -211,7 +276,15 @@ The chain is fail-closed:
 
 `COLLISION`, `TIMEOUT`, and `PLANNER_FAILURE` remain separate algorithm
 outcomes. `SIMULATOR_FAILURE` and `INVALID_RESET` remain counted in the
-artifacts and are excluded only according to the declared protocol.
+artifacts and are excluded only according to the declared protocol. Each
+logical task has at most three physical attempts: the initial attempt and up to
+two infrastructure-only retries after an explicitly classified
+`SIMULATOR_FAILURE` or `INVALID_RESET`. Algorithm outcomes are never retried
+because they are unfavorable.
+
+Recovery success is computed exactly as a logged `REJOIN -> NORMAL`
+transition. The transition already requires the original task goal, low
+failure score, and valid progress; no additional protection window is claimed.
 
 ## Reproduce the paper without simulation
 
@@ -231,21 +304,26 @@ white background, 2D vector graphics, three functional color groups at most,
 shape/hatch redundancy, and double-column-readable typography. Telemetry media
 are explicitly labelled reconstructions; simulator screenshots must come from
 an actual captured run and are never synthesized by the paper scripts.
+When a verified capture is available, the manuscript includes
+`paper/figures/runtime_gazebo_doorway_bottleneck_medium.png` together with its
+machine-readable provenance in `outputs/figures/runtime/`. The paper compiles
+without that optional qualitative image until a real capture has succeeded.
 
 ## Authoritative artifact layout
 
 ```text
-configs/experiments/scenario_catalog_moderate_v4.yaml
+configs/final/ei_gazebo.yaml
+configs/experiments/scenario_catalog_moderate_v5.yaml
 configs/planner/baselines.yaml
-scenarios/splits/moderate_v4_test.yaml
+scenarios/splits/moderate_v5_test.yaml
 checkpoints/bc/uniform_scenario/best.onnx
 checkpoints/dagger/coverage_safety_aligned/best.onnx
+outputs/moderate/v5_validation/calibration_report.json
 outputs/moderate/final/episode_manifest.parquet
 outputs/moderate/final/run_manifest.json
 outputs/moderate/final/results.parquet
 outputs/moderate/final/summary.csv
 outputs/moderate/final/pairwise_statistics.json
-outputs/moderate/final/calibration_report.json
 outputs/moderate/final/failure_analysis.md
 outputs/moderate/final/artifact_manifest.json
 outputs/figures/moderate_*.pdf

@@ -43,11 +43,11 @@ are excluded only from algorithm metrics.
 
 ## KI-080: Relocated Docker ROS caches are root-owned but host-path neutral
 
-After the atomic move to `/home/diy/bonus_track/PGRR`, `ros_ws/build`, `install`, and
+After the atomic move to `${PROJECT_ROOT}`, `ros_ws/build`, `install`, and
 `log` remain owned by root because the pinned Arena container ran colcon as root. They
 contain zero old/new host-path references and their symlinks use the stable `/workspace`
 mount, so relocation did not invalidate them. Host and previously broken host-path
-caches were moved to `/home/diy/bonus_track/PGRR_migration_backup_20260804` instead of
+caches were moved to `${PROJECT_ROOT}_migration_backup_20260804` instead of
 being deleted. Do not run a host colcon build into the root-owned container trees or
 blindly `chown` historical artifacts; use the Docker build profile or archive the trees
 before a clean rebuild.
@@ -217,7 +217,7 @@ The Humble task generator reads `auto_reset` but reset every completed task unco
 
 ## KI-023: Host and container symlink builds need distinct paths
 
-Colcon symlink artifacts embed absolute paths. A host build under `/home/diy/RAMP` is not reusable at `/workspace` in the Arena container. Container artifacts remain in `ros_ws/{build,install,log}` and optional host artifacts use `*-host`; all generated variants are ignored.
+Colcon symlink artifacts embed absolute paths. A host build under `${HOME}/RAMP` is not reusable at `/workspace` in the Arena container. Container artifacts remain in `ros_ws/{build,install,log}` and optional host artifacts use `*-host`; all generated variants are ignored.
 
 ## KI-024: Arena can pause at its task timeout before the logger's terminal sample
 

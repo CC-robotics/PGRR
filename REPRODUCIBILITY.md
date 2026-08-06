@@ -1,40 +1,38 @@
 # Reproducing PGRR
 
-This document describes the reproducible release of **PGRR: Planning-Guided
-Recovery and Rejoin**. Commands resolve the Git root at runtime and therefore
-remain valid if the repository is cloned, moved, or renamed.
+This document describes the frozen moderate-v5 release of **PGRR:
+Planning-Guided Recovery and Rejoin**. Commands resolve the Git root at runtime
+and remain valid after the repository is moved or renamed.
 
-The paper's locked method is the imitation-learning version: a privileged
-short-horizon expert, behavior cloning, and planning/action masks applied during
-labeling and deployment.  The two-round DAgger workflow was completed, but the
-second-round checkpoint was worse on validation and is retained as a negative
-result.  The locked checkpoint extends the better first-round aggregate with a
-train-split coverage shard. PPO and the learned failure detector are outside
-the claimed release result.
+The paper evaluates the imitation-learning method: a privileged short-horizon
+planning reference, Uniform BC, a completed two-round DAgger workflow, an
+observable failure trigger, planning/action masks, recovery rejoin, and an
+independent safety supervisor. The validation-selected deployment checkpoint
+extends the accepted DAgger aggregate with a train-only coverage shard; the
+second-round candidate was evaluated but not selected. PPO and a learned
+failure detector are not completed or claimed contributions.
 
 ## Reproduction levels
 
 | Level | Command | Purpose | Paper evidence? |
 |---|---|---|---:|
-| Tests | `make test` | Lint, formatting, types, unit/integration/regression tests | no |
-| Small reproduction | `make reproduce-small` | Run bounded expert/mask/schema/statistics contracts and replay frozen policies on the small validation artifact; rebuild the paper only when final evidence already exists | no |
-| Generated paper artifacts | `make figures`, `make tables`, `make paper` | Rebuild plots, LaTeX tables, bibliography, and PDF from existing results | yes, if inputs are the locked final artifacts |
-| Full evaluation | explicit 64-episode command below | Re-run the frozen test split and paired analysis | yes |
+| Tests | `make test` | Lint, formatting, types, and automated tests | no |
+| Small reproduction | `make reproduce-small` | Exercise bounded data/model/statistics contracts | no |
+| Paper rebuild | `make reproduce-paper` | Recompute final analysis and manuscript from locked evidence | yes |
+| Full evaluation | complete command below | Re-run 600 held-out method--episodes | yes |
 
-Smoke runs and the small reproduction verify software flow. They must never be
-reported as final training or evaluation.
+Smoke, pilot, calibration, and validation runs verify software or select a
+configuration. They are never substituted for held-out test evidence.
 
 ## 1. Establish the repository root
-
-Every command in this guide begins from the checked-out Git root:
 
 ```bash
 PROJECT_ROOT="$(git rev-parse --show-toplevel)"
 cd "$PROJECT_ROOT"
 ```
 
-Record the revision and verify that code/configuration changes are committed
-before a locked evaluation:
+Before a locked evaluation, record the revision and ensure algorithm,
+configuration, scenario, and checkpoint inputs are committed:
 
 ```bash
 git rev-parse HEAD
@@ -43,135 +41,113 @@ git diff --exit-code
 git diff --cached --exit-code
 ```
 
-The final evaluator fingerprints the Git commit, scenario files, and selected
-checkpoint. Do not run a paper evaluation from an uncommitted algorithm or
-configuration state.
+The runner fingerprints the Git commit, split manifest, every compiled
+scenario, and each selected learned checkpoint.
 
 ## 2. Environment boundary
 
-PGRR deliberately uses two isolated environments.
+PGRR deliberately separates online ROS execution from offline analysis.
 
 ### Offline environment
 
-`ramp-offline` is a Python 3.10 Conda environment for datasets, expert labels,
-BC/DAgger, testing, statistics, figures, tables, and Tectonic. It must not source
-ROS setup files.
+The `ramp-offline` Python 3.10 Conda environment is used for HDF5/Parquet data,
+expert labels, BC/DAgger, tests, statistics, vector figures, LaTeX tables, and
+paper compilation. It must not source ROS setup files.
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
 make preflight
 make conda
 ```
 
-The declarations and locks are:
-
-- [environment.yml](environment.yml)
-- [environment.lock.yml](environment.lock.yml)
-- [requirements-offline.lock.txt](requirements-offline.lock.txt)
+The declarations and locks are
+[`environment.yml`](environment.yml),
+[`environment.lock.yml`](environment.lock.yml), and
+[`requirements-offline.lock.txt`](requirements-offline.lock.txt).
 
 ### ROS2/Arena runtime
 
-The verified online profile is the isolated Arena ROS2 Humble/Gazebo container,
-not Conda, Flatland, or Arena 5.0. It uses Jackal and Nav2 DWB. Build it only
-from a shell with no active project Conda environment:
+The verified online profile is the isolated Arena ROS2 Humble/Gazebo container
+with Jackal and Nav2 DWB. It is not Conda, Flatland, Arena 5, or hardware.
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
 conda deactivate 2>/dev/null || true
 unset CONDA_PREFIX CONDA_DEFAULT_ENV VIRTUAL_ENV
 make arena
 make build
 ```
 
-Exact runtime provenance is in
+Exact runtime provenance is recorded in
 [`third_party/arena_commits.lock`](third_party/arena_commits.lock) and
 [`third_party/dependency_manifest.md`](third_party/dependency_manifest.md).
-Runtime scripts also remove foreign ROS variables before sourcing Humble; this
-is necessary on hosts whose default shell has another ROS distribution active.
+Runtime scripts remove foreign ROS variables before sourcing Humble.
 
-## 3. Tests and smoke validation
+## 3. Tests and runtime smoke check
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
 make test
 make smoke SEED=0 HEADLESS=1
 ```
 
-`make test` must return zero. The smoke test checks Gazebo startup, Jackal,
-`/clock`, TF, LiDAR, odometry, goal submission, and clean bounded shutdown. It
-does not establish an algorithm success rate.
+The smoke test checks Gazebo startup, Jackal spawning, `/clock`, TF, LiDAR,
+odometry, goal submission, and bounded cleanup. Goal acceptance is not an
+algorithm-success result.
 
-## 4. Small end-to-end reproduction
+## 4. Small reproduction
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
 make reproduce-small SEED=0
-make figures
-make tables
-make paper
 ```
 
-The small path runs targeted schema, action-mask, state-machine, expert,
-statistics, and paper-contract tests, then replays the frozen models on the
-small scenario-disjoint policy set.  That replay is written under
-`outputs/smoke/` and never replaces the frozen offline ablation.  When a
-complete final run manifest is already present, the command additionally
-rebuilds the final analysis and manuscript from the recorded evidence; it does
-not launch simulation or claim to retrain the submitted checkpoint.
+This path exercises schema, mask, state-machine, expert, policy, and statistics
+contracts on small non-paper artifacts. It neither retrains the submitted model
+nor launches the 600-episode test.
 
-## 5. Frozen inputs for the paper evaluation
+## 5. Frozen moderate-v5 inputs
 
-The normative experiment declaration is
-[`configs/final/ei_gazebo.yaml`](configs/final/ei_gazebo.yaml). Before launching,
-verify at least the following inputs and retain their hashes with the run:
+The normative declaration is
+[`configs/final/ei_gazebo.yaml`](configs/final/ei_gazebo.yaml). Verify its
+inputs before the first held-out test episode:
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
-
 sha256sum \
   configs/final/ei_gazebo.yaml \
-  scenarios/splits/test.yaml \
+  configs/experiments/scenario_catalog_moderate_v5.yaml \
+  scenarios/splits/moderate_v5_validation.yaml \
+  scenarios/splits/moderate_v5_test.yaml \
+  checkpoints/bc/uniform_scenario/best.onnx \
   checkpoints/dagger/coverage_safety_aligned/best.onnx \
+  configs/planner/baselines.yaml \
   configs/failure/rules.yaml \
   configs/failure/recovery_state_machine.yaml \
   configs/planner/recovery_actions.yaml
 ```
 
-The checkpoint expected by the frozen configuration is available through the
-stable release entry point
-[`checkpoints/final/best.onnx`](checkpoints/final/best.onnx), a relative link to
-`checkpoints/dagger/coverage_safety_aligned/best.onnx`.
-Its public method name is **Triggered-DAgger**. The runner retains the internal
-method identifier `bc` for compatibility with ROS launch files, raw logs, and
-older checkpoints.
-
-The test split contains 24 immutable scenarios:
+Moderate-v5 contains eight interaction families, three densities, and five
+held-out repetitions per family--density cell:
 
 ```text
-8 families x 3 densities = 24 scenarios
-24 x (Base DWB + Triggered-DAgger) = 48 logical episodes
-8 high-density x (Standard + Heuristic) = 16 logical episodes
-Total = 64 logical episodes
+8 families x 3 densities x 5 repetitions = 120 conditions per method
+120 x 5 methods = 600 logical method--episodes
 ```
 
-All methods use the same scenario records. A retry caused by
-`SIMULATOR_FAILURE` or `INVALID_RESET` is a separately retained physical
-attempt, not an extra algorithm sample.
+The five methods are `base`, `standard`, `heuristic`, `bc_uniform`, and
+`pgrr`. Every method uses the identical 120 condition keys. The detailed v5
+construction rationale is in
+[`docs/moderate_v5_benchmark.md`](docs/moderate_v5_benchmark.md).
 
-## 6. Complete locked 64-episode evaluation
+The selected PGRR artifact is
+`checkpoints/dagger/coverage_safety_aligned/best.onnx`. Its training set is the
+accepted DAgger aggregate plus a head-on coverage shard collected exclusively
+from the train split. The separately retained second-round candidate did not
+pass validation selection and is not substituted into the test protocol.
 
-Run this once, after the configuration is frozen and before inspecting any test
-outcome for tuning:
+## 6. Validation-only calibration and lock
+
+Benchmark construction and method selection use only train/validation data.
+The accepted calibration report must be generated from the complete v5
+validation manifest before test execution:
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
-
 env \
   -u PYTHONPATH \
   -u AMENT_PREFIX_PATH \
@@ -180,30 +156,47 @@ env \
   -u ROS_DISTRO \
   -u ROS_VERSION \
   -u ROS_PYTHON_VERSION \
-  conda run -n ramp-offline \
+  conda run --no-capture-output -n ramp-offline \
   python scripts/evaluate/run_experiment.py \
-    --split test \
-    --methods base bc \
-    --high-density-methods standard heuristic \
-    --jobs 4 \
-    --timeout 180 \
-    --checkpoint checkpoints/dagger/coverage_safety_aligned/best.onnx \
-    --output-dir outputs/final
+    --split validation \
+    --split-manifest scenarios/splits/moderate_v5_validation.yaml \
+    --methods base standard heuristic bc_uniform pgrr \
+    --jobs 6 \
+    --timeout 240 \
+    --output-dir outputs/moderate/v5_validation
+
+make statistics \
+  MODERATE_ANALYSIS_DIR=outputs/moderate/v5_validation
 ```
 
-The four workers receive distinct fixed ROS domain IDs and Gazebo partitions.
-Use fewer `--jobs` on constrained systems; changing parallelism does not change
-the logical manifest, but it must be recorded in `run_manifest.json`. Do not run
-two evaluators with overlapping ROS domain ranges on the same host.
-
-The runner refuses to overwrite an existing raw episode or locked manifest. If
-the process is interrupted, use the **same commit, checkpoint, split, methods,
-timeout, and output directory**, adding only `--resume`:
+The authoritative calibration evidence is
+`outputs/moderate/v5_validation/calibration_report.json`. The artifact builder
+requires `split=validation`, `status=accepted`, and `passed=true`; a report
+computed from test rows is rejected. After validation selection, freeze the
+tree before opening the test split:
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
+git tag -a pre-final-eval-v5 -m "Frozen moderate-v5 evaluation inputs"
+```
 
+## 7. Complete held-out evaluation
+
+Run the test once after the validation-selected tree is frozen:
+
+```bash
+make evaluate-flatland \
+  MODERATE_SPLIT_MANIFEST=scenarios/splits/moderate_v5_test.yaml \
+  MODERATE_ANALYSIS_DIR=outputs/moderate/final \
+  EVALUATION_JOBS=6 \
+  EVALUATION_TIMEOUT_S=240
+```
+
+`evaluate-flatland` is a retained compatibility target name; the locked runtime
+is Gazebo. The runner refuses to overwrite an existing manifest. If execution
+is interrupted, use the same commit, split, method set, checkpoints, timeout,
+and output directory, adding only `--resume` to the equivalent direct command:
+
+```bash
 env \
   -u PYTHONPATH \
   -u AMENT_PREFIX_PATH \
@@ -212,186 +205,137 @@ env \
   -u ROS_DISTRO \
   -u ROS_VERSION \
   -u ROS_PYTHON_VERSION \
-  conda run -n ramp-offline \
+  conda run --no-capture-output -n ramp-offline \
   python scripts/evaluate/run_experiment.py \
     --split test \
-    --methods base bc \
-    --high-density-methods standard heuristic \
-    --jobs 4 \
-    --timeout 180 \
-    --checkpoint checkpoints/dagger/coverage_safety_aligned/best.onnx \
-    --output-dir outputs/final \
+    --split-manifest scenarios/splits/moderate_v5_test.yaml \
+    --methods base standard heuristic bc_uniform pgrr \
+    --jobs 6 \
+    --timeout 240 \
+    --output-dir outputs/moderate/final \
     --resume
 ```
 
-Resume validates existing artifacts and only continues an incomplete logical
-task. A logical task gets at most one retry, and only after an explicitly
-classified `SIMULATOR_FAILURE` or `INVALID_RESET`. `GOAL_REACHED`, `COLLISION`,
-`TIMEOUT`, and `PLANNER_FAILURE` are retained algorithm outcomes and are never
-rerun merely because the result is unfavorable.
+A logical task receives at most three physical attempts: one initial attempt
+and up to two retries, each permitted only after an explicitly classified
+`SIMULATOR_FAILURE` or `INVALID_RESET`. Every physical attempt remains in the
+artifacts. `GOAL_REACHED`, `COLLISION`, `TIMEOUT`, and `PLANNER_FAILURE` are
+retained algorithm outcomes and are never rerun because the result is
+unfavorable.
 
-To independently reproduce published artifacts after `outputs/final/` and
-`data/raw/` have already been populated, use a fresh checkout/worktree at the
-recorded commit. Do not delete or overwrite the published raw evidence.
+## 8. Statistics, figures, tables, and paper
 
-## 7. Collect results and run paired statistics
-
-After the runner reports all 64 logical tasks complete:
+After all 600 logical tasks are complete:
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
-
-env \
-  -u PYTHONPATH \
-  -u AMENT_PREFIX_PATH \
-  -u COLCON_PREFIX_PATH \
-  -u CMAKE_PREFIX_PATH \
-  -u ROS_DISTRO \
-  -u ROS_VERSION \
-  -u ROS_PYTHON_VERSION \
-  conda run -n ramp-offline \
-  python scripts/evaluate/collect_results.py \
-    --manifest outputs/final/episode_manifest.parquet \
-    --raw-dir data/raw \
-    --run-manifest outputs/final/run_manifest.json \
-    --results outputs/final/results.parquet \
-    --summary outputs/final/summary.csv \
-    --statistics outputs/final/statistics.json \
-    --reference-policy base \
-    --treatment-policy bc \
-    --bootstrap-samples 10000 \
-    --bootstrap-seed 20260804
+make statistics MODERATE_ANALYSIS_DIR=outputs/moderate/final
+make figures MODERATE_ANALYSIS_DIR=outputs/moderate/final
+make tables MODERATE_ANALYSIS_DIR=outputs/moderate/final
+make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
 ```
 
-Collection verifies manifest membership, completion, outcomes, and raw evidence
-before writing derived files. The statistical unit is the paired scenario
-episode. Reported analysis includes descriptive statistics, 95% paired bootstrap
-confidence intervals, McNemar tests for binary outcomes, Wilcoxon signed-rank
-tests for continuous metrics, effect sizes, and Holm multiple-comparison
-correction. A p-value without its effect size and interval is incomplete.
+The collector verifies manifest membership, completion, outcome evidence, and
+paired metadata. The moderate summarizer requires exactly the same 120
+conditions for all five methods. It produces paired bootstrap intervals, exact
+McNemar tests for binary outcomes, Wilcoxon signed-rank tests for continuous
+metrics, effect sizes, and one global Holm correction family.
 
-The authoritative machine-readable outputs are:
-
-- [episode manifest](outputs/final/episode_manifest.parquet)
-- [run manifest](outputs/final/run_manifest.json)
-- [episode results](outputs/final/results.parquet)
-- [summary CSV](outputs/final/summary.csv)
-- [statistics JSON](outputs/final/statistics.json)
-- [failure analysis](outputs/final/failure_analysis.md)
-
-If `summary.csv` or `statistics.json` is absent, do not substitute pilot values
-or manually fill the paper tables.
-
-## 8. Figures, tables, and manuscript
+For a complete paper replay from existing raw evidence:
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
-
-make figures
-make tables
-make paper
+MODERATE_ANALYSIS_DIR=outputs/moderate/final \
+MODERATE_CALIBRATION_REPORT=outputs/moderate/v5_validation/calibration_report.json \
+scripts/reproduce_paper.sh
 ```
 
-`make figures` and `make tables` read the locked summary/statistics files.
-`make paper` regenerates those assets and compiles
-[`paper/main.tex`](paper/main.tex) with IEEEtran using `latexmk` when available
-or Tectonic from `ramp-offline`. The build fails for unresolved references,
-citations, an empty PDF, or overfull boxes.
+This command never launches simulation. It recollects raw streams, validates
+the five-method condition set, regenerates statistics, figures, tables,
+telemetry media, and the anonymous IEEEtran PDF, then writes a checksummed
+artifact manifest.
 
-For a complete release-level replay after final artifacts exist:
+## 9. Runtime screenshot policy
+
+Publication charts and diagrams are generated as vector PDFs. A simulator
+screenshot is optional until a real capture succeeds and is never synthesized.
+The validated capture command and provenance rules are documented in
+[`docs/runtime_screenshots.md`](docs/runtime_screenshots.md). When present, the
+paper-facing image is
+`paper/figures/runtime_gazebo_doorway_bottleneck_medium.png`, paired with
+`outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json`.
+The artifact builder rejects an unpaired screenshot or metadata file.
+
+## 10. Authoritative outputs
+
+- `outputs/moderate/v5_validation/calibration_report.json`
+- `outputs/moderate/final/episode_manifest.parquet`
+- `outputs/moderate/final/run_manifest.json`
+- `outputs/moderate/final/results.parquet`
+- `outputs/moderate/final/summary.csv`
+- `outputs/moderate/final/pairwise_statistics.json`
+- `outputs/moderate/final/failure_analysis.md`
+- `outputs/moderate/final/artifact_manifest.json`
+- `paper/generated/moderate_*.tex`
+- `paper/figures/moderate_*.pdf`
+- `outputs/figures/moderate_*.pdf`
+- `outputs/tables/moderate_*.tex`
+- `paper/main.pdf`
+
+If any complete-run artifact is absent, do not substitute pilot values or
+manually edit a result table.
+
+## 11. Required release checks
 
 ```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
-make reproduce-paper
-```
-
-The final PDF is [paper/main.pdf](paper/main.pdf). Claims must remain aligned
-with [`paper/claim_evidence_matrix.md`](paper/claim_evidence_matrix.md).
-
-## 9. Required release checks
-
-```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
-cd "$PROJECT_ROOT"
-
 make test
 make reproduce-small SEED=0
-make figures
-make tables
-make paper
+make figures MODERATE_ANALYSIS_DIR=outputs/moderate/final
+make tables MODERATE_ANALYSIS_DIR=outputs/moderate/final
+make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
+make privacy-check
 
-test -s outputs/final/episode_manifest.parquet
-test -s outputs/final/run_manifest.json
-test -s outputs/final/results.parquet
-test -s outputs/final/summary.csv
-test -s outputs/final/statistics.json
-test -s outputs/final/failure_analysis.md
-test -s outputs/final/artifact_manifest.json
+test -s outputs/moderate/v5_validation/calibration_report.json
+test -s outputs/moderate/final/episode_manifest.parquet
+test -s outputs/moderate/final/run_manifest.json
+test -s outputs/moderate/final/results.parquet
+test -s outputs/moderate/final/summary.csv
+test -s outputs/moderate/final/pairwise_statistics.json
+test -s outputs/moderate/final/failure_analysis.md
+test -s outputs/moderate/final/artifact_manifest.json
 test -s paper/main.pdf
 ```
 
-When present, verify the generated
-[artifact manifest](outputs/final/artifact_manifest.json) against the checked-out
-commit and file hashes. `paper/main.pdf`, tables, and plots are derived; raw
-episode streams, manifests, configuration, and checkpoint hashes are the
-primary evidence.
+The final PDF must have no unresolved references/citations, overfull boxes,
+Type 3 fonts, or unembedded fonts. Run the privacy audit from the exact release
+checkout; do not weaken its allowlist to admit stale paths or metadata.
 
-## 10. No test-set tuning
+## 12. No test-set tuning
 
-The following protocol is mandatory:
-
-1. Train only with scenarios in `scenarios/splits/train.yaml`.
-2. Select architectures, thresholds, masks, rewards, checkpoints, and stopping
-   rules only with the train and validation splits.
-3. Freeze and commit the final configuration and record all hashes before the
+1. Train only with v5 train scenarios.
+2. Select thresholds, masks, checkpoints, and stopping rules only with train and
+   validation evidence.
+3. Freeze and tag code, configuration, scenarios, and checkpoints before the
    first test launch.
-4. Execute every method against the same locked test manifest.
-5. Retain all algorithm outcomes, including collisions, timeouts, and planner
-   failures.
-6. Exclude only `SIMULATOR_FAILURE` and `INVALID_RESET`, while reporting their
-   counts, attempts, and reasons.
-7. Never alter parameters after reading test outcomes. If a genuine software
-   bug invalidates an episode, commit the fix, document it, and rerun every
-   method affected by that bug under a newly versioned evaluation.
+4. Execute every method on the same test manifest.
+5. Retain collisions, timeouts, planner failures, and infrastructure attempts.
+6. Exclude only `SIMULATOR_FAILURE` and `INVALID_RESET` according to the stated
+   protocol, while reporting their counts and reasons.
+7. Never change parameters after inspecting test outcomes. A genuine code bug
+   requires a documented fix and complete rerun of every affected method under
+   a new version.
 
-The test split is evidence, not a debugging curriculum. Development pilots and
-counterexamples remain useful in `outputs/pilot/`, but they cannot be pooled
-with the locked test or presented as independent final episodes.
+## 13. Known reproducibility limits
 
-## 11. Outcome and retry semantics
-
-Every episode terminates in exactly one declared category:
-
-- `GOAL_REACHED`
-- `COLLISION`
-- `TIMEOUT`
-- `PLANNER_FAILURE`
-- `SIMULATOR_FAILURE`
-- `INVALID_RESET`
-
-The first four are algorithm outcomes. The last two are infrastructure outcomes
-and may receive one bounded retry. Raw `.jsonl`, `.metadata.json`, and
-`.outcome.json` files are preserved so exclusions and retries remain auditable.
-
-## 12. Known reproducibility limits
-
-- The containerized Humble/Gazebo fallback differs from Arena 5.0, Flatland,
-  real pedestrians, and hardware.
-- Software rendering and Gazebo scheduling can change wall-clock duration even
-  when scenario seeds are fixed; simulator time and outcome evidence are used
-  for metrics.
-- Fallback pedestrians are LiDAR-visible contactless actors, not a validated
-  human-dynamics model.
-- Pose-derived simulation localization is more accurate than a real localization
-  pipeline.
-- The expert depends on privileged simulator truth during label generation, but
-  deployment inputs are observable only.
-- The finite recovery action set and empirical safety margins provide no formal
+- The pinned Humble/Gazebo fallback differs from Arena 5, Flatland, real
+  pedestrians, and hardware.
+- Software rendering and Gazebo scheduling can change wall-clock duration;
+  simulator time and terminal evidence are used for metrics.
+- Deterministic LiDAR-visible actors are not a validated human-intent model.
+- Simulation localization is more accurate than a deployed localization stack.
+- The expert uses privileged simulator state during label generation only.
+- The finite action set and empirical safety margins provide no formal
   completeness or collision-avoidance guarantee.
 
-For current problems and retained negative results, see
-[CURRENT_STATUS.md](CURRENT_STATUS.md), [KNOWN_ISSUES.md](KNOWN_ISSUES.md), and
-[DECISIONS.md](DECISIONS.md).
+Current retained negative results and limitations are tracked in
+[`CURRENT_STATUS.md`](CURRENT_STATUS.md),
+[`KNOWN_ISSUES.md`](KNOWN_ISSUES.md), and
+[`DECISIONS.md`](DECISIONS.md).

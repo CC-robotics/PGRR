@@ -1,5 +1,16 @@
 # Progress log
 
+## 2026-08-06 — validation-only blind-corner clearance freeze
+
+- Completed two bounded blind-corner geometry calibrations using validation only:
+  `a52804c` (`9.00/16.00`) and `3406c08` (`8.75/16.25`, satisfying the catalog's
+  2.85 m inflated-corner diagonal-clearance check).
+- Both fixed five-case probes recorded three `GOAL_REACHED` outcomes, no collision,
+  and `PLANNER_FAILURE` for the low- and high-density blind-corner cases. The hard
+  cases remain in the benchmark; no further difficulty tuning is planned.
+- Synchronized the frozen catalog, validation split, test split, and state-machine
+  hashes to the `3406c08` files without running or inspecting the held-out test.
+
 ## 2026-08-04 — locked EI result and PGRR relocation
 
 - Completed all 64 logical tasks in the frozen test manifest at commit `35d7e60`: 24
@@ -28,8 +39,8 @@
 - Adopted PGRR as the public name: Planning-Guided Failure-Triggered Recovery and
   Rejoin. Internal `ramp_*` package names and `method=bc` artifact identifiers remain
   for compatibility; the selected method is Uniform BC + DAgger, not MWBC or PPO.
-- Atomically relocated the full 9.2 GB working repository to
-  `/home/diy/bonus_track/PGRR`. Archived the host-path ROS caches and old venv without
+- Atomically relocated the full 9.2 GB working repository to `${PROJECT_ROOT}`.
+  Archived the host-path ROS caches and old venv without
   deletion, recreated the venv/editable packages at the new path, and retained the
   root-owned Docker ROS caches after confirming that they use only `/workspace` and
   contain no host-path references.

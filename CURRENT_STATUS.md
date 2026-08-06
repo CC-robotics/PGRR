@@ -1,8 +1,55 @@
 # Current status
 
-## 2026-08-04 — locked EI evaluation complete and repository relocated (current)
+## 2026-08-06 — moderate-v5 evaluation protocol (current)
 
-The immutable final test is complete at project commit
+The 64-method-episode evaluation recorded on 2026-08-04 is retained as
+historical development evidence only. It is not the current moderate-v5 final
+evaluation, is not eligible for the new five-method result macros, and must not
+be described as the final paper experiment.
+
+The current validation protocol has 72 physical interaction conditions per
+method (eight families, three densities, three repetitions), or 360 logical
+method--episodes across `base`, `standard`, `heuristic`, `bc_uniform`, and
+`pgrr`. The planned held-out test has 120 conditions per method (five
+repetitions per family--density cell), or 600 logical method--episodes total
+across those same five methods. The splits intentionally reuse the same
+`map_empty` map and family templates but have disjoint seed blocks, scenario
+IDs, and compiled physical realizations; no unseen-map or unseen-template
+generalization is claimed.
+
+At this synchronization point, no `moderate_v5_test` episode has been executed
+or inspected. The held-out test remains blocked until validation-selected code,
+configuration, scenario hashes, and both learned checkpoints are frozen. Old
+`outputs/final/` artifacts and pilot rows are not a fallback for missing
+`outputs/moderate/final/` evidence.
+
+The selected method remains imitation-only PGRR: observable rule triggering,
+a bounded recovery/rejoin state machine, 25 interpretable recovery actions,
+planning and LiDAR masking, a validation-selected DAgger checkpoint, and an
+independent empirical safety supervisor. PPO and learned failure prediction
+are not claimed contributions. The implementation documents 8-s ordinary,
+30-s extended-yield, and 45-s whole-sequence bounds; a 15-degree task-forward
+release sector; second-activation escape escalation; immediate escalation under
+reliable unilateral flow; a 1-s unilateral BACKUP pulse; and a configuration-
+controlled lateral-side commitment that also releases on route change, observed
+conflict, or infeasibility. Recovery success is exactly a logged
+`REJOIN -> NORMAL` transition under the state-machine guards, with no invented
+post-transition protection window.
+
+Blind-corner clearance received exactly two validation-only geometry
+calibrations. Commit `a52804c` changed the two shelf coordinates from
+`9.50/15.50` to `9.00/16.00`; its fixed five-case probe produced three
+`GOAL_REACHED` outcomes, no collision, and `PLANNER_FAILURE` in both blind-corner
+cases. Commit `3406c08` changed them to `8.75/16.25` to satisfy the catalog's
+2.85 m inflated-corner diagonal-clearance check; the same five-case probe again produced three
+`GOAL_REACHED` outcomes, no collision, and the two blind-corner
+`PLANNER_FAILURE` outcomes. These hard cases are retained. Scenario difficulty
+and clearance are now frozen, with no further tuning from validation and no
+held-out test inspection.
+
+## 2026-08-04 — locked 64-episode development evaluation and relocation (historical; superseded)
+
+This historical evaluation was completed at project commit
 `35d7e601cd6f5baf168948a7174cd32fa9c37c5b` and run ID `b8fcd1607de0`.
 The fixed manifest contains 64 logical episodes and the final run manifest reports
 64/64 completed tasks with no worker errors. Base and PGRR ran on all eight scenario
@@ -18,7 +65,7 @@ the runner's legacy identifier for PGRR/Triggered DAgger; it must not be describ
 plain behavior cloning. The selected checkpoint is Uniform BC + DAgger with
 `margin_lambda=0`; MWBC, PPO, and a learned detector are not selected contributions.
 
-### Locked final outcomes
+### Historical locked outcomes (not moderate-v5 final results)
 
 | Method | Scope | Goal | Collision | Timeout | Mean duration (s) | Mean minimum human distance (m) | Mean intervention ratio |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -80,16 +127,16 @@ methods; it does not infer causality from terminal labels.
 
 ### Relocation and current deliverable boundary
 
-The repository was atomically renamed from `/home/diy/RAMP` to
-`/home/diy/bonus_track/PGRR`; the directory inode is unchanged and the old path is
+The repository was atomically renamed from `${HOME}/RAMP` to `${PROJECT_ROOT}`; the
+directory inode is unchanged and the old path is
 absent. Non-relocatable host/broken ROS caches and the old inference venv are retained
-recoverably in `/home/diy/bonus_track/PGRR_migration_backup_20260804` (162 MB). The
+recoverably in `${PROJECT_ROOT}_migration_backup_20260804` (162 MB). The
 active Docker-built `ros_ws/{build,install,log}` directories are root-owned as expected,
 but contain no old or new host path and use only the stable `/workspace` container
 prefix. The inference venv and both Conda editable packages now resolve to the PGRR
 path.
 
-The current minimum honest EI deliverable is the imitation-only PGRR system, the
+At that historical checkpoint, the minimum honest EI deliverable was the imitation-only PGRR system, the
 locked 64-episode Gazebo fallback evaluation, paired statistics, offline mask/DAgger
 ablation, failure report, generated figures/tables/video, and the compiled eight-page
 `paper/main.pdf`. It does **not** satisfy the originally proposed 360-episode-per-method
@@ -101,8 +148,9 @@ exist. The publication-style revision is released as `submission-v2`; the earlie
 locked outcomes, while v2 improves the narrative, figures, tables, and their automated
 regression checks.
 
-All sections below are retained as historical development evidence and may describe
-pilots or candidates that the locked final test supersedes.
+Everything in the 2026-08-04 section and below is retained as historical
+development evidence. It may describe pilots or candidates superseded by the
+current moderate-v5 protocol.
 
 ## 2026-08-01 — verified-pose DAgger pilot (historical; superseded)
 

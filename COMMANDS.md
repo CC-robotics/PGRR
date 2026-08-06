@@ -671,9 +671,12 @@ The repository move was an atomic same-filesystem rename. Existing sibling proje
 under `bonus_track` were not touched:
 
 ```bash
-cd /home/diy
-mv -- /home/diy/RAMP /home/diy/bonus_track/PGRR
-cd /home/diy/bonus_track/PGRR
+export PROJECT_ROOT="${PROJECT_ROOT:-${HOME}/bonus_track/PGRR}"
+export LEGACY_PROJECT_ROOT="${HOME}/RAMP"
+export MIGRATION_BACKUP="${PROJECT_ROOT}_migration_backup_20260804"
+cd "${HOME}"
+mv -- "${LEGACY_PROJECT_ROOT}" "${PROJECT_ROOT}"
+cd "${PROJECT_ROOT}"
 ```
 
 The old host-path caches and venv were retained outside the repository rather than
@@ -681,38 +684,38 @@ deleted. The active Docker build/install/log trees were left in place after prov
 they are host-path neutral:
 
 ```bash
-mkdir -p /home/diy/bonus_track/PGRR_migration_backup_20260804/ros_ws
+mkdir -p "${MIGRATION_BACKUP}/ros_ws"
 
 mv -- ros_ws/build-host ros_ws/install-host ros_ws/log-host \
   ros_ws/build.broken-hostpaths-20260730 \
   ros_ws/install.broken-hostpaths-20260730 \
   ros_ws/log.broken-hostpaths-20260730 \
-  /home/diy/bonus_track/PGRR_migration_backup_20260804/ros_ws/
+  "${MIGRATION_BACKUP}/ros_ws/"
 
 mv -- .venv-inference \
-  /home/diy/bonus_track/PGRR_migration_backup_20260804/.venv-inference
+  "${MIGRATION_BACKUP}/.venv-inference"
 
 python3 -m venv --system-site-packages .venv-inference
 .venv-inference/bin/python -m pip install \
   coloredlogs==15.0.1 flatbuffers==25.12.19 humanfriendly==10.0 \
   numpy==2.2.6 onnxruntime==1.23.2
 
-/home/diy/anaconda3/envs/ramp-offline/bin/python -m pip install \
+conda run -n ramp-offline python -m pip install \
   -e packages/ramp_core -e packages/ramp_ml
-/home/diy/anaconda3/envs/ramp-offline/bin/python -m pip freeze \
+conda run -n ramp-offline python -m pip freeze \
   > requirements-offline.lock.txt
 ```
 
 Post-move provenance checks:
 
 ```bash
-test ! -e /home/diy/RAMP
+test ! -e "${LEGACY_PROJECT_ROOT}"
 git rev-parse --show-toplevel
 
-rg -l '/home/diy/RAMP|/home/diy/bonus_track/PGRR' \
+rg -l "${LEGACY_PROJECT_ROOT}|${PROJECT_ROOT}" \
   ros_ws/build ros_ws/install ros_ws/log
 find ros_ws/build ros_ws/install ros_ws/log \
-  -type l -lname '/home/diy/RAMP*' -print
+  -type l -lname "${LEGACY_PROJECT_ROOT}*" -print
 
 sha256sum \
   outputs/final/episode_manifest.parquet \
@@ -730,7 +733,7 @@ The narrative, figures, and tables were regenerated without changing the locked 
 files:
 
 ```bash
-cd /home/diy/bonus_track/PGRR
+cd "${PROJECT_ROOT}"
 make figures
 make tables
 make paper
