@@ -31,8 +31,8 @@ moderation:
   # enough control margin for DWB: runs became pinned to either shelf tip.
   # Shortening both shelves preserves the occluded oncoming interaction while
   # providing a footprint-clear local-planning channel through the corner.
-  blind_corner_vertical_end_y_m: 9.00
-  blind_corner_horizontal_start_x_m: 16.00
+  blind_corner_vertical_end_y_m: 8.75
+  blind_corner_horizontal_start_x_m: 16.25
 
   # Keep the nearest stationary group member comfortably outside the 0.73 m
   # swept hard guard and leave the lower corridor as a usable recovery lane.

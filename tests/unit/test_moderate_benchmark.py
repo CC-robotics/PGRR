@@ -188,8 +188,8 @@ def test_v5_catalog_is_validation_calibrated_and_uses_fresh_split_blocks() -> No
     config = yaml.safe_load(V5_CONFIG.read_text(encoding="utf-8"))
     moderation = config["moderation"]
     assert config["benchmark_id"] == "moderate_social_navigation_v5"
-    assert moderation["blind_corner_vertical_end_y_m"] == 9.00
-    assert moderation["blind_corner_horizontal_start_x_m"] == 16.00
+    assert moderation["blind_corner_vertical_end_y_m"] == 8.75
+    assert moderation["blind_corner_horizontal_start_x_m"] == 16.25
     assert moderation["group_nearest_actor_offset_m"] == 1.15
     assert moderation["overtaking_lane_offset_range_m"] == [0.96, 1.16]
     assert moderation["opposite_stream_lane_offset_range_m"] == [0.96, 1.16]
@@ -706,11 +706,11 @@ def test_v5_compiler_emits_recoverable_clearances_and_static_free_actor_routes(
                     for item in scenario["obstacles"]["static"]
                     if "corner_h_moderate" in item["name"]
                 ]
-                assert max(float(item["pos"][1]) for item in vertical) == pytest.approx(9.00)
-                assert min(float(item["pos"][0]) for item in horizontal) == pytest.approx(16.00)
-                inflated_dx = 16.00 - 0.45 - 0.40 - (13.50 + 0.20 + 0.40)
-                inflated_dy = 12.80 - 0.20 - 0.40 - (9.00 + 0.45 + 0.40)
-                assert (inflated_dx**2 + inflated_dy**2) ** 0.5 >= 2.50
+                assert max(float(item["pos"][1]) for item in vertical) == pytest.approx(8.75)
+                assert min(float(item["pos"][0]) for item in horizontal) == pytest.approx(16.25)
+                inflated_dx = 16.25 - 0.45 - 0.40 - (13.50 + 0.20 + 0.40)
+                inflated_dy = 12.80 - 0.20 - 0.40 - (8.75 + 0.45 + 0.40)
+                assert (inflated_dx**2 + inflated_dy**2) ** 0.5 >= 2.85
             elif family == "group_blocking":
                 nearest_centerline_offset = min(
                     abs(float(actor["waypoints"][0][1]) - 12.0) for actor in actors
