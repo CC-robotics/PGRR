@@ -250,7 +250,7 @@
         "name": "corner_v_moderate_01",
         "pos": [
           13.5,
-          6.875,
+          7.0,
           1.5707963267948966
         ]
       },
@@ -259,7 +259,7 @@
         "name": "corner_v_moderate_02",
         "pos": [
           13.5,
-          7.75,
+          8.0,
           1.5707963267948966
         ]
       },
@@ -268,16 +268,7 @@
         "name": "corner_v_moderate_03",
         "pos": [
           13.5,
-          8.625,
-          1.5707963267948966
-        ]
-      },
-      {
-        "model": "shelf",
-        "name": "corner_v_moderate_04",
-        "pos": [
-          13.5,
-          9.5,
+          9.0,
           1.5707963267948966
         ]
       },
@@ -285,7 +276,7 @@
         "model": "shelf",
         "name": "corner_h_moderate_00",
         "pos": [
-          15.5,
+          16.0,
           12.8,
           0.0
         ]
@@ -294,7 +285,7 @@
         "model": "shelf",
         "name": "corner_h_moderate_01",
         "pos": [
-          16.333333333333332,
+          16.9,
           12.8,
           0.0
         ]
@@ -303,7 +294,7 @@
         "model": "shelf",
         "name": "corner_h_moderate_02",
         "pos": [
-          17.166666666666668,
+          17.8,
           12.8,
           0.0
         ]
@@ -312,7 +303,7 @@
         "model": "shelf",
         "name": "corner_h_moderate_03",
         "pos": [
-          18.0,
+          18.7,
           12.8,
           0.0
         ]
@@ -321,7 +312,7 @@
         "model": "shelf",
         "name": "corner_h_moderate_04",
         "pos": [
-          18.833333333333332,
+          19.6,
           12.8,
           0.0
         ]
@@ -329,15 +320,6 @@
       {
         "model": "shelf",
         "name": "corner_h_moderate_05",
-        "pos": [
-          19.666666666666668,
-          12.8,
-          0.0
-        ]
-      },
-      {
-        "model": "shelf",
-        "name": "corner_h_moderate_06",
         "pos": [
           20.5,
           12.8,
@@ -366,8 +348,8 @@
     "moderation": {
       "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
       "actor_update_frequency_hz": 5.0,
-      "blind_corner_horizontal_start_x_m": 15.5,
-      "blind_corner_vertical_end_y_m": 9.5,
+      "blind_corner_horizontal_start_x_m": 16.0,
+      "blind_corner_vertical_end_y_m": 9.0,
       "corridor_footprint_clear_width_m": 2.6,
       "doorway_exit_x_m": 5.0,
       "doorway_footprint_clear_width_m": 2.3,

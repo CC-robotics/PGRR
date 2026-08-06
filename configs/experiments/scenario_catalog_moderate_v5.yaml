@@ -26,11 +26,13 @@ moderation:
   group_clear_channel_width_m: 1.30
   all_routes_one_shot: true
 
-  # V5 calibration knobs were declared from v4 validation only. The blind
-  # corner receives a footprint-clear chamfer instead of a zero-margin shelf
-  # intersection, while its oncoming actor still traverses the occluded turn.
-  blind_corner_vertical_end_y_m: 9.50
-  blind_corner_horizontal_start_x_m: 15.50
+  # V5 calibration knobs were declared from validation only. Closed-loop V5
+  # traces showed that the original raster-reachable chamfer did not leave
+  # enough control margin for DWB: runs became pinned to either shelf tip.
+  # Shortening both shelves preserves the occluded oncoming interaction while
+  # providing a footprint-clear local-planning channel through the corner.
+  blind_corner_vertical_end_y_m: 9.00
+  blind_corner_horizontal_start_x_m: 16.00
 
   # Keep the nearest stationary group member comfortably outside the 0.73 m
   # swept hard guard and leave the lower corridor as a usable recovery lane.

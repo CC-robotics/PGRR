@@ -400,8 +400,8 @@
     "moderation": {
       "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
       "actor_update_frequency_hz": 5.0,
-      "blind_corner_horizontal_start_x_m": 15.5,
-      "blind_corner_vertical_end_y_m": 9.5,
+      "blind_corner_horizontal_start_x_m": 16.0,
+      "blind_corner_vertical_end_y_m": 9.0,
       "corridor_footprint_clear_width_m": 2.6,
       "doorway_exit_x_m": 5.0,
       "doorway_footprint_clear_width_m": 2.3,

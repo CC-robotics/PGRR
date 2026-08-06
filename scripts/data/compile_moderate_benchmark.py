@@ -195,8 +195,8 @@ def _validate_config(config: dict[str, Any]) -> None:
             raise ValueError("v5 calibration requires deterministic actor dynamics")
         vertical_end = float(moderation["blind_corner_vertical_end_y_m"])
         horizontal_start = float(moderation["blind_corner_horizontal_start_x_m"])
-        if not 9.5 <= vertical_end <= 11.5:
-            raise ValueError("blind-corner vertical endpoint must be in [9.5, 11.5] m")
+        if not 8.5 <= vertical_end <= 11.5:
+            raise ValueError("blind-corner vertical endpoint must be in [8.5, 11.5] m")
         if not 14.5 <= horizontal_start <= 16.5:
             raise ValueError("blind-corner horizontal start must be in [14.5, 16.5] m")
         # These are the closest corners after the 0.40 m robot-footprint
