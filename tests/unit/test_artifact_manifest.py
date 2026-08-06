@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import sys
 from pathlib import Path
+from typing import Any
 
+import pandas as pd
 import pytest
+import yaml
+from PIL import Image
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts/paper/build_artifact_manifest.py"
 SPEC = importlib.util.spec_from_file_location("build_artifact_manifest", SCRIPT)
@@ -20,19 +25,23 @@ def _write(path: Path, content: bytes = b"artifact\n") -> None:
     path.write_bytes(content)
 
 
+def _sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    _write(path, (json.dumps(payload, sort_keys=True) + "\n").encode())
+
+
 def _complete_fixture(root: Path) -> None:
     for relative in (
         MODULE.DEFAULT_CONFIG,
         MODULE.DEFAULT_BASELINE_CONFIG,
         MODULE.DEFAULT_UNIFORM_CHECKPOINT,
         MODULE.DEFAULT_CHECKPOINT,
-        MODULE.DEFAULT_RESULTS,
         MODULE.DEFAULT_SUMMARY,
         MODULE.DEFAULT_STATISTICS,
-        MODULE.DEFAULT_CALIBRATION_REPORT,
         MODULE.DEFAULT_FAILURE_ANALYSIS,
-        MODULE.DEFAULT_EPISODE_MANIFEST,
-        MODULE.DEFAULT_RUN_MANIFEST,
         MODULE.DEFAULT_OFFLINE_ABLATION_CSV,
         MODULE.DEFAULT_OFFLINE_ABLATION_JSON,
         MODULE.DEFAULT_PAPER,
@@ -47,8 +56,151 @@ def _complete_fixture(root: Path) -> None:
         MODULE.DEFAULT_FAILURE_CONFIG,
         MODULE.DEFAULT_STATE_MACHINE_CONFIG,
         MODULE.DEFAULT_ACTION_CONFIG,
+        Path("configs/platform/arena_profile.yaml"),
+        Path("scenarios/splits/moderate_v5_validation.yaml"),
     ):
         _write(root / relative)
+    (root / "scenarios/splits/moderate_v5_validation.yaml").write_text(
+        "split: validation\nscenarios: []\n", encoding="utf-8"
+    )
+    (root / MODULE.DEFAULT_TEST_SPLIT).write_text(
+        "split: test\nscenarios:\n"
+        "  - scenario_id: fixture\n"
+        "    family: doorway_bottleneck\n"
+        "    density: medium\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        root / MODULE.DEFAULT_CALIBRATION_REPORT,
+        {"split": "validation", "status": "accepted", "passed": True},
+    )
+
+    evaluation_commit = "e" * 40
+    methods = ["base", "standard", "heuristic", "bc_uniform", "pgrr"]
+    checkpoints = {
+        "bc_uniform": (
+            MODULE.DEFAULT_UNIFORM_CHECKPOINT.as_posix(),
+            _sha(root / MODULE.DEFAULT_UNIFORM_CHECKPOINT),
+        ),
+        "pgrr": (
+            MODULE.DEFAULT_CHECKPOINT.as_posix(),
+            _sha(root / MODULE.DEFAULT_CHECKPOINT),
+        ),
+    }
+    validation_split = root / "scenarios/splits/moderate_v5_validation.yaml"
+    evaluation_config = {
+        "schema_version": 2,
+        "benchmark": {
+            "catalog": MODULE.DEFAULT_CONFIG.as_posix(),
+            "catalog_sha256": _sha(root / MODULE.DEFAULT_CONFIG),
+            "calibration_split": "scenarios/splits/moderate_v5_validation.yaml",
+            "calibration_split_sha256": _sha(validation_split),
+            "calibration_report": MODULE.DEFAULT_CALIBRATION_REPORT.as_posix(),
+        },
+        "runtime": {
+            "split": "test",
+            "split_manifest": MODULE.DEFAULT_TEST_SPLIT.as_posix(),
+            "split_manifest_sha256": _sha(root / MODULE.DEFAULT_TEST_SPLIT),
+            "episode_timeout_s": 240.0,
+            "parallel_jobs": 1,
+        },
+        "primary_comparison": {
+            "methods": methods,
+            "families": ["doorway_bottleneck"],
+            "densities": ["medium"],
+            "repetitions_per_family_density_cell": 1,
+            "expected_conditions_per_method": 1,
+            "expected_episodes": 5,
+        },
+        "learned_baseline": {
+            "source_policy": "bc_uniform",
+            "checkpoint": checkpoints["bc_uniform"][0],
+            "checkpoint_sha256": checkpoints["bc_uniform"][1],
+        },
+        "learned_method": {
+            "source_policy": "pgrr",
+            "checkpoint": checkpoints["pgrr"][0],
+            "checkpoint_sha256": checkpoints["pgrr"][1],
+        },
+        "frozen_inputs": {
+            "arena_profile_sha256": _sha(root / "configs/platform/arena_profile.yaml"),
+            "planner_profiles_sha256": _sha(root / MODULE.DEFAULT_BASELINE_CONFIG),
+            "failure_rules_sha256": _sha(root / MODULE.DEFAULT_FAILURE_CONFIG),
+            "state_machine_sha256": _sha(root / MODULE.DEFAULT_STATE_MACHINE_CONFIG),
+            "recovery_actions_sha256": _sha(root / MODULE.DEFAULT_ACTION_CONFIG),
+            "project_commit": "resolved_and_recorded_by_runner",
+        },
+    }
+    evaluation_path = root / MODULE.DEFAULT_EVALUATION_CONFIG
+    evaluation_path.parent.mkdir(parents=True, exist_ok=True)
+    evaluation_path.write_text(yaml.safe_dump(evaluation_config), encoding="utf-8")
+
+    rows: list[dict[str, Any]] = []
+    run_results: list[dict[str, Any]] = []
+    for task_index, method in enumerate(methods):
+        checkpoint_path, checkpoint_hash = checkpoints.get(method, ("", ""))
+        row = {
+            "task_index": task_index,
+            "episode_id": f"scenario_eval_{method}_a0_dwb",
+            "scenario_id": "scenario_test_seed1",
+            "replicate": 0,
+            "seed": 1,
+            "split": "test",
+            "method": method,
+            "source_policy": method,
+            "checkpoint_path": checkpoint_path,
+            "checkpoint_sha256": checkpoint_hash,
+            "project_commit": evaluation_commit,
+            "timeout_s": 240.0,
+            "recovery_tau_on_override": "",
+        }
+        rows.append(row)
+        run_results.append(
+            {
+                "task_index": task_index,
+                "episode_id": row["episode_id"],
+                "scenario_id": row["scenario_id"],
+                "replicate": row["replicate"],
+                "method": method,
+                "status": "complete",
+                "checkpoint_path": checkpoint_path,
+                "checkpoint_sha256": checkpoint_hash,
+                "attempts": [{"outcome": "GOAL_REACHED"}],
+            }
+        )
+    episode_frame = pd.DataFrame(rows)
+    (root / MODULE.DEFAULT_EPISODE_MANIFEST).parent.mkdir(parents=True, exist_ok=True)
+    episode_frame.to_parquet(root / MODULE.DEFAULT_EPISODE_MANIFEST, index=False)
+    results_frame = episode_frame.copy()
+    results_frame["logical_episode_id"] = results_frame["episode_id"]
+    results_frame["outcome"] = "GOAL_REACHED"
+    results_frame.to_parquet(root / MODULE.DEFAULT_RESULTS, index=False)
+    _write_json(
+        root / MODULE.DEFAULT_RUN_MANIFEST,
+        {
+            "schema_version": 1,
+            "run_id": "1" * 12,
+            "project_commit": evaluation_commit,
+            "split": "test",
+            "split_manifest": MODULE.DEFAULT_TEST_SPLIT.as_posix(),
+            "split_manifest_sha256": _sha(root / MODULE.DEFAULT_TEST_SPLIT),
+            "episode_manifest": MODULE.DEFAULT_EPISODE_MANIFEST.as_posix(),
+            "timeout_s": 240.0,
+            "requested_jobs": 1,
+            "effective_jobs": 1,
+            "recovery_tau_on_override": "",
+            "methods": methods,
+            "high_density_methods": [],
+            "method_checkpoints": {
+                method: {"path": path, "sha256": digest}
+                for method, (path, digest) in checkpoints.items()
+            },
+            "expected_task_count": 5,
+            "completed_task_count": 5,
+            "worker_errors": [],
+            "results": run_results,
+        },
+    )
     _write(root / "paper/sections/method.tex", b"section\n")
     for name in MODULE.EXPECTED_FIGURES:
         _write(root / MODULE.DEFAULT_FIGURES_DIR / name, b"%PDF figure\n")
@@ -67,6 +219,95 @@ def _complete_fixture(root: Path) -> None:
     )
 
 
+def _set_successful_infrastructure_retry(root: Path, *, task_index: int, attempt: int) -> str:
+    assert attempt in {1, 2}
+    episode_path = root / MODULE.DEFAULT_EPISODE_MANIFEST
+    results_path = root / MODULE.DEFAULT_RESULTS
+    run_path = root / MODULE.DEFAULT_RUN_MANIFEST
+
+    episode_frame = pd.read_parquet(episode_path)
+    logical_id = str(
+        episode_frame.loc[episode_frame["task_index"] == task_index, "episode_id"].item()
+    )
+    assert logical_id.endswith("_a0_dwb")
+    episode_stem = logical_id.removesuffix("_a0_dwb")
+    physical_id = f"{episode_stem}_a{attempt}_dwb"
+
+    results_frame = pd.read_parquet(results_path)
+    selected = results_frame["task_index"] == task_index
+    results_frame.loc[selected, "logical_episode_id"] = logical_id
+    results_frame.loc[selected, "episode_id"] = physical_id
+    results_frame.to_parquet(results_path, index=False)
+
+    run_manifest = json.loads(run_path.read_text(encoding="utf-8"))
+    run_result = next(
+        record for record in run_manifest["results"] if record["task_index"] == task_index
+    )
+    run_result["episode_id"] = physical_id
+    run_result["attempts"] = [
+        {
+            "attempt": index,
+            "episode_id": f"{episode_stem}_a{index}_dwb",
+            "outcome": "INVALID_RESET" if index < attempt else "GOAL_REACHED",
+        }
+        for index in range(attempt + 1)
+    ]
+    _write_json(run_path, run_manifest)
+    return physical_id
+
+
+def _complete_runtime_capture(root: Path) -> None:
+    source = root / MODULE.OPTIONAL_RUNTIME_SCREENSHOT_SOURCE
+    paper = root / MODULE.OPTIONAL_RUNTIME_SCREENSHOT
+    source.parent.mkdir(parents=True, exist_ok=True)
+    paper.parent.mkdir(parents=True, exist_ok=True)
+    Image.new("RGB", (800, 600), color=(20, 90, 140)).save(source)
+    paper.write_bytes(source.read_bytes())
+    scenario_metadata = {
+        "scenario_id": "doorway_medium_validation",
+        "family": "doorway_bottleneck",
+        "density": "medium",
+        "seed": 17,
+        "split": "validation",
+    }
+    scenario = root / "scenarios/generated/runtime_capture.json"
+    _write_json(scenario, {"ramp_metadata": scenario_metadata})
+    _write_json(
+        root / MODULE.OPTIONAL_RUNTIME_CAPTURE_METADATA,
+        {
+            "artifact_type": "real_arena_gazebo_gui_screenshot",
+            "capture_backend": "PyQt5.QScreen.grabWindow(X11 window)",
+            "capture_target": "Gazebo GUI window",
+            "dimensions": {"width_px": 800, "height_px": 600},
+            "episode_id": "runtime_capture_fixture",
+            "episode_outcome": "GOAL_REACHED",
+            "git_commit": "c" * 40,
+            "arena_commit": "d" * 40,
+            "arena_image_id": "sha256:" + "a" * 64,
+            "launch_profile": {
+                "simulator": "gazebo",
+                "headless": 0,
+                "local_planner": "dwb",
+            },
+            "scenario": {"path": "scenarios/generated/runtime_capture.json", **scenario_metadata},
+            "artifacts": {
+                "screenshot": MODULE.OPTIONAL_RUNTIME_SCREENSHOT_SOURCE.as_posix(),
+                "paper_copy": MODULE.OPTIONAL_RUNTIME_SCREENSHOT.as_posix(),
+                "screenshot_sha256": _sha(source),
+            },
+            "window": {"title": "Gazebo"},
+            "camera_framing": {
+                "framing": "scenario_midpoint_oblique",
+                "transport_service": "/gui/move_to/pose",
+            },
+            "visual_validation": {
+                "scene_viewport_grayscale_stddev": 25.0,
+                "scene_viewport_unique_colors": 500,
+            },
+        },
+    )
+
+
 def test_manifest_has_only_relative_checksummed_artifacts(tmp_path: Path) -> None:
     _complete_fixture(tmp_path)
 
@@ -78,9 +319,12 @@ def test_manifest_has_only_relative_checksummed_artifacts(tmp_path: Path) -> Non
         git_dirty=False,
     )
 
-    assert payload["schema_version"] == 1
-    assert payload["project_commit"] == "a" * 40
+    assert payload["schema_version"] == 2
+    assert payload["evaluation_commit"] == "e" * 40
+    assert payload["artifact_generation_commit"] == "a" * 40
     assert payload["git_worktree_dirty"] is False
+    assert payload["release"] is False
+    assert payload["evaluation_provenance"]["run_id"] == "1" * 12
     assert payload["category_counts"]["figure"] == len(MODULE.EXPECTED_FIGURES)
     assert payload["category_counts"]["table"] == len(MODULE.EXPECTED_TABLES)
     assert payload["category_counts"]["checkpoint"] == 2
@@ -97,6 +341,91 @@ def test_manifest_has_only_relative_checksummed_artifacts(tmp_path: Path) -> Non
         if item["path"] == MODULE.DEFAULT_CHECKPOINT.as_posix()
     )
     assert record["sha256"] == hashlib.sha256(checkpoint.read_bytes()).hexdigest()
+
+
+@pytest.mark.parametrize("attempt", [1, 2])
+def test_manifest_accepts_valid_infrastructure_retry_identity_chain(
+    tmp_path: Path,
+    attempt: int,
+) -> None:
+    _complete_fixture(tmp_path)
+    physical_id = _set_successful_infrastructure_retry(
+        tmp_path,
+        task_index=4,
+        attempt=attempt,
+    )
+
+    payload = MODULE.build_manifest(
+        tmp_path,
+        project_commit="a" * 40,
+        git_dirty=False,
+    )
+
+    episode_frame = pd.read_parquet(tmp_path / MODULE.DEFAULT_EPISODE_MANIFEST)
+    results_frame = pd.read_parquet(tmp_path / MODULE.DEFAULT_RESULTS)
+    run_manifest = json.loads((tmp_path / MODULE.DEFAULT_RUN_MANIFEST).read_text(encoding="utf-8"))
+    logical_id = str(episode_frame.loc[episode_frame["task_index"] == 4, "episode_id"].item())
+    result = results_frame.loc[results_frame["task_index"] == 4].iloc[0]
+    run_result = next(record for record in run_manifest["results"] if record["task_index"] == 4)
+    assert logical_id.endswith("_a0_dwb")
+    assert result["logical_episode_id"] == logical_id
+    assert result["episode_id"] == physical_id
+    assert run_result["episode_id"] == physical_id
+    assert payload["evaluation_provenance"]["run_id"] == "1" * 12
+
+
+def test_manifest_rejects_retry_physical_id_not_recorded_by_runner(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    _set_successful_infrastructure_retry(tmp_path, task_index=4, attempt=2)
+    results_path = tmp_path / MODULE.DEFAULT_RESULTS
+    results_frame = pd.read_parquet(results_path)
+    selected = results_frame["task_index"] == 4
+    results_frame.loc[selected, "episode_id"] = str(
+        results_frame.loc[selected, "episode_id"].item()
+    ).replace("_a2_dwb", "_a1_dwb")
+    results_frame.to_parquet(results_path, index=False)
+
+    with pytest.raises(MODULE.ArtifactError, match="physical episode_id disagree"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="a" * 40,
+            git_dirty=False,
+        )
+
+
+def test_manifest_rejects_retry_logical_id_not_in_episode_manifest(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    _set_successful_infrastructure_retry(tmp_path, task_index=4, attempt=1)
+    results_path = tmp_path / MODULE.DEFAULT_RESULTS
+    results_frame = pd.read_parquet(results_path)
+    results_frame.loc[results_frame["task_index"] == 4, "logical_episode_id"] = (
+        "wrong_logical_episode_a0_dwb"
+    )
+    results_frame.to_parquet(results_path, index=False)
+
+    with pytest.raises(MODULE.ArtifactError, match="logical_episode_id disagree"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="a" * 40,
+            git_dirty=False,
+        )
+
+
+def test_manifest_rejects_retry_with_changed_run_identity(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    _set_successful_infrastructure_retry(tmp_path, task_index=4, attempt=1)
+    run_path = tmp_path / MODULE.DEFAULT_RUN_MANIFEST
+    run_manifest = json.loads(run_path.read_text(encoding="utf-8"))
+    run_result = next(record for record in run_manifest["results"] if record["task_index"] == 4)
+    run_result["replicate"] = 99
+    _write_json(run_path, run_manifest)
+
+    with pytest.raises(MODULE.ArtifactError, match="episode manifest identity"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="a" * 40,
+            git_dirty=False,
+        )
 
 
 def test_manifest_fails_closed_when_a_required_artifact_is_missing(tmp_path: Path) -> None:
@@ -134,4 +463,136 @@ def test_manifest_rejects_artifacts_outside_project(tmp_path: Path) -> None:
             paper_path=outside,
             project_commit="d" * 40,
             git_dirty=True,
+        )
+
+
+def test_manifest_rejects_test_split_calibration_report(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    _write(
+        tmp_path / MODULE.DEFAULT_CALIBRATION_REPORT,
+        (json.dumps({"split": "test", "status": "rejected", "passed": False}) + "\n").encode(),
+    )
+
+    with pytest.raises(MODULE.ArtifactError, match="validation-only"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="e" * 40,
+            git_dirty=True,
+        )
+
+
+def test_manifest_requires_runtime_capture_metadata_when_screenshot_exists(
+    tmp_path: Path,
+) -> None:
+    _complete_fixture(tmp_path)
+    _write(tmp_path / MODULE.OPTIONAL_RUNTIME_SCREENSHOT, b"PNG screenshot\n")
+
+    with pytest.raises(MODULE.ArtifactError, match="must all exist or all be absent"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="f" * 40,
+            git_dirty=True,
+        )
+
+
+def test_manifest_rejects_results_from_a_different_evaluation_commit(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    results = pd.read_parquet(tmp_path / MODULE.DEFAULT_RESULTS)
+    results["project_commit"] = "a" * 40
+    results.to_parquet(tmp_path / MODULE.DEFAULT_RESULTS, index=False)
+
+    with pytest.raises(MODULE.ArtifactError, match="project_commit disagrees"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+        )
+
+
+def test_manifest_rejects_run_checkpoint_that_disagrees_with_final_config(
+    tmp_path: Path,
+) -> None:
+    _complete_fixture(tmp_path)
+    run_path = tmp_path / MODULE.DEFAULT_RUN_MANIFEST
+    run_manifest = json.loads(run_path.read_text(encoding="utf-8"))
+    run_manifest["method_checkpoints"]["pgrr"]["sha256"] = "0" * 64
+    _write_json(run_path, run_manifest)
+
+    with pytest.raises(MODULE.ArtifactError, match="pgrr checkpoint provenance disagrees"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+        )
+
+
+def test_manifest_rejects_run_split_that_disagrees_with_final_config(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    run_path = tmp_path / MODULE.DEFAULT_RUN_MANIFEST
+    run_manifest = json.loads(run_path.read_text(encoding="utf-8"))
+    run_manifest["split_manifest_sha256"] = "0" * 64
+    _write_json(run_path, run_manifest)
+
+    with pytest.raises(MODULE.ArtifactError, match="test split hash disagrees"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+        )
+
+
+def test_release_manifest_rejects_a_dirty_worktree(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+
+    with pytest.raises(MODULE.ArtifactError, match="clean Git worktree"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=True,
+            release=True,
+        )
+
+
+def test_release_manifest_requires_and_validates_real_runtime_capture(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+
+    with pytest.raises(MODULE.ArtifactError, match="verified real Gazebo"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+            release=True,
+        )
+
+    _complete_runtime_capture(tmp_path)
+    payload = MODULE.build_manifest(
+        tmp_path,
+        project_commit="b" * 40,
+        git_dirty=False,
+        release=True,
+    )
+    assert payload["release"] is True
+    assert payload["category_counts"]["runtime_screenshot"] == 1
+    assert payload["category_counts"]["runtime_screenshot_source"] == 1
+    assert payload["category_counts"]["runtime_capture_metadata"] == 1
+
+
+def test_runtime_capture_metadata_rejects_a_test_scenario(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    _complete_runtime_capture(tmp_path)
+    metadata_path = tmp_path / MODULE.OPTIONAL_RUNTIME_CAPTURE_METADATA
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    metadata["scenario"]["split"] = "test"
+    scenario_path = tmp_path / metadata["scenario"]["path"]
+    scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
+    scenario["ramp_metadata"]["split"] = "test"
+    _write_json(metadata_path, metadata)
+    _write_json(scenario_path, scenario)
+
+    with pytest.raises(MODULE.ArtifactError, match="held-out test"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+            release=True,
         )
