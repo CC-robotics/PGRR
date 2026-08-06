@@ -271,6 +271,11 @@ class RuleFailureDetector:
             self.config.safety_margin_m,
         )
         collision = 1.0 if forward_clearance <= stop_distance else 0.0
+        # Preserve an immediate narrow-forward guard at the stricter near-field
+        # threshold.  Unlike the former wide-sector rule, this cannot be held
+        # active by a shelf beside the robot.
+        if forward_clearance <= self.config.collision_wide_absolute_distance_m:
+            collision = 1.0
         # A fixed corridor wall can remain close to the robot's side for an
         # entire episode. Apply the absolute threshold to the forward sector;
         # omnidirectional hazards are handled by their closing trend below.
@@ -282,12 +287,12 @@ class RuleFailureDetector:
             )
         ):
             collision = 1.0
-        # The narrow forward sector avoids classifying corridor side walls as
-        # hazards, but a crossing person can leave that sector while remaining
-        # in the robot's swept near field. Use a smaller absolute threshold in
-        # the wider collision sector to cover that observable case.
-        if collision_clearance <= self.config.collision_wide_absolute_distance_m:
-            collision = 1.0
+        # Do not turn a single close return in the wider sector into a dynamic
+        # collision prediction.  Static shelves at a corner can remain within
+        # this sector indefinitely even though the task-forward corridor is
+        # clear.  Off-axis hazards are still detected below after a short,
+        # bearing-consistent closing trend; the control-rate footprint stop
+        # guard remains independent of this high-level trigger.
         if (
             self.config.collision_omnidirectional_absolute_distance_m > 0.0
             and sample.nearest_lidar_distance

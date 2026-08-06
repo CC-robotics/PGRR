@@ -369,32 +369,55 @@ def test_stationary_confirmed_clearance_without_motion_request_is_not_collision(
     assert prediction.collision_risk == 0.0
 
 
-def test_wide_near_field_risk_catches_obstacle_outside_narrow_front_sector() -> None:
-    prediction = RuleFailureDetector().update(
+def test_wide_near_field_requires_closing_evidence_outside_front_sector() -> None:
+    detector = RuleFailureDetector()
+    initial = detector.update(
         _sample(
             0.0,
-            lidar=0.65,
+            lidar=1.30,
             forward_lidar=3.0,
-            collision_lidar=0.65,
+            collision_lidar=1.30,
+            nearest_bearing=0.5,
+            collision_bearing=0.5,
             linear=0.0,
             angular=0.0,
         )
     )
-    assert prediction.collision_risk == 1.0
-
-
-def test_wide_near_field_stops_before_combined_human_radius_overlap() -> None:
-    prediction = RuleFailureDetector().update(
+    prediction = detector.update(
         _sample(
-            0.0,
-            lidar=0.84,
+            0.5,
+            lidar=1.00,
             forward_lidar=3.0,
-            collision_lidar=0.84,
-            linear=0.26,
-            angular=-0.37,
+            collision_lidar=1.00,
+            nearest_bearing=0.5,
+            collision_bearing=0.5,
+            linear=0.0,
+            angular=0.0,
         )
     )
-    assert prediction.collision_risk == 1.0
+    assert initial.collision_risk == 0.0
+    assert prediction.collision_risk == pytest.approx(0.75)
+
+
+def test_stationary_wide_near_field_return_is_not_a_dynamic_trigger() -> None:
+    detector = RuleFailureDetector()
+    prediction = None
+    for index in range(7):
+        prediction = detector.update(
+            _sample(
+                index * 0.5,
+                lidar=0.73,
+                forward_lidar=1.5,
+                collision_lidar=0.73,
+                nearest_bearing=0.62,
+                collision_bearing=0.62,
+                linear=0.0,
+                angular=0.0,
+                base_linear=0.0,
+            )
+        )
+    assert prediction is not None
+    assert prediction.collision_risk == 0.0
 
 
 def test_collision_warning_requires_time_and_clearance_before_release() -> None:
@@ -576,7 +599,7 @@ def test_bearing_consistency_is_circular_across_pi() -> None:
     assert prediction.collision_risk == pytest.approx(0.75)
 
 
-def test_immediate_collision_threshold_does_not_require_bearing_identity() -> None:
+def test_single_wide_return_does_not_bypass_temporal_identity() -> None:
     prediction = RuleFailureDetector().update(
         _sample(
             0.0,
@@ -585,7 +608,7 @@ def test_immediate_collision_threshold_does_not_require_bearing_identity() -> No
             collision_lidar=0.84,
         )
     )
-    assert prediction.collision_risk == 1.0
+    assert prediction.collision_risk == 0.0
 
 
 def test_side_wall_range_change_explained_by_robot_motion_is_not_dynamic_risk() -> None:
@@ -654,7 +677,7 @@ def test_off_axis_range_jitter_below_closing_threshold_does_not_trigger() -> Non
     assert prediction.collision_risk == 0.0
 
 
-def test_close_side_obstacle_closing_while_turning_is_not_suppressed() -> None:
+def test_close_side_return_while_turning_defers_to_footprint_guard() -> None:
     detector = RuleFailureDetector()
     detector.update(
         _sample(
@@ -676,7 +699,7 @@ def test_close_side_obstacle_closing_while_turning_is_not_suppressed() -> None:
             angular=0.9,
         )
     )
-    assert prediction.collision_risk == 1.0
+    assert prediction.collision_risk == 0.0
 
 
 def test_history_rejects_nonmonotonic_timestamps() -> None:
