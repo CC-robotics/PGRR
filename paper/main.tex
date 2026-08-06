@@ -30,8 +30,8 @@ recovery modes.  A planning mask rejects infeasible decisions, and an
 independent stopping-distance supervisor may override motion.  A privileged
 short-horizon planner supplies recovery demonstrations for behavior cloning
 and a two-round DAgger workflow; checkpoint selection uses validation only.
-Deployment uses only LiDAR and navigation history.  The
-held-out moderate protocol evaluates \ModerateMethodCount{} methods on the same
+Deployment uses only LiDAR and navigation history.  The held-out,
+three-density Gazebo benchmark evaluates \ModerateMethodCount{} methods on the same
 \ModeratePairCount{} conditions each (\ModerateEpisodeCount{} method--episodes).
 PGRR reaches \ModeratePGRRSuccessRate{} of goals versus
 \ModerateBaseSuccessRate{} for DWB, with paired PGRR-minus-DWB goal, collision,
@@ -76,7 +76,8 @@ contact from being conflated with task completion.
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.96\textwidth]{scenario_overview.pdf}
-  \caption{The eight deterministic interaction-family templates.  Arrows show
+  \caption{The eight deterministic interaction-family templates used in the
+  held-out three-density Gazebo benchmark.  Arrows show
   nominal robot and pedestrian routes; each split compiles separate seeded
   physical realizations at low, medium, and high density on the same map.}
   \label{fig:scenarios}
@@ -92,7 +93,7 @@ contact from being conflated with task completion.
 \section{Conclusion}
 \input{sections/conclusion.tex}
 
-\IEEEtriggeratref{14}
+\IEEEtriggeratref{15}
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 \end{document}

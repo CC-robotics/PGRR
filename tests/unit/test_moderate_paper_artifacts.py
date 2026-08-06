@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -33,7 +34,8 @@ summarize = _load("summarize_moderate_paper_fixture", "scripts/evaluate/summariz
 METHODS = ("base", "standard", "heuristic", "bc_uniform", "pgrr")
 FAMILIES = tuple(moderate_artifacts.FAMILY_ORDER)
 DENSITIES = ("low", "medium", "high")
-EXPECTED_CONDITION_COUNT = len(FAMILIES) * len(DENSITIES)
+REPETITIONS = 5
+EXPECTED_CONDITION_COUNT = len(FAMILIES) * len(DENSITIES) * REPETITIONS
 SYNTHETIC_PROJECT_COMMIT = "a" * 40
 
 
@@ -56,7 +58,7 @@ def _synthetic_test_outcomes(method: str) -> list[str]:
         + ["PLANNER_FAILURE"],
         "pgrr": ["GOAL_REACHED"] * 20 + ["COLLISION"] * 2 + ["TIMEOUT"] + ["PLANNER_FAILURE"],
     }
-    return payload[method]
+    return payload[method] * REPETITIONS
 
 
 def _synthetic_test_results() -> pd.DataFrame:
@@ -66,7 +68,7 @@ def _synthetic_test_results() -> pd.DataFrame:
         (family, density, repeat)
         for family in FAMILIES
         for density in DENSITIES
-        for repeat in range(1)
+        for repeat in range(REPETITIONS)
     ]
     rows: list[dict[str, Any]] = []
     for method_index, method in enumerate(METHODS):
@@ -139,12 +141,76 @@ def _write_synthetic_test_artifacts(tmp_path: Path) -> tuple[Path, Path, Path]:
     return results_path, summary_path, statistics_path
 
 
+def _digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _write_synthetic_ablation(tmp_path: Path) -> Path:
+    root = tmp_path / "ablation_root"
+    ablation = root / "outputs/moderate/final/offline_policy_ablation.csv"
+    dataset = root / "data/interim/multiscenario_safety_aligned_validation.h5"
+    dataset.parent.mkdir(parents=True, exist_ok=True)
+    dataset.write_bytes(b"synthetic portable validation dataset")
+    models = {
+        "Uniform BC": "checkpoints/bc/uniform_scenario/best.pt",
+        "Margin-weighted BC": "checkpoints/bc/mwbc_scenario/best.pt",
+        "Triggered DAgger": "checkpoints/dagger/coverage_safety_aligned/best.pt",
+    }
+    rows: list[dict[str, Any]] = []
+    for model_index, (model, relative_checkpoint) in enumerate(models.items()):
+        checkpoint = root / relative_checkpoint
+        checkpoint.parent.mkdir(parents=True, exist_ok=True)
+        checkpoint.write_bytes(f"checkpoint {model}".encode())
+        for mask in ("enabled", "disabled_offline"):
+            enabled = mask == "enabled"
+            rows.append(
+                {
+                    "model": model,
+                    "action_mask": mask,
+                    "checkpoint": relative_checkpoint,
+                    "checkpoint_sha256": _digest(checkpoint),
+                    "dataset": dataset.relative_to(root).as_posix(),
+                    "dataset_sha256": _digest(dataset),
+                    "parameter_count": 59193,
+                    "sample_count": 399,
+                    "top1_accuracy": 0.80 + 0.04 * model_index if enabled else 0.10,
+                    "top3_accuracy": 0.94 if enabled else 0.40,
+                    "invalid_action_rate": 0.0 if enabled else 0.80,
+                    "expert_cost_regret": 0.3 if enabled else 800000.0,
+                    "near_optimal_rate": 0.85 if enabled else 0.1,
+                    "catastrophic_action_rate": 0.0 if enabled else 0.8,
+                }
+            )
+    ablation.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_csv(ablation, index=False)
+    ablation.with_suffix(".json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "output": ablation.relative_to(root).as_posix(),
+                "output_sha256": _digest(ablation),
+                "dataset": dataset.relative_to(root).as_posix(),
+                "dataset_sha256": _digest(dataset),
+                "sample_count": 399,
+                "models": list(models.values()),
+                "note": (
+                    "Mask-disabled rows are offline proposals and were never executed on the robot."
+                ),
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    return ablation
+
+
 def test_synthetic_test_fixture_generates_vector_figures_and_booktabs(
     tmp_path: Path,
 ) -> None:
     results, summary, statistics = _write_synthetic_test_artifacts(tmp_path)
     figure_dir = tmp_path / "figures"
     table_dir = tmp_path / "tables"
+    ablation = _write_synthetic_ablation(tmp_path)
 
     figures = make_figures.generate_moderate_figures(
         results,
@@ -159,6 +225,7 @@ def test_synthetic_test_fixture_generates_vector_figures_and_booktabs(
         statistics,
         table_dir,
         expected_condition_count=EXPECTED_CONDITION_COUNT,
+        ablation_path=ablation,
     )
 
     assert {path.name for path in figures} == {
@@ -173,6 +240,7 @@ def test_synthetic_test_fixture_generates_vector_figures_and_booktabs(
         "moderate_recovery_metrics.tex",
         "moderate_pairwise_statistics.tex",
         "moderate_result_macros.tex",
+        "offline_ablation.tex",
     }
     for figure in figures:
         payload = figure.read_bytes()
@@ -193,8 +261,9 @@ def test_synthetic_test_fixture_generates_vector_figures_and_booktabs(
     assert "Planner fail" in main and "Planner fail" in density
     assert "95\\% Wilson" in main
     assert "global family" in pairwise
-    assert "McNemar" in pairwise and "Wilcoxon" in pairwise
-    assert r"\mathrm{OR}_H" in pairwise and r"r_{\mathrm{rb}}" in pairwise
+    assert pairwise.count(" & McNemar & ") == 12
+    assert "Wilcoxon" not in pairwise
+    assert r"\mathrm{OR}_H" in pairwise and r"r_{\mathrm{rb}}" not in pairwise
     assert r"\providecommand{\ModerateMethodCount}{5}" in macros
     assert rf"\providecommand{{\ModeratePairCount}}{{{EXPECTED_CONDITION_COUNT}}}" in macros
     assert r"\textbf{PGRR}" in main

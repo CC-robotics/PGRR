@@ -28,6 +28,12 @@ def test_moderate_targets_forward_default_expected_condition_count() -> None:
         assert '--expected-condition-count "120"' in command
 
 
+def test_moderate_tables_consumes_published_offline_ablation() -> None:
+    command = _dry_run("moderate-tables")
+    assert '--ablation "outputs/moderate/final/offline_policy_ablation.csv"' in command
+    assert "scripts/paper/make_tables.py" not in command
+
+
 def test_moderate_targets_forward_expected_condition_count_override() -> None:
     for target in ("moderate-figures", "moderate-tables"):
         command = _dry_run(target, expected_conditions=72)
@@ -47,8 +53,6 @@ def test_final_runner_uses_real_python_entrypoint_and_five_methods() -> None:
 def test_paper_target_orders_complete_moderate_pipeline() -> None:
     command = _dry_run("paper")
     stages = (
-        "scripts/evaluate/collect_results.py",
-        "scripts/evaluate/summarize_moderate.py",
         "scripts/paper/make_moderate_figures.py",
         "scripts/paper/make_method_figures.py",
         "scripts/paper/make_moderate_tables.py",
@@ -56,7 +60,10 @@ def test_paper_target_orders_complete_moderate_pipeline() -> None:
     )
     offsets = [command.index(stage) for stage in stages]
     assert offsets == sorted(offsets)
-    assert "--methods base standard heuristic bc_uniform pgrr" in command
-    assert '--main-method "pgrr"' in command
+    assert '--results "outputs/moderate/final/results.parquet"' in command
+    assert '--statistics "outputs/moderate/final/pairwise_statistics.json"' in command
+    assert '--ablation "outputs/moderate/final/offline_policy_ablation.csv"' in command
+    assert "scripts/evaluate/collect_results.py" not in command
+    assert "scripts/evaluate/summarize_moderate.py" not in command
     assert "scripts/paper/make_figures.py" not in command
     assert "scripts/paper/make_tables.py" not in command

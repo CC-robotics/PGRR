@@ -1,6 +1,6 @@
 \subsection{Closed-Loop Navigation Outcomes}
 Table~\ref{tab:moderate-main-results} reports all retained terminal outcomes for
-the complete five-method protocol.  Of \ModerateEpisodeCount{} logical
+the complete held-out three-density Gazebo benchmark.  Of \ModerateEpisodeCount{} logical
 method--episodes, \ModerateValidEpisodeCount{} enter algorithm metrics and
 \ModerateExcludedEpisodeCount{} are retained as simulator/reset exclusions.
 Base DWB reaches \ModerateBaseSuccessRate{} of goals, collides in
@@ -19,7 +19,7 @@ artifacts and accompanying technical report.
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.96\textwidth]{moderate_outcomes_and_density.pdf}
-  \caption{Complete moderate-v5 outcomes.  (a) Stacked bars retain goal,
+  \caption{Held-out three-density Gazebo outcomes.  (a) Stacked bars retain goal,
   collision, timeout, and planner-failure terminations.  (b) Goal-reaching
   rates by density include Wilson 95\% confidence intervals.  All methods use
   identical condition keys.}
@@ -44,19 +44,23 @@ scenario or seed after evaluation.
 
 \input{generated/moderate_pairwise_statistics.tex}
 
-\subsection{Imitation and Mask Ablations}
+\subsection{Recovery Behavior}
+Table~\ref{tab:moderate-recovery-results} reports triggers, successful
+REJOIN-to-NORMAL transitions, time under recovery, intervention ratio, and
+emergency-stop entries.  These quantities audit whether completion is obtained
+through bounded recovery rather than persistent waiting; they do not replace
+terminal navigation outcomes.
+
+\input{generated/moderate_recovery_metrics.tex}
+
+\subsection{Offline Imitation and Mask Diagnostics}
 The separate offline ablation in Table~\ref{tab:offline-ablation} compares
 Uniform BC, margin-weighted BC, and the selected DAgger checkpoint on the same
 scenario-disjoint validation states.  Margin weighting is retained as a
 negative result rather than a selected contribution.  The no-mask rows are
-counterfactual diagnostics and are not executed in simulation.  This ablation
-tests expert agreement and action validity; the complete five-method closed-loop
+counterfactual mask-dependence diagnostics and are not executed in simulation.
+They test expert agreement and invalid-action exposure, not a controlled
+closed-loop causal effect; the complete five-method closed-loop
 evaluation above remains the evidence for navigation performance.
-
-Per-episode trigger count, recovery success and duration, intervention ratio,
-emergency stops, family-level counts, and the safety--efficiency view remain in
-the generated audit artifacts and accompanying technical report.  Undefined
-recovery rates are never imputed as zero; Table~\ref{tab:moderate-main-results}
-keeps task outcomes, minimum distance, and successful-run time visible here.
 
 \input{generated/offline_ablation.tex}

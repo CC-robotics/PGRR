@@ -9,6 +9,13 @@ for expert labeling and evaluation, as shown in Figure~\ref{fig:architecture}.
 
 \subsection{Failure Trigger and Recovery State Machine}
 Observable rules score collision risk, freeze, oscillation, and deadlock.
+Their aggregate is deliberately transparent:
+\begin{equation}
+ s_t=\max\{s_t^{\mathrm{col}},s_t^{\mathrm{frz}},
+ s_t^{\mathrm{osc}},s_t^{\mathrm{dlk}}\}\in[0,1].
+\end{equation}
+The temporal predicates are binary; collision risk may take an intermediate
+value from TTC or a bearing-consistent closing trend.
 Collision risk combines braking clearance, 1.5-s time to collision, near-field
 range, and a 0.5-s ego-compensated closing trend.  Freeze requires more than
 1 m remaining, less than 0.15 m displacement over 3 s, and a planner motion
@@ -39,8 +46,17 @@ The 25 actions are 21 robot-relative subgoals
 plus WAIT, BACKUP, REPLAN, and CONTINUE.  The Boolean mask $M(o_t,a)$ rejects
 off-map or occupied endpoints, disconnected free space, obstructed swept
 segments, insufficient rear observability, excessive path deviation, and
-unavailable replanning.  WAIT is the fail-closed fallback; mask-invalid logits
-are suppressed before softmax.
+unavailable replanning.  Specifically, the map segment must have 0.25-m
+clearance and its endpoint must be connected to the robot within a 10,000-cell
+search.  The deployable LiDAR mask requires a 0.48-m swept capsule and endpoint
+clearance $r+0.25$ m; BACKUP requires an observed 0.45-m rear segment plus
+0.25 m clearance.  The ordinary path envelope is 0.65 m; only recurrent learned
+directional yielding widens that regularizer to 1.5 m, without relaxing the
+other mask intersections.  Collision latching raises motion clearance to
+0.90 m.  Pedestrian identity is absent online: dynamic occupancy enters
+through LiDAR, while privileged human positions may only further intersect the
+training mask.  WAIT is the fail-closed fallback; mask-invalid logits are
+suppressed before softmax.
 
 Path-frame scan differencing identifies persistent unilateral closing flow.  A
 hysteretic yield latch and route-consistent side commitment then remove only
@@ -74,8 +90,16 @@ for collision, progress, social distance, rejoin distance, length, smoothness,
 time, side switching, and repeated waiting.  The weights are
 $(10^6,8,4,3,0.4,0.2,0.3,0.5,1)$; invalid actions are removed and collision
 receives a dominating finite penalty.  The label stores the best action, all 25
-costs, and the best-to-second-best margin.  Figure~\ref{fig:recovery-design}
-illustrates this training-only ranking.
+costs, and the best-to-second-best margin.  All candidates share the same 3-s
+horizon; no train/test-dependent cost normalization is used.  When a
+scale-free gap is needed for an offline diagnostic, it is
+\begin{equation}
+ \bar\Delta J(a)=\frac{[J(a)-J(a^*)]_+}{1+|J(a^*)|},\qquad
+ a^*=\arg\min_{a:M(a)=1}J(a),
+\end{equation}
+which leaves the expert action unchanged and is not an additional loss in the
+selected uniform-BC/DAgger model.  Figure~\ref{fig:recovery-design} illustrates
+this training-only ranking.
 
 \subsection{Behavior Cloning and DAgger}
 Two 1-D convolutions encode the $5\times180$ LiDAR stack; a 128-unit state

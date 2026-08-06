@@ -39,6 +39,7 @@ RESULT_ASSETS = {
     "report/generated/result_density.pdf",
     "report/generated/result_family.pdf",
     "report/generated/result_safety_efficiency.pdf",
+    "report/generated/result_paired_effects.pdf",
 }
 
 
@@ -102,6 +103,25 @@ def load_report_data(path: Path, *, stage: str) -> dict[str, Any]:
         expected = {"base", "standard", "heuristic", "bc_uniform", "pgrr"}
         if methods != expected:
             raise DeckBuildError("report data does not contain the complete five-method summary")
+        if data.get("schema_version") != 2:
+            raise DeckBuildError("result-bearing deck requires report data schema version 2")
+        if not str(data.get("statistics_sha256", "")).strip():
+            raise DeckBuildError("report data omits paired-statistics provenance")
+        paired = data.get("paired_comparisons")
+        if not isinstance(paired, list) or len(paired) != 12:
+            raise DeckBuildError("report data must contain all twelve paired binary effects")
+        observed = {
+            (str(row.get("comparator")), str(row.get("endpoint")))
+            for row in paired
+            if isinstance(row, dict)
+        }
+        expected_effects = {
+            (comparator, endpoint)
+            for comparator in ("base", "standard", "heuristic", "bc_uniform")
+            for endpoint in ("goal_reached", "collision", "timeout")
+        }
+        if observed != expected_effects:
+            raise DeckBuildError("report data paired effects are incomplete or duplicated")
     return data
 
 
@@ -161,7 +181,9 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
     summary = _summary_by_method(data)
     base = summary["base"]
     pgrr = summary["pgrr"]
-    effects = data["paired_effects"]
+    paired = {
+        (str(row["comparator"]), str(row["endpoint"])): row for row in data["paired_comparisons"]
+    }
     stage_label = "锁定 test" if data["stage"] == "test" else "validation 快照（非最终 test）"
     densities = {(row["density"], row["method"]): row for row in data["density_summary"]}
     density_lines = tuple(
@@ -198,15 +220,22 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
             "report/generated/result_family.pdf",
         ),
         24: (
-            "PGRR−DWB 的三个终止端点必须联合解释",
+            "四个 baseline × 三个终止端点均给出配对差、区间、校正 p 与效应量",
             (
-                f"目标到达差：{_points(effects['goal_difference'])}",
-                f"碰撞差：{_points(effects['collision_difference'])}",
-                f"超时差：{_points(effects['timeout_difference'])}",
-                f"完整有效配对：{int(effects['pair_count'])}",
-                "是否显著只依据全局 Holm 校正后的统计文件",
+                *(
+                    f"{label}：到达 {_points(paired[(method, 'goal_reached')]['difference'])}；"
+                    f"碰撞 {_points(paired[(method, 'collision')]['difference'])}；"
+                    f"超时 {_points(paired[(method, 'timeout')]['difference'])}"
+                    for method, label in (
+                        ("base", "DWB"),
+                        ("standard", "Standard"),
+                        ("heuristic", "Heuristic"),
+                        ("bc_uniform", "Uniform BC"),
+                    )
+                ),
+                "右图逐端点标注 95% CI、全局 Holm p_H 与 matched OR_H",
             ),
-            None,
+            "report/generated/result_paired_effects.pdf",
         ),
         25: (
             "安全—效率视图是补充，不替代终止结果",
@@ -546,7 +575,7 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
             "PGRR 对 Baseline 的配对效应",
             result[24][0],
             result[24][1],
-            "正的目标差有利；碰撞和超时则负值有利。显著性只引用锁定统计 JSON。",
+            "正的目标差有利；碰撞和超时则负值有利。逐项读取区间、全局 Holm pH 与 ORH。",
             result[24][2],
             True,
         ),
@@ -853,8 +882,11 @@ def generate_pptx(specs: tuple[SlideSpec, ...], *, stage: str, output: Path) -> 
             )
             if spec.asset:
                 raster = _raster_asset(PROJECT_ROOT / spec.asset, generated_dir)
-                _add_bullets(slide, api, spec.bullets, x=0.75, y=1.85, w=5.0, h=4.8, size=16.5)
-                _add_picture_fit(slide, api, raster, 5.9, 1.75, 6.7, 4.95)
+                if spec.number == 24:
+                    _add_picture_fit(slide, api, raster, 0.72, 1.70, 11.9, 5.18)
+                else:
+                    _add_bullets(slide, api, spec.bullets, x=0.75, y=1.85, w=5.0, h=4.8, size=16.5)
+                    _add_picture_fit(slide, api, raster, 5.9, 1.75, 6.7, 4.95)
             else:
                 _add_bullets(slide, api, spec.bullets, x=1.0, y=1.88, w=11.2, h=4.8, size=19)
 

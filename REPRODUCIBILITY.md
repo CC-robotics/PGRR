@@ -18,7 +18,7 @@ failure detector are not completed or claimed contributions.
 |---|---|---|---:|
 | Tests | `make test` | Lint, formatting, types, and automated tests | no |
 | Small reproduction | `make reproduce-small` | Exercise bounded data/model/statistics contracts | no |
-| Paper rebuild | `make reproduce-paper` | Recompute final analysis and manuscript from locked evidence | yes |
+| Paper rebuild | `make reproduce-paper` | Rebuild all documents from published final evidence; raw recollection is opt-in | yes |
 | Full evaluation | complete command below | Re-run 600 held-out method--episodes | yes |
 
 Smoke, pilot, calibration, and validation runs verify software or select a
@@ -37,9 +37,9 @@ The report and presentation use the same stage contract:
 
 | Stage | Approved input | Meaning |
 |---|---|---|
-| `pending` | no results file | Method, runtime, and protocol only; numerical pages visibly pending |
-| `validation` | completed immutable snapshot under `outputs/report_inputs/validation/` | Selection evidence, always marked non-final |
-| `test` | `outputs/moderate/final/results.parquet` | Locked held-out evidence after the complete test protocol |
+| `pending` | no results or statistics file | Method, runtime, and protocol only; numerical pages visibly pending |
+| `validation` | immutable `results.parquet` and `pairwise_statistics.json` under `outputs/report_inputs/validation/` | Selection evidence, always marked non-final |
+| `test` | sibling `results.parquet` and `pairwise_statistics.json` under `outputs/moderate/final/` | Locked held-out evidence after the complete test protocol |
 
 Build the current data-free documents without opening any result Parquet:
 
@@ -56,9 +56,13 @@ mkdir -p outputs/report_inputs/validation
 install -m 0444 \
   outputs/moderate/v5_validation/results.parquet \
   outputs/report_inputs/validation/results.parquet
+install -m 0444 \
+  outputs/moderate/v5_validation/pairwise_statistics.json \
+  outputs/report_inputs/validation/pairwise_statistics.json
 
 REPORT_STAGE=validation \
 REPORT_RESULTS=outputs/report_inputs/validation/results.parquet \
+REPORT_STATISTICS=outputs/report_inputs/validation/pairwise_statistics.json \
 make technical-report presentation
 ```
 
@@ -67,6 +71,7 @@ The locked test documents are generated only with:
 ```bash
 REPORT_STAGE=test \
 REPORT_RESULTS=outputs/moderate/final/results.parquet \
+REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
 make technical-report presentation
 ```
 
@@ -284,6 +289,7 @@ make tables MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
 REPORT_STAGE=test \
   REPORT_RESULTS=outputs/moderate/final/results.parquet \
+  REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
   make technical-report presentation
 ```
 
@@ -293,18 +299,46 @@ conditions for all five methods. It produces paired bootstrap intervals, exact
 McNemar tests for binary outcomes, Wilcoxon signed-rank tests for continuous
 metrics, effect sizes, and one global Holm correction family.
 
-For a complete paper replay from existing raw evidence:
+For a complete document rebuild from the published, privacy-safe evidence:
 
 ```bash
 MODERATE_ANALYSIS_DIR=outputs/moderate/final \
 MODERATE_CALIBRATION_REPORT=outputs/moderate/v5_validation/calibration_report.json \
+PGRR_RELEASE_MODE=0 \
+PGRR_RECOLLECT_RAW=0 \
 scripts/reproduce_paper.sh
 ```
 
-This command never launches simulation. It recollects raw streams, validates
-the five-method condition set, regenerates statistics, figures, tables,
-telemetry media, and the anonymous IEEEtran PDF, then writes a checksummed
-artifact manifest.
+This command never launches simulation and rejects every result source except
+the locked `outputs/moderate/final` test run with 120 paired conditions per
+method. With the default `PGRR_RECOLLECT_RAW=0`, it does not access `data/raw`:
+it consumes the published results, statistics, failure analysis, telemetry
+media, offline-ablation CSV/JSON, and tracked validation HDF5. It regenerates
+figures and tables, verifies the anonymous IEEEtran paper at exactly 8 pages,
+builds a 30--40-page test-stage Chinese technical report, and builds the
+30-slide PPTX/PDF, speaker notes, and contact sheet. It records the actual report
+page count and writes a checksummed candidate manifest.
+
+Maintainers with the unpublished raw streams may explicitly recollect and
+rerender the result-dependent artifacts:
+
+```bash
+PGRR_RELEASE_MODE=0 PGRR_RECOLLECT_RAW=1 scripts/reproduce_paper.sh
+```
+
+Commit the resulting candidate bundle before the release gate. From that clean
+checkout, run:
+
+```bash
+PGRR_RELEASE_MODE=1 scripts/reproduce_paper.sh
+```
+
+Release mode is validate-only: before any generation command it recomputes the
+manifest, compares scientific provenance plus every artifact path/category/
+size/SHA256/page/media field with the published manifest, runs the
+tracked/nonignored privacy audit, and exits. It intentionally ignores only the
+candidate timestamp and assembly-commit bookkeeping so the development-build,
+commit, clean-validation sequence is closed rather than self-invalidating.
 
 ## 9. Runtime screenshot policy
 
@@ -327,6 +361,11 @@ The artifact builder rejects an unpaired screenshot or metadata file.
 - `outputs/moderate/final/pairwise_statistics.json`
 - `outputs/moderate/final/failure_analysis.md`
 - `outputs/moderate/final/artifact_manifest.json`
+- `outputs/moderate/final/offline_policy_ablation.csv`
+- `outputs/moderate/final/offline_policy_ablation.json`
+- `outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.pdf`
+- `outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.png`
+- `outputs/moderate/final/media/pgrr_representative_telemetry.mp4`
 - `paper/generated/moderate_*.tex`
 - `paper/figures/moderate_*.pdf`
 - `outputs/figures/moderate_*.pdf`
@@ -337,6 +376,7 @@ The artifact builder rejects an unpaired screenshot or metadata file.
 - `presentation/PGRR_report_zh.pdf`
 - `presentation/speaker_notes_zh.md`
 - `presentation/contact_sheet.png`
+- `data/interim/multiscenario_safety_aligned_validation.h5`
 
 If any complete-run artifact is absent, do not substitute pilot values or
 manually edit a result table.
@@ -351,6 +391,7 @@ make tables MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
 REPORT_STAGE=test \
   REPORT_RESULTS=outputs/moderate/final/results.parquet \
+  REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
   make technical-report presentation
 make privacy-check
 
@@ -362,12 +403,23 @@ test -s outputs/moderate/final/summary.csv
 test -s outputs/moderate/final/pairwise_statistics.json
 test -s outputs/moderate/final/failure_analysis.md
 test -s outputs/moderate/final/artifact_manifest.json
+test -s outputs/moderate/final/offline_policy_ablation.csv
+test -s outputs/moderate/final/offline_policy_ablation.json
+test -s data/interim/multiscenario_safety_aligned_validation.h5
 test -s paper/main.pdf
 test -s report/PGRR_technical_report_zh.pdf
 test -s presentation/PGRR_report_zh.pptx
 test -s presentation/PGRR_report_zh.pdf
 test -s presentation/speaker_notes_zh.md
 test -s presentation/contact_sheet.png
+```
+
+After those generated files and the candidate manifest are committed, create a
+clean checkout and run the non-mutating release gate:
+
+```bash
+test -z "$(git status --porcelain --untracked-files=all)"
+PGRR_RELEASE_MODE=1 scripts/reproduce_paper.sh
 ```
 
 The final PDF must have no unresolved references/citations, overfull boxes,

@@ -95,7 +95,7 @@ WAIT、BACKUP、REPLAN、CONTINUE 四个离散恢复动作之间选择。地图�
 
 训练侧使用短时域特权规划专家产生动作和候选代价，随后采用 Behavior Cloning 和两轮 DAgger 覆盖策略诱导状态。部署侧只读取 LiDAR、目标、局部路径、机器人速度、DWB 输出、进展历史、规划器状态和失败分数，不读取行人真值或未来轨迹。
 
-本报告把终止结果、安全、效率、稳定性、恢复行为、排除项和失败案例分开呈现。碰撞减少不会被重新解释为成功；超时和规划失败不会被隐藏。只有 stage-aware 构建器通过路径、split、pair 和完整性检查后，结果页才会出现数值。
+本报告把终止结果、安全、效率、稳定性、恢复行为、排除项和失败案例分开呈现。碰撞减少不会被重新解释为成功；超时和规划失败不会被隐藏。只有 stage-aware 构建器同时验证 episode-level Parquet 与配对统计 JSON 的路径、split、五方法、condition、端点计数和全局 Holm 一致性后，结果页才会出现数值。
 
 \clearpage
 \tableofcontents
@@ -107,7 +107,7 @@ WAIT、BACKUP、REPLAN、CONTINUE 四个离散恢复动作之间选择。地图�
 \section{问题背景与研究目标}
 在已知二维静态地图中，经典局部规划器能够稳定完成大量常规 PointGoal 任务，但动态行人会引入互相让行、门口竞争、遮挡突现和短时封堵。持续端到端替换经典规划器会扩大分布偏移和验证范围，且不利于解释具体恢复行为。
 
-本项目研究的问题是：\emph{能否在不破坏正常场景稳定性的前提下，只在传统规划器即将失败时，利用规划专家生成的示范和分布聚合学习恢复决策？}
+本项目研究的问题是：\textbf{能否在不破坏正常场景稳定性的前提下，只在传统规划器即将失败时，利用规划专家生成的示范和分布聚合学习恢复决策？}
 
 系统的最低目标不是承诺无碰撞，而是形成一个有界、可审计、可回退的恢复层，并使用相同 episode manifest 对五种方法进行配对评价。
 
@@ -297,7 +297,10 @@ SIMULATOR\_FAILURE 和 INVALID\_RESET 可重试且从算法分母单独排除，
 \section{配对效应与安全—效率视图}
 \ifReportResultsAvailable
   PGRR 与 DWB 的描述性目标到达率差为 \ReportGoalDifference{}；DWB 和 PGRR 的总体到达率分别为
-  \ReportBaseGoalRate{} 和 \ReportPGRRGoalRate{}。统计显著性必须另由锁定的配对统计 JSON 支持，不能由这三个描述量推断。
+  \ReportBaseGoalRate{} 和 \ReportPGRRGoalRate{}。以下表图不再依赖该描述量推断显著性，而是绑定 SHA256 前缀为
+  \texttt{\ReportStatisticsSha} 的配对统计 JSON，并逐项报告 PGRR 相对 DWB、Standard、Heuristic 和 Uniform BC 的到达、碰撞与超时差。
+  \input{generated/result_paired_statistics.tex}
+  \SafeFigure{generated/result_paired_effects.pdf}{PGRR 相对四个 baseline 的十二个预注册二元端点。点为百分点配对差，线为 95\% paired-bootstrap CI；图内同时标注全局 Holm 校正后的 $p_H$ 与 Haldane 校正 matched odds ratio $\mathrm{OR}_H$。到达端点正值有利，碰撞和超时端点负值有利。}
   \SafeFigure{generated/result_safety_efficiency.pdf}{成功 episode 导航时间与全部有效 episode 最小人距的联合视图。两个轴不替代终止结果。}
 \else
   \PendingResults
@@ -372,13 +375,16 @@ ID 范围 & 半径（m） & 相对角（度） & 类型 \\
 \section{结果构建的 fail-closed 规则}
 结果构建器执行以下硬检查：
 \begin{enumerate}
-  \item pending 模式不得接收任何 results 路径；
+  \item pending 模式不得接收任何 results 或 statistics 路径；
   \item historical、pilot、calibration、smoke 与运行中的 validation 路径在打开前被拒绝；
-  \item validation 只能读取显式完成快照，test 只能读取 \texttt{outputs/moderate/final/results.parquet}；
+  \item validation 只能读取显式完成快照；test 只能读取
+  \nolinkurl{outputs/moderate/final/results.parquet} 与
+  \nolinkurl{outputs/moderate/final/pairwise_statistics.json} 这一对同目录产物；
   \item split 必须与报告阶段唯一一致；
   \item 每个 pair 必须恰好包含五种方法且场景元数据一致；
   \item 终止类型必须属于预声明集合；
-  \item 报告 JSON、TeX 宏和图表共享同一结果 SHA256。
+  \item 配对 JSON 的有效对数、端点计数、差值、McNemar 格、全局 Holm $p$ 与 matched odds ratio 必须由 Parquet 逐项复算一致；
+  \item 报告 JSON、TeX 宏和图表同时保存结果与统计文件的 SHA256。
 \end{enumerate}
 
 \clearpage

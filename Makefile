@@ -21,6 +21,7 @@ MODERATE_ANALYSIS_DIR ?= outputs/moderate/final
 MODERATE_RESULTS ?= $(MODERATE_ANALYSIS_DIR)/results.parquet
 MODERATE_SUMMARY ?= $(MODERATE_ANALYSIS_DIR)/summary.csv
 MODERATE_STATISTICS ?= $(MODERATE_ANALYSIS_DIR)/pairwise_statistics.json
+MODERATE_OFFLINE_ABLATION ?= $(MODERATE_ANALYSIS_DIR)/offline_policy_ablation.csv
 MODERATE_EXPECTED_CONDITIONS ?= 120
 MODERATE_BENCHMARK_CONFIG ?= configs/experiments/scenario_catalog_moderate_v5.yaml
 MODERATE_SPLIT_MANIFEST ?= scenarios/splits/moderate_v5_test.yaml
@@ -32,6 +33,7 @@ EVALUATION_JOBS ?= 6
 EVALUATION_TIMEOUT_S ?= 240
 REPORT_STAGE ?= pending
 REPORT_RESULTS ?= outputs/moderate/final/results.parquet
+REPORT_STATISTICS ?= outputs/moderate/final/pairwise_statistics.json
 REPORT_EXPECTED_CONDITIONS ?=
 REPORT_GENERATED_DIR ?= report/generated
 PRESENTATION_OUTPUT ?= presentation/PGRR_report_zh.pptx
@@ -122,7 +124,7 @@ statistics: ## Collect and summarize the complete five-method moderate benchmark
 		--main-method "$(MODERATE_MAIN_METHOD)" \
 		--reference-method "$(MODERATE_REFERENCE_METHOD)" \
 		--bootstrap-samples 10000 --bootstrap-seed "$(BOOTSTRAP_SEED)"
-moderate-figures: statistics ## Generate five-method moderate benchmark vector figures.
+moderate-figures: ## Generate figures from published moderate result/statistic artifacts.
 	@$(OFFLINE_RUN) python scripts/paper/make_moderate_figures.py \
 		--results "$(MODERATE_RESULTS)" --summary "$(MODERATE_SUMMARY)" \
 		--statistics "$(MODERATE_STATISTICS)" \
@@ -136,15 +138,17 @@ moderate-figures: statistics ## Generate five-method moderate benchmark vector f
 method-figures: ## Generate result-independent closed-loop and expert figures.
 	@$(OFFLINE_RUN) python scripts/paper/make_method_figures.py --output-dir paper/figures
 	@$(OFFLINE_RUN) python scripts/paper/make_method_figures.py --output-dir outputs/figures
-moderate-tables: statistics ## Generate five-method moderate benchmark LaTeX tables.
+moderate-tables: ## Generate tables from published moderate result/statistic artifacts.
 	@$(OFFLINE_RUN) python scripts/paper/make_moderate_tables.py \
 		--results "$(MODERATE_RESULTS)" --summary "$(MODERATE_SUMMARY)" \
 		--statistics "$(MODERATE_STATISTICS)" \
+		--ablation "$(MODERATE_OFFLINE_ABLATION)" \
 		--expected-condition-count "$(MODERATE_EXPECTED_CONDITIONS)" \
 		--output-dir paper/generated
 	@$(OFFLINE_RUN) python scripts/paper/make_moderate_tables.py \
 		--results "$(MODERATE_RESULTS)" --summary "$(MODERATE_SUMMARY)" \
 		--statistics "$(MODERATE_STATISTICS)" \
+		--ablation "$(MODERATE_OFFLINE_ABLATION)" \
 		--expected-condition-count "$(MODERATE_EXPECTED_CONDITIONS)" \
 		--output-dir outputs/tables
 figures: moderate-figures method-figures ## Generate publication figures from the moderate benchmark.
@@ -154,12 +158,15 @@ paper: figures tables ## Compile the manuscript after validating generated artif
 
 report-assets: ## Generate fail-closed pending/validation/test report inputs.
 	@args=(--stage "$(REPORT_STAGE)" --output-dir "$(REPORT_GENERATED_DIR)"); \
-	if [[ "$(REPORT_STAGE)" != "pending" ]]; then args+=(--results "$(REPORT_RESULTS)"); fi; \
+	if [[ "$(REPORT_STAGE)" != "pending" ]]; then \
+		args+=(--results "$(REPORT_RESULTS)" --statistics "$(REPORT_STATISTICS)"); \
+	fi; \
 	if [[ -n "$(REPORT_EXPECTED_CONDITIONS)" ]]; then args+=(--expected-conditions "$(REPORT_EXPECTED_CONDITIONS)"); fi; \
 	$(OFFLINE_RUN) python scripts/report/build_report_assets.py "$${args[@]}"
 
 technical-report: ## Build and validate the 25--35 page Chinese technical report.
 	@REPORT_STAGE="$(REPORT_STAGE)" REPORT_RESULTS="$(if $(filter pending,$(REPORT_STAGE)),,$(REPORT_RESULTS))" \
+	REPORT_STATISTICS="$(if $(filter pending,$(REPORT_STAGE)),,$(REPORT_STATISTICS))" \
 	REPORT_EXPECTED_CONDITIONS="$(REPORT_EXPECTED_CONDITIONS)" CONDA_ENV_NAME="$(CONDA_ENV_NAME)" \
 	scripts/report/build_report.sh
 

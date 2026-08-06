@@ -35,6 +35,7 @@ data/raw/**/*.jsonl
 data/raw/**/*.metadata.json
 data/raw/**/*.outcome.json
 data/interim/*.h5
+!data/interim/multiscenario_safety_aligned_validation.h5
 data/processed/*.h5
 data/quarantine/
 checkpoints/**/*.pt

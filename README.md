@@ -314,13 +314,36 @@ failure score, and valid progress; no additional protection window is claimed.
 After the completed run is present:
 
 ```bash
+PGRR_RELEASE_MODE=0 PGRR_RECOLLECT_RAW=0 \
 scripts/reproduce_paper.sh
 ```
 
-This command never launches Arena. It recollects the locked raw streams,
-recomputes complete-condition summaries and paired statistics, regenerates the
-moderate figures/tables in both publication directories, compiles the anonymous
-IEEEtran paper, and writes a checksummed artifact manifest.
+This default development rebuild never launches Arena and never opens
+`data/raw`. It accepts only the published `outputs/moderate/final` test result,
+statistics, failure analysis, telemetry media, and offline-ablation sidecar for
+120 paired conditions per method. It regenerates the figures, tables, anonymous
+8-page paper, 30--40-page detailed report, and 30-slide PPTX/PDF, then writes a
+checksummed candidate artifact manifest. Historical `outputs/final`, pilot,
+smoke, calibration, and validation results cannot be substituted.
+
+Raw recollection is a separate, explicit operation for maintainers who possess
+the unpublished episode streams:
+
+```bash
+PGRR_RELEASE_MODE=0 PGRR_RECOLLECT_RAW=1 scripts/reproduce_paper.sh
+```
+
+After committing the complete candidate bundle, validate it from a clean
+checkout without generating anything:
+
+```bash
+PGRR_RELEASE_MODE=1 scripts/reproduce_paper.sh
+```
+
+Release mode first reconstructs and compares the manifest's scientific
+provenance and every artifact path, category, size, SHA256, document page count,
+and media property, then runs the tracked/nonignored privacy audit and exits.
+Its PASS is the privacy/release gate; the development PASS is explicitly not.
 
 Publication figures follow a restrained Robot/Embodied closed-loop style:
 white background, 2D vector graphics, three functional color groups at most,
@@ -356,6 +379,7 @@ runner may still be writing it:
 ```bash
 REPORT_STAGE=validation \
 REPORT_RESULTS=outputs/report_inputs/validation/results.parquet \
+REPORT_STATISTICS=outputs/report_inputs/validation/pairwise_statistics.json \
 make technical-report presentation
 ```
 
@@ -364,6 +388,7 @@ The final test documents accept only the locked moderate-v5 result:
 ```bash
 REPORT_STAGE=test \
 REPORT_RESULTS=outputs/moderate/final/results.parquet \
+REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
 make technical-report presentation
 ```
 
@@ -390,6 +415,11 @@ outputs/moderate/final/summary.csv
 outputs/moderate/final/pairwise_statistics.json
 outputs/moderate/final/failure_analysis.md
 outputs/moderate/final/artifact_manifest.json
+outputs/moderate/final/offline_policy_ablation.csv
+outputs/moderate/final/offline_policy_ablation.json
+outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.pdf
+outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.png
+outputs/moderate/final/media/pgrr_representative_telemetry.mp4
 outputs/figures/moderate_*.pdf
 outputs/tables/moderate_*.tex
 paper/generated/moderate_*.tex
@@ -400,6 +430,7 @@ presentation/PGRR_report_zh.pptx
 presentation/PGRR_report_zh.pdf
 presentation/speaker_notes_zh.md
 presentation/contact_sheet.png
+data/interim/multiscenario_safety_aligned_validation.h5
 ```
 
 If any required moderate artifact is absent or incomplete, `make paper` fails;

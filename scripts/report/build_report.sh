@@ -6,6 +6,7 @@ PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-ramp-offline}"
 REPORT_STAGE="${REPORT_STAGE:-pending}"
 REPORT_RESULTS="${REPORT_RESULTS:-}"
+REPORT_STATISTICS="${REPORT_STATISTICS:-}"
 REPORT_EXPECTED_CONDITIONS="${REPORT_EXPECTED_CONDITIONS:-}"
 ASSET_ARGS=(--stage "${REPORT_STAGE}" --output-dir "${PROJECT_ROOT}/report/generated")
 
@@ -14,7 +15,11 @@ if [[ "${REPORT_STAGE}" != "pending" ]]; then
         echo "ERROR: REPORT_RESULTS is required for validation/test technical reports" >&2
         exit 2
     fi
-    ASSET_ARGS+=(--results "${REPORT_RESULTS}")
+    if [[ -z "${REPORT_STATISTICS}" ]]; then
+        echo "ERROR: REPORT_STATISTICS is required for validation/test technical reports" >&2
+        exit 2
+    fi
+    ASSET_ARGS+=(--results "${REPORT_RESULTS}" --statistics "${REPORT_STATISTICS}")
 fi
 if [[ -n "${REPORT_EXPECTED_CONDITIONS}" ]]; then
     ASSET_ARGS+=(--expected-conditions "${REPORT_EXPECTED_CONDITIONS}")

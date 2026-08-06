@@ -14,4 +14,6 @@ installed; it never attempts to install packages or modify ROS/Arena.
 
 All result-bearing slides consume `report/generated/report_data.json`, which
 is produced by the fail-closed report asset builder. They do not read result
-Parquet files directly.
+Parquet files directly. Slide 24 displays all four PGRR-versus-baseline
+comparisons for goal reaching, collision, and timeout, including paired 95%
+confidence intervals, global Holm-adjusted p-values, and matched odds ratios.

@@ -36,6 +36,25 @@ GIT_COMMITTER_EMAIL="charles.chen@example.invalid" \
 `git archive` deliberately excludes the original `.git` directory, ignored
 runtime files, untracked logs, credentials, reflogs, and old objects.
 
+The development build has already written a candidate
+`outputs/moderate/final/artifact_manifest.json`. Validate that exact candidate
+from the clean one-commit archive before creating any additional branch:
+
+```bash
+(
+  cd "${PUBLISH_ROOT}"
+  PGRR_RELEASE_MODE=1 scripts/reproduce_paper.sh
+)
+```
+
+This mode does not rebuild or rewrite a file. It first reconstructs the
+scientific manifest in memory and compares provenance, artifact paths,
+categories, sizes, SHA256 hashes, document page counts, and media properties
+with the committed candidate. It then runs the tracked/nonignored privacy audit
+and confirms that the worktree stayed clean. Candidate timestamps and the
+assembly-commit field are not compared because committing the development
+bundle necessarily changes the commit after the candidate was generated.
+
 ## 2. Create the teaching branch from the clean root
 
 The teaching script requires the source branch name `teacher/reference`. Run it
@@ -80,6 +99,10 @@ for ref in main student/reproduce; do
     "${audit_tree}" --all-files
 done
 ```
+
+`--all-files` is intentionally used only on these isolated archive trees. The
+ordinary release-mode gate uses the default tracked/nonignored audit so it does
+not traverse ignored multi-gigabyte raw experiments in the research worktree.
 
 The privacy audit fails closed when `pdfinfo`, `pdftotext`, Pillow, or HDF5
 support is unavailable. For Office ZIP files it scans every XML and relationship

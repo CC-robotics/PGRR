@@ -311,7 +311,7 @@ version; PPO and a learned detector are not credited as completed contributions.
 | GP robust recovery | yes | yes/proactive | GP risk model and recovery-state search | learned/modelled planning outcomes | no | no | recovery state | unknown/cluttered, not social focus |
 | DR-MPC | MPC backbone | no dedicated failure boundary | learned residual | training trajectories | no | learned residual policy | no, continuous MPC correction | yes |
 | Fare | no, visual IL policy is normally active | OOD-triggered | heuristic recovery informed by OOD recognition | no explicit failure data | no | no recovery RL | no, corrective learned-policy/recovery control | real-world visual navigation, not a social benchmark |
-| This work, current IL version | yes, Nav2 DWB | yes | privileged short-horizon rollout expert | yes (train only) | two rounds | **not completed/claimed** | yes, 21 subgoals + 4 modes | preliminary Humble/Gazebo fallback pilot |
+| This work, current IL version | yes, Nav2 DWB | yes | privileged short-horizon rollout expert | yes (train only) | two rounds | **not completed/claimed** | yes, 21 subgoals + 4 modes | held-out three-density ROS2 Humble/Gazebo benchmark |
 
 ## Safe positioning for an EI-length manuscript
 
@@ -334,5 +334,5 @@ version; PPO and a learned detector are not credited as completed contributions.
   planning/IL/RL combination, collision-free guarantees, or general social
   navigation superiority.
 - Do not claim PPO or learned-detector gains until closed-loop, locked validation
-  actually supports them. Current evidence supports a preliminary feasibility
-  and safety--time trade-off statement, not statistical superiority.
+  actually supports them. Numerical performance and superiority language must
+  come only from the complete frozen test artifacts and their paired analysis.

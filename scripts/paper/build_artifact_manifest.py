@@ -12,8 +12,11 @@ import argparse
 import hashlib
 import json
 import re
+import shutil
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
+import zipfile
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
@@ -38,14 +41,27 @@ DEFAULT_CALIBRATION_REPORT = Path("outputs/moderate/v5_validation/calibration_re
 DEFAULT_FAILURE_ANALYSIS = Path("outputs/moderate/final/failure_analysis.md")
 DEFAULT_EPISODE_MANIFEST = Path("outputs/moderate/final/episode_manifest.parquet")
 DEFAULT_RUN_MANIFEST = Path("outputs/moderate/final/run_manifest.json")
-DEFAULT_OFFLINE_ABLATION_CSV = Path("outputs/final/offline_policy_ablation.csv")
-DEFAULT_OFFLINE_ABLATION_JSON = Path("outputs/final/offline_policy_ablation.json")
+DEFAULT_OFFLINE_ABLATION_CSV = Path("outputs/moderate/final/offline_policy_ablation.csv")
+DEFAULT_OFFLINE_ABLATION_JSON = Path("outputs/moderate/final/offline_policy_ablation.json")
+DEFAULT_OFFLINE_ABLATION_DATASET = Path("data/interim/multiscenario_safety_aligned_validation.h5")
 DEFAULT_FIGURES_DIR = Path("paper/figures")
 DEFAULT_TABLES_DIR = Path("paper/generated")
 DEFAULT_OUTPUT_FIGURES_DIR = Path("outputs/figures")
 DEFAULT_OUTPUT_TABLES_DIR = Path("outputs/tables")
-DEFAULT_VIDEOS_DIR = Path("outputs/videos")
+DEFAULT_MEDIA_KEYFRAMES_PDF = Path(
+    "outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.pdf"
+)
+DEFAULT_MEDIA_KEYFRAMES_PNG = Path(
+    "outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.png"
+)
+DEFAULT_VIDEO = Path("outputs/moderate/final/media/pgrr_representative_telemetry.mp4")
 DEFAULT_PAPER = Path("paper/main.pdf")
+DEFAULT_REPORT = Path("report/PGRR_technical_report_zh.pdf")
+DEFAULT_REPORT_DATA = Path("report/generated/report_data.json")
+DEFAULT_PRESENTATION_PPTX = Path("presentation/PGRR_report_zh.pptx")
+DEFAULT_PRESENTATION_PDF = Path("presentation/PGRR_report_zh.pdf")
+DEFAULT_PRESENTATION_NOTES = Path("presentation/speaker_notes_zh.md")
+DEFAULT_PRESENTATION_CONTACT_SHEET = Path("presentation/contact_sheet.png")
 DEFAULT_MAIN_TEX = Path("paper/main.tex")
 DEFAULT_REFERENCES = Path("paper/references.bib")
 DEFAULT_CLAIM_MATRIX = Path("paper/claim_evidence_matrix.md")
@@ -600,6 +616,9 @@ def _validate_evaluation_provenance(
     return {
         "evaluation_commit": evaluation_commit,
         "evaluation_config_sha256": sha256_file(evaluation_config_file),
+        "expected_conditions_per_method": expected_per_method,
+        "expected_episodes": expected_episodes,
+        "methods": methods,
         "run_id": run_id,
         "run_manifest_sha256": sha256_file(run_manifest_file),
         "episode_manifest_sha256": sha256_file(episode_file),
@@ -743,6 +762,313 @@ def _artifact_record(project_root: Path, category: str, path: Path) -> dict[str,
     }
 
 
+def _validate_existing_manifest(path: Path, current: Mapping[str, Any]) -> None:
+    """Require the published manifest to match a fresh read-only reconstruction.
+
+    Timestamps and the commit that assembled the archive are intentionally not
+    compared: committing the generated bundle necessarily happens after the
+    development build.  Every scientific provenance field and every artifact
+    path, category, size, hash, and validated document/media property is
+    compared exactly.
+    """
+
+    existing = _load_json_object(path, label="published artifact manifest")
+    compared_keys = (
+        "schema_version",
+        "evaluation_commit",
+        "evaluation_provenance",
+        "document_pages",
+        "video_metadata",
+        "artifact_count",
+        "category_counts",
+        "artifacts",
+    )
+    mismatches = [key for key in compared_keys if existing.get(key) != current.get(key)]
+    if mismatches:
+        raise ArtifactError(
+            "published artifact manifest is stale or tampered; mismatched fields: "
+            + ", ".join(mismatches)
+        )
+
+
+def _pdf_page_count(path: Path, *, label: str) -> int:
+    """Return a PDF page count using the release-declared Poppler tooling."""
+
+    executable = shutil.which("pdfinfo")
+    if executable is None:
+        raise ArtifactError(f"pdfinfo is required to validate {label}")
+    try:
+        completed = subprocess.run(
+            [executable, str(path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise ArtifactError(f"cannot inspect {label}: {path}") from error
+    match = re.search(r"^Pages:\s+(\d+)\s*$", completed.stdout, flags=re.MULTILINE)
+    if match is None:
+        raise ArtifactError(f"pdfinfo did not report a page count for {label}")
+    return int(match.group(1))
+
+
+def _require_pdf_pages(path: Path, *, expected: int, label: str) -> int:
+    observed = _pdf_page_count(path, label=label)
+    if observed != expected:
+        raise ArtifactError(f"{label} must contain exactly {expected} pages; found {observed}")
+    return observed
+
+
+def _require_pdf_page_range(
+    path: Path,
+    *,
+    minimum: int,
+    maximum: int,
+    label: str,
+) -> int:
+    observed = _pdf_page_count(path, label=label)
+    if not minimum <= observed <= maximum:
+        raise ArtifactError(f"{label} must contain {minimum}--{maximum} pages; found {observed}")
+    return observed
+
+
+def _validate_offline_ablation(
+    *,
+    project_root: Path,
+    csv_path: Path,
+    sidecar_path: Path,
+    dataset_path: Path,
+) -> None:
+    """Bind the published offline ablation to its tracked validation dataset."""
+
+    sidecar = _load_json_object(sidecar_path, label="offline-ablation sidecar")
+    if sidecar.get("schema_version") != 1:
+        raise ArtifactError("offline-ablation sidecar must use schema_version 1")
+    expected_csv = _relative(project_root, csv_path)
+    expected_dataset = _relative(project_root, dataset_path)
+    if sidecar.get("output") != expected_csv:
+        raise ArtifactError("offline-ablation sidecar names a different CSV")
+    if sidecar.get("output_sha256") != sha256_file(csv_path):
+        raise ArtifactError("offline-ablation CSV hash disagrees with its sidecar")
+    if sidecar.get("dataset") != expected_dataset:
+        raise ArtifactError("offline-ablation sidecar names a different dataset")
+    dataset_hash = sha256_file(dataset_path)
+    if sidecar.get("dataset_sha256") != dataset_hash:
+        raise ArtifactError("offline-ablation dataset hash disagrees with its sidecar")
+    try:
+        frame = pd.read_csv(csv_path)
+    except (OSError, pd.errors.ParserError) as error:
+        raise ArtifactError(f"invalid offline-ablation CSV: {csv_path}") from error
+    required = {"dataset", "dataset_sha256", "sample_count"}
+    if missing := sorted(required - set(frame.columns)):
+        raise ArtifactError("offline-ablation CSV is missing columns: " + ", ".join(missing))
+    if set(frame["dataset"].astype(str)) != {expected_dataset}:
+        raise ArtifactError("offline-ablation CSV names a different dataset")
+    if set(frame["dataset_sha256"].astype(str)) != {dataset_hash}:
+        raise ArtifactError("offline-ablation CSV dataset hash disagrees with the tracked file")
+    sample_counts = pd.to_numeric(frame["sample_count"], errors="coerce")
+    if sample_counts.isna().any() or set(sample_counts.astype(int)) != {
+        int(sidecar.get("sample_count", -1))
+    }:
+        raise ArtifactError("offline-ablation sample count disagrees with its sidecar")
+
+
+def _validate_png(path: Path, *, label: str, require_contrast: bool = False) -> None:
+    """Decode a raster fully and optionally reject blank review sheets."""
+
+    try:
+        with Image.open(path) as image:
+            if image.format != "PNG":
+                raise ArtifactError(f"{label} must be a PNG image")
+            image.load()
+            if image.width <= 0 or image.height <= 0:
+                raise ArtifactError(f"{label} has empty dimensions")
+            if require_contrast:
+                sample = image.convert("RGB")
+                sample.thumbnail((512, 512))
+                pixels = list(sample.get_flattened_data())
+                luminance = [sum(pixel) / 3.0 for pixel in pixels]
+                nonwhite_ratio = sum(value < 248.0 for value in luminance) / len(luminance)
+                if max(luminance) - min(luminance) < 12.0 or nonwhite_ratio < 0.01:
+                    raise ArtifactError(f"{label} is blank or has insufficient visual contrast")
+    except ArtifactError:
+        raise
+    except (OSError, ValueError) as error:
+        raise ArtifactError(f"invalid {label}: {path}") from error
+
+
+def _validate_video(path: Path) -> dict[str, Any]:
+    """Use ffprobe to require a readable, non-empty, positive-duration video stream."""
+
+    executable = shutil.which("ffprobe")
+    if executable is None:
+        raise ArtifactError("ffprobe is required to validate the telemetry video")
+    try:
+        completed = subprocess.run(
+            [
+                executable,
+                "-v",
+                "error",
+                "-select_streams",
+                "v:0",
+                "-count_frames",
+                "-show_entries",
+                "stream=codec_name,codec_type,width,height,duration,nb_read_frames",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "json",
+                str(path),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        payload = json.loads(completed.stdout)
+    except (OSError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
+        raise ArtifactError(f"telemetry video cannot be decoded by ffprobe: {path}") from error
+    streams = payload.get("streams")
+    if not isinstance(streams, list) or len(streams) != 1:
+        raise ArtifactError("telemetry MP4 must contain a readable video stream")
+    stream = _mapping(streams[0], label="telemetry video stream")
+    if stream.get("codec_type") != "video" or not str(stream.get("codec_name", "")):
+        raise ArtifactError("telemetry MP4 does not declare a decodable video codec")
+    try:
+        width = int(stream.get("width", 0))
+        height = int(stream.get("height", 0))
+        frame_count = int(stream.get("nb_read_frames", 0))
+        stream_duration = float(stream.get("duration", "nan"))
+        format_payload = _mapping(payload.get("format", {}), label="telemetry video format")
+        format_duration = float(format_payload.get("duration", "nan"))
+    except (TypeError, ValueError) as error:
+        raise ArtifactError("telemetry MP4 has invalid stream metadata") from error
+    durations = [value for value in (stream_duration, format_duration) if value > 0.0]
+    if width <= 0 or height <= 0 or frame_count <= 0 or not durations:
+        raise ArtifactError("telemetry MP4 must have frames, dimensions, and positive duration")
+    return {
+        "codec": str(stream["codec_name"]),
+        "width": width,
+        "height": height,
+        "frame_count": frame_count,
+        "duration_s": max(durations),
+    }
+
+
+def _validate_report_data(
+    path: Path,
+    *,
+    project_root: Path,
+    results_path: Path,
+    results_sha256: str,
+    statistics_path: Path,
+    statistics_sha256: str,
+    expected_conditions: int,
+    expected_episodes: int,
+) -> None:
+    """Bind the detailed report and deck to the same locked test result."""
+
+    payload = _load_json_object(path, label="technical-report data")
+    if payload.get("schema_version") != 2:
+        raise ArtifactError("technical-report data must use schema_version 2")
+    if payload.get("stage") != "test" or payload.get("results_available") is not True:
+        raise ArtifactError("technical-report data must declare the locked test stage")
+    if payload.get("author_alias") != "Charles Chen":
+        raise ArtifactError("technical-report data must use the approved Charles Chen alias")
+    expected_path = _relative(project_root, results_path)
+    if payload.get("results_path") != expected_path:
+        raise ArtifactError("technical-report data does not reference the locked final results")
+    if payload.get("results_sha256") != results_sha256:
+        raise ArtifactError("technical-report data hash disagrees with the locked final results")
+    expected_statistics_path = _relative(project_root, statistics_path)
+    if payload.get("statistics_path") != expected_statistics_path:
+        raise ArtifactError(
+            "technical-report data does not reference the locked pairwise statistics"
+        )
+    if payload.get("statistics_sha256") != statistics_sha256:
+        raise ArtifactError(
+            "technical-report data hash disagrees with the locked pairwise statistics"
+        )
+    try:
+        condition_count = int(payload["condition_count"])
+        episode_count = int(payload["episode_count"])
+        valid_count = int(payload["valid_episode_count"])
+        excluded_count = int(payload["excluded_episode_count"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ArtifactError("technical-report data has invalid result counts") from error
+    if condition_count != expected_conditions or episode_count != expected_episodes:
+        raise ArtifactError("technical-report data counts disagree with the frozen test protocol")
+    if valid_count < 0 or excluded_count < 0 or valid_count + excluded_count != episode_count:
+        raise ArtifactError("technical-report valid/excluded counts do not cover every episode")
+    paired = payload.get("paired_comparisons")
+    if not isinstance(paired, list) or len(paired) != 12:
+        raise ArtifactError("technical-report data must contain all 12 paired comparisons")
+    observed_pairs = {
+        (str(record.get("comparator")), str(record.get("endpoint")))
+        for record in paired
+        if isinstance(record, Mapping)
+    }
+    expected_pairs = {
+        (comparator, endpoint)
+        for comparator in ("base", "standard", "heuristic", "bc_uniform")
+        for endpoint in ("goal_reached", "collision", "timeout")
+    }
+    if observed_pairs != expected_pairs:
+        raise ArtifactError("technical-report paired comparison matrix is incomplete")
+
+
+def _validate_presentation(pptx: Path, notes: Path, contact_sheet: Path) -> None:
+    """Require a structurally complete 30-slide briefing and its review aids."""
+
+    try:
+        with zipfile.ZipFile(pptx) as archive:
+            slide_names = {
+                name
+                for name in archive.namelist()
+                if re.fullmatch(r"ppt/slides/slide\d+\.xml", name)
+            }
+            try:
+                core_properties = ET.fromstring(archive.read("docProps/core.xml"))
+            except KeyError as error:
+                raise ArtifactError("presentation PPTX is missing core properties") from error
+            except ET.ParseError as error:
+                raise ArtifactError("presentation PPTX has invalid core properties") from error
+    except (OSError, zipfile.BadZipFile) as error:
+        raise ArtifactError(f"invalid presentation PPTX: {pptx}") from error
+    expected_slide_names = {f"ppt/slides/slide{number}.xml" for number in range(1, 31)}
+    if slide_names != expected_slide_names:
+        raise ArtifactError(
+            f"presentation PPTX must contain exactly 30 slides; found {len(slide_names)}"
+        )
+    namespaces = {
+        "cp": "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
+        "dc": "http://purl.org/dc/elements/1.1/",
+    }
+    creator = core_properties.findtext("dc:creator", default="", namespaces=namespaces)
+    modified_by = core_properties.findtext("cp:lastModifiedBy", default="", namespaces=namespaces)
+    subject = core_properties.findtext("dc:subject", default="", namespaces=namespaces)
+    if subject.split(";", maxsplit=1)[0].strip() != "stage=test":
+        raise ArtifactError("presentation PPTX is not bound to the locked test stage")
+    if creator != "Charles Chen" or modified_by != "Charles Chen":
+        raise ArtifactError(
+            "presentation PPTX creator and lastModifiedBy must use the approved alias"
+        )
+
+    notes_text = notes.read_text(encoding="utf-8")
+    note_sections = re.findall(r"^##\s+(\d{2})\.\s+", notes_text, flags=re.MULTILINE)
+    expected_note_sections = [f"{number:02d}" for number in range(1, 31)]
+    if note_sections != expected_note_sections:
+        raise ArtifactError(
+            f"presentation speaker notes must contain 30 slide sections; found {len(note_sections)}"
+        )
+    if "阶段\uff1a`test`" not in notes_text:
+        raise ArtifactError("presentation speaker notes are not bound to the locked test stage")
+    _validate_png(contact_sheet, label="presentation contact sheet", require_contrast=True)
+    with Image.open(contact_sheet) as image:
+        width, height = image.size
+    if width < 1000 or height < 500:
+        raise ArtifactError("presentation contact sheet is too small for visual review")
+
+
 def build_manifest(
     project_root: Path,
     *,
@@ -759,10 +1085,20 @@ def build_manifest(
     failure_analysis_path: Path = DEFAULT_FAILURE_ANALYSIS,
     episode_manifest_path: Path = DEFAULT_EPISODE_MANIFEST,
     run_manifest_path: Path = DEFAULT_RUN_MANIFEST,
+    offline_ablation_path: Path = DEFAULT_OFFLINE_ABLATION_CSV,
+    offline_ablation_dataset_path: Path = DEFAULT_OFFLINE_ABLATION_DATASET,
     figures_dir: Path = DEFAULT_FIGURES_DIR,
     tables_dir: Path = DEFAULT_TABLES_DIR,
-    videos_dir: Path = DEFAULT_VIDEOS_DIR,
+    media_keyframes_pdf_path: Path = DEFAULT_MEDIA_KEYFRAMES_PDF,
+    media_keyframes_png_path: Path = DEFAULT_MEDIA_KEYFRAMES_PNG,
+    video_path: Path = DEFAULT_VIDEO,
     paper_path: Path = DEFAULT_PAPER,
+    report_path: Path = DEFAULT_REPORT,
+    report_data_path: Path = DEFAULT_REPORT_DATA,
+    presentation_pptx_path: Path = DEFAULT_PRESENTATION_PPTX,
+    presentation_pdf_path: Path = DEFAULT_PRESENTATION_PDF,
+    presentation_notes_path: Path = DEFAULT_PRESENTATION_NOTES,
+    presentation_contact_sheet_path: Path = DEFAULT_PRESENTATION_CONTACT_SHEET,
     generation_command: str = "scripts/reproduce_paper.sh",
     generated_at: str | None = None,
     project_commit: str | None = None,
@@ -813,13 +1149,18 @@ def build_manifest(
         ("failure_analysis", failure_analysis_path, "failure analysis"),
         (
             "offline_ablation",
-            DEFAULT_OFFLINE_ABLATION_CSV,
+            offline_ablation_path,
             "offline ablation CSV",
         ),
         (
             "offline_ablation",
-            DEFAULT_OFFLINE_ABLATION_JSON,
+            offline_ablation_path.with_suffix(".json"),
             "offline ablation provenance",
+        ),
+        (
+            "offline_ablation_dataset",
+            offline_ablation_dataset_path,
+            "offline ablation dataset",
         ),
         ("paper_source", DEFAULT_MAIN_TEX, "paper TeX source"),
         ("paper_source", DEFAULT_REFERENCES, "paper references"),
@@ -841,6 +1182,16 @@ def build_manifest(
         ),
         ("frozen_input", DEFAULT_ACTION_CONFIG, "recovery-action configuration"),
         ("paper", paper_path, "paper PDF"),
+        ("technical_report", report_path, "technical-report PDF"),
+        ("report_data", report_data_path, "technical-report data"),
+        ("presentation", presentation_pptx_path, "presentation PPTX"),
+        ("presentation", presentation_pdf_path, "presentation PDF"),
+        ("presentation_notes", presentation_notes_path, "presentation speaker notes"),
+        (
+            "presentation_contact_sheet",
+            presentation_contact_sheet_path,
+            "presentation contact sheet",
+        ),
     )
     artifacts: list[tuple[str, Path]] = []
     for category, path, label in singleton_specs:
@@ -851,6 +1202,67 @@ def build_manifest(
         label="moderate calibration report",
     )
     _validate_calibration_report(resolved_calibration_report)
+
+    resolved_ablation = _require_file(root, offline_ablation_path, label="offline ablation CSV")
+    resolved_ablation_sidecar = _require_file(
+        root,
+        offline_ablation_path.with_suffix(".json"),
+        label="offline ablation provenance",
+    )
+    resolved_ablation_dataset = _require_file(
+        root,
+        offline_ablation_dataset_path,
+        label="offline ablation dataset",
+    )
+    _validate_offline_ablation(
+        project_root=root,
+        csv_path=resolved_ablation,
+        sidecar_path=resolved_ablation_sidecar,
+        dataset_path=resolved_ablation_dataset,
+    )
+
+    resolved_results = _require_file(root, results_path, label="episode results")
+    resolved_statistics = _require_file(root, statistics_path, label="statistics report")
+    resolved_paper = _require_file(root, paper_path, label="paper PDF")
+    resolved_report = _require_file(root, report_path, label="technical-report PDF")
+    resolved_report_data = _require_file(root, report_data_path, label="technical-report data")
+    resolved_presentation_pptx = _require_file(
+        root, presentation_pptx_path, label="presentation PPTX"
+    )
+    resolved_presentation_pdf = _require_file(root, presentation_pdf_path, label="presentation PDF")
+    resolved_presentation_notes = _require_file(
+        root, presentation_notes_path, label="presentation speaker notes"
+    )
+    resolved_contact_sheet = _require_file(
+        root,
+        presentation_contact_sheet_path,
+        label="presentation contact sheet",
+    )
+    _validate_report_data(
+        resolved_report_data,
+        project_root=root,
+        results_path=resolved_results,
+        results_sha256=provenance["results_sha256"],
+        statistics_path=resolved_statistics,
+        statistics_sha256=sha256_file(resolved_statistics),
+        expected_conditions=int(provenance["expected_conditions_per_method"]),
+        expected_episodes=int(provenance["expected_episodes"]),
+    )
+    paper_pages = _require_pdf_pages(resolved_paper, expected=8, label="conference paper")
+    report_pages = _require_pdf_page_range(
+        resolved_report,
+        minimum=30,
+        maximum=40,
+        label="technical report",
+    )
+    presentation_pages = _require_pdf_pages(
+        resolved_presentation_pdf, expected=30, label="presentation PDF"
+    )
+    _validate_presentation(
+        resolved_presentation_pptx,
+        resolved_presentation_notes,
+        resolved_contact_sheet,
+    )
 
     resolved_figures_dir = _inside_root(root, figures_dir, label="figures directory")
     for filename in EXPECTED_FIGURES:
@@ -916,35 +1328,37 @@ def build_manifest(
             )
         )
 
-    resolved_videos_dir = _inside_root(root, videos_dir, label="videos directory")
-    videos = sorted(path for path in resolved_videos_dir.glob("*_telemetry.mp4") if path.is_file())
-    if not videos:
-        raise ArtifactError(
-            "missing required final telemetry video: "
-            f"{resolved_videos_dir.relative_to(root)}/*_telemetry.mp4"
+    resolved_video = _require_file(root, video_path, label="final telemetry video")
+    artifacts.append(("video", resolved_video))
+    resolved_keyframes_pdf = _require_file(
+        root,
+        media_keyframes_pdf_path,
+        label="final telemetry keyframes PDF",
+    )
+    artifacts.append(
+        (
+            "runtime_keyframe",
+            resolved_keyframes_pdf,
         )
-    for video in videos:
-        if video.stat().st_size <= 0:
-            raise ArtifactError(f"empty required result video: {video.relative_to(root)}")
-        artifacts.append(("video", video))
-
-    for suffix in ("pdf", "png"):
-        keyframes = sorted(
-            path
-            for path in resolved_output_figures.glob(f"*_telemetry_keyframes.{suffix}")
-            if path.is_file()
+    )
+    resolved_keyframes_png = _require_file(
+        root,
+        media_keyframes_png_path,
+        label="final telemetry keyframes PNG",
+    )
+    artifacts.append(
+        (
+            "runtime_keyframe",
+            resolved_keyframes_png,
         )
-        if not keyframes:
-            raise ArtifactError(
-                "missing required final telemetry keyframes: "
-                f"{resolved_output_figures.relative_to(root)}/*_telemetry_keyframes.{suffix}"
-            )
-        for keyframe in keyframes:
-            if keyframe.stat().st_size <= 0:
-                raise ArtifactError(
-                    f"empty required telemetry keyframe: {keyframe.relative_to(root)}"
-                )
-            artifacts.append(("runtime_keyframe", keyframe))
+    )
+    keyframe_pages = _require_pdf_pages(
+        resolved_keyframes_pdf,
+        expected=1,
+        label="telemetry keyframes PDF",
+    )
+    _validate_png(resolved_keyframes_png, label="telemetry keyframes PNG")
+    video_metadata = _validate_video(resolved_video)
 
     runtime_screenshot = _inside_root(
         root,
@@ -1010,6 +1424,13 @@ def build_manifest(
         "git_worktree_dirty": dirty,
         "release": release,
         "evaluation_provenance": provenance,
+        "document_pages": {
+            _relative(root, resolved_paper): paper_pages,
+            _relative(root, resolved_report): report_pages,
+            _relative(root, resolved_presentation_pdf): presentation_pages,
+            _relative(root, resolved_keyframes_pdf): keyframe_pages,
+        },
+        "video_metadata": video_metadata,
         "artifact_count": len(records),
         "category_counts": dict(sorted(counts.items())),
         "artifacts": records,
@@ -1035,16 +1456,43 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--failure-analysis", type=Path, default=DEFAULT_FAILURE_ANALYSIS)
     parser.add_argument("--episode-manifest", type=Path, default=DEFAULT_EPISODE_MANIFEST)
     parser.add_argument("--run-manifest", type=Path, default=DEFAULT_RUN_MANIFEST)
+    parser.add_argument(
+        "--offline-ablation",
+        type=Path,
+        default=DEFAULT_OFFLINE_ABLATION_CSV,
+    )
+    parser.add_argument(
+        "--offline-ablation-dataset",
+        type=Path,
+        default=DEFAULT_OFFLINE_ABLATION_DATASET,
+    )
     parser.add_argument("--figures-dir", type=Path, default=DEFAULT_FIGURES_DIR)
     parser.add_argument("--tables-dir", type=Path, default=DEFAULT_TABLES_DIR)
-    parser.add_argument("--videos-dir", type=Path, default=DEFAULT_VIDEOS_DIR)
+    parser.add_argument("--media-keyframes-pdf", type=Path, default=DEFAULT_MEDIA_KEYFRAMES_PDF)
+    parser.add_argument("--media-keyframes-png", type=Path, default=DEFAULT_MEDIA_KEYFRAMES_PNG)
+    parser.add_argument("--video", type=Path, default=DEFAULT_VIDEO)
     parser.add_argument("--paper", type=Path, default=DEFAULT_PAPER)
+    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
+    parser.add_argument("--report-data", type=Path, default=DEFAULT_REPORT_DATA)
+    parser.add_argument("--presentation-pptx", type=Path, default=DEFAULT_PRESENTATION_PPTX)
+    parser.add_argument("--presentation-pdf", type=Path, default=DEFAULT_PRESENTATION_PDF)
+    parser.add_argument("--presentation-notes", type=Path, default=DEFAULT_PRESENTATION_NOTES)
+    parser.add_argument(
+        "--presentation-contact-sheet",
+        type=Path,
+        default=DEFAULT_PRESENTATION_CONTACT_SHEET,
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--command", default="scripts/reproduce_paper.sh")
     parser.add_argument(
         "--release",
         action="store_true",
         help="fail unless the worktree is clean and the real runtime capture is verified",
+    )
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="validate the declared bundle without writing or replacing the manifest",
     )
     return parser
 
@@ -1067,25 +1515,47 @@ def main(argv: Sequence[str] | None = None) -> int:
             failure_analysis_path=args.failure_analysis,
             episode_manifest_path=args.episode_manifest,
             run_manifest_path=args.run_manifest,
+            offline_ablation_path=args.offline_ablation,
+            offline_ablation_dataset_path=args.offline_ablation_dataset,
             figures_dir=args.figures_dir,
             tables_dir=args.tables_dir,
-            videos_dir=args.videos_dir,
+            media_keyframes_pdf_path=args.media_keyframes_pdf,
+            media_keyframes_png_path=args.media_keyframes_png,
+            video_path=args.video,
             paper_path=args.paper,
+            report_path=args.report,
+            report_data_path=args.report_data,
+            presentation_pptx_path=args.presentation_pptx,
+            presentation_pdf_path=args.presentation_pdf,
+            presentation_notes_path=args.presentation_notes,
+            presentation_contact_sheet_path=args.presentation_contact_sheet,
             generation_command=args.command,
             release=args.release,
         )
         output = _inside_root(ROOT.resolve(), args.output, label="artifact manifest output")
-        output.parent.mkdir(parents=True, exist_ok=True)
-        temporary = output.with_suffix(output.suffix + ".tmp")
-        temporary.write_text(
-            json.dumps(payload, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
-        temporary.replace(output)
+        if args.validate_only:
+            published = _require_file(
+                ROOT.resolve(),
+                output,
+                label="published artifact manifest",
+            )
+            _validate_existing_manifest(published, payload)
+        else:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            temporary = output.with_suffix(output.suffix + ".tmp")
+            temporary.write_text(
+                json.dumps(payload, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            temporary.replace(output)
     except (ArtifactError, OSError, ValueError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2
-    print(f"Artifact manifest PASS: {output.relative_to(ROOT)} ({payload['artifact_count']} files)")
+    action = "validation" if args.validate_only else "write"
+    print(
+        f"Artifact manifest {action} PASS: {output.relative_to(ROOT)} "
+        f"({payload['artifact_count']} files)"
+    )
     return 0
 
 

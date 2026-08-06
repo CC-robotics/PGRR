@@ -38,6 +38,15 @@ else
 fi
 
 test -s main.pdf
+if ! command -v pdfinfo >/dev/null 2>&1; then
+    echo "ERROR: pdfinfo is required to enforce the conference page limit" >&2
+    exit 1
+fi
+paper_pages="$(pdfinfo main.pdf | awk '/^Pages:/ {print $2}')"
+if [[ "${paper_pages}" != "8" ]]; then
+    echo "ERROR: conference paper must contain exactly 8 pages; found ${paper_pages:-unknown}" >&2
+    exit 1
+fi
 if grep -Eq "undefined references|Citation .* undefined|Reference .* undefined" main.log; then
     echo "ERROR: unresolved paper reference or citation" >&2
     exit 1

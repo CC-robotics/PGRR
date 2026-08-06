@@ -44,6 +44,16 @@ except ModuleNotFoundError:  # Imported as a namespace module by pytest.
         wilson_interval,
     )
 
+try:
+    from make_tables import ArtifactError as OfflineAblationError
+    from make_tables import load_offline_ablation, offline_ablation_table
+except ModuleNotFoundError:  # Imported as a namespace module by pytest.
+    paper_scripts = str(Path(__file__).resolve().parent)
+    if paper_scripts not in sys.path:
+        sys.path.insert(0, paper_scripts)
+    from make_tables import ArtifactError as OfflineAblationError
+    from make_tables import load_offline_ablation, offline_ablation_table
+
 
 def _write(path: Path, payload: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -144,7 +154,7 @@ def main_results_table(
         )
     payload = provenance + (
         """\\begin{table*}[t]
-\\caption{Closed-loop results on the complete moderate paired manifest.}
+\\caption{Closed-loop results on the held-out three-density Gazebo benchmark.}
 \\label{tab:moderate-main-results}
 \\centering
 \\footnotesize
@@ -206,7 +216,7 @@ def density_results_table(
             )
     payload = provenance + (
         """\\begin{table*}[t]
-\\caption{Terminal outcomes by crowd density on the moderate paired manifest.}
+\\caption{Terminal outcomes by crowd density on the held-out Gazebo benchmark.}
 \\label{tab:moderate-density-results}
 \\centering
 \\footnotesize
@@ -265,7 +275,7 @@ def recovery_metrics_table(
         )
     payload = provenance + (
         """\\begin{table*}[t]
-\\caption{Recovery behavior on valid moderate-benchmark episodes.}
+\\caption{Recovery behavior on valid held-out Gazebo episodes.}
 \\label{tab:moderate-recovery-results}
 \\centering
 \\footnotesize
@@ -345,8 +355,7 @@ def pairwise_statistics_table(
         comparison = comparisons[comparator]
         assert isinstance(comparison, Mapping)
         binary = comparison["binary_outcomes"]
-        continuous = comparison["continuous_metrics"]
-        assert isinstance(binary, Mapping) and isinstance(continuous, Mapping)
+        assert isinstance(binary, Mapping)
         for key, label in (
             ("goal_reached", "Goal reached"),
             ("collision", "Collision"),
@@ -355,17 +364,12 @@ def pairwise_statistics_table(
             analysis = binary[key]
             assert isinstance(analysis, Mapping)
             rows.append(_statistic_row(str(comparator), label, analysis, binary=True))
-        for key, label in (("spl", "SPL"), ("min_human_distance_m", "Min. human distance")):
-            analysis = continuous.get(key)
-            if not isinstance(analysis, Mapping) or analysis.get("status") != "ok":
-                continue
-            rows.append(_statistic_row(str(comparator), label, analysis, binary=False))
     hypothesis_count = int(
         statistics["global_multiple_comparison"]["hypothesis_count"]  # type: ignore[index]
     )
     payload = provenance + (
         """\\begin{table*}[t]
-\\caption{Paired PGRR-minus-baseline comparisons on the complete moderate manifest.}
+\\caption{Paired PGRR-minus-baseline terminal-outcome comparisons on the held-out Gazebo benchmark.}
 \\label{tab:moderate-pairwise-results}
 \\centering
 \\scriptsize
@@ -386,11 +390,10 @@ Baseline & Endpoint & Test & $\\Delta$ [95\\% CI] & $p_{\\mathrm{raw}}$
 \\parbox{0.98\\textwidth}{\\scriptsize \\emph{Note.} Differences are PGRR minus the
 named baseline. Binary-rate differences use percentage points (pp), episode-pair bootstrap
 95\\% CIs, exact McNemar tests, and Haldane-corrected matched odds ratios
-$\\mathrm{OR}_H$. Continuous endpoints use paired bootstrap CIs, Wilcoxon signed-rank tests,
-and rank-biserial correlation $r_{\\mathrm{rb}}$. The reported Holm value belongs to one
-global family of """
+$\\mathrm{OR}_H$. Continuous paired endpoints remain available in the technical report and
+machine-readable statistics. The reported Holm value belongs to one global family of """
         + str(hypothesis_count)
-        + " preregistered binary and continuous tests across all four baselines.}"
+        + " predeclared binary and continuous tests across all four baselines.}"
         + """
 \\end{table*}
 """
@@ -464,8 +467,16 @@ def generate_moderate_tables(
     output_dir: Path,
     *,
     expected_condition_count: int,
+    ablation_path: Path | None = None,
 ) -> list[Path]:
-    """Validate the three inputs and generate all moderate LaTeX tables."""
+    """Validate locked inputs and generate the moderate LaTeX tables.
+
+    The offline imitation ablation is optional because it is independent of
+    the closed-loop condition manifest.  When supplied, its CSV, JSON sidecar,
+    dataset, and checkpoint hashes are validated before ``offline_ablation.tex``
+    is emitted.  This deliberately avoids routing 120x5 closed-loop results
+    through the legacy paper-table generator.
+    """
 
     results, _, statistics = load_moderate_artifacts(
         results_path,
@@ -473,6 +484,12 @@ def generate_moderate_tables(
         statistics_path,
         expected_condition_count=expected_condition_count,
     )
+    ablation_payload: tuple[pd.DataFrame, dict[str, object]] | None = None
+    if ablation_path is not None:
+        try:
+            ablation_payload = load_offline_ablation(ablation_path)
+        except OfflineAblationError as error:
+            raise ModerateArtifactError(str(error)) from error
     provenance = _provenance(results_path, summary_path, statistics_path, results)
     outputs = [
         output_dir / "moderate_main_results.tex",
@@ -486,6 +503,16 @@ def generate_moderate_tables(
     recovery_metrics_table(results, provenance=provenance, output=outputs[2])
     pairwise_statistics_table(statistics, provenance=provenance, output=outputs[3])
     result_macros(results, statistics, provenance=provenance, output=outputs[4])
+    if ablation_path is not None and ablation_payload is not None:
+        ablation, sidecar = ablation_payload
+        offline_output = output_dir / "offline_ablation.tex"
+        offline_ablation_table(
+            ablation,
+            sidecar,
+            ablation_path=ablation_path,
+            output=offline_output,
+        )
+        outputs.append(offline_output)
     return outputs
 
 
@@ -499,11 +526,19 @@ def _parser() -> argparse.ArgumentParser:
         type=int,
         required=True,
         help=(
-            "Exact preregistered test conditions per method; publication generation "
+            "Exact predeclared frozen test conditions per method; publication generation "
             "fails otherwise."
         ),
     )
     parser.add_argument("--output-dir", type=Path, default=ROOT / "paper/generated")
+    parser.add_argument(
+        "--ablation",
+        type=Path,
+        help=(
+            "Optional immutable offline-ablation CSV. Its sibling JSON and all "
+            "referenced dataset/checkpoint hashes are verified before table generation."
+        ),
+    )
     return parser
 
 
@@ -516,6 +551,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.statistics,
             args.output_dir,
             expected_condition_count=args.expected_condition_count,
+            ablation_path=args.ablation,
         )
     except (ModerateArtifactError, OSError, ValueError) as error:
         print(f"ERROR: {error}", file=sys.stderr)

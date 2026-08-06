@@ -10,7 +10,11 @@ evaluation.
 LiDAR-visible cylindrical pedestrians follow deterministic one-shot routes at
 5 Hz and 0.06--0.55 m/s.  Swept-step guards hold motions inside a 0.90-m
 soft-yield region and prevent footprint crossing at 0.73 m.  This produces
-paired, replayable interaction stress tests, not a model of human intent.
+paired, replayable interaction stress tests, not a model of human intent.  The
+same actor guard is applied to every method and sees no method identity.  It
+only modifies a pedestrian's proposed step: it neither overrides robot commands
+nor suppresses the logger's robot--pedestrian collision outcome, so a robot
+entering the physical collision radius is still counted as a collision.
 
 \IfFileExists{figures/runtime_gazebo_doorway_bottleneck_medium.png}{%
 \begin{figure}[t]
@@ -40,19 +44,35 @@ receives identical starts, goals, pedestrian routes, seeds, planner profile,
 and 240-s limit.  Artifact generation rejects missing conditions or mismatched
 pair metadata.
 
-We compare (i) Base DWB; (ii) Standard Nav2 recovery; (iii) rule-triggered
-Heuristic recovery using the same state machine, mask, and supervisor;
-(iv) Uniform BC; and (v) the validation-selected PGRR DAgger checkpoint.  The
-expert is a labeling and diagnostic reference, not a deployment baseline.
-Margin weighting is retained as a negative offline ablation.  PPO and a learned
-detector are not evaluated contributions.
+We compare four baselines with PGRR.  \emph{Base DWB} is NavFn/DWB with Arena's
+periodic-replanning behavior tree and no PGRR node.  \emph{Standard} changes
+only that tree to Arena's supplied replanning-and-recovery tree.
+\emph{Heuristic} adds the observable detector, state machine, mask, and
+supervisor to Base, but selects legal actions deterministically.
+\emph{Uniform BC} uses the same recovery hierarchy, network architecture,
+expert demonstrations, mask, and supervisor as PGRR, but omits DAgger
+aggregation and its train-only coverage shard.  \emph{PGRR} uses the frozen
+validation-selected DAgger checkpoint.  Thus Heuristic isolates learned action
+selection and Uniform BC isolates aggregation; the expert is a training and
+diagnostic reference, not a deployment baseline.  Margin weighting is retained
+as a negative offline result.  PPO and a learned detector are not evaluated
+contributions.
 
 \subsection{Metrics and Statistics}
 Logs retain geometry, commands, planner and recovery state, rule scores, LiDAR,
 and paths.  We report goal, collision, timeout, planner failure, SPL, path
 length, success-conditional time, minimum human distance, personal-space and
 discomfort measures, emergency stops, triggers, recovery success and duration,
-and intervention ratio.  Simulator/reset failures remain recorded and may be
+and intervention ratio.  For episode $i$,
+$\mathrm{SPL}_i=S_iL_i/\max(L_i,P_i)$; success-conditioned time uses only
+$S_i=1$.  Personal-space ratio integrates $\mathbb{1}[d_h<1.2\,\mathrm m]$
+over observed time, while discomfort time uses $d_h<1.0$ m.  A trigger is an
+entry from NORMAL into recovery-active state, recovery success is a logged
+REJOIN$\rightarrow$NORMAL transition, recovery duration integrates states
+PENDING through EMERGENCY-STOP, and intervention ratio additionally includes a
+non-CONTINUE action or command override.  Emergency stops count entries, not
+samples.  Full formulae and implementation pointers are in
+\texttt{docs/metrics.md}.  Simulator/reset failures remain recorded and may be
 excluded only by the declared protocol; algorithm failures are never merged,
 removed, or retried.
 

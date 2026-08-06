@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "stage": "pending",
   "results_available": false,
   "notice": "Validation is running; no numerical result is approved for reporting.",

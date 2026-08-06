@@ -3,7 +3,10 @@ localization that is more accurate than a deployed AMCL stack.  Its
 deterministic pedestrians are useful for paired replay but do not capture human
 intent, group norms, perception uncertainty, or the diversity of real crowds.
 Minimum distance and discomfort time are therefore geometric proxies rather
-than validated human-comfort judgments.
+than validated human-comfort judgments.  Their shared swept-step guard improves
+scenario repeatability but is itself a simplified response model; because it
+does not override robot control or collision labeling, it should not be read as
+a safety mechanism for any compared navigation method.
 
 The detector, planning mask, learned policy, Nav2 controller, and emergency
 supervisor act jointly in the deployed hierarchy.  Closed-loop outcomes do not

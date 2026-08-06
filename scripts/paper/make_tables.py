@@ -289,7 +289,17 @@ def load_offline_ablation(path: Path) -> tuple[pd.DataFrame, dict[str, object]]:
     if "offline" not in note or "never executed" not in note:
         raise ArtifactError(f"{sidecar_path} does not state the mask-disabled execution caveat")
 
-    artifact_root = path.resolve().parents[2]
+    dataset_relative = Path(next(iter(datasets)))
+    if dataset_relative.is_absolute() or ".." in dataset_relative.parts:
+        raise ArtifactError(f"{path} contains a non-portable dataset path")
+    candidate_roots = [
+        parent for parent in path.resolve().parents if (parent / dataset_relative).is_file()
+    ]
+    if len(candidate_roots) != 1:
+        raise ArtifactError(
+            f"cannot resolve one repository root from offline ablation dataset: {path}"
+        )
+    artifact_root = candidate_roots[0]
     referenced = frame[["checkpoint", "checkpoint_sha256"]].drop_duplicates()
     for row in referenced.itertuples(index=False):
         checkpoint = artifact_root / str(row.checkpoint)
