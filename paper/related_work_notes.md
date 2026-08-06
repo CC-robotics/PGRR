@@ -15,15 +15,16 @@ not text to copy verbatim into the manuscript.
 - Arena 5.0's RSS landing-page/Crossref author metadata differs from the
   published PDF title page. `references.bib` follows the 16-author PDF order;
   the DOI, title, venue, and year agree.
-- Arena-Rosnav 2.0, Arena 4.0, Arena-Bench, All-in-One, DR-MPC, and GP recovery
-  are cited using their formal IEEE/RSS records rather than their earlier arXiv
-  records. Existing keys are retained where `main.tex` already uses them.
+- Arena-Rosnav 2.0, Arena 4.0, Arena-Bench, All-in-One, waypoint generators,
+  DR-MPC, and GP recovery are cited using their formal IEEE/RSS records rather
+  than their earlier arXiv records. Existing keys are retained where
+  `main.tex` already uses them.
 - There is no separate peer-reviewed DWB paper. For prose about the controller,
   cite the DWA paper and the Nav2 system paper, then identify the exact DWB
   software/configuration using the
   [official Nav2 documentation](https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html).
-- `wang2026failureaware` remains an original arXiv record: no formal proceedings
-  or journal record was verified at this snapshot.
+- `wang2025fare` and `wang2026failureaware` remain original arXiv records: no
+  formal proceedings or journal records were verified at this snapshot.
 
 ## Paper-by-paper reading notes
 
@@ -107,6 +108,23 @@ not text to copy verbatim into the manuscript.
   it is not a bounded failure-only recovery policy and does not output temporary
   recovery subgoals. This is one of the closest hybrid-navigation comparisons.
 - **Primary record:** <https://doi.org/10.1109/ICRA46639.2022.9811797>
+
+### DRL obstacle avoidance with waypoint generators (`kastner2021waypoints`)
+
+- **Abstract/scope:** connects a DRL obstacle-avoidance controller to a
+  conventional global planner without asking the learned controller to solve
+  long-range planning by itself.
+- **Method:** inserts an intermediate-planner layer whose waypoint generators
+  translate the global plan into local guidance for the learned avoidance
+  controller.
+- **Experiments:** compares the integrated systems with traditional navigation
+  systems in dynamic environments and reports safety, efficiency, and path
+  smoothness outcomes.
+- **Limitation/relevance:** this is the closest waypoint-interface prior art,
+  but its waypoint layer guides a learned local controller during nominal
+  navigation. PGRR instead lets DWB execute both nominal and temporary goals
+  and invokes learning only to choose a bounded recovery option.
+- **Primary record:** <https://doi.org/10.1109/IROS51168.2021.9636039>
 
 ### Dynamic Window Approach (`fox1997dwa`)
 
@@ -261,6 +279,21 @@ not text to copy verbatim into the manuscript.
   planning-expert recovery actions on learner-induced failure states.
 - **Primary record:** <https://arxiv.org/abs/2604.23360>
 
+### Failure resilience in learned visual navigation (`wang2025fare`)
+
+- **Abstract/scope:** augments visual imitation-learning policies so that they
+  can detect, recognize, and recover from out-of-distribution failures.
+- **Method:** shapes the policy representation for OOD detection and
+  recognition without explicit failure data, then uses the recognized failure
+  evidence to inform heuristic recovery.
+- **Experiments:** the preprint reports real-world recovery across two visual
+  navigation policy architectures and a long indoor/outdoor route.
+- **Limitation/relevance:** Fare starts from an end-to-end visual policy and
+  treats policy OOD as the failure signal. PGRR retains a classical nominal
+  controller, detects navigation interaction failures from LiDAR and progress
+  histories, and learns among planning-masked recovery options.
+- **Primary record:** <https://arxiv.org/abs/2510.24680>
+
 ## Method comparison matrix
 
 `Yes (train)` means privileged information is confined to training/labeling.
@@ -273,17 +306,20 @@ version; PPO and a learned detector are not credited as completed contributions.
 | ORCA | no classical global stack assumed | no | analytic reciprocal model | no | no | no | no, reciprocal velocity | yes, reciprocal agents |
 | SARL | no, learned policy is normally active | no | RL reward/simulator | structured human state during learning/testing | no | yes | no, navigation action | yes |
 | All-in-One | planner portfolio under learned switch | no | planner performance through RL | simulator training | no | yes | no, planner selection | yes |
+| Waypoint generators | conventional global planner; learned local avoidance | no | none | simulator training of the DRL controller | no | yes | intermediate guidance for learned control, not a recovery subgoal | highly dynamic obstacles |
 | Del Duchetto et al. | yes | yes | human recovery demonstrations | no simulator privilege required | incremental LfD, not canonical DAgger | no | local recovery control | failure cases, limited social focus |
 | GP robust recovery | yes | yes/proactive | GP risk model and recovery-state search | learned/modelled planning outcomes | no | no | recovery state | unknown/cluttered, not social focus |
 | DR-MPC | MPC backbone | no dedicated failure boundary | learned residual | training trajectories | no | learned residual policy | no, continuous MPC correction | yes |
+| Fare | no, visual IL policy is normally active | OOD-triggered | heuristic recovery informed by OOD recognition | no explicit failure data | no | no recovery RL | no, corrective learned-policy/recovery control | real-world visual navigation, not a social benchmark |
 | This work, current IL version | yes, Nav2 DWB | yes | privileged short-horizon rollout expert | yes (train only) | two rounds | **not completed/claimed** | yes, 21 subgoals + 4 modes | preliminary Humble/Gazebo fallback pilot |
 
 ## Safe positioning for an EI-length manuscript
 
 - **Primary direct comparisons:** All-in-One for hybrid classical/learning
-  control; Del Duchetto et al. for learned navigation recovery; GP recovery for
-  proactive failure/recovery-state reasoning; DR-MPC for residual hybrid social
-  navigation.
+  control; waypoint generators for connecting learned avoidance to a global
+  plan; Del Duchetto et al. for learned navigation recovery; GP recovery for
+  proactive failure/recovery-state reasoning; Fare for learned-policy failure
+  recognition and recovery; DR-MPC for residual hybrid social navigation.
 - **Methodological foundations:** DWA/Nav2, DAgger, and invalid-action masking.
 - **Platform/evaluation provenance:** Arena-Bench and Arena-Rosnav 2.0; Arena
   3.0--5.0 should be compressed into platform evolution, with Arena 5.0 clearly
