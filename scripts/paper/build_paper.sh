@@ -20,7 +20,7 @@ required_artifacts=(
 )
 for artifact in "${required_artifacts[@]}"; do
     if [[ ! -s "${PROJECT_ROOT}/${artifact}" ]]; then
-        echo "ERROR: missing generated moderate-v4 paper artifact: ${artifact}" >&2
+        echo "ERROR: missing generated moderate benchmark paper artifact: ${artifact}" >&2
         echo "Run 'make statistics figures tables' after the complete final run." >&2
         exit 1
     fi

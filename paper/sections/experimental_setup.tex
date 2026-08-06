@@ -1,35 +1,64 @@
 \subsection{Platform and Robot}
 Experiments use the pinned Arena ROS2 Humble runtime with the Gazebo fallback,
 Nav2 NavFn/DWB, and a Jackal model.  The map spans
-$31.28\times24.03$ m and the evaluation footprint radius is 0.36 m.  A planar
-LiDAR is resampled to the 180 bins consumed by the recovery policy.  The
-deployment interface contains only LiDAR, path, velocity, command, progress,
-planner-status, and rule-detector histories; simulator poses are isolated for
-actor execution, expert labeling, and evaluation.
+$31.28\times24.03$ m; evaluation uses a 0.36-m robot radius and 0.35-m
+pedestrian radius.  A planar LiDAR is resampled to the 180 bins consumed by the
+recovery policy.  Localized and physical goal tolerances are 0.25 and 0.30 m,
+respectively.  The deployment interface contains only LiDAR, path, velocity,
+command, progress, planner-status, and rule-detector histories; simulator poses
+are isolated for actor execution, expert labeling, and evaluation.
 
 Pedestrians are LiDAR-visible cylindrical actors following deterministic,
-one-shot routes at 5 Hz.  Their swept-step guard holds a candidate motion that
-would reduce robot clearance inside the configured 0.90 m soft-yield region;
-the 0.73 m hard guard prevents a step from crossing the robot footprint.  This
-protocol makes pedestrian motion replayable without treating scripted actor
-state as a deployment observation.  It is an interaction stress model rather
-than a model of human intent.
+one-shot routes at 5 Hz, with family-dependent speeds spanning 0.06--0.55 m/s.
+Their swept-step guard holds a candidate motion that would reduce robot
+clearance inside the configured 0.90 m soft-yield region; the 0.73 m hard guard
+prevents a step from crossing the robot footprint.  This protocol makes
+pedestrian motion replayable without treating scripted actor state as a
+deployment observation.  It is an interaction stress model rather than a
+model of human intent.
 
-\subsection{Moderate-v4 Scenarios and Splits}
-The benchmark contains head-on corridor, doorway bottleneck, crossing flow,
+\IfFileExists{figures/runtime_gazebo_doorway_bottleneck_medium.png}{%
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{runtime_gazebo_doorway_bottleneck_medium.png}
+  \caption{Actual Arena/Gazebo execution of the doorway interaction with
+  Jackal and LiDAR-visible pedestrians.  The image is qualitative runtime
+  evidence; all numerical results are computed from paired episode logs.}
+  \label{fig:runtime-gazebo}
+\end{figure}
+}{}
+
+\subsection{Moderate-v5 Scenarios and Splits}
+Figure~\ref{fig:scenarios} summarizes the head-on corridor, doorway bottleneck, crossing flow,
 blind corner, group blocking, overtaking, opposite streams, and temporary
 blockage.  Low, medium, and high densities contain one, two, and four
-pedestrians, respectively.  Train, validation, and test use disjoint seed
-blocks and compiled scenario hashes.  The held-out test manifest contains five
-geometry-offset repetitions for every family--density cell, yielding
-\ModeratePairCount{} immutable conditions per method.
+pedestrians, respectively.  All splits intentionally share the
+\texttt{map\_empty} map and the eight family templates; train, validation, and
+test instead use disjoint seed blocks, scenario IDs, and compiled physical
+realizations.  Thus the protocol tests held-out interactions, not unseen-map or
+unseen-template generalization.
 
-All \ModerateMethodCount{} methods run the same condition keys, robot starts,
-goals, pedestrian routes, seeds, timeout, and planner profile.  The resulting
-publication table therefore contains \ModerateEpisodeCount{} logical
-method--episodes before any infrastructure exclusion.  Final generation fails
-if a method is missing a condition, if scenario metadata differs across a
-pair, or if the observed condition count is not the preregistered value.
+The validation manifest contains three repetitions for each of the 24
+family--density cells: 72 conditions per method and 360 logical
+method--episodes across the five methods.  These runs are reserved for code,
+checkpoint, and configuration selection.  The held-out test plan contains five
+repetitions per cell: 120 conditions per method and 600 logical
+method--episodes total.  Every method receives the same condition keys within
+each split.
+
+Moderate-v5 was constructed from moderate-v4 validation evidence, which exposed
+static-geometry overlaps and interaction lanes narrower than the combined
+robot--pedestrian collision radii.  V5 repairs those construction defects while
+retaining the eight families, density levels, footprint, planner, and actor
+protocol.  The full v5 validation manifest is the only split authorized for
+checking reference-planner difficulty and interaction coverage.  No v5 test
+episode is executed or inspected before the code, configuration, scenario
+hashes, and checkpoints are frozen.
+
+All five methods run the same condition keys, robot starts, goals, pedestrian
+routes, seeds, 240-s timeout, and planner profile.  Final generation fails if a
+method is missing a condition, if scenario metadata differs across a pair, or
+if the observed condition count is not the frozen value.
 
 \subsection{Baselines and Learned Method}
 The closed-loop comparison includes: (i) Base DWB without a recovery subtree;
@@ -42,12 +71,14 @@ privileged short-horizon expert is used as a planning reference for labels and
 diagnostics only; it is not a deployment baseline, and no optimality claim is
 made.
 
-Training and model selection use only train and validation scenarios.  Two
-DAgger aggregation rounds are preserved, while the deployed checkpoint is
-chosen by validation loss and closed-loop validation behavior.  Margin
-weighting remains a reported negative offline ablation.  PPO and a learned
-failure detector are outside the evaluated method and are not claimed as
-completed contributions.
+Training and model selection use only train and validation scenarios.  The
+two-round DAgger workflow is preserved, but the second-round candidate did not
+pass validation selection.  The deployed checkpoint instead combines the
+accepted DAgger aggregate with a train-only head-on coverage shard and is chosen
+by validation loss and closed-loop validation behavior.  Margin weighting
+remains a reported negative offline ablation.  PPO and a learned failure
+detector are outside the evaluated method and are not claimed as completed
+contributions.
 
 \subsection{Metrics and Statistical Protocol}
 Every stream records physical robot and pedestrian geometry, commands, planner
@@ -60,20 +91,31 @@ intervention ratio.  \texttt{SIMULATOR\_FAILURE} and
 from algorithm rates according to the declared protocol; collision, timeout,
 and planner failure are never merged or removed.
 
+A recovery success is a logged REJOIN-to-NORMAL transition.  The state-machine
+guard requires the original task goal to be active again, failure score below
+$\tau_{off}$, and valid goal progress.  Reaching the final goal is a separate
+navigation outcome, and the recovery metric does not add an unimplemented
+post-transition protection window.
+
 PGRR is paired separately with each baseline on identical condition keys.
 Binary outcomes use exact McNemar tests and episode-pair bootstrap confidence
 intervals.  Continuous paired differences use two-sided Wilcoxon signed-rank
 tests, paired bootstrap intervals, and rank-biserial effect sizes.  One global
-Holm correction covers all preregistered comparator--endpoint tests.  The
-tables report effect sizes and intervals regardless of statistical
+Holm correction covers all predeclared comparator--endpoint tests.  Confidence
+intervals use 10,000 paired bootstrap resamples with recorded seed 20260804.
+The tables report effect sizes and intervals regardless of statistical
 significance.
 
 \subsection{Execution and Artifact Integrity}
-Concurrent workers use isolated ROS domain IDs and simulator partitions.  A
+Six concurrent workers use isolated ROS domain IDs and simulator partitions.  A
 startup handshake holds actors until navigation, authoritative pose feedback,
 and logging are active.  The runner refuses overwrite, records checkpoint and
-scenario hashes, retains both attempts after an infrastructure retry, and
-requires exactly one accepted terminal result per logical task.  The paper
-pipeline first collects the locked run, then validates the complete five-method
+scenario hashes, and retains every physical attempt.  A logical task permits at
+most three physical attempts: the initial attempt and up to two retries, each
+only after an explicitly classified \texttt{SIMULATOR\_FAILURE} or
+\texttt{INVALID\_RESET}.  Collision, timeout, and planner failure are accepted
+algorithm outcomes and are never rerun because they are unfavorable.  Exactly
+one accepted terminal result is required per logical task.  The paper pipeline
+first collects the locked run, then validates the complete five-method
 condition set, computes statistics, and generates all result tables and figures
 from Parquet, CSV, and JSON artifacts.

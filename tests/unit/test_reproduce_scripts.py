@@ -62,27 +62,43 @@ def test_paper_reproduction_consumes_artifacts_without_running_simulation() -> N
     assert "summarize_moderate.py" in source
     assert "failure_analysis.py" in source
     assert "render_episode_media.py" in source
+    assert "offline_policy_ablation.py" in source
+    assert "--output outputs/final/offline_policy_ablation.csv" in source
     assert "make_method_figures.py" in source
     assert "make_moderate_figures.py" in source
     assert "make_moderate_tables.py" in source
     assert "make_figures.py" not in source
-    assert "make_tables.py" not in source
+    assert "scripts/paper/make_tables.py" in source
+    assert "--ablation outputs/final/offline_policy_ablation.csv" in source
     assert "build_paper.sh" in source
     assert "build_artifact_manifest.py" in source
     assert "outputs/moderate/final" in source
     assert "MODERATE_EXPECTED_CONDITIONS:-120" in source
+    assert "configs/final/ei_gazebo.yaml" in source
+    assert "scenario_catalog_moderate_v5.yaml" in source
+    assert "moderate_v5_test.yaml" in source
+    assert "outputs/moderate/v5_validation/calibration_report.json" in source
     assert "METHODS=(base standard heuristic bc_uniform pgrr)" in source
     assert "--main-method pgrr" in source
     assert "--bootstrap-seed 20260804" in source
+    assert '--test-split "${MODERATE_TEST_SPLIT}"' in source
+    assert '--evaluation-config "${FINAL_EVALUATION_CONFIG}"' in source
+    assert '--calibration-report "${MODERATE_CALIBRATION_REPORT}"' in source
+    assert "PGRR_RELEASE_MODE:-1" in source
+    assert "git status --porcelain --untracked-files=all" in source
+    assert "release_args+=(--release)" in source
+    assert '"${release_args[@]}"' in source
     assert "run_experiment.py" not in source
     assert "run_baseline.py" not in source
     assert "smoke_arena.sh" not in source
 
     stages = (
+        "offline_policy_ablation.py",
         "collect_results.py",
         "summarize_moderate.py",
         "make_method_figures.py",
         "make_moderate_figures.py",
+        "scripts/paper/make_tables.py",
         "make_moderate_tables.py",
         "build_paper.sh",
     )

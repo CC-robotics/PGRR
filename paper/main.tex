@@ -29,7 +29,10 @@ velocity, the policy selects among 21 temporary subgoals and four interpretable
 recovery modes.  A planning mask rejects infeasible decisions, and an
 independent stopping-distance supervisor may override motion.  A privileged
 short-horizon planner supplies recovery demonstrations for behavior cloning and
-two rounds of DAgger; deployment uses only LiDAR and navigation history.  The
+a two-round DAgger workflow; the validation-selected checkpoint extends the
+accepted DAgger aggregate with a train-only coverage shard rather than using
+the unselected second-round candidate.  Deployment uses only LiDAR and
+navigation history.  The
 held-out moderate protocol evaluates \ModerateMethodCount{} methods on the same
 \ModeratePairCount{} conditions each (\ModerateEpisodeCount{} method--episodes).
 PGRR reaches \ModeratePGRRSuccessRate{} of goals versus
@@ -62,15 +65,34 @@ single safety score.
 
 \begin{figure*}[t]
   \centering
+  \includegraphics[width=0.96\textwidth]{recovery_state_machine.pdf}
+  \caption{Bounded recovery state machine.  Hysteretic detector evidence,
+  original-goal progress, action completion, and the independent emergency
+  guard determine transitions; all recovery and rejoin loops have explicit
+  attempt and wall-clock limits.}
+  \label{fig:state-machine}
+\end{figure*}
+
+\begin{figure*}[t]
+  \centering
   \includegraphics[width=0.96\textwidth]{action_space_expert.pdf}
-  \caption{Interpretable recovery decisions and privileged expert labeling.
-  Candidate rollouts that violate the configured planning mask are never
-  selectable; privileged pedestrian prediction is used only to rank legal
-  training actions.}
+  \caption{Schematic illustration of interpretable recovery decisions and
+  privileged expert labeling; it is not a recorded episode rollout.  Candidate
+  rollouts that violate the configured planning mask are never selectable, and
+  privileged pedestrian prediction is used only to rank legal training
+  actions.}
   \label{fig:action-expert}
 \end{figure*}
 
 \section{Experimental Setup}
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.96\textwidth]{scenario_overview.pdf}
+  \caption{The eight deterministic interaction-family templates.  Arrows show
+  nominal robot and pedestrian routes; each split compiles separate seeded
+  physical realizations at low, medium, and high density on the same map.}
+  \label{fig:scenarios}
+\end{figure*}
 \input{sections/experimental_setup.tex}
 
 \section{Results and Analysis}

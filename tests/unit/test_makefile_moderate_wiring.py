@@ -39,7 +39,7 @@ def test_final_runner_uses_real_python_entrypoint_and_five_methods() -> None:
     command = _dry_run("evaluate-flatland")
     assert "scripts/evaluate/run_experiment.py" in command
     assert "scripts/evaluate/run_experiment.sh" not in command
-    assert '--split-manifest "scenarios/splits/moderate_v4_test.yaml"' in command
+    assert '--split-manifest "scenarios/splits/moderate_v5_test.yaml"' in command
     assert "--methods base standard heuristic bc_uniform pgrr" in command
     assert '--output-dir "outputs/moderate/final"' in command
 

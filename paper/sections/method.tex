@@ -6,12 +6,17 @@ $o_t$ contains five 180-beam LiDAR scans, goal distance and bearing, eight path
 waypoints in the robot frame, robot velocity, $u^B_t$, ten-step goal-distance and
 angular-velocity histories, a one-hot planner status, and four rule scores.
 Ground-truth pedestrian state is isolated in a privileged record used only for
-expert labeling and evaluation.
+expert labeling and evaluation.  Figure~\ref{fig:architecture} separates these
+training-only signals from the observable deployment loop.
 
 \subsection{Failure Trigger and Recovery State Machine}
 The detector computes collision-risk, freeze, oscillation, and deadlock scores.
 Collision risk combines braking distance, 1.5-s time to collision, absolute
-near-field clearance, and a 0.5-s radial closing trend.  Freeze requires more
+near-field clearance, and a 0.5-s radial closing trend.  The absolute trigger
+uses the narrow forward sector; an off-axis return must retain a consistent
+bearing and close faster than the range change explained by ego motion.  This
+keeps a static corner shelf from impersonating a moving obstacle while the
+independent footprint guard remains active.  Freeze requires more
 than 1 m remaining, less than 0.15 m displacement over 3 s, and a planner request
 for motion.  Oscillation requires at least six angular-velocity sign changes
 after a 0.08 rad/s deadband and less than 0.20 m progress over 4 s.  Deadlock uses
@@ -20,18 +25,23 @@ obstacle within 1.2 m, and low robot speed.  Motion rules are disabled for the
 first 4 s after the synchronized
 episode handshake; collision evidence remains active.
 
-The usual state sequence is
-NORMAL$\rightarrow$PENDING$\rightarrow$RECOVERY$\rightarrow$REJOIN, although a
-confirmed one-frame trigger may enter RECOVERY directly after cooldown.
-EMERGENCY-STOP has highest priority and may resume; only FAILED and SUCCEEDED
-are terminal.  Recovery enters above $\tau_{on}=0.65$ and exits after four
-frames below $\tau_{off}=0.35$ plus valid
-goal progress.  Decisions occur at 2 Hz, velocity control at 10 Hz, with a 0.5-s
-minimum hold, 2-s cooldown, an 8-s learned-policy recovery bound, a 5-s rejoin
-bound, and four consecutive recovery attempts.  The original goal is stored
+Figure~\ref{fig:state-machine} shows the complete bounded state machine.
+NORMAL, PENDING, RECOVERY, and REJOIN are nonterminal; EMERGENCY-STOP has
+highest priority and resumes through RECOVERY, REJOIN, or NORMAL as indicated
+by the saved state and current score.  Only FAILED and SUCCEEDED are terminal.
+The final configuration confirms entry above $\tau_{on}=0.65$ in one decision
+frame and requires four frames below $\tau_{off}=0.35$ plus valid goal progress
+to leave recovery.  Decisions occur at 2 Hz and velocity control at 10 Hz, with
+a 0.5-s minimum hold and 2-s cooldown.  A normal learned option is bounded by
+8 s, a still-active directional-yield option by 30 s, and the entire unresolved
+recovery--rejoin sequence by 45 s.  Each REJOIN is bounded by 5 s, permits at
+most two returns to RECOVERY within the sequence, and the state machine permits
+at most four consecutive recovery activations.  The original goal is stored
 before intervention and reissued whenever a bounded temporary option hands
 control to REJOIN; this transition does not require Nav2 to have reached the
-temporary target.
+temporary target.  A recovery is counted successful only when REJOIN then
+returns to NORMAL with the original goal active, the score below $\tau_{off}$,
+and valid progress; no extra post-transition protection window is assumed.
 
 \subsection{Recovery Actions, Mask, and Safety Supervisor}
 The 25 actions are 21 robot-relative subgoals
@@ -46,6 +56,34 @@ global-path deviation, or unavailable replanning.  WAIT is the final safe
 fallback, so at least one action remains legal.  Before softmax, masked logits
 are set to the minimum representable value.
 
+During an active learned directional-yield latch, LiDAR bearings and candidate
+endpoints are represented in the local task-path frame.  Comparing the oldest
+and newest scans of the five-frame stack, a side is marked as closing when at
+least six valid returns in its $5^{\circ}$--$60^{\circ}$ sector decrease by at
+least 0.20 m and their current ranges are at most 4.0 m.  Evidence updates are
+suspended when $|\omega|>0.20$ rad/s.  The yield latch itself releases only
+after three distinct scans show at least 0.90 m clearance inside a
+$\pm15^{\circ}$ corridor centered on the observable local path tangent while
+the collision score is clear.  Retained side evidence removes only
+already-legal endpoints directed toward the observed closing side.  After the
+learner selects an endpoint with at least 0.25 m task-normal displacement, a
+route-consistent side commitment removes opposite-side endpoints on subsequent
+active-yield retriggers.  Its progress horizon is configuration controlled; it
+also releases after a path-tangent change greater than $45^{\circ}$, a newly
+observed conflict on the committed side, loss of every planning-safe escape on
+that side, or terminal reset.
+
+If an unresolved interaction reaches its second recovery activation, the
+recurrent-escape constraint retains only already-valid lateral subgoals and
+REPLAN whenever at least one exists.  Reliable unilateral closing-flow evidence
+applies the same escalation on the first activation.  If no such escape is
+legal and BACKUP remains the selected safe fallback, unilateral flow uses a
+1-s bounded pulse before recomputing the complete mask; ordinary BACKUP remains
+bounded by 3 s.  These observable filters only intersect the geometric and
+planning mask, never re-enable motion, and retain WAIT as a fail-closed
+fallback.  Their thresholds were selected on validation interactions; we make
+no isolated causal or formal-safety claim for any guard.
+
 An independent supervisor may override any policy output.  Its longitudinal
 stopping distance is
 \begin{equation}
@@ -53,7 +91,10 @@ stopping distance is
 \end{equation}
 with $a_b=0.8$ m/s$^2$, latency $\ell=0.15$ s, and margin $m=0.45$ m in the
 recovery controller.  It provides bounded stop, reverse, turn, and forward
-escape submodes, all logged separately from the learned action.  This is an
+escape submodes, all logged separately from the learned action.  Translation
+uses a 0.48-m omnidirectional stop threshold.  In-place turns use a separate
+0.40-m swept-radius threshold for the 0.36-m circular evaluation footprint, so
+a safe side wall cannot prohibit every bounded rotation.  This is an
 empirical safety filter, not a formal guarantee.
 
 \subsection{Privileged Planning Expert}
@@ -75,6 +116,8 @@ and repeated waiting.  The weights are respectively
 $(10^6,8,4,3,0.4,0.2,0.3,0.5,1)$; collision and masked actions are effectively
 hard constraints.  Besides the minimum-cost action, the expert stores all 25
 costs and the gap to the second-best action for analysis.
+Figure~\ref{fig:action-expert} is a schematic of this candidate ranking, not a
+recorded episode rollout.
 
 \subsection{Behavior Cloning and DAgger}
 The policy uses two 1-D convolutions over the $5\times180$ LiDAR stack, a
@@ -85,10 +128,14 @@ the selected model, uniform behavior cloning minimizes
 \end{equation}
 DAgger then executes the learner on training scenarios, asks the privileged
 expert to relabel visited recovery states, aggregates them, and retrains.  The
-selected aggregate contains 1,387 raw recovery states from 12 episodes; mirror
-augmentation yields 2,774 training samples, with 399 states in a
-scenario-disjoint validation set.  Training uses AdamW at $3\times10^{-4}$,
-batch size 128, maximum 30 epochs, gradient norm 1, and early-stopping patience
-6.  The deployment checkpoint is selected by validation loss.  Its configuration
-uses uniform BC and no PPO; throughout the paper, PGRR therefore denotes the
+two-round workflow was completed, but the second-round candidate was not
+selected on validation.  The deployed checkpoint instead retrains the accepted
+DAgger aggregate after adding a train-only head-on coverage shard; no validation
+or test episode enters that shard.  This selected aggregate contains 1,387 raw
+recovery states from 12 episodes; mirror augmentation yields 2,774 training
+samples, with 399 states in a scenario-disjoint validation set.  Training uses
+AdamW at $3\times10^{-4}$, batch size 128, maximum 30 epochs, gradient norm 1,
+and early-stopping patience 6.  The deployment checkpoint is selected by
+validation loss and closed-loop validation behavior.  Its configuration uses
+uniform BC and no PPO; throughout the paper, PGRR therefore denotes the
 selected DAgger policy rather than an RL-refined variant.

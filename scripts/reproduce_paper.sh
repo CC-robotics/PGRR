@@ -6,12 +6,18 @@ PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-ramp-offline}"
 MODERATE_ANALYSIS_DIR="${MODERATE_ANALYSIS_DIR:-outputs/moderate/final}"
 MODERATE_EXPECTED_CONDITIONS="${MODERATE_EXPECTED_CONDITIONS:-120}"
+FINAL_EVALUATION_CONFIG="${FINAL_EVALUATION_CONFIG:-configs/final/ei_gazebo.yaml}"
+MODERATE_BENCHMARK_CONFIG="${MODERATE_BENCHMARK_CONFIG:-configs/experiments/scenario_catalog_moderate_v5.yaml}"
+MODERATE_TEST_SPLIT="${MODERATE_TEST_SPLIT:-scenarios/splits/moderate_v5_test.yaml}"
+MODERATE_CALIBRATION_REPORT="${MODERATE_CALIBRATION_REPORT:-outputs/moderate/v5_validation/calibration_report.json}"
+PGRR_RELEASE_MODE="${PGRR_RELEASE_MODE:-1}"
 EPISODE_MANIFEST="${MODERATE_ANALYSIS_DIR}/episode_manifest.parquet"
 RUN_MANIFEST="${MODERATE_ANALYSIS_DIR}/run_manifest.json"
 RESULTS="${MODERATE_ANALYSIS_DIR}/results.parquet"
 SUMMARY="${MODERATE_ANALYSIS_DIR}/summary.csv"
 STATISTICS="${MODERATE_ANALYSIS_DIR}/pairwise_statistics.json"
 METHODS=(base standard heuristic bc_uniform pgrr)
+release_args=()
 
 if (($#)); then
     echo "Usage: scripts/reproduce_paper.sh" >&2
@@ -25,6 +31,14 @@ if ! command -v conda >/dev/null 2>&1; then
     echo "ERROR: conda is required for the ramp-offline environment" >&2
     exit 1
 fi
+case "${PGRR_RELEASE_MODE}" in
+    0) ;;
+    1) release_args+=(--release) ;;
+    *)
+        echo "ERROR: PGRR_RELEASE_MODE must be 0 (development) or 1 (release)" >&2
+        exit 2
+        ;;
+esac
 
 clean_env() {
     env \
@@ -53,7 +67,18 @@ offline() {
 }
 
 cd "${PROJECT_ROOT}"
-for required in "${EPISODE_MANIFEST}" "${RUN_MANIFEST}"; do
+if [[ "${PGRR_RELEASE_MODE}" == "1" ]] && [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
+    echo "ERROR: release paper reproduction requires a clean Git worktree" >&2
+    echo "Use PGRR_RELEASE_MODE=0 only for a development artifact rebuild." >&2
+    exit 1
+fi
+for required in \
+    "${EPISODE_MANIFEST}" \
+    "${RUN_MANIFEST}" \
+    "${FINAL_EVALUATION_CONFIG}" \
+    "${MODERATE_BENCHMARK_CONFIG}" \
+    "${MODERATE_TEST_SPLIT}" \
+    "${MODERATE_CALIBRATION_REPORT}"; do
     if [[ ! -s "${required}" ]]; then
         echo "ERROR: missing completed final-run input: ${required}" >&2
         echo "This command only rebuilds artifacts; it never starts or resumes simulation." >&2
@@ -61,7 +86,9 @@ for required in "${EPISODE_MANIFEST}" "${RUN_MANIFEST}"; do
     fi
 done
 
-echo "[reproduce-paper] collecting the locked moderate-v4 run; no simulation will be launched"
+echo "[reproduce-paper] collecting the locked moderate-v5 run; no simulation will be launched"
+offline python scripts/evaluate/offline_policy_ablation.py \
+    --output outputs/final/offline_policy_ablation.csv
 offline python scripts/evaluate/collect_results.py \
     --manifest "${EPISODE_MANIFEST}" \
     --run-manifest "${RUN_MANIFEST}" \
@@ -97,7 +124,22 @@ for figure_dir in paper/figures outputs/figures; do
         --expected-condition-count "${MODERATE_EXPECTED_CONDITIONS}" \
         --output-dir "${figure_dir}"
 done
+offline_table_build_dir="$(mktemp -d)"
+cleanup_offline_table_build() {
+    rm -r -- "${offline_table_build_dir}"
+}
+trap cleanup_offline_table_build EXIT
+offline python scripts/paper/make_tables.py \
+    --results "${RESULTS}" \
+    --summary "${SUMMARY}" \
+    --statistics-json "${STATISTICS}" \
+    --ablation outputs/final/offline_policy_ablation.csv \
+    --output-dir "${offline_table_build_dir}"
 for table_dir in paper/generated outputs/tables; do
+    mkdir -p "${table_dir}"
+    install -m 0644 \
+        "${offline_table_build_dir}/offline_ablation.tex" \
+        "${table_dir}/offline_ablation.tex"
     offline python scripts/paper/make_moderate_tables.py \
         --results "${RESULTS}" \
         --summary "${SUMMARY}" \
@@ -110,14 +152,18 @@ clean_env \
     CONDA_ENV_NAME="${CONDA_ENV_NAME}" \
     bash "${PROJECT_ROOT}/scripts/paper/build_paper.sh"
 offline python scripts/paper/build_artifact_manifest.py \
+    --config "${MODERATE_BENCHMARK_CONFIG}" \
+    --evaluation-config "${FINAL_EVALUATION_CONFIG}" \
+    --test-split "${MODERATE_TEST_SPLIT}" \
     --results "${RESULTS}" \
     --summary "${SUMMARY}" \
     --statistics "${STATISTICS}" \
-    --calibration-report "${MODERATE_ANALYSIS_DIR}/calibration_report.json" \
+    --calibration-report "${MODERATE_CALIBRATION_REPORT}" \
     --failure-analysis "${MODERATE_ANALYSIS_DIR}/failure_analysis.md" \
     --episode-manifest "${EPISODE_MANIFEST}" \
     --run-manifest "${RUN_MANIFEST}" \
     --output "${MODERATE_ANALYSIS_DIR}/artifact_manifest.json" \
-    --command scripts/reproduce_paper.sh
+    --command scripts/reproduce_paper.sh \
+    "${release_args[@]}"
 
 echo "[reproduce-paper] PASS: paper/main.pdf and ${MODERATE_ANALYSIS_DIR}/artifact_manifest.json"

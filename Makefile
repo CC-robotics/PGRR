@@ -22,11 +22,13 @@ MODERATE_RESULTS ?= $(MODERATE_ANALYSIS_DIR)/results.parquet
 MODERATE_SUMMARY ?= $(MODERATE_ANALYSIS_DIR)/summary.csv
 MODERATE_STATISTICS ?= $(MODERATE_ANALYSIS_DIR)/pairwise_statistics.json
 MODERATE_EXPECTED_CONDITIONS ?= 120
-MODERATE_SPLIT_MANIFEST ?= scenarios/splits/moderate_v4_test.yaml
+MODERATE_BENCHMARK_CONFIG ?= configs/experiments/scenario_catalog_moderate_v5.yaml
+MODERATE_SPLIT_MANIFEST ?= scenarios/splits/moderate_v5_test.yaml
+MODERATE_CALIBRATION_REPORT ?= outputs/moderate/v5_validation/calibration_report.json
 MODERATE_METHODS ?= base standard heuristic bc_uniform pgrr
 MODERATE_MAIN_METHOD ?= pgrr
 MODERATE_REFERENCE_METHOD ?= base
-EVALUATION_JOBS ?= 3
+EVALUATION_JOBS ?= 6
 EVALUATION_TIMEOUT_S ?= 240
 OFFLINE_RUN := env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION conda run -n "$(CONDA_ENV_NAME)"
 
@@ -88,7 +90,7 @@ train-detector: ## Train the optional learned failure detector.
 	@$(OFFLINE_RUN) python scripts/train/train_detector.py --seed "$(SEED)"
 pilot: ## Run validation-only pilot evaluation.
 	@scripts/evaluate/run_experiment.sh --tier pilot --seed "$(SEED)"
-evaluate-flatland: ## Run the locked five-method moderate-v4 test manifest.
+evaluate-flatland: ## Run the locked five-method moderate-v5 test manifest (legacy target name).
 	@$(OFFLINE_RUN) python scripts/evaluate/run_experiment.py \
 		--split test --split-manifest "$(MODERATE_SPLIT_MANIFEST)" \
 		--methods $(MODERATE_METHODS) --jobs "$(EVALUATION_JOBS)" \
