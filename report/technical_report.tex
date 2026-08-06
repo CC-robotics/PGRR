@@ -1,0 +1,388 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\setmainfont{Noto Serif CJK SC}
+\setsansfont{Noto Sans CJK SC}
+\setmonofont{Noto Sans Mono CJK SC}
+\setCJKmainfont{Noto Serif CJK SC}
+\setCJKsansfont{Noto Sans CJK SC}
+\setCJKmonofont{Noto Sans Mono CJK SC}
+\usepackage[a4paper,margin=22mm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{array,booktabs,longtable,tabularx}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{microtype}
+
+\definecolor{PGRRInk}{HTML}{1B1F23}
+\definecolor{PGRRBlue}{HTML}{356E9F}
+\definecolor{PGRROrange}{HTML}{D55E00}
+\definecolor{PGRRLight}{HTML}{F2F4F5}
+\hypersetup{colorlinks=true,linkcolor=PGRRBlue,urlcolor=PGRRBlue}
+\graphicspath{{../paper/figures/}{generated/}}
+\input{generated/report_stage.tex}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{PGRR 动态社会导航技术报告}
+\rhead{\ReportStageLabel}
+\cfoot{\thepage}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.35em}
+\setlist{nosep,leftmargin=2em}
+
+\newcommand{\StageBox}{%
+  \begin{center}
+  \fcolorbox{PGRROrange}{PGRRLight}{%
+    \begin{minipage}{0.90\textwidth}
+    \textbf{报告阶段：\ReportStageLabel}\par
+    \ReportStageNotice
+    \end{minipage}}
+  \end{center}}
+
+\newcommand{\PendingResults}{%
+  \begin{center}
+  \fcolorbox{PGRRBlue}{PGRRLight}{%
+    \begin{minipage}{0.88\textwidth}
+    \centering\bfseries
+    本页结果尚未锁定。构建系统没有读取历史 64-episode、pilot、calibration
+    或正在写入的验证目录，也没有填入推测数值。
+    \end{minipage}}
+  \end{center}}
+
+\newcommand{\SafeFigure}[3][0.93\textwidth]{%
+  \begin{figure}[htbp]
+  \centering
+  \IfFileExists{#2}{\includegraphics[width=#1]{#2}}{\includegraphics[width=#1]{#2}}
+  \caption{#3}
+  \end{figure}}
+
+\title{\bfseries 规划引导、失败触发的动态社会导航恢复与重接\\
+\large PGRR 系统、算法、实验与复现技术报告}
+\author{Charles Chen}
+\date{2026 年 8 月}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{22mm}
+  {\sffamily\bfseries\fontsize{24}{30}\selectfont
+  规划引导、失败触发的\\动态社会导航恢复与重接\par}
+  \vspace{7mm}
+  {\sffamily\Large PGRR 技术报告\par}
+  \vspace{14mm}
+  \SafeFigure[0.88\textwidth]{system_architecture.pdf}{PGRR 的可观测闭环架构。该图为结果无关的方法图。}
+  \vfill
+  {\large Charles Chen\par}
+  \vspace{2mm}
+  {\ReportStageLabel\par}
+  \vspace{8mm}
+  {\small 本文档与 8 页 IEEE 会议稿相互独立：会议稿保持紧凑，本报告保存完整工程、算法、协议和证据链。\par}
+\end{titlepage}
+
+\clearpage
+\section*{报告状态与执行摘要}
+\addcontentsline{toc}{section}{报告状态与执行摘要}
+\StageBox
+
+PGRR 保留 Nav2 DWB 作为常态导航器，仅在可观测风险或持续无进展证据满足滞回触发条件时介入。学习策略不直接输出底盘速度，而是在 21 个临时子目标和
+WAIT、BACKUP、REPLAN、CONTINUE 四个离散恢复动作之间选择。地图、LiDAR、路径和行为可用性共同形成 action mask，独立停止距离监督器拥有最高覆盖优先级。
+
+训练侧使用短时域特权规划专家产生动作和候选代价，随后采用 Behavior Cloning 和两轮 DAgger 覆盖策略诱导状态。部署侧只读取 LiDAR、目标、局部路径、机器人速度、DWB 输出、进展历史、规划器状态和失败分数，不读取行人真值或未来轨迹。
+
+本报告把终止结果、安全、效率、稳定性、恢复行为、排除项和失败案例分开呈现。碰撞减少不会被重新解释为成功；超时和规划失败不会被隐藏。只有 stage-aware 构建器通过路径、split、pair 和完整性检查后，结果页才会出现数值。
+
+\clearpage
+\tableofcontents
+\clearpage
+\listoffigures
+\listoftables
+
+\clearpage
+\section{问题背景与研究目标}
+在已知二维静态地图中，经典局部规划器能够稳定完成大量常规 PointGoal 任务，但动态行人会引入互相让行、门口竞争、遮挡突现和短时封堵。持续端到端替换经典规划器会扩大分布偏移和验证范围，且不利于解释具体恢复行为。
+
+本项目研究的问题是：\emph{能否在不破坏正常场景稳定性的前提下，只在传统规划器即将失败时，利用规划专家生成的示范和分布聚合学习恢复决策？}
+
+系统的最低目标不是承诺无碰撞，而是形成一个有界、可审计、可回退的恢复层，并使用相同 episode manifest 对五种方法进行配对评价。
+
+\clearpage
+\section{典型失败模式}
+系统统一处理四类高层失败证据：碰撞风险、冻结、左右振荡和动态死锁。它们既可能由动态参与者引起，也可能由局部路径、几何角点和控制历史共同造成。
+
+\begin{description}
+  \item[碰撞风险] 前向硬距离、制动距离、时间到碰撞或持续侧向闭合趋势达到阈值。
+  \item[冻结] 目标仍远、机器人位移不足，但规划器持续请求运动或没有有效控制。
+  \item[振荡] 角速度在去除死区后反复换向，同时缺少目标进展。
+  \item[死锁] 周围占据持续阻塞原路径，短窗口内机器人没有可接受进展。
+\end{description}
+
+失败类别用于触发和分析，不替代最终 episode 结局。每个 episode 只能属于预声明的目标到达、碰撞、超时、规划失败或两个基础设施排除类之一。
+
+\clearpage
+\section{贡献、边界与命名}
+PGRR 表示 Planning-Guided Recovery and Rejoin。当前可验证的贡献边界是：
+
+\begin{enumerate}
+  \item 经典规划器常态运行、失败证据持续后才介入的分层架构；
+  \item 使用特权短时域规划自动标注可解释恢复子目标；
+  \item Behavior Cloning 与两轮 DAgger 组成的恢复分布学习流程；
+  \item 规划约束 action mask、独立安全监督和有界重接状态机；
+  \item 覆盖八类动态交互、三档密度和完整终止类别的配对协议。
+\end{enumerate}
+
+PPO、学习型失败检测器、跨仿真器大规模迁移和实机部署不是当前版本的贡献。报告不会使用“首次结合”“保证安全”或“解决社会导航”等不可验证表述。
+
+\clearpage
+\section{总体系统架构}
+\SafeFigure{system_architecture.pdf}{PGRR 在线闭环和训练侧特权监督边界。虚线训练区域不会进入部署观测。}
+
+在线链路按“观测构造—失败证据—滞回状态机—动作 mask—策略选择—临时目标执行—原目标重接”运行。Nav2 继续负责全局路径和 DWB 局部控制；Goal Mux 保存原始目标，恢复期间只临时切换到可执行子目标。
+
+\clearpage
+\section{正式观测与信息边界}
+\begin{table}[htbp]
+\centering
+\caption{恢复策略可用观测。}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+类别 & 内容 \\
+\midrule
+LiDAR & 最近 5 帧，每帧下采样为 180 beams \\
+目标与路径 & 机器人坐标系目标极坐标；全局路径前方 8 个局部路点 \\
+运动状态 & 当前线/角速度；DWB 当前线/角速度输出 \\
+历史 & 最近 10 步目标距离变化与角速度变化 \\
+离散状态 & 规划器状态以及规则失败检测分数 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+正式评价禁止使用行人 ID、真实位置、真实速度、未来轨迹、仿真器碰撞预言和测试标签。privileged 字段只存在于专家标注、评价和错误分析链路中。
+
+\clearpage
+\section{失败触发与滞回}
+触发器不依赖单帧宽扇区的孤立近距返回。窄前向区域保留即时硬防护；偏轴风险需要一段时间内方向一致、并补偿机器人自运动的闭合证据。冻结、振荡和死锁分别使用位移、目标进展、角速度换向和规划器状态的时间窗口。
+
+进入恢复要求失败分数连续超过 $\tau_{on}$，退出要求连续低于 $\tau_{off}$ 且重新产生目标进展，并满足 $\tau_{on}>\tau_{off}$。cooldown、动作最短保持时间、恢复总时限和最大连续恢复次数共同抑制快速反复触发。
+
+\clearpage
+\section{恢复动作空间}
+\SafeFigure{action_space_expert.pdf}{21 个临时子目标、4 个行为动作以及特权专家排序示意。该图是方法示意，不是录制 episode。}
+
+临时子目标由三个半径 $r\in\{0.6,1.0,1.4\}$ m 与七个相对角
+$\theta\in\{-90,-60,-30,0,30,60,90\}^{\circ}$ 组合而成。动作 ID 固定且不会随训练重排。临时目标仍由 DWB 执行，因此学习策略保持为高层恢复选择器。
+
+\clearpage
+\section{规划 Action Mask}
+mask 在策略 softmax 前执行，任何策略都不能选择被屏蔽动作。子目标在障碍内、地图外、局部不可达、与机器人不连通或明显进入动态占据区域时无效；BACKUP 需要后方安全距离；REPLAN 需要当前规划接口可用。
+
+mask 是可行性约束，不是形式化安全证明。无 mask 的离线行只用于评估非法动作倾向，绝不在仿真中执行。
+
+\clearpage
+\section{独立安全监督器}
+平移停止距离采用
+\[
+  d_{stop}=\frac{v^2}{2a_{brake}}+v\,t_{latency}+d_{margin}.
+\]
+当最近障碍距离小于对应安全阈值时，监督器优先于学习决策，执行停止、安全减速或受限转向。实现将原地旋转的圆形净空与平移足迹停止距离分开处理，避免安全侧墙无条件禁止所有原地调整。
+
+监督器介入次数、持续时间和 episode 终止结果分开记录。报告只称其为安全导向过滤器，不宣称形式化无碰撞保证。
+
+\clearpage
+\section{恢复与重接状态机}
+\SafeFigure{recovery_state_machine.pdf}{NORMAL、PENDING\_RECOVERY、RECOVERY、REJOIN、EMERGENCY\_STOP 与终止状态之间的有界转换。}
+
+Goal Mux 在进入恢复前保存原始任务目标。恢复动作完成后进入 REJOIN，重新发送原目标；只有原目标重新激活、失败分数下降并观察到有效进展后才返回 NORMAL。任何阶段的紧急停止都具有最高优先级，超时或超过最大尝试次数进入明确失败状态。
+
+\clearpage
+\section{特权短时域规划专家}
+专家只在训练与 Oracle 分析中使用静态占据地图、机器人真值、行人位置速度及其短时预测。每个合法候选动作进行差速运动学 rollout，并计算碰撞、进展、社会距离、重接、长度、平滑、时间和切换代价：
+\[
+J=w_cJ_c+w_pJ_p+w_sJ_s+w_rJ_r+w_lJ_l+w_mJ_m+w_tJ_t+w_xJ_x.
+\]
+碰撞和 masked 动作为硬约束；WAIT 仍承担时间与无进展成本。专家输出最优动作、25 维代价、合法 mask、第一与第二动作间 margin 及预测成功标志。
+
+\clearpage
+\section{Behavior Cloning 与 DAgger}
+LiDAR 分支使用小型一维 CNN，状态分支使用 MLP，拼接后输出 25 个动作 logits。mask 在 softmax 前设置非法动作 logit。训练首先进行均匀 BC，再执行两轮 DAgger：策略只在 train split 运行，专家为策略实际访问的恢复状态重新标注，聚合数据后在固定 validation split 上重新训练。
+
+当前选择的 checkpoint 来源、训练数据和 SHA256 由最终配置与 artifact manifest 固定。margin weighting 的结果按真实验证决定；若没有优势，则作为负面消融而不是主贡献。
+
+\section{训练与部署信息隔离}
+训练阶段的行人真值、未来短时预测和完整候选 rollout 永远不会拼入正式观测张量。导出模型只接收规范化的 LiDAR stack 和导航状态，并输出受 mask 约束的动作概率。
+
+这种隔离允许使用更强的规划监督，同时保持测试时输入可由机器人传感和 Nav2 状态产生。数据 schema、checkpoint manifest 和推理节点测试共同检查训练特权没有泄漏到部署接口。
+
+\section{ROS2 与 Nav2 工程实现}
+ROS2 overlay 将核心逻辑、机器学习模块和 ROS 适配层分开。核心几何、检测、状态机、专家、数据和统计代码不依赖 ROS；适配层统一封装 Nav2 goal、取消、状态和最后控制输出；bringup 层管理 namespace、frame、topic remap 和 use\_sim\_time。
+
+episode logger 同时保存正式观测、算法状态、评价真值和来源元数据，但数据层明确区分 observation 与 privileged 字段。所有路径、topic、service、action 和 frame 均由配置或 remap 提供。
+
+\clearpage
+\section{Arena/Gazebo 运行证据}
+\SafeFigure[0.78\textwidth]{runtime_gazebo_doorway_bottleneck_medium.png}{真实 Arena Gazebo GUI 截图：Jackal 在 doorway\_bottleneck、medium、validation 场景运行。关联 episode 结局为 GOAL\_REACHED；截图、窗口信息、运行日志和 SHA256 均有元数据。}
+
+该截图只证明对应运行时、机器人、行人和场景能够实际启动与完成，不承担定量效果证据。定量结论只能来自完整 manifest 的 episode-level Parquet。
+
+\clearpage
+\section{八类社会导航压力场景}
+\SafeFigure{scenario_overview.pdf}{八类确定性交互模板及机器人、行人名义运动方向。}
+
+场景覆盖 head-on corridor、doorway bottleneck、crossing flow、blind corner、group blocking、overtaking、opposite streams 和 temporary blockage。每类包含 low、medium、high 三档密度，具体物理 realization 由 split 与 seed 固定。
+
+\clearpage
+\section{数据划分与协议锁定}
+train、validation 和 test 使用不相交的 scenario ID 与 seed block。训练只用于专家数据和 DAgger；validation 只用于阈值、checkpoint 和方法选择；test 只有在配置、代码、checkpoint 与 episode manifest 冻结后才可打开。
+
+最终 test 协议预注册 120 个条件，每个条件由 DWB、Standard、Heuristic、Uniform BC 和 PGRR 五种方法共享，总计 600 个 logical method--episodes。validation 快照则必须有独立标签，不得包装成 test 结论。
+
+\clearpage
+\section{对比方法}
+\begin{table}[htbp]
+\centering
+\caption{完整闭环对比。}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+方法 & 定义 \\
+\midrule
+DWB & 经典 Nav2 局部规划器，无 PGRR 恢复层 \\
+Standard & DWB 加标准导航恢复行为 \\
+Heuristic & 规则触发与手工可解释动作选择 \\
+Uniform BC & 相同观测、动作和 mask 的均匀行为克隆 \\
+PGRR & 选定 DAgger checkpoint、规划 mask、有界状态机与安全监督 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+五种方法必须使用完全相同的 pair key。比较不会因某方法失败而删除对应 seed，也不会把基础设施故障转换为算法失败或成功。
+
+\clearpage
+\section{评价指标}
+终止指标包括目标到达、碰撞、超时和规划失败。效率包括 SPL、路径长度和导航时间；社会与安全包括最小人距、个人空间侵入比例、不舒适时间和紧急停止；稳定性包括角速度 jerk；恢复包括触发次数、REJOIN 到 NORMAL 的成功次数、恢复时长和介入比例。
+
+恢复成功不等于最终导航成功。一次恢复可以成功重接但随后仍失败；反之，没有触发恢复的成功 episode 不会被记为恢复成功。
+
+\section{配对统计与基础设施排除}
+二元终止端点使用完全相同 pair key 的精确 McNemar 检验，连续配对差异使用双侧 Wilcoxon signed-rank。均值配对效应使用固定 seed 的 10,000 次 percentile bootstrap 95\% 区间，预注册比较族统一进行 Holm 校正，并同时报告效应量和区间。
+
+SIMULATOR\_FAILURE 和 INVALID\_RESET 可重试且从算法分母单独排除，但物理尝试、排除数、原因和哈希必须保留。COLLISION、TIMEOUT 和 PLANNER\_FAILURE 不允许重试美化。
+
+\clearpage
+\section{完整终止结果}
+\ifReportResultsAvailable
+  本报告绑定 \ReportConditionCount{} 个配对条件、\ReportEpisodeCount{} 个方法 episode，其中
+  \ReportValidEpisodeCount{} 个进入算法指标，\ReportExcludedEpisodeCount{} 个为单独报告的基础设施排除。
+  \input{generated/result_table.tex}
+  \SafeFigure{generated/result_outcomes.pdf}{五种方法的完整终止结果。碰撞、超时和规划失败均未折叠。}
+\else
+  \PendingResults
+\fi
+
+\clearpage
+\section{密度与交互族分层}
+\ifReportResultsAvailable
+  \SafeFigure{generated/result_density.pdf}{低、中、高密度下的目标到达率。该图只做预声明分层描述。}
+  \SafeFigure[0.90\textwidth]{generated/result_family.pdf}{八类交互场景与五种方法的目标到达率矩阵。}
+\else
+  \PendingResults
+  本页将在安全输入通过 split、pair 和完整性检查后自动生成密度柱状图与 family 热力图。
+\fi
+
+\clearpage
+\section{配对效应与安全—效率视图}
+\ifReportResultsAvailable
+  PGRR 与 DWB 的描述性目标到达率差为 \ReportGoalDifference{}；DWB 和 PGRR 的总体到达率分别为
+  \ReportBaseGoalRate{} 和 \ReportPGRRGoalRate{}。统计显著性必须另由锁定的配对统计 JSON 支持，不能由这三个描述量推断。
+  \SafeFigure{generated/result_safety_efficiency.pdf}{成功 episode 导航时间与全部有效 episode 最小人距的联合视图。两个轴不替代终止结果。}
+\else
+  \PendingResults
+\fi
+
+\clearpage
+\section{恢复行为与消融}
+\ifReportResultsAvailable
+  自动生成数据包含每种方法的平均恢复触发、聚合恢复成功率、恢复时长和介入比例。最终表必须与终止结果并列阅读，以检查策略是否滥用 WAIT、BACKUP 或频繁切换。
+\else
+  \PendingResults
+\fi
+
+离线消融比较 Uniform BC、margin-weighted BC、DAgger checkpoint 和 mask 关闭的反事实动作选择。离线准确率和 regret 不能代替闭环导航证据；未被 validation 选中的候选模型作为负面选择结果保留。
+
+\section{失败案例与诚实结论}
+失败分析按静态碰撞、人群碰撞、开放区冻结、窄通道冻结、振荡、死锁、误触发、漏触发、非法子目标、重接失败、规划器 abort 和重复恢复分类。每类保存计数、代表轨迹、failure score、恢复动作和可用视频。
+
+报告重点检查安全与完成之间的转移：减少碰撞但增加 timeout 不是“成功率提高”；长期 WAIT、持续 BACKUP 或反复紧急停止都需要作为保守失败模式展示。
+
+\clearpage
+\section{局限性与有效性威胁}
+当前系统依赖二维 LiDAR、已知静态地图、离散恢复动作和仿真行人模型。特权专家依赖仿真真值；安全监督器没有形式化保证；同一地图和场景模板上的 held-out seed 不等价于跨地图泛化；Gazebo 截图和小规模迁移不能代替实机实验。
+
+阈值、checkpoint 和场景校准只允许使用 validation。若最终 test 与 validation 方向不同，应报告差异，而不是根据 test 重新调参。
+
+\clearpage
+\section{可复现构建与证据链}
+报告、PPT 和会议稿共同读取同一批准的结果文件，但分别生成自己的图表和元数据。推荐命令为：
+\begin{verbatim}
+make statistics MODERATE_ANALYSIS_DIR=outputs/moderate/final
+make figures tables paper
+REPORT_STAGE=test make technical-report
+REPORT_STAGE=test make presentation
+\end{verbatim}
+
+artifact manifest 应保存 Git commit、Arena commit、checkpoint SHA256、scenario hash、结果文件 SHA256、生成命令和时间。发布前执行隐私审计，文档作者只使用化名 Charles Chen。
+
+\section{结论}
+PGRR 将学习限制在经典规划器的失败恢复层，并通过可解释动作、规划 mask、滞回状态机、特权规划监督和 DAgger 形成可审计闭环。系统已经具备从真实 episode 结果生成完整统计、矢量图、会议论文、技术报告和汇报材料的结构。
+
+\ifReportResultsAvailable
+本阶段的具体数值已由批准结果自动注入；是否支持性能优势仍应以配对置信区间、Holm 校正和失败分析共同判断。
+\else
+当前仍处于结果待锁定阶段，因此本报告不提供成功率或显著性结论。
+\fi
+
+\clearpage
+\appendix
+\section{固定动作 ID}
+\begin{longtable}{rrrl}
+\caption{25 个离散恢复动作。}\label{tab:actions}\\
+\toprule
+ID 范围 & 半径（m） & 相对角（度） & 类型 \\
+\midrule
+\endfirsthead
+\toprule
+ID 范围 & 半径（m） & 相对角（度） & 类型 \\
+\midrule
+\endhead
+0--6 & 0.6 & $-90,-60,-30,0,30,60,90$ & 临时子目标 \\
+7--13 & 1.0 & $-90,-60,-30,0,30,60,90$ & 临时子目标 \\
+14--20 & 1.4 & $-90,-60,-30,0,30,60,90$ & 临时子目标 \\
+21 & -- & -- & WAIT \\
+22 & -- & -- & BACKUP \\
+23 & -- & -- & REPLAN \\
+24 & -- & -- & CONTINUE \\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\section{结果构建的 fail-closed 规则}
+结果构建器执行以下硬检查：
+\begin{enumerate}
+  \item pending 模式不得接收任何 results 路径；
+  \item historical、pilot、calibration、smoke 与运行中的 validation 路径在打开前被拒绝；
+  \item validation 只能读取显式完成快照，test 只能读取 \texttt{outputs/moderate/final/results.parquet}；
+  \item split 必须与报告阶段唯一一致；
+  \item 每个 pair 必须恰好包含五种方法且场景元数据一致；
+  \item 终止类型必须属于预声明集合；
+  \item 报告 JSON、TeX 宏和图表共享同一结果 SHA256。
+\end{enumerate}
+
+\clearpage
+\section{汇报材料检查清单}
+最终交付同时检查 PDF 页数、PPTX slide 数、字体嵌入、图片关系、禁止占位符、个人信息、真实截图 SHA、结果阶段标签和 speaker notes。若任何一项失败，构建命令返回非零状态，不发布半成品。
+
+\end{document}

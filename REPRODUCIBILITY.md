@@ -24,6 +24,56 @@ failure detector are not completed or claimed contributions.
 Smoke, pilot, calibration, and validation runs verify software or select a
 configuration. They are never substituted for held-out test evidence.
 
+## Documentation layers and evidence stages
+
+PGRR maintains three independently validated documents:
+
+1. `paper/main.pdf`: concise anonymous IEEE conference manuscript;
+2. `report/PGRR_technical_report_zh.pdf`: detailed Chinese technical report;
+3. `presentation/PGRR_report_zh.pptx` and its PDF export: thirty-slide Chinese
+   briefing, with `presentation/speaker_notes_zh.md` and a contact sheet.
+
+The report and presentation use the same stage contract:
+
+| Stage | Approved input | Meaning |
+|---|---|---|
+| `pending` | no results file | Method, runtime, and protocol only; numerical pages visibly pending |
+| `validation` | completed immutable snapshot under `outputs/report_inputs/validation/` | Selection evidence, always marked non-final |
+| `test` | `outputs/moderate/final/results.parquet` | Locked held-out evidence after the complete test protocol |
+
+Build the current data-free documents without opening any result Parquet:
+
+```bash
+REPORT_STAGE=pending make technical-report presentation
+```
+
+After the validation writer has exited and the complete result has passed its
+collector checks, create a separate read-only reporting snapshot. Never point
+the report builder at the live validation output directory:
+
+```bash
+mkdir -p outputs/report_inputs/validation
+install -m 0444 \
+  outputs/moderate/v5_validation/results.parquet \
+  outputs/report_inputs/validation/results.parquet
+
+REPORT_STAGE=validation \
+REPORT_RESULTS=outputs/report_inputs/validation/results.parquet \
+make technical-report presentation
+```
+
+The locked test documents are generated only with:
+
+```bash
+REPORT_STAGE=test \
+REPORT_RESULTS=outputs/moderate/final/results.parquet \
+make technical-report presentation
+```
+
+The input guard rejects the historical 64-episode result, pilot, calibration,
+smoke, and live validation paths before reading them. No old result can be used
+as a fallback for a test report, presentation, paper table, or conclusion.
+
 ## 1. Establish the repository root
 
 ```bash
@@ -232,6 +282,9 @@ make statistics MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make figures MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make tables MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
+REPORT_STAGE=test \
+  REPORT_RESULTS=outputs/moderate/final/results.parquet \
+  make technical-report presentation
 ```
 
 The collector verifies manifest membership, completion, outcome evidence, and
@@ -279,6 +332,11 @@ The artifact builder rejects an unpaired screenshot or metadata file.
 - `outputs/figures/moderate_*.pdf`
 - `outputs/tables/moderate_*.tex`
 - `paper/main.pdf`
+- `report/PGRR_technical_report_zh.pdf`
+- `presentation/PGRR_report_zh.pptx`
+- `presentation/PGRR_report_zh.pdf`
+- `presentation/speaker_notes_zh.md`
+- `presentation/contact_sheet.png`
 
 If any complete-run artifact is absent, do not substitute pilot values or
 manually edit a result table.
@@ -291,6 +349,9 @@ make reproduce-small SEED=0
 make figures MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make tables MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
+REPORT_STAGE=test \
+  REPORT_RESULTS=outputs/moderate/final/results.parquet \
+  make technical-report presentation
 make privacy-check
 
 test -s outputs/moderate/v5_validation/calibration_report.json
@@ -302,6 +363,11 @@ test -s outputs/moderate/final/pairwise_statistics.json
 test -s outputs/moderate/final/failure_analysis.md
 test -s outputs/moderate/final/artifact_manifest.json
 test -s paper/main.pdf
+test -s report/PGRR_technical_report_zh.pdf
+test -s presentation/PGRR_report_zh.pptx
+test -s presentation/PGRR_report_zh.pdf
+test -s presentation/speaker_notes_zh.md
+test -s presentation/contact_sheet.png
 ```
 
 The final PDF must have no unresolved references/citations, overfull boxes,
@@ -339,3 +405,26 @@ Current retained negative results and limitations are tracked in
 [`CURRENT_STATUS.md`](CURRENT_STATUS.md),
 [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md), and
 [`DECISIONS.md`](DECISIONS.md).
+
+## 14. GitHub maintenance
+
+After the sanitized initial publication, use pull requests for ordinary
+changes and preserve every published evidence tag. A corrected evaluation must
+use a new experiment ID and release tag; never replace a tagged result in place
+or tune a method from its held-out outcome.
+
+Before pushing a release:
+
+1. rebuild all three documentation layers from the same approved stage;
+2. run tests, artifact validation, and the privacy audit from a clean checkout;
+3. confirm that document metadata contains no local account, hostname,
+   absolute path, token, or real identity;
+4. use anonymous paper authorship and only the Charles Chen alias where a
+   report or presentation author is required;
+5. review `presentation/contact_sheet.png` and the technical-report PDF;
+6. publish large raw evidence separately with checksums rather than adding
+   transient simulator logs to the default branch.
+
+Generated numerical tables and slide values are outputs, not editing surfaces.
+Change the authoritative Parquet/JSON input, preserve its hash and provenance,
+and regenerate every dependent artifact.

@@ -1,4 +1,4 @@
-# PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin
+# PGRR: Planning-Guided Recovery and Rejoin
 
 PGRR is a failure-triggered recovery layer for dynamic social navigation. A
 classical ROS2 navigation stack controls routine PointGoal motion. Learning is
@@ -7,13 +7,16 @@ oscillation, deadlock, or planner failure. The learned policy selects an
 interpretable temporary subgoal or recovery mode; it does not continuously
 replace the local planner or command base velocity.
 
+The four letters expand to **Planning-Guided Recovery and Rejoin**. The phrase
+*failure-triggered* describes when the layer intervenes: the nominal planner
+retains control until observable failure evidence persists. PGRR is an internal
+and descriptive system name, not a claim that the acronym is unique in the
+robotics literature.
+
 The paper title is:
 
 > *Planning-Guided Failure-Triggered Recovery via Imitation Learning for
 > Dynamic Social Navigation*
-
-PGRR is introduced in the manuscript as a descriptive project name, not as a
-claim of a unique acronym.
 
 > **Evidence status.** The selected release uses a privileged rollout expert,
 > Uniform BC, a completed two-round DAgger workflow, planning/action masking,
@@ -25,6 +28,12 @@ claim of a unique acronym.
 > from the complete moderate-v5 five-method artifacts under
 > `outputs/moderate/final/`; validation probes and previous evaluations are
 > never copied into the paper.
+
+The closed-loop evaluation is a five-method suite: four baselines plus the
+PGRR main method. The baselines are DWB, Standard Nav2 recovery, deterministic
+Heuristic recovery, and Uniform BC. PGRR is the validation-selected DAgger
+policy with the same observable interface and planning mask. The privileged
+expert is a training reference, not a fifth deployment baseline.
 
 ## Method
 
@@ -126,6 +135,20 @@ Online and offline environments are deliberately separate:
 
 Never install or source Arena from an active Conda environment. Runtime scripts
 remove Conda and foreign ROS variables before starting the pinned Humble stack.
+
+## Verified Arena/Gazebo evidence
+
+The repository contains a real Arena/Gazebo GUI capture from a validation
+doorway-bottleneck episode with Jackal and Nav2 DWB:
+
+- [`paper/figures/runtime_gazebo_doorway_bottleneck_medium.png`](paper/figures/runtime_gazebo_doorway_bottleneck_medium.png);
+- [`outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json`](outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json);
+- [`outputs/figures/runtime/gazebo_doorway_bottleneck_medium.window.json`](outputs/figures/runtime/gazebo_doorway_bottleneck_medium.window.json).
+
+The metadata binds the pixels to the scenario, runtime, terminal record,
+project/Arena revisions, and screenshot checksum. This is qualitative evidence
+that the declared runtime and scenario actually executed. It is not substituted
+for the complete paired benchmark or used to infer an aggregate success rate.
 
 ## Installation and build
 
@@ -309,6 +332,47 @@ When a verified capture is available, the manuscript includes
 machine-readable provenance in `outputs/figures/runtime/`. The paper compiles
 without that optional qualitative image until a real capture has succeeded.
 
+## Paper, technical report, and presentation
+
+The repository maintains three evidence layers for different audiences:
+
+| Layer | Artifact | Purpose |
+|---|---|---|
+| Conference paper | [`paper/main.pdf`](paper/main.pdf) | Concise anonymous IEEE manuscript |
+| Technical report | [`report/PGRR_technical_report_zh.pdf`](report/PGRR_technical_report_zh.pdf) | Detailed Chinese method, engineering, protocol, and evidence report |
+| Presentation | [`presentation/PGRR_report_zh.pptx`](presentation/PGRR_report_zh.pptx) and [`presentation/PGRR_report_zh.pdf`](presentation/PGRR_report_zh.pdf) | Thirty-slide Chinese briefing with external speaker notes |
+
+The report and presentation are stage-aware. The current data-free build is:
+
+```bash
+REPORT_STAGE=pending make technical-report presentation
+```
+
+`pending` mode opens no result Parquet and visibly marks every numerical page
+as not yet locked. A completed validation run must first be copied to the
+dedicated immutable snapshot location; it is never read directly while a
+runner may still be writing it:
+
+```bash
+REPORT_STAGE=validation \
+REPORT_RESULTS=outputs/report_inputs/validation/results.parquet \
+make technical-report presentation
+```
+
+The final test documents accept only the locked moderate-v5 result:
+
+```bash
+REPORT_STAGE=test \
+REPORT_RESULTS=outputs/moderate/final/results.parquet \
+make technical-report presentation
+```
+
+The stage-aware builder rejects historical `outputs/final`, pilot,
+calibration, smoke, and live validation paths before opening them. Therefore
+the old 64-episode artifact and exploratory runs can never populate a final
+report slide, table, macro, or claim. Validation documents remain explicitly
+labelled as non-test evidence.
+
 ## Authoritative artifact layout
 
 ```text
@@ -331,12 +395,37 @@ outputs/tables/moderate_*.tex
 paper/generated/moderate_*.tex
 paper/figures/moderate_*.pdf
 paper/main.pdf
+report/PGRR_technical_report_zh.pdf
+presentation/PGRR_report_zh.pptx
+presentation/PGRR_report_zh.pdf
+presentation/speaker_notes_zh.md
+presentation/contact_sheet.png
 ```
 
 If any required moderate artifact is absent or incomplete, `make paper` fails;
 old final tables and pilot CSVs are not a fallback. Manuscript claims are mapped
 to evidence in
 [`paper/claim_evidence_matrix.md`](paper/claim_evidence_matrix.md).
+
+## GitHub maintenance and releases
+
+- Use pull requests for normal maintenance after the sanitized initial
+  publication. Do not rewrite a published evidence tag to replace an
+  unfavorable or incomplete result.
+- A new result set requires a new experiment ID, immutable manifest, artifact
+  hashes, regenerated documents, and a versioned release tag.
+- Keep local account names, hostnames, absolute paths, credentials, tokens,
+  editor state, and raw transient runtime logs out of commits and document
+  metadata. Public authorship is anonymous for the paper and may use only the
+  alias Charles Chen in the report or presentation.
+- Run `make test`, the stage-appropriate document build, and
+  `make privacy-check` before a GitHub release. Inspect the generated report
+  and presentation contact sheet before accepting visual changes.
+- Do not manually edit generated numerical tables, macros, figures, or slide
+  values. Update their authoritative Parquet/JSON input and rerun the builders.
+- Preserve third-party licenses and pinned Arena/ROS provenance. Large raw
+  episodes and infrastructure logs should be published as checksummed release
+  artifacts rather than silently added to the default branch.
 
 ## Limitations
 
@@ -362,6 +451,8 @@ checkpoints/   BC and DAgger models and metadata
 scripts/       bootstrap, Arena, data, training, evaluation, and paper commands
 outputs/       validation/final results, figures, tables, logs, and videos
 paper/         IEEEtran manuscript, verified references, and generated artifacts
+report/        stage-aware detailed Chinese technical report
+presentation/  30-slide PPTX/PDF, speaker notes, and visual contact sheet
 tests/         unit, integration, and deterministic regression tests
 ```
 

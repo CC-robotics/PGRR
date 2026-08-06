@@ -30,11 +30,18 @@ MODERATE_MAIN_METHOD ?= pgrr
 MODERATE_REFERENCE_METHOD ?= base
 EVALUATION_JOBS ?= 6
 EVALUATION_TIMEOUT_S ?= 240
+REPORT_STAGE ?= pending
+REPORT_RESULTS ?= outputs/moderate/final/results.parquet
+REPORT_EXPECTED_CONDITIONS ?=
+REPORT_GENERATED_DIR ?= report/generated
+PRESENTATION_OUTPUT ?= presentation/PGRR_report_zh.pptx
+PRESENTATION_NOTES ?= presentation/speaker_notes_zh.md
+PRESENTATION_PDF ?= presentation/PGRR_report_zh.pdf
 OFFLINE_RUN := env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION conda run -n "$(CONDA_ENV_NAME)"
 
 .DEFAULT_GOAL := help
 
-.PHONY: help preflight conda arena build test smoke baseline scenarios mine-failures label-expert train-bc train-dagger train-ppo-smoke train-ppo train-detector pilot evaluate-flatland evaluate-gazebo statistics method-figures figures tables moderate-figures moderate-tables paper reproduce-small reproduce-paper privacy-check student-branch
+.PHONY: help preflight conda arena build test smoke baseline scenarios mine-failures label-expert train-bc train-dagger train-ppo-smoke train-ppo train-detector pilot evaluate-flatland evaluate-gazebo statistics method-figures figures tables moderate-figures moderate-tables paper report-assets technical-report presentation-check presentation reproduce-small reproduce-paper privacy-check student-branch
 
 help: ## Show available targets.
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z0-9_-]+:.*## / {printf "%-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -144,6 +151,31 @@ figures: moderate-figures method-figures ## Generate publication figures from th
 tables: moderate-tables ## Generate publication tables from the moderate benchmark.
 paper: figures tables ## Compile the manuscript after validating generated artifacts.
 	@scripts/paper/build_paper.sh
+
+report-assets: ## Generate fail-closed pending/validation/test report inputs.
+	@args=(--stage "$(REPORT_STAGE)" --output-dir "$(REPORT_GENERATED_DIR)"); \
+	if [[ "$(REPORT_STAGE)" != "pending" ]]; then args+=(--results "$(REPORT_RESULTS)"); fi; \
+	if [[ -n "$(REPORT_EXPECTED_CONDITIONS)" ]]; then args+=(--expected-conditions "$(REPORT_EXPECTED_CONDITIONS)"); fi; \
+	$(OFFLINE_RUN) python scripts/report/build_report_assets.py "$${args[@]}"
+
+technical-report: ## Build and validate the 25--35 page Chinese technical report.
+	@REPORT_STAGE="$(REPORT_STAGE)" REPORT_RESULTS="$(if $(filter pending,$(REPORT_STAGE)),,$(REPORT_RESULTS))" \
+	REPORT_EXPECTED_CONDITIONS="$(REPORT_EXPECTED_CONDITIONS)" CONDA_ENV_NAME="$(CONDA_ENV_NAME)" \
+	scripts/report/build_report.sh
+
+presentation-check: report-assets ## Validate the 30-slide Chinese deck specification without python-pptx.
+	@$(OFFLINE_RUN) python scripts/presentation/build_deck.py \
+		--stage "$(REPORT_STAGE)" --report-data "$(REPORT_GENERATED_DIR)/report_data.json" \
+		--check-only
+
+presentation: report-assets ## Build the 30-slide PPTX, speaker notes, and exported PDF.
+	@$(OFFLINE_RUN) python scripts/presentation/build_deck.py \
+		--stage "$(REPORT_STAGE)" --report-data "$(REPORT_GENERATED_DIR)/report_data.json" \
+		--output "$(PRESENTATION_OUTPUT)" --notes "$(PRESENTATION_NOTES)"
+	@PRESENTATION_PPTX="$(abspath $(PRESENTATION_OUTPUT))" \
+	PRESENTATION_PDF="$(abspath $(PRESENTATION_PDF))" \
+	PRESENTATION_NOTES="$(abspath $(PRESENTATION_NOTES))" \
+	CONDA_ENV_NAME="$(CONDA_ENV_NAME)" scripts/presentation/render_pdf.sh
 reproduce-small: ## Exercise the full small-data pipeline.
 	@scripts/reproduce_small.sh --seed "$(SEED)"
 reproduce-paper: ## Rebuild paper artifacts from a completed locked evaluation.

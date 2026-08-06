@@ -52,3 +52,11 @@ paper/*.fls
 paper/*.log
 paper/*.out
 paper/*.pdf
+report/*.aux
+report/*.log
+report/*.lof
+report/*.lot
+report/*.out
+report/*.toc
+report/technical_report.pdf
+presentation/generated/
