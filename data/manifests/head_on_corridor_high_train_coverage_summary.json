@@ -17,5 +17,5 @@
   "predicted_success_count": 231,
   "rejoin_release_threshold": 0.65,
   "sample_count": 234,
-  "source_jsonl": "/home/diy/RAMP/data/raw/head_on_corridor_high_train_s01020_coverage_policy_dwb.jsonl"
+  "source_jsonl": "data/raw/head_on_corridor_high_train_s01020_coverage_policy_dwb.jsonl"
 }

@@ -1,5 +1,5 @@
 {
-  "dataset": "/home/diy/RAMP/data/processed/dagger_iter2_train.h5",
+  "dataset": "data/processed/dagger_iter2_train.h5",
   "validation_dataset": "data/interim/temporary_blockage_validation_expert.h5",
   "device": "cuda",
   "train_samples": 2766,

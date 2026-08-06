@@ -1,136 +1,38 @@
-RAMP environment preflight
-captured_at=2026-08-04T17:43:00+08:00
-project_root=/home/diy/bonus_track/PGRR
-arena_ws=/home/diy/arena5_ws
+RAMP environment preflight (privacy-safe release summary)
+captured_at=2026-08-04T09:43:00Z
+project_root=${PROJECT_ROOT}
+arena_ws=${ARENA_WS}
 
-[uname]
-Linux diy01 6.8.0-124-generic #124~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 21:05:19 UTC  x86_64 x86_64 x86_64 GNU/Linux
+[operating system]
+distribution=Ubuntu 22.04.5 LTS
+kernel=Linux 6.8.0-124-generic
+architecture=x86_64
 
-[os-release]
-PRETTY_NAME="Ubuntu 22.04.5 LTS"
-NAME="Ubuntu"
-VERSION_ID="22.04"
-VERSION="22.04.5 LTS (Jammy Jellyfish)"
-VERSION_CODENAME=jammy
-ID=ubuntu
-ID_LIKE=debian
-HOME_URL="https://www.ubuntu.com/"
-SUPPORT_URL="https://help.ubuntu.com/"
-BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-UBUNTU_CODENAME=jammy
+[compute]
+logical_cpu_count=32
+memory_total=62 GiB
+disk_available_at_capture=396 GiB
+gpu=NVIDIA GeForce RTX 5090 D
+nvidia_driver=580.173.02
+gpu_memory=32607 MiB
 
-[cpu]
-架构：                                   x86_64
-CPU 运行模式：                           32-bit, 64-bit
-Address sizes:                           39 bits physical, 48 bits virtual
-字节序：                                 Little Endian
-CPU:                                     32
-在线 CPU 列表：                          0-31
-厂商 ID：                                GenuineIntel
-型号名称：                               Intel(R) Core(TM) i9-14900KF
-CPU 系列：                               6
-型号：                                   183
-每个核的线程数：                         2
-每个座的核数：                           24
-座：                                     1
-步进：                                   1
-CPU 最大 MHz：                           6000.0000
-CPU 最小 MHz：                           800.0000
-BogoMIPS：                               6374.40
-标记：                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb intel_pt sha_ni xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk avx_vnni dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req hfi vnmi umip pku ospke waitpkg gfni vaes vpclmulqdq rdpid movdiri movdir64b fsrm md_clear serialize arch_lbr ibt flush_l1d arch_capabilities ibpb_exit_to_user
-虚拟化：                                 VT-x
-L1d 缓存：                               896 KiB (24 instances)
-L1i 缓存：                               1.3 MiB (24 instances)
-L2 缓存：                                32 MiB (12 instances)
-L3 缓存：                                36 MiB (1 instance)
-NUMA 节点：                              1
-NUMA 节点0 CPU：                         0-31
-Vulnerability Gather data sampling:      Not affected
-Vulnerability Indirect target selection: Not affected
-Vulnerability Itlb multihit:             Not affected
-Vulnerability L1tf:                      Not affected
-Vulnerability Mds:                       Not affected
-Vulnerability Meltdown:                  Not affected
-Vulnerability Mmio stale data:           Not affected
-Vulnerability Reg file data sampling:    Mitigation; Clear Register File
-Vulnerability Retbleed:                  Not affected
-Vulnerability Spec rstack overflow:      Not affected
-Vulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl
-Vulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
-Vulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI BHI_DIS_S
-Vulnerability Srbds:                     Not affected
-Vulnerability Tsa:                       Not affected
-Vulnerability Tsx async abort:           Not affected
-Vulnerability Vmscape:                   Mitigation; IBPB before exit to userspace
+[toolchain]
+system_python=3.12.7
+conda=24.9.2
+offline_python=3.10
+git=2.34.1
+ros_distribution=Humble
+ros_package_count=197
+docker=available
+arena_workspace=present
 
-[memory]
-               total        used        free      shared  buff/cache   available
-内存：       62Gi        10Gi       4.4Gi       1.2Gi        48Gi        50Gi
-交换：       31Gi       388Mi        31Gi
+[privacy]
+hostname=anonymous
+process_list=omitted
+device_identifiers=omitted
+absolute_user_paths=omitted
 
-[disk]
-文件系统        大小  已用  可用 已用% 挂载点
-/dev/nvme0n1p5  894G  453G  396G   54% /
-
-[python]
-/home/diy/anaconda3/bin/python3
-Python 3.12.7
-
-[conda]
-/home/diy/anaconda3/bin/conda
-conda 24.9.2
-
-[mamba]
-
-[git]
-git version 2.34.1
-
-[ros2 inherited]
-/opt/ros/iron/bin/ros2
-ROS_DISTRO=humble
-
-[ros2 humble]
-/opt/ros/humble/bin/ros2
-ROS_DISTRO=humble
-197
-
-[gpu]
-/usr/bin/nvidia-smi
-Tue Aug  4 17:43:01 2026
-+-----------------------------------------------------------------------------------------+
-| NVIDIA-SMI 580.173.02             Driver Version: 580.173.02     CUDA Version: 13.0     |
-+-----------------------------------------+------------------------+----------------------+
-| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
-|                                         |                        |               MIG M. |
-|=========================================+========================+======================|
-|   0  NVIDIA GeForce RTX 5090 D      Off |   00000000:01:00.0  On |                  N/A |
-|  0%   42C    P8             56W /  575W |    1206MiB /  32607MiB |     10%      Default |
-|                                         |                        |                  N/A |
-+-----------------------------------------+------------------------+----------------------+
-
-+-----------------------------------------------------------------------------------------+
-| Processes:                                                                              |
-|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
-|        ID   ID                                                               Usage      |
-|=========================================================================================|
-|    0   N/A  N/A            1503      G   /usr/lib/xorg/Xorg                      737MiB |
-|    0   N/A  N/A            1875      G   /usr/bin/gnome-shell                    112MiB |
-|    0   N/A  N/A            3839      G   ...utstore/dist/jre/bin/nutstore          6MiB |
-|    0   N/A  N/A          954330      G   /usr/share/code/code                    102MiB |
-|    0   N/A  N/A         1993285      G   ...144 --variations-seed-version         80MiB |
-|    0   N/A  N/A         2378248      G   ...rack-uuid=3190708988185955192         75MiB |
-+-----------------------------------------------------------------------------------------+
-
-[docker]
-/usr/bin/docker
-Docker version 29.1.3, build 29.1.3-0ubuntu3~22.04.2
-
-[active environments]
-CONDA_PREFIX=/home/diy/anaconda3
-CONDA_DEFAULT_ENV=base
-VIRTUAL_ENV=
-
-[arena discovery]
-workspace absent
+[resource checks]
+free_disk_at_least_40_gib=yes
+memory_at_least_16_gib=yes
+status=passed

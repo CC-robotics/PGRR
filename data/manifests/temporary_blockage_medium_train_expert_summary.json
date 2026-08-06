@@ -15,5 +15,5 @@
   "predicted_success_count": 6,
   "rejoin_release_threshold": 0.65,
   "sample_count": 175,
-  "source_jsonl": "/home/diy/RAMP/data/raw/temporary_blockage_medium_train_s01710_final_heuristic_dwb.jsonl"
+  "source_jsonl": "data/raw/temporary_blockage_medium_train_s01710_final_heuristic_dwb.jsonl"
 }

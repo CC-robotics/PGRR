@@ -27,7 +27,7 @@
     }
   },
   "checkpoint": {
-    "path": "/home/diy/RAMP/checkpoints/dagger/iter_2/best.onnx",
+    "path": "checkpoints/dagger/iter_2/best.onnx",
     "sha256": "d6d74089eb3a9169edc7f76646b8ae274d12febc679bd136376829151051690d"
   },
   "config": {
@@ -51,7 +51,7 @@
   "dataset": {
     "episode_count": 14,
     "observation_count": 14778,
-    "path": "/home/diy/RAMP/data/processed/dagger_iter2_train.h5",
+    "path": "data/processed/dagger_iter2_train.h5",
     "sample_count": 1383,
     "sha256": "15191feb362bb4ae1fb1af42c3981581d6a4659e457b4bb5c198ae4ad68fb733"
   },
@@ -60,6 +60,6 @@
   "schema_version": 1,
   "validation_dataset": {
     "path": "data/interim/temporary_blockage_validation_expert.h5",
-    "sha256": "291e2d46987edfa156bd5f1a8c87e9d501e5a9797aedc0579d74eb48f5866258"
+    "sha256": "02f0253787644552853143081b1e553946396954f378e363748caecf14b94c3f"
   }
 }

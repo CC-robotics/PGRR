@@ -16,5 +16,5 @@
   "predicted_success_count": 7,
   "rejoin_release_threshold": 0.65,
   "sample_count": 7,
-  "source_jsonl": "/home/diy/RAMP/data/raw/crossing_flow_high_train_s01260_dagger1_bc_dwb.jsonl"
+  "source_jsonl": "data/raw/crossing_flow_high_train_s01260_dagger1_bc_dwb.jsonl"
 }

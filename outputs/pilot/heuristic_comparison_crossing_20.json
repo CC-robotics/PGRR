@@ -39,7 +39,7 @@
   "invalid_resets": [
     {
       "attempt": 0,
-      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed03_reactive13_standard_dwb_attempt00.json",
+      "diagnostic": "outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed03_reactive13_standard_dwb_attempt00.json",
       "episode_id": "crossing_flow_high_mining_seed03_reactive13_standard_dwb",
       "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
       "outcome": "INVALID_RESET",
@@ -48,7 +48,7 @@
     },
     {
       "attempt": 0,
-      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed06_reactive13_heuristic_dwb_attempt00.json",
+      "diagnostic": "outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed06_reactive13_heuristic_dwb_attempt00.json",
       "episode_id": "crossing_flow_high_mining_seed06_reactive13_heuristic_dwb",
       "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
       "outcome": "INVALID_RESET",
@@ -57,7 +57,7 @@
     },
     {
       "attempt": 0,
-      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed09_reactive13_heuristic_dwb_attempt00.json",
+      "diagnostic": "outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed09_reactive13_heuristic_dwb_attempt00.json",
       "episode_id": "crossing_flow_high_mining_seed09_reactive13_heuristic_dwb",
       "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
       "outcome": "INVALID_RESET",
@@ -66,7 +66,7 @@
     },
     {
       "attempt": 0,
-      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed11_reactive13_heuristic_dwb_attempt00.json",
+      "diagnostic": "outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed11_reactive13_heuristic_dwb_attempt00.json",
       "episode_id": "crossing_flow_high_mining_seed11_reactive13_heuristic_dwb",
       "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
       "outcome": "INVALID_RESET",
@@ -75,7 +75,7 @@
     },
     {
       "attempt": 1,
-      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed11_reactive13_heuristic_dwb_attempt01.json",
+      "diagnostic": "outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed11_reactive13_heuristic_dwb_attempt01.json",
       "episode_id": "crossing_flow_high_mining_seed11_reactive13_heuristic_dwb",
       "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
       "outcome": "INVALID_RESET",
@@ -84,7 +84,7 @@
     },
     {
       "attempt": 0,
-      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed17_reactive13_heuristic_dwb_attempt00.json",
+      "diagnostic": "outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed17_reactive13_heuristic_dwb_attempt00.json",
       "episode_id": "crossing_flow_high_mining_seed17_reactive13_heuristic_dwb",
       "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
       "outcome": "INVALID_RESET",
@@ -93,7 +93,7 @@
     },
     {
       "attempt": 1,
-      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed17_reactive13_heuristic_dwb_attempt01.json",
+      "diagnostic": "outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed17_reactive13_heuristic_dwb_attempt01.json",
       "episode_id": "crossing_flow_high_mining_seed17_reactive13_heuristic_dwb",
       "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
       "outcome": "INVALID_RESET",
@@ -102,7 +102,7 @@
     },
     {
       "attempt": 2,
-      "diagnostic": "/home/diy/RAMP/outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed17_reactive13_heuristic_dwb_attempt02.json",
+      "diagnostic": "outputs/logs/baseline/invalid_reset/crossing_flow_high_mining_seed17_reactive13_heuristic_dwb_attempt02.json",
       "episode_id": "crossing_flow_high_mining_seed17_reactive13_heuristic_dwb",
       "exclusion_reason": "Arena/Nav2 did not produce a valid terminal episode",
       "outcome": "INVALID_RESET",
@@ -159,17 +159,17 @@
   "schema_version": 1,
   "source_files": {
     "base": [
-      "/home/diy/RAMP/outputs/pilot/corrected_crossing_base_10.csv",
-      "/home/diy/RAMP/outputs/pilot/corrected_crossing_base_10_19.csv"
+      "outputs/pilot/corrected_crossing_base_10.csv",
+      "outputs/pilot/corrected_crossing_base_10_19.csv"
     ],
     "heuristic": [
-      "/home/diy/RAMP/outputs/pilot/corrected_crossing_heuristic_10.csv",
-      "/home/diy/RAMP/outputs/pilot/corrected_crossing_heuristic_10_19.csv",
-      "/home/diy/RAMP/outputs/pilot/corrected_crossing_heuristic_17_19.csv"
+      "outputs/pilot/corrected_crossing_heuristic_10.csv",
+      "outputs/pilot/corrected_crossing_heuristic_10_19.csv",
+      "outputs/pilot/corrected_crossing_heuristic_17_19.csv"
     ],
     "standard": [
-      "/home/diy/RAMP/outputs/pilot/corrected_crossing_standard_20.csv",
-      "/home/diy/RAMP/outputs/pilot/corrected_crossing_standard_09_19.csv"
+      "outputs/pilot/corrected_crossing_standard_20.csv",
+      "outputs/pilot/corrected_crossing_standard_09_19.csv"
     ]
   },
   "standard": {

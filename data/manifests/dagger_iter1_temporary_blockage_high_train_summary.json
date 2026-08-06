@@ -13,5 +13,5 @@
   "predicted_success_count": 3,
   "rejoin_release_threshold": 0.65,
   "sample_count": 37,
-  "source_jsonl": "/home/diy/RAMP/data/raw/temporary_blockage_high_train_s01720_dagger1_bc_v2_dwb.jsonl"
+  "source_jsonl": "data/raw/temporary_blockage_high_train_s01720_dagger1_bc_v2_dwb.jsonl"
 }

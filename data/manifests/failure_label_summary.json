@@ -1,17 +1,17 @@
 {
   "config": "configs/failure/rules.yaml",
-  "config_sha256": "43c25466d6d7e7e980d6c289834a38838663c2662b7dfe4099beaeb8c3613601",
+  "config_sha256": "7fb6af03d658823e434407fa42b059a6b14e945206c8cec8b1682b135b862154",
   "episode_count": 30,
   "failure_onsets_by_family": {
-    "crossing_flow": 22,
+    "crossing_flow": 27,
     "doorway_bottleneck": 20,
-    "head_on_corridor": 30
+    "head_on_corridor": 27
   },
-  "hard_negative_count": 3779,
-  "labels_hdf5": "data/interim/gate1_failure_labels.h5",
-  "labels_sha256": "1d8ba46d749942f789d1ce73f2c03304c53439eb37c53fd6bd3e6c78146b2a37",
+  "hard_negative_count": 2460,
+  "labels_hdf5": "data/processed/failure_labels.h5",
+  "labels_sha256": "936441be30b5e29122e591ab293075f0119dfd73be35763b09474d4a359941e7",
   "positive_counts": {
-    "COLLISION_RISK": 2830,
+    "COLLISION_RISK": 4617,
     "DEADLOCK": 1221,
     "FREEZE": 2143,
     "OSCILLATION": 0

@@ -13,5 +13,5 @@
   "predicted_success_count": 161,
   "rejoin_release_threshold": 0.65,
   "sample_count": 161,
-  "source_jsonl": "/home/diy/RAMP/data/raw/blind_corner_high_train_s01320_final_heuristic_dwb.jsonl"
+  "source_jsonl": "data/raw/blind_corner_high_train_s01320_final_heuristic_dwb.jsonl"
 }

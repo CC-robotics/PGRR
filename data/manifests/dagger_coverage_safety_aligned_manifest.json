@@ -37,7 +37,7 @@
   "dagger_shards": [
     {
       "path": "data/interim/head_on_corridor_high_train_coverage.h5",
-      "sha256": "b3cc4df1e9dd9094b77261b5cd012a96be103df7cbcb389a731fc36c649357d8"
+      "sha256": "e7fbf897e0e63ab72f5124b8a1d9723e6eb1ac9d8cdc2a423a4f5fa24907c677"
     }
   ],
   "dataset": {

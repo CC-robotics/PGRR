@@ -109,7 +109,7 @@ nvidia-nvshmem-cu13==3.4.5
 nvidia-nvtx==13.0.85
 onnx==1.22.0
 overrides==7.7.0
-packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1777103621/work
+packaging==26.2
 pandas==2.3.3
 pandas-flavor==0.8.1
 pandocfilters==1.5.1
@@ -142,10 +142,8 @@ python-json-logger==4.1.0
 pytz==2026.3.post1
 PyYAML==6.0.3
 pyzmq==27.1.0
-# Editable Git install with no remote (ramp-core==0.1.0)
--e /home/diy/bonus_track/PGRR/packages/ramp_core
-# Editable Git install with no remote (ramp-ml==0.1.0)
--e /home/diy/bonus_track/PGRR/packages/ramp_ml
+-e packages/ramp_core
+-e packages/ramp_ml
 referencing==0.37.0
 requests==2.34.2
 rfc3339-validator==0.1.4

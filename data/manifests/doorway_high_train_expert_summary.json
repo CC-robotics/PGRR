@@ -20,5 +20,5 @@
   "predicted_success_count": 10,
   "rejoin_release_threshold": 0.65,
   "sample_count": 209,
-  "source_jsonl": "/home/diy/RAMP/data/raw/doorway_bottleneck_high_train_s01120_final_heuristic_dwb.jsonl"
+  "source_jsonl": "data/raw/doorway_bottleneck_high_train_s01120_final_heuristic_dwb.jsonl"
 }

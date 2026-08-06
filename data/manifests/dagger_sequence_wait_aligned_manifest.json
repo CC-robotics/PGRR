@@ -2,7 +2,7 @@
   "base_datasets": [
     {
       "path": "data/processed/dagger_opposite_stream_train.h5",
-      "sha256": "29245e6376fd24202b766b7abd30a6e10f84834f906262a658abd95515070a7c"
+      "sha256": "9e47ed07d07d8adf54f4dcec19b43b0180f4d113d044532a8c270fed7849a7d1"
     }
   ],
   "best_validation_epoch": {
@@ -45,7 +45,7 @@
     "observation_count": 16302,
     "path": "data/processed/dagger_sequence_wait_aligned_train.h5",
     "sample_count": 2002,
-    "sha256": "f7aa3c1b25e5b5b2058f36733139bc9674d5b08d3353dc9af750f4d7272443a9"
+    "sha256": "2a46403f914ec7403464778b13f99faa27fee475c31190b20cfc232f7f603522"
   },
   "iteration": 5,
   "project_commit": "e659a05ad5598236e24eb3d4f74a4951d52fc853",
