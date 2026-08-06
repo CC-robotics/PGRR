@@ -142,15 +142,11 @@ def _assert_terminal_publication(
 
 
 def _assert_emergency_rotation_bounds(manager: RecoveryManagerNode) -> None:
-    expected_clearance = max(
-        manager._float("emergency_rotation_clearance_m"),
-        manager._float("footprint_stop_clearance_m")
-        + manager._float("emergency_release_hysteresis_m"),
-    )
+    expected_clearance = manager._float("emergency_rotation_clearance_m")
     controller = manager._emergency_escape
     if not math.isclose(controller.rotation_clearance_m, expected_clearance):
         raise RuntimeError(
-            "emergency rotation omitted the footprint release margin: "
+            "emergency rotation did not use its swept-radius margin: "
             f"expected={expected_clearance}, observed={controller.rotation_clearance_m}"
         )
     if not math.isclose(controller.turn_duration_s, 0.8):

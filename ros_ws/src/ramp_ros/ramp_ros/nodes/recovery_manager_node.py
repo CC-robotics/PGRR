@@ -484,7 +484,7 @@ class RecoveryManagerNode(Node):
             "footprint_release_hysteresis_m": 0.0,
             # This nominal geometric floor is composed with the stricter
             # footprint stop-and-release boundary before any turn is allowed.
-            "emergency_rotation_clearance_m": 0.24,
+            "emergency_rotation_clearance_m": 0.40,
             "emergency_turn_duration_s": 0.8,
             "emergency_maximum_turn_pulses": 4,
             "emergency_forward_entry_clearance_m": 0.85,
@@ -933,13 +933,9 @@ class RecoveryManagerNode(Node):
         )
 
     def _effective_emergency_rotation_clearance(self) -> float:
-        """Return the observable swept margin required for emergency rotation."""
+        """Return the separately configured circular swept-rotation margin."""
 
-        return max(
-            self._float("emergency_rotation_clearance_m"),
-            self._float("footprint_stop_clearance_m")
-            + self._float("emergency_release_hysteresis_m"),
-        )
+        return self._float("emergency_rotation_clearance_m")
 
     def _motion_stop_distance(self, linear_velocity: float) -> float:
         """Return the directional stop distance, including a collision latch."""
