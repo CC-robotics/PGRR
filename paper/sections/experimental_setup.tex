@@ -1,121 +1,74 @@
 \subsection{Platform and Robot}
-Experiments use the pinned Arena ROS2 Humble runtime with the Gazebo fallback,
-Nav2 NavFn/DWB, and a Jackal model.  The map spans
-$31.28\times24.03$ m; evaluation uses a 0.36-m robot radius and 0.35-m
-pedestrian radius.  A planar LiDAR is resampled to the 180 bins consumed by the
-recovery policy.  Localized and physical goal tolerances are 0.25 and 0.30 m,
-respectively.  The deployment interface contains only LiDAR, path, velocity,
-command, progress, planner-status, and rule-detector histories; simulator poses
-are isolated for actor execution, expert labeling, and evaluation.
+Experiments use a pinned Arena ROS2 Humble/Gazebo runtime with Nav2 NavFn/DWB
+and Jackal.  The map is $31.28\times24.03$ m; robot and pedestrian radii are
+0.36 and 0.35 m.  Planar LiDAR is resampled to 180 bins, and localized and
+physical goal tolerances are 0.25 and 0.30 m.  Deployment receives only LiDAR,
+path, velocity, command, progress, planner-status, and rule histories.
+Simulator poses remain isolated for actor execution, expert labels, and
+evaluation.
 
-Pedestrians are LiDAR-visible cylindrical actors following deterministic,
-one-shot routes at 5 Hz, with family-dependent speeds spanning 0.06--0.55 m/s.
-Their swept-step guard holds a candidate motion that would reduce robot
-clearance inside the configured 0.90 m soft-yield region; the 0.73 m hard guard
-prevents a step from crossing the robot footprint.  This protocol makes
-pedestrian motion replayable without treating scripted actor state as a
-deployment observation.  It is an interaction stress model rather than a
-model of human intent.
+LiDAR-visible cylindrical pedestrians follow deterministic one-shot routes at
+5 Hz and 0.06--0.55 m/s.  Swept-step guards hold motions inside a 0.90-m
+soft-yield region and prevent footprint crossing at 0.73 m.  This produces
+paired, replayable interaction stress tests, not a model of human intent.
 
 \IfFileExists{figures/runtime_gazebo_doorway_bottleneck_medium.png}{%
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{runtime_gazebo_doorway_bottleneck_medium.png}
-  \caption{Actual Arena/Gazebo execution of the doorway interaction with
-  Jackal and LiDAR-visible pedestrians.  The image is qualitative runtime
-  evidence; all numerical results are computed from paired episode logs.}
+  \caption{Recorded Arena/Gazebo validation execution of the doorway
+  interaction.  This is qualitative runtime evidence; numerical results come
+  only from paired episode logs.}
   \label{fig:runtime-gazebo}
 \end{figure}
 }{}
 
-\subsection{Moderate-v5 Scenarios and Splits}
-Figure~\ref{fig:scenarios} summarizes the head-on corridor, doorway bottleneck, crossing flow,
-blind corner, group blocking, overtaking, opposite streams, and temporary
-blockage.  Low, medium, and high densities contain one, two, and four
-pedestrians, respectively.  All splits intentionally share the
-\texttt{map\_empty} map and the eight family templates; train, validation, and
-test instead use disjoint seed blocks, scenario IDs, and compiled physical
-realizations.  Thus the protocol tests held-out interactions, not unseen-map or
-unseen-template generalization.
+\subsection{Scenarios, Splits, and Comparators}
+Figure~\ref{fig:scenarios} shows eight interaction families: head-on corridor,
+doorway bottleneck, crossing flow, blind corner, group blocking, overtaking,
+opposite streams, and temporary blockage.  Low, medium, and high density use
+one, two, and four pedestrians.  All splits share the map and family templates,
+but use disjoint seeds, scenario IDs, and compiled physical realizations;
+therefore the test measures held-out interactions, not map or template
+generalization.
 
-The validation manifest contains three repetitions for each of the 24
-family--density cells: 72 conditions per method and 360 logical
-method--episodes across the five methods.  These runs are reserved for code,
-checkpoint, and configuration selection.  The held-out test plan contains five
-repetitions per cell: 120 conditions per method and 600 logical
-method--episodes total.  Every method receives the same condition keys within
-each split.
+Validation has three repetitions in each of 24 family--density cells (72
+conditions per method); held-out test has five (120 per method).  Validation is
+used for code, configuration, and checkpoint selection.  Test scenarios remain
+unexecuted until code, hashes, and checkpoints are frozen.  Every method then
+receives identical starts, goals, pedestrian routes, seeds, planner profile,
+and 240-s limit.  Artifact generation rejects missing conditions or mismatched
+pair metadata.
 
-Moderate-v5 was constructed from moderate-v4 validation evidence, which exposed
-static-geometry overlaps and interaction lanes narrower than the combined
-robot--pedestrian collision radii.  V5 repairs those construction defects while
-retaining the eight families, density levels, footprint, planner, and actor
-protocol.  The full v5 validation manifest is the only split authorized for
-checking reference-planner difficulty and interaction coverage.  No v5 test
-episode is executed or inspected before the code, configuration, scenario
-hashes, and checkpoints are frozen.
+We compare (i) Base DWB; (ii) Standard Nav2 recovery; (iii) rule-triggered
+Heuristic recovery using the same state machine, mask, and supervisor;
+(iv) Uniform BC; and (v) the validation-selected PGRR DAgger checkpoint.  The
+expert is a labeling and diagnostic reference, not a deployment baseline.
+Margin weighting is retained as a negative offline ablation.  PPO and a learned
+detector are not evaluated contributions.
 
-All five methods run the same condition keys, robot starts, goals, pedestrian
-routes, seeds, 240-s timeout, and planner profile.  Final generation fails if a
-method is missing a condition, if scenario metadata differs across a pair, or
-if the observed condition count is not the frozen value.
+\subsection{Metrics and Statistics}
+Logs retain geometry, commands, planner and recovery state, rule scores, LiDAR,
+and paths.  We report goal, collision, timeout, planner failure, SPL, path
+length, success-conditional time, minimum human distance, personal-space and
+discomfort measures, emergency stops, triggers, recovery success and duration,
+and intervention ratio.  Simulator/reset failures remain recorded and may be
+excluded only by the declared protocol; algorithm failures are never merged,
+removed, or retried.
 
-\subsection{Baselines and Learned Method}
-The closed-loop comparison includes: (i) Base DWB without a recovery subtree;
-(ii) the Standard Nav2 recovery behavior; (iii) a rule-triggered Heuristic
-policy with the same state machine, planning mask, and safety supervisor as the
-learned hierarchy; (iv) Uniform BC using the planning-expert demonstrations;
-and (v) PGRR using the validation-selected DAgger checkpoint.  The first four
-are complete paired baselines rather than a high-density subset.  The
-privileged short-horizon expert is used as a planning reference for labels and
-diagnostics only; it is not a deployment baseline, and no optimality claim is
-made.
-
-Training and model selection use only train and validation scenarios.  The
-two-round DAgger workflow is preserved, but the second-round candidate did not
-pass validation selection.  The deployed checkpoint instead combines the
-accepted DAgger aggregate with a train-only head-on coverage shard and is chosen
-by validation loss and closed-loop validation behavior.  Margin weighting
-remains a reported negative offline ablation.  PPO and a learned failure
-detector are outside the evaluated method and are not claimed as completed
-contributions.
-
-\subsection{Metrics and Statistical Protocol}
-Every stream records physical robot and pedestrian geometry, commands, planner
-and recovery state, failure scores, LiDAR, and paths.  We report goal reaching,
-collision, timeout, planner failure, SPL, path length, successful-run navigation
-time, minimum human-centre distance, personal-space violation, discomfort time,
-emergency stops, triggers, recovery success, recovery duration, and
-intervention ratio.  \texttt{SIMULATOR\_FAILURE} and
-\texttt{INVALID\_RESET} attempts remain in the artifacts and may be excluded
-from algorithm rates according to the declared protocol; collision, timeout,
-and planner failure are never merged or removed.
-
-A recovery success is a logged REJOIN-to-NORMAL transition.  The state-machine
-guard requires the original task goal to be active again, failure score below
-$\tau_{off}$, and valid goal progress.  Reaching the final goal is a separate
-navigation outcome, and the recovery metric does not add an unimplemented
-post-transition protection window.
-
-PGRR is paired separately with each baseline on identical condition keys.
-Binary outcomes use exact McNemar tests and episode-pair bootstrap confidence
-intervals.  Continuous paired differences use two-sided Wilcoxon signed-rank
-tests, paired bootstrap intervals, and rank-biserial effect sizes.  One global
+Methods are paired on identical condition keys.  Binary outcomes use exact
+McNemar tests and paired bootstrap intervals; continuous differences use
+two-sided Wilcoxon tests, paired intervals, and rank-biserial effects.  A single
 Holm correction covers all predeclared comparator--endpoint tests.  Confidence
-intervals use 10,000 paired bootstrap resamples with recorded seed 20260804.
-The tables report effect sizes and intervals regardless of statistical
-significance.
+intervals use 10,000 resamples with seed 20260804; estimates, intervals, and
+effect sizes are reported regardless of significance.
 
-\subsection{Execution and Artifact Integrity}
-Six concurrent workers use isolated ROS domain IDs and simulator partitions.  A
-startup handshake holds actors until navigation, authoritative pose feedback,
-and logging are active.  The runner refuses overwrite, records checkpoint and
-scenario hashes, and retains every physical attempt.  A logical task permits at
-most three physical attempts: the initial attempt and up to two retries, each
-only after an explicitly classified \texttt{SIMULATOR\_FAILURE} or
-\texttt{INVALID\_RESET}.  Collision, timeout, and planner failure are accepted
-algorithm outcomes and are never rerun because they are unfavorable.  Exactly
-one accepted terminal result is required per logical task.  The paper pipeline
-first collects the locked run, then validates the complete five-method
-condition set, computes statistics, and generates all result tables and figures
-from Parquet, CSV, and JSON artifacts.
+\subsection{Execution Integrity}
+Six workers use isolated ROS domains and simulator partitions.  A startup
+handshake holds actors until navigation, pose feedback, and logging are live.
+The runner refuses overwrite and records checkpoint and scenario hashes.  A
+logical task permits two retries only after classified
+\texttt{SIMULATOR\_FAILURE} or \texttt{INVALID\_RESET}; collision, timeout, and
+planner failure are accepted outcomes.  Complete five-method pairing is checked
+before statistics, tables, and figures are generated from Parquet, CSV, and
+JSON artifacts.

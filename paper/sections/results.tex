@@ -11,10 +11,10 @@ its valid episodes.  PGRR reaches \ModeratePGRRSuccessRate{}, collides in
 \input{generated/moderate_main_results.tex}
 
 Figure~\ref{fig:moderate-outcomes-density} preserves each terminal category and
-shows goal-reaching uncertainty by density.  Table~\ref{tab:moderate-density-results}
-provides the corresponding exact percentages.  Timeout and planner failure
-remain explicit in both artifacts, so a lower contact rate cannot be
-misinterpreted as successful recovery.
+shows goal-reaching uncertainty by density.  Timeout and planner failure
+remain explicit, so a lower contact rate cannot be misinterpreted as successful
+recovery.  Exact family--density counts remain in the generated evaluation
+artifacts and accompanying technical report.
 
 \begin{figure*}[t]
   \centering
@@ -25,8 +25,6 @@ misinterpreted as successful recovery.
   identical condition keys.}
   \label{fig:moderate-outcomes-density}
 \end{figure*}
-
-\input{generated/moderate_density_results.tex}
 
 \subsection{Paired Effects Against Four Baselines}
 On the \ModerateBasePGRRValidPairCount{} valid Base--PGRR pairs, the PGRR-minus-DWB
@@ -41,54 +39,10 @@ and timeout describe distinct failure modes.
 
 Table~\ref{tab:moderate-pairwise-results} extends the same paired analysis to
 Standard, Heuristic, and Uniform BC and reports raw and globally Holm-adjusted
-tests, confidence intervals, and effect sizes.  Figure~\ref{fig:moderate-paired-effects}
-visualizes the three binary endpoint differences without selecting a favorable
+tests, confidence intervals, and effect sizes without selecting a favorable
 scenario or seed after evaluation.
 
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.96\textwidth]{moderate_paired_effects.pdf}
-  \caption{Paired PGRR-minus-baseline endpoint differences on the complete
-  manifest.  Points are mean paired differences and bars are 95\% bootstrap
-  intervals; positive is favorable only for goal reaching.}
-  \label{fig:moderate-paired-effects}
-\end{figure*}
-
 \input{generated/moderate_pairwise_statistics.tex}
-
-\subsection{Family Structure, Safety, and Intervention}
-The family matrix in Figure~\ref{fig:moderate-family-success} reports exact
-goal-reaching counts rather than selecting representative successes.  It shows
-whether an aggregate effect is concentrated in one interaction geometry or is
-shared across head-on, bottleneck, crossing, corner, blocking, overtaking,
-opposite-stream, and temporary-blockage conditions.
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.90\textwidth]{moderate_family_success.pdf}
-  \caption{Goal-reaching episodes by interaction family, pooled only across
-  the three declared densities and five held-out repetitions.  Each cell gives
-  goals over valid episodes.}
-  \label{fig:moderate-family-success}
-\end{figure*}
-
-Table~\ref{tab:moderate-recovery-results} reports trigger frequency, recovery
-success, recovery duration, intervention ratio, and emergency stops for every
-method.  Undefined recovery rates for methods or episodes with no trigger are
-left undefined rather than imputed as zero.  Figure~\ref{fig:moderate-safety-efficiency}
-places median minimum human distance against successful-run navigation time;
-its two axes are reported alongside, not substituted for, terminal outcomes.
-
-\input{generated/moderate_recovery_metrics.tex}
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.88\textwidth]{moderate_safety_efficiency.pdf}
-  \caption{Safety--efficiency view for all five methods.  Horizontal values
-  use successful episodes; vertical values use every valid episode.  Error
-  bars are 95\% percentile-bootstrap intervals.}
-  \label{fig:moderate-safety-efficiency}
-\end{figure*}
 
 \subsection{Imitation and Mask Ablations}
 The separate offline ablation in Table~\ref{tab:offline-ablation} compares
@@ -98,5 +52,11 @@ negative result rather than a selected contribution.  The no-mask rows are
 counterfactual diagnostics and are not executed in simulation.  This ablation
 tests expert agreement and action validity; the complete five-method closed-loop
 evaluation above remains the evidence for navigation performance.
+
+Per-episode trigger count, recovery success and duration, intervention ratio,
+emergency stops, family-level counts, and the safety--efficiency view remain in
+the generated audit artifacts and accompanying technical report.  Undefined
+recovery rates are never imputed as zero; Table~\ref{tab:moderate-main-results}
+keeps task outcomes, minimum distance, and successful-run time visible here.
 
 \input{generated/offline_ablation.tex}

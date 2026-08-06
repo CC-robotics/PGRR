@@ -15,7 +15,8 @@ a training and diagnostic reference, not a certified optimal controller.
 
 All final conditions use one pinned simulator/runtime profile.  We do not claim
 cross-simulator transfer, hardware validation, PPO refinement, or a learned
-failure detector.  Although five held-out repetitions improve on single-seed
-cells, the benchmark still covers a limited set of maps, route templates, and
-pedestrian behaviors.  Responsive human models, additional maps and planners,
-formal safety analysis, and real-robot trials are the most important extensions.
+failure detector.  Split separation is over seeds and compiled physical
+realizations, not maps or interaction-family templates; five held-out
+repetitions per cell still cover a limited range of pedestrian behavior.
+Responsive human models, additional maps and planners, formal safety analysis,
+and real-robot trials are the most important extensions.

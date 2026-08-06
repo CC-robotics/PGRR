@@ -22,26 +22,23 @@ for Dynamic Social Navigation}
 \begin{abstract}
 Classical navigation is reliable in routine mapped environments yet remains
 brittle under reciprocal pedestrian interactions.  We present
-planning-guided failure-triggered recovery and rejoin (PGRR), a layer that
+Planning-Guided Recovery and Rejoin (PGRR), a failure-triggered layer that
 preserves Nav2 DWB for nominal navigation and invokes a learned policy only
 when observable risk or progress rules persist.  Rather than commanding
 velocity, the policy selects among 21 temporary subgoals and four interpretable
 recovery modes.  A planning mask rejects infeasible decisions, and an
 independent stopping-distance supervisor may override motion.  A privileged
-short-horizon planner supplies recovery demonstrations for behavior cloning and
-a two-round DAgger workflow; the validation-selected checkpoint extends the
-accepted DAgger aggregate with a train-only coverage shard rather than using
-the unselected second-round candidate.  Deployment uses only LiDAR and
-navigation history.  The
+short-horizon planner supplies recovery demonstrations for behavior cloning
+and a two-round DAgger workflow; checkpoint selection uses validation only.
+Deployment uses only LiDAR and navigation history.  The
 held-out moderate protocol evaluates \ModerateMethodCount{} methods on the same
 \ModeratePairCount{} conditions each (\ModerateEpisodeCount{} method--episodes).
 PGRR reaches \ModeratePGRRSuccessRate{} of goals versus
 \ModerateBaseSuccessRate{} for DWB, with paired PGRR-minus-DWB goal, collision,
 and timeout differences of \ModeratePGRRSuccessDifference{},
 \ModeratePGRRCollisionDifference{}, and \ModeratePGRRTimeoutDifference{},
-respectively.  Reporting all terminal outcomes separately exposes both recovery
-benefits and conservative failure modes rather than collapsing them into a
-single safety score.
+respectively.  Reporting all terminal outcomes separately prevents reduced
+contact from being conflated with task completion.
 \end{abstract}
 
 \section{Introduction}
@@ -65,23 +62,14 @@ single safety score.
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=0.96\textwidth]{recovery_state_machine.pdf}
-  \caption{Bounded recovery state machine.  Hysteretic detector evidence,
-  original-goal progress, action completion, and the independent emergency
-  guard determine transitions; all recovery and rejoin loops have explicit
-  attempt and wall-clock limits.}
-  \label{fig:state-machine}
-\end{figure*}
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.96\textwidth]{action_space_expert.pdf}
-  \caption{Schematic illustration of interpretable recovery decisions and
-  privileged expert labeling; it is not a recorded episode rollout.  Candidate
-  rollouts that violate the configured planning mask are never selectable, and
-  privileged pedestrian prediction is used only to rank legal training
-  actions.}
-  \label{fig:action-expert}
+  \includegraphics[width=0.83\textwidth]{recovery_state_machine.pdf}\\[-1mm]
+  \includegraphics[width=0.86\textwidth]{action_space_expert.pdf}
+  \caption{Recovery design.  Top: hysteretic, bounded state transitions with
+  independent emergency priority.  Bottom: schematic recovery actions and
+  privileged expert ranking, not a recorded rollout.  Mask-invalid candidates
+  are never selectable, and pedestrian prediction is used only for training
+  labels.}
+  \label{fig:recovery-design}
 \end{figure*}
 
 \section{Experimental Setup}
@@ -104,6 +92,7 @@ single safety score.
 \section{Conclusion}
 \input{sections/conclusion.tex}
 
+\IEEEtriggeratref{14}
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 \end{document}
