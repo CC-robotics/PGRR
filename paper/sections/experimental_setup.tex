@@ -64,7 +64,8 @@ intervals use 10,000 resamples with seed 20260804; estimates, intervals, and
 effect sizes are reported regardless of significance.
 
 \subsection{Execution Integrity}
-Six workers use isolated ROS domains and simulator partitions.  A startup
+Parallel workers use isolated ROS domains and simulator partitions; each run
+manifest records the exact worker count.  A startup
 handshake holds actors until navigation, pose feedback, and logging are live.
 The runner refuses overwrite and records checkpoint and scenario hashes.  A
 logical task permits two retries only after classified
