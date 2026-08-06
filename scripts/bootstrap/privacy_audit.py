@@ -20,18 +20,51 @@ import subprocess
 import sys
 import tokenize
 import warnings
+import zipfile
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import unquote
+from xml.etree import ElementTree
 
 ROOT = Path(__file__).resolve().parents[2]
 HDF5_SUFFIXES = {".h5", ".hdf5"}
 PDF_SUFFIXES = {".pdf"}
 IMAGE_SUFFIXES = {".jpeg", ".jpg", ".png"}
+OFFICE_ZIP_SUFFIXES = {
+    ".docm",
+    ".docx",
+    ".dotm",
+    ".dotx",
+    ".odp",
+    ".ods",
+    ".odt",
+    ".potm",
+    ".potx",
+    ".ppsm",
+    ".ppsx",
+    ".pptm",
+    ".pptx",
+    ".xlsm",
+    ".xlsx",
+    ".xltm",
+    ".xltx",
+}
+OPEN_DOCUMENT_SUFFIXES = {".odp", ".ods", ".odt"}
+OFFICE_XML_SUFFIXES = {".rels", ".xml"}
+OFFICE_MEDIA_PREFIXES = ("pictures/", "ppt/media/", "word/media/", "xl/media/")
+MAX_OFFICE_MEMBERS = 20_000
+MAX_OFFICE_MEMBER_BYTES = 256 * 1024 * 1024
+MAX_OFFICE_TOTAL_BYTES = 512 * 1024 * 1024
 SKIP_DIRECTORY_NAMES = {".git"}
 
 ABSOLUTE_HOME_RE = re.compile(
     r"(?<![A-Za-z0-9_${])/(?:home|Users)/[A-Za-z0-9._-]+",
+    re.IGNORECASE,
+)
+WINDOWS_HOME_RE = re.compile(
+    r"(?<![A-Za-z0-9_${])(?:file:/+)?[A-Za-z]:[\\/](?:Users|Documents and Settings)"
+    r"[\\/][A-Za-z0-9._ -]+",
     re.IGNORECASE,
 )
 EMAIL_RE = re.compile(
@@ -52,7 +85,7 @@ ALLOWED_EMAILS = {
     "charles.chen@example.invalid",
     "pgrr-test@example.invalid",
 }
-ALLOWED_IDENTITY_MARKERS = ("anonymous", "charles chen")
+ALLOWED_IDENTITIES = {"anonymous", "anonymous authors", "charles chen"}
 
 
 @dataclass(frozen=True, order=True)
@@ -78,6 +111,11 @@ def _allowed_email(value: str) -> bool:
     if normalized in ALLOWED_EMAILS or normalized.endswith("@example.invalid"):
         return True
     return normalized.startswith("anonymous@")
+
+
+def _allowed_identity(value: str) -> bool:
+    normalized = " ".join(value.casefold().split())
+    return not normalized or normalized in ALLOWED_IDENTITIES
 
 
 def _sensitive_literals(extra_forbidden: Iterable[str]) -> tuple[str, ...]:
@@ -220,6 +258,16 @@ def _scan_text(
                 _line_number(text, home_match.start()) if source == "text" else None,
             )
         )
+    windows_home_match = WINDOWS_HOME_RE.search(text)
+    if windows_home_match is not None:
+        findings.add(
+            Finding(
+                relative_path,
+                source,
+                "absolute Windows home-directory path",
+                _line_number(text, windows_home_match.start()) if source == "text" else None,
+            )
+        )
     host_match = HOST_FIELD_RE.search(text)
     if host_match is not None:
         findings.add(
@@ -326,36 +374,131 @@ def _scan_pdf_metadata(
     *,
     extra_forbidden: Iterable[str],
 ) -> set[Finding]:
-    executable = shutil.which("pdfinfo")
-    if executable is None:
-        return {
+    findings: set[Finding] = set()
+    pdfinfo = shutil.which("pdfinfo")
+    pdftotext = shutil.which("pdftotext")
+    if pdfinfo is None:
+        findings.add(
             Finding(
                 relative_path,
                 "pdf-metadata",
                 "pdfinfo unavailable; PDF metadata was not auditable",
             )
+        )
+    else:
+        completed = subprocess.run(
+            [pdfinfo, str(path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if completed.returncode != 0:
+            findings.add(Finding(relative_path, "pdf-metadata", "unreadable PDF metadata"))
+        else:
+            findings.update(
+                _scan_text(
+                    completed.stdout,
+                    relative_path,
+                    "pdf-metadata",
+                    extra_forbidden=extra_forbidden,
+                )
+            )
+            for line in completed.stdout.splitlines():
+                key, separator, value = line.partition(":")
+                if separator and key.strip().casefold() == "author" and value.strip():
+                    if not _allowed_identity(value):
+                        findings.add(
+                            Finding(
+                                relative_path,
+                                "pdf-metadata",
+                                "non-allowlisted PDF author",
+                            )
+                        )
+    if pdftotext is None:
+        findings.add(
+            Finding(
+                relative_path,
+                "pdf-text",
+                "pdftotext unavailable; compressed PDF text was not auditable",
+            )
+        )
+    else:
+        completed = subprocess.run(
+            [pdftotext, "-enc", "UTF-8", str(path), "-"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if completed.returncode != 0:
+            findings.add(Finding(relative_path, "pdf-text", "unreadable PDF text"))
+        else:
+            findings.update(
+                _scan_text(
+                    completed.stdout,
+                    relative_path,
+                    "pdf-text",
+                    extra_forbidden=extra_forbidden,
+                )
+            )
+    return findings
+
+
+def _scan_image_payload(
+    payload: bytes,
+    relative_path: str,
+    *,
+    source: str,
+    extra_forbidden: Iterable[str],
+) -> set[Finding]:
+    """Inspect compressed raster metadata supplied as bytes."""
+
+    try:
+        from PIL import ExifTags, Image
+    except ImportError:
+        return {
+            Finding(
+                relative_path,
+                source,
+                "Pillow unavailable; image metadata was not auditable",
+            )
         }
-    completed = subprocess.run(
-        [executable, str(path)],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    if completed.returncode != 0:
-        return {Finding(relative_path, "pdf-metadata", "unreadable PDF metadata")}
-    findings = _scan_text(
-        completed.stdout,
-        relative_path,
-        "pdf-metadata",
-        extra_forbidden=extra_forbidden,
-    )
-    for line in completed.stdout.splitlines():
-        key, separator, value = line.partition(":")
-        if separator and key.strip().casefold() == "author" and value.strip():
-            identity = value.strip().casefold()
-            if not any(marker in identity for marker in ALLOWED_IDENTITY_MARKERS):
-                findings.add(Finding(relative_path, "pdf-metadata", "non-allowlisted PDF author"))
+
+    findings: set[Finding] = set()
+    try:
+        with Image.open(io.BytesIO(payload)) as image:
+            metadata: list[tuple[str, object]] = [
+                (str(key), value) for key, value in image.info.items()
+            ]
+            metadata.extend(
+                (str(ExifTags.TAGS.get(key, key)), value) for key, value in image.getexif().items()
+            )
+    except (OSError, ValueError):
+        return {Finding(relative_path, source, "unreadable image metadata")}
+
+    for key, value in metadata:
+        metadata_text = (
+            _printable_strings(value) if isinstance(value, bytes) else _attribute_text(value)
+        )
+        metadata_findings = _scan_text(
+            metadata_text,
+            relative_path,
+            source,
+            extra_forbidden=extra_forbidden,
+        )
+        if metadata_findings:
+            findings.update(metadata_findings)
+            findings.add(
+                Finding(
+                    relative_path,
+                    source,
+                    f"sensitive image metadata field: {key}",
+                )
+            )
+        if key.strip().casefold() in {"artist", "author"} and metadata_text.strip():
+            if not _allowed_identity(metadata_text):
+                findings.add(Finding(relative_path, source, "non-allowlisted image author"))
     return findings
 
 
@@ -368,51 +511,238 @@ def _scan_image_metadata(
     """Inspect compressed PNG/JPEG metadata, including EXIF text fields."""
 
     try:
-        from PIL import ExifTags, Image
-    except ImportError:
-        return {
-            Finding(
-                relative_path,
-                "image-metadata",
-                "Pillow unavailable; image metadata was not auditable",
-            )
-        }
+        payload = path.read_bytes()
+    except OSError:
+        return {Finding(relative_path, "image-metadata", "unreadable image metadata")}
+    return _scan_image_payload(
+        payload,
+        relative_path,
+        source="image-metadata",
+        extra_forbidden=extra_forbidden,
+    )
+
+
+def _xml_local_name(value: str) -> str:
+    return value.rsplit("}", 1)[-1].rsplit(":", 1)[-1]
+
+
+def _decode_office_xml(payload: bytes) -> str:
+    for encoding in ("utf-8-sig", "utf-16"):
+        try:
+            return payload.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    raise UnicodeDecodeError("office-xml", payload, 0, len(payload), "unsupported XML encoding")
+
+
+def _scan_office_archive(
+    path: Path,
+    relative_path: str,
+    *,
+    extra_forbidden: Iterable[str],
+) -> set[Finding]:
+    """Inspect OOXML/OpenDocument contents instead of only ZIP container strings."""
 
     findings: set[Finding] = set()
     try:
-        with Image.open(path) as image:
-            metadata: list[tuple[str, object]] = [
-                (str(key), value) for key, value in image.info.items()
-            ]
-            metadata.extend(
-                (str(ExifTags.TAGS.get(key, key)), value) for key, value in image.getexif().items()
-            )
-    except (OSError, ValueError):
-        return {Finding(relative_path, "image-metadata", "unreadable image metadata")}
-
-    for key, value in metadata:
-        payload = _printable_strings(value) if isinstance(value, bytes) else _attribute_text(value)
-        metadata_findings = _scan_text(
-            payload,
-            relative_path,
-            "image-metadata",
-            extra_forbidden=extra_forbidden,
-        )
-        if metadata_findings:
-            findings.update(metadata_findings)
-            findings.add(
-                Finding(
-                    relative_path,
-                    "image-metadata",
-                    f"sensitive image metadata field: {key}",
-                )
-            )
-        if key.strip().casefold() in {"artist", "author"} and payload.strip():
-            identity = payload.strip().casefold()
-            if not any(marker in identity for marker in ALLOWED_IDENTITY_MARKERS):
+        with zipfile.ZipFile(path) as archive:
+            members = archive.infolist()
+            if len(members) > MAX_OFFICE_MEMBERS:
+                return {
+                    Finding(
+                        relative_path,
+                        "office-archive",
+                        "Office archive has too many members to audit safely",
+                    )
+                }
+            total_size = sum(member.file_size for member in members)
+            if total_size > MAX_OFFICE_TOTAL_BYTES:
+                return {
+                    Finding(
+                        relative_path,
+                        "office-archive",
+                        "Office archive is too large to audit safely",
+                    )
+                }
+            names = [member.filename for member in members if not member.is_dir()]
+            if len(names) != len(set(names)):
                 findings.add(
-                    Finding(relative_path, "image-metadata", "non-allowlisted image author")
+                    Finding(relative_path, "office-archive", "duplicate Office archive member")
                 )
+            normalized_names = {name.casefold() for name in names}
+            required_core = (
+                "meta.xml"
+                if path.suffix.casefold() in OPEN_DOCUMENT_SUFFIXES
+                else "docprops/core.xml"
+            )
+            if required_core not in normalized_names:
+                findings.add(
+                    Finding(
+                        relative_path,
+                        "office-core-properties",
+                        f"required Office core properties are missing: {required_core}",
+                    )
+                )
+
+            for member in members:
+                if member.is_dir():
+                    continue
+                member_name = member.filename
+                normalized_member = member_name.replace("\\", "/")
+                member_path_findings = _scan_text(
+                    unquote(member_name),
+                    relative_path,
+                    "office-member-path",
+                    extra_forbidden=extra_forbidden,
+                )
+                if member_path_findings:
+                    findings.update(member_path_findings)
+                    findings.add(
+                        Finding(
+                            relative_path,
+                            "office-member-path",
+                            f"sensitive Office member name: {member_name}",
+                        )
+                    )
+                if normalized_member.startswith("/") or ".." in normalized_member.split("/"):
+                    findings.add(
+                        Finding(
+                            relative_path,
+                            "office-archive",
+                            "unsafe Office archive member path",
+                        )
+                    )
+                if member.flag_bits & 0x1:
+                    findings.add(
+                        Finding(
+                            relative_path,
+                            "office-archive",
+                            f"encrypted Office member is not auditable: {member_name}",
+                        )
+                    )
+                    continue
+                if member.file_size > MAX_OFFICE_MEMBER_BYTES:
+                    findings.add(
+                        Finding(
+                            relative_path,
+                            "office-archive",
+                            f"Office member is too large to audit safely: {member_name}",
+                        )
+                    )
+                    continue
+                payload = archive.read(member)
+                member_suffix = Path(normalized_member).suffix.casefold()
+                if member_suffix in OFFICE_XML_SUFFIXES:
+                    try:
+                        decoded = _decode_office_xml(payload)
+                        root = ElementTree.fromstring(payload)
+                    except (ElementTree.ParseError, UnicodeDecodeError, ValueError):
+                        findings.add(
+                            Finding(
+                                relative_path,
+                                "office-xml",
+                                f"malformed or undecodable Office XML: {member_name}",
+                            )
+                        )
+                        continue
+                    serialized = ElementTree.tostring(root, encoding="unicode")
+                    xml_findings = _scan_text(
+                        f"{decoded}\n{serialized}",
+                        relative_path,
+                        "office-xml",
+                        extra_forbidden=extra_forbidden,
+                    )
+                    if xml_findings:
+                        findings.update(xml_findings)
+                        findings.add(
+                            Finding(
+                                relative_path,
+                                "office-xml",
+                                f"sensitive Office XML member: {member_name}",
+                            )
+                        )
+                    for element in root.iter():
+                        local_name = _xml_local_name(element.tag).casefold()
+                        if local_name in {"creator", "initial-creator", "lastmodifiedby"}:
+                            identity = "".join(element.itertext()).strip()
+                            if not _allowed_identity(identity):
+                                findings.add(
+                                    Finding(
+                                        relative_path,
+                                        "office-core-properties",
+                                        f"non-allowlisted Office {local_name}: {member_name}",
+                                    )
+                                )
+                        if local_name != "relationship":
+                            continue
+                        attributes = {
+                            _xml_local_name(key).casefold(): value
+                            for key, value in element.attrib.items()
+                        }
+                        if attributes.get("targetmode", "").casefold() != "external":
+                            continue
+                        target = unquote(attributes.get("target", ""))
+                        if not target:
+                            findings.add(
+                                Finding(
+                                    relative_path,
+                                    "office-external-relationship",
+                                    f"empty external Office relationship: {member_name}",
+                                )
+                            )
+                            continue
+                        target_findings = _scan_text(
+                            target,
+                            relative_path,
+                            "office-external-relationship",
+                            extra_forbidden=extra_forbidden,
+                        )
+                        if target_findings:
+                            findings.update(target_findings)
+                            findings.add(
+                                Finding(
+                                    relative_path,
+                                    "office-external-relationship",
+                                    f"sensitive external Office relationship: {member_name}",
+                                )
+                            )
+                    continue
+
+                strings_findings = _scan_text(
+                    _printable_strings(payload),
+                    relative_path,
+                    "office-member-strings",
+                    extra_forbidden=extra_forbidden,
+                )
+                if strings_findings:
+                    findings.update(strings_findings)
+                    findings.add(
+                        Finding(
+                            relative_path,
+                            "office-member-strings",
+                            f"sensitive Office binary member: {member_name}",
+                        )
+                    )
+                lowered_member = normalized_member.casefold()
+                if lowered_member.startswith(OFFICE_MEDIA_PREFIXES):
+                    if member_suffix in IMAGE_SUFFIXES:
+                        media_findings = _scan_image_payload(
+                            payload,
+                            relative_path,
+                            source="office-media-metadata",
+                            extra_forbidden=extra_forbidden,
+                        )
+                        if media_findings:
+                            findings.update(media_findings)
+                            findings.add(
+                                Finding(
+                                    relative_path,
+                                    "office-media-metadata",
+                                    f"sensitive embedded Office media: {member_name}",
+                                )
+                            )
+    except (OSError, RuntimeError, zipfile.BadZipFile, zipfile.LargeZipFile):
+        findings.add(Finding(relative_path, "office-archive", "unreadable Office ZIP archive"))
     return findings
 
 
@@ -519,6 +849,14 @@ def scan_tree(
         if suffix in IMAGE_SUFFIXES:
             findings.update(
                 _scan_image_metadata(
+                    path,
+                    relative_path,
+                    extra_forbidden=extra_forbidden,
+                )
+            )
+        if suffix in OFFICE_ZIP_SUFFIXES:
+            findings.update(
+                _scan_office_archive(
                     path,
                     relative_path,
                     extra_forbidden=extra_forbidden,
