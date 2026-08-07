@@ -151,6 +151,8 @@ class EmergencyEscapeController:
     backup_peak_clearance_m: float | None = None
     turn_count: int = 0
     progress_observed_after_hazard: bool = False
+    turn_before_release: bool = False
+    clear_turn_active: bool = False
 
     def __post_init__(self) -> None:
         values = (
@@ -216,25 +218,58 @@ class EmergencyEscapeController:
             # when the hazard clears or when its omnidirectional swept margin
             # becomes unsafe.  An active safe pulse may still be preempted by
             # the higher-priority BACKUP/FORWARD checks below.
-            if not hazard:
+            if not hazard and not self.clear_turn_active:
                 self.escape_until_s = float("-inf")
                 self.mode = EmergencyEscapeMode.STOP
                 turn_active = False
             elif obstacle_clearance_m < self.rotation_clearance_m:
                 self.escape_until_s = float("-inf")
                 self.mode = EmergencyEscapeMode.STOP
+                self.clear_turn_active = False
                 turn_active = False
             elif not turn_active:
                 # Pulse expiry deliberately drops the sticky direction before
                 # selecting again from the current observable bearing.
                 self.escape_until_s = float("-inf")
                 self.mode = EmergencyEscapeMode.STOP
+                self.clear_turn_active = False
 
         if not turning and now_s < self.escape_until_s:
             if self.mode is not EmergencyEscapeMode.BACKUP or backup_permitted:
                 return True, self.mode
             self.escape_until_s = float("-inf")
             self.mode = EmergencyEscapeMode.STOP
+        if turn_active and self.clear_turn_active:
+            return True, self.mode
+        if not hazard and self.turn_before_release:
+            # Recurrent hazards can clear during each individually safe BACKUP
+            # pulse.  Releasing Nav2 immediately lets it undo that clearance
+            # before the next decision, producing a forward/reverse limit
+            # cycle.  After the configured retreat evidence has accumulated,
+            # keep ownership for one bounded turn while the freshly observed
+            # swept margin is still available.  The control loop continues to
+            # enforce the same rotation-clearance boundary throughout.
+            stopped = abs(linear_speed_mps) <= self.release_speed_mps
+            if not stopped:
+                self.mode = EmergencyEscapeMode.STOP
+                return True, self.mode
+            wrapped = math.atan2(math.sin(obstacle_angle_rad), math.cos(obstacle_angle_rad))
+            if (
+                obstacle_clearance_m >= self.rotation_clearance_m
+                and self.turn_count < self.maximum_turn_pulses
+            ):
+                self.mode = (
+                    EmergencyEscapeMode.TURN_RIGHT
+                    if wrapped >= 0.0
+                    else EmergencyEscapeMode.TURN_LEFT
+                )
+                self.escape_until_s = now_s + self.turn_duration_s
+                self.turn_count += 1
+                self.turn_before_release = False
+                self.clear_turn_active = True
+                return True, self.mode
+            self.mode = EmergencyEscapeMode.STOP
+            return True, self.mode
         if not hazard:
             self.hazard_since_s = None
             self.mode = EmergencyEscapeMode.STOP
@@ -258,6 +293,8 @@ class EmergencyEscapeController:
                 self.backup_peak_clearance_m = None
                 self.turn_count = 0
                 self.progress_observed_after_hazard = False
+                self.turn_before_release = False
+                self.clear_turn_active = False
             return False, self.mode
         self.hazard_clear_since_s = None
         if self.hazard_since_s is None or now_s < self.hazard_since_s:
@@ -301,6 +338,7 @@ class EmergencyEscapeController:
             self.escape_until_s = now_s + self.backup_duration_s
             self.backup_used_in_hazard = True
             self.backup_count += 1
+            self.turn_before_release |= self.backup_count >= self.minimum_retreat_pulses
             self.backup_start_clearance_m = obstacle_clearance_m
             self.backup_peak_clearance_m = obstacle_clearance_m
             return True, self.mode
@@ -321,6 +359,7 @@ class EmergencyEscapeController:
             )
             self.escape_until_s = now_s + self.turn_duration_s
             self.turn_count += 1
+            self.turn_before_release = False
             return True, self.mode
         self.mode = EmergencyEscapeMode.STOP
         return True, self.mode

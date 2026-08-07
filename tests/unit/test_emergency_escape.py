@@ -432,7 +432,7 @@ def test_turn_pulses_recheck_direction_and_have_a_persistent_hazard_limit() -> N
 
 
 def test_clear_time_without_goal_progress_does_not_reset_escape_budgets() -> None:
-    controller = _controller(minimum_retreat_pulses=1)
+    controller = _controller(minimum_retreat_pulses=2)
     common = {
         "linear_speed_mps": 0.0,
         "rear_clearance_m": 2.0,
@@ -462,7 +462,66 @@ def test_clear_time_without_goal_progress_does_not_reset_escape_budgets() -> Non
     )
     assert controller.update(now_s=5.6, hazard=True, **common) == (
         True,
+        EmergencyEscapeMode.BACKUP,
+    )
+    assert controller.backup_count == 2
+
+
+def test_recurrent_retreat_turns_before_nominal_motion_can_undo_clearance() -> None:
+    controller = _controller(minimum_retreat_pulses=3, rotation_clearance_m=0.40)
+    common = {
+        "linear_speed_mps": 0.0,
+        "rear_clearance_m": 2.0,
+        "obstacle_angle_rad": 0.2,
+    }
+    assert controller.update(now_s=0.0, hazard=True, obstacle_clearance_m=0.42, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.update(now_s=0.5, hazard=True, obstacle_clearance_m=0.42, **common) == (
+        True,
+        EmergencyEscapeMode.BACKUP,
+    )
+    assert controller.update(now_s=1.4, hazard=False, obstacle_clearance_m=0.54, **common) == (
+        False,
+        EmergencyEscapeMode.STOP,
+    )
+
+    assert controller.update(now_s=1.5, hazard=True, obstacle_clearance_m=0.42, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.update(now_s=2.0, hazard=True, obstacle_clearance_m=0.42, **common) == (
+        True,
+        EmergencyEscapeMode.BACKUP,
+    )
+    assert controller.update(now_s=2.9, hazard=False, obstacle_clearance_m=0.54, **common) == (
+        False,
+        EmergencyEscapeMode.STOP,
+    )
+
+    assert controller.update(now_s=3.0, hazard=True, obstacle_clearance_m=0.42, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.update(now_s=3.5, hazard=True, obstacle_clearance_m=0.42, **common) == (
+        True,
+        EmergencyEscapeMode.BACKUP,
+    )
+    # The third independently rear-gated retreat creates a safe 0.54 m swept
+    # margin.  Keep recovery ownership and turn before Nav2 can drive forward
+    # into the same 0.42 m corner again.
+    assert controller.update(now_s=4.4, hazard=False, obstacle_clearance_m=0.54, **common) == (
+        True,
         EmergencyEscapeMode.TURN_RIGHT,
+    )
+    assert controller.update(now_s=4.8, hazard=False, obstacle_clearance_m=0.50, **common) == (
+        True,
+        EmergencyEscapeMode.TURN_RIGHT,
+    )
+    assert controller.update(now_s=5.3, hazard=False, obstacle_clearance_m=0.48, **common) == (
+        False,
+        EmergencyEscapeMode.STOP,
     )
 
 
