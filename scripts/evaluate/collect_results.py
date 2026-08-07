@@ -842,6 +842,11 @@ def write_outputs(
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     """Collect results and atomically replace the three derived artifacts."""
 
+    if reference_policy == treatment_policy:
+        raise ValueError(
+            "reference_policy and treatment_policy must differ; use collection-only "
+            "for a single-method run"
+        )
     results = collect_results(manifest_path, raw_dir, run_manifest_path)
     statistics_module = _load_statistics_module()
     statistics_payload: dict[str, Any] = statistics_module.build_statistics(
@@ -863,6 +868,42 @@ def write_outputs(
     return results, summary, statistics_payload
 
 
+def _atomic_write_parquet(frame: pd.DataFrame, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    frame.to_parquet(temporary, index=False)
+    temporary.replace(path)
+
+
+def _atomic_write_csv(frame: pd.DataFrame, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    frame.to_csv(temporary, index=False, lineterminator="\n")
+    temporary.replace(path)
+
+
+def write_collection_outputs(
+    *,
+    manifest_path: Path,
+    raw_dir: Path,
+    run_manifest_path: Path | None,
+    results_path: Path,
+    summary_path: Path,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Collect immutable episodes without inventing a single-method comparison.
+
+    This is the only supported output path for a one-method calibration run.
+    Retryable simulator/reset attempts remain embedded in the episode rows and
+    method summary, while no pairwise-statistics artifact is created.
+    """
+
+    results = collect_results(manifest_path, raw_dir, run_manifest_path)
+    summary = build_summary(results)
+    _atomic_write_parquet(results, results_path)
+    _atomic_write_csv(summary, summary_path)
+    return results, summary
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -882,7 +923,24 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--treatment-policy", default="bc")
     parser.add_argument("--bootstrap-samples", type=int, default=10_000)
     parser.add_argument("--bootstrap-seed", type=int, default=0)
+    parser.add_argument(
+        "--collection-only",
+        action="store_true",
+        help=(
+            "write results and method summary only; required for a single-method run and "
+            "never emits pairwise statistics"
+        ),
+    )
     args = parser.parse_args(argv)
+    if args.collection_only:
+        write_collection_outputs(
+            manifest_path=args.manifest,
+            raw_dir=args.raw_dir,
+            run_manifest_path=args.run_manifest,
+            results_path=args.results,
+            summary_path=args.summary,
+        )
+        return
     write_outputs(
         manifest_path=args.manifest,
         raw_dir=args.raw_dir,
