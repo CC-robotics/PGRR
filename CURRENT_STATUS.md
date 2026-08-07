@@ -1,13 +1,37 @@
 # Current status
 
-## 2026-08-07 — validation-selected recurrent-escape correction (current)
+## 2026-08-07 — moderate-v5 calibration rejected; held-out test remains sealed (current)
+
+All four comparator validation runs are complete on the same 72-condition
+moderate-v5 validation manifest. Together with the previously frozen PGRR run,
+this closes the planned 360 logical validation episodes without inspecting or
+running any moderate-v5 test episode. The comparator runner retained 12
+no-outcome startup failures and completed those logical tasks with a single-worker
+resume; every original failed attempt remains referenced by the run manifest.
+
+The comparator algorithm outcomes are Base 57 `GOAL_REACHED` / 15 `COLLISION`,
+Standard 58 / 14, Heuristic 63 `GOAL_REACHED` / four `PLANNER_FAILURE` / five
+`TIMEOUT`, and Uniform BC 64 `GOAL_REACHED` / eight `PLANNER_FAILURE`. PGRR's
+separate complete run remains 62 `GOAL_REACHED`, one collision, one timeout, and
+eight planner failures. These are validation results, not held-out paper results.
+
+The preregistered Base calibration rejected moderate-v5. Base success is 57/72
+(79.17%), above the fixed 75% maximum; collision plus timeout is 15/72 (20.83%),
+the interaction-episode ratio is 62/72 (86.11%), and seven of eight families
+contain interactions, so the other three checks pass. The rejected report is
+preserved under
+`outputs/moderate/v5_validation_comparators_d26d835/analysis/calibration_report.json`.
+The moderate-v5 held-out test therefore remains sealed and is not eligible for
+final claims. A successor benchmark may be declared only from validation evidence,
+with new seed blocks and a new identifier, then frozen before its own calibration.
+
+## 2026-08-07 — validation-selected recurrent-escape correction
 
 The moderate-v5 held-out test remains unexecuted and uninspected. Algorithm changes
 in this section were selected only from validation trajectories; the 2026-08-06
 freeze still applies to scenario geometry and difficulty. The complete 72-condition
-PGRR validation run has passed its manifest-completeness gate. Base calibration and
-the other three comparator validation runs remain required before the five-method
-configuration is frozen for test.
+PGRR validation run passed its manifest-completeness gate. The later complete
+comparator validation and rejected Base calibration are recorded above.
 
 The concrete validation failure was a low-density blind-corner live-lock: a short
 clear interval reset the emergency BACKUP/TURN allowance without observable progress
@@ -40,9 +64,9 @@ made. The correction has materially improved completion on validation but has no
 eliminated every timeout or recovery failure.
 
 Ruff, formatting, strict mypy, all 636 offline tests, and the three-package ROS overlay
-build pass. The PGRR runtime candidate is now fixed while the remaining four methods
-run on the same 72-condition validation manifest. Only an accepted Base calibration
-report and complete five-method validation will unlock the held-out test.
+build pass. The PGRR runtime candidate remains fixed. Comparator validation later
+completed, but the Base calibration rejected the benchmark, so the held-out test
+was not unlocked.
 
 ## 2026-08-06 — moderate-v5 evaluation protocol (current)
 

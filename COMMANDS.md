@@ -2,6 +2,55 @@
 
 Commands are copied here when a gate is accepted. Raw command output is stored under `outputs/logs/`.
 
+## 2026-08-07 complete moderate-v5 comparator validation and rejected calibration
+
+```bash
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  conda run -n ramp-offline python scripts/evaluate/run_experiment.py \
+  --split validation \
+  --split-manifest scenarios/splits/moderate_v5_validation.yaml \
+  --methods base standard heuristic bc_uniform \
+  --jobs 4 --timeout 240 \
+  --output-dir outputs/moderate/v5_validation_comparators_d26d835
+
+# The first pass retained 12 no-outcome startup failures. Resume only incomplete
+# logical tasks with lower simulator concurrency.
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  conda run -n ramp-offline python scripts/evaluate/run_experiment.py \
+  --split validation \
+  --split-manifest scenarios/splits/moderate_v5_validation.yaml \
+  --methods base standard heuristic bc_uniform \
+  --jobs 1 --timeout 240 \
+  --output-dir outputs/moderate/v5_validation_comparators_d26d835 --resume
+
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  /home/diy/anaconda3/envs/ramp-offline/bin/python \
+  scripts/evaluate/collect_results.py \
+  --manifest outputs/moderate/v5_validation_comparators_d26d835/episode_manifest.parquet \
+  --run-manifest outputs/moderate/v5_validation_comparators_d26d835/run_manifest.json \
+  --raw-dir data/raw \
+  --results outputs/moderate/v5_validation_comparators_d26d835/results.parquet \
+  --summary outputs/moderate/v5_validation_comparators_d26d835/collector_summary.csv \
+  --statistics outputs/moderate/v5_validation_comparators_d26d835/collector_statistics.json \
+  --reference-policy base --treatment-policy bc_uniform \
+  --bootstrap-samples 10000 --bootstrap-seed 20260807
+
+env -u PYTHONPATH /home/diy/anaconda3/envs/ramp-offline/bin/python \
+  scripts/evaluate/summarize_moderate.py \
+  --results outputs/moderate/v5_validation_comparators_d26d835/results.parquet \
+  --output-dir outputs/moderate/v5_validation_comparators_d26d835/analysis \
+  --methods base standard heuristic bc_uniform \
+  --main-method bc_uniform --reference-method base \
+  --bootstrap-samples 10000 --bootstrap-seed 20260807
+```
+
+Result: 288/288 logical comparator episodes complete. The unfiltered Base
+calibration is `rejected`: success 57/72 = 79.17% exceeds the fixed 75% maximum.
+No moderate-v5 test episode was run.
+
 ## 2026-08-07 validation-only timeout remediation
 
 The target probe and eight-family low-density regression used only the validation

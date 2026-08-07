@@ -1,5 +1,22 @@
 # Decision log
 
+## D-068: Reject moderate-v5 before test and require a newly seeded successor
+
+The complete Base validation produced 57 goals and 15 collisions over all 72
+predeclared conditions. Its 79.17% success rate exceeds the preregistered 75%
+maximum, while collision plus timeout (20.83%), interaction coverage (86.11%), and
+interaction-family coverage (seven of eight) pass. The calibration is therefore
+rejected exactly as configured; the threshold is not widened after observing the
+result, and the moderate-v5 test split remains unexecuted and uninspected.
+
+The two validation-only blind-corner geometry rounds in D-066 remain part of the
+audit trail and are not silently extended under the v5 name. Any benchmark revision
+must use a new benchmark identifier, new validation and test seed blocks, and an
+explicit family-level rationale derived only from validation aggregates. It must be
+compiled and frozen before running its Base calibration. A successor may proceed to
+held-out testing only if every existing calibration check passes without filtering
+families, densities, repetitions, seeds, or outcomes.
+
 ## D-001: Strict offline/runtime environment separation
 
 The host has both ROS2 Humble and Iron, while the initial shell selected Iron inside Conda base. Arena commands will run in a clean non-Conda shell that explicitly sources Humble. Offline ML commands will run only through `conda run -n ramp-offline` or the offline activation helper.
