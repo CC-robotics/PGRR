@@ -1,0 +1,441 @@
+{
+  "obstacles": {
+    "dynamic": [
+      {
+        "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+        "actor_update_frequency_hz": 5.0,
+        "behavior": {
+          "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+          "actor_update_frequency_hz": 5.0,
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": true,
+          "other_force_factor": 10.0,
+          "robot_hard_guard_distance_m": 0.73,
+          "robot_soft_yield_distance_m": 0.9,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 1,
+        "max_vel": 0.3823,
+        "model": "gazebo_actor",
+        "name": "ped_00",
+        "pos": [
+          19.0,
+          12.85,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.9,
+        "robot_hard_guard_distance_m": 0.73,
+        "robot_soft_yield_distance_m": 0.9,
+        "type": "adult",
+        "waypoints": [
+          [
+            19.0,
+            12.85,
+            3.141592653589793
+          ],
+          [
+            5.0,
+            12.85,
+            3.141592653589793
+          ]
+        ]
+      },
+      {
+        "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+        "actor_update_frequency_hz": 5.0,
+        "behavior": {
+          "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+          "actor_update_frequency_hz": 5.0,
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": true,
+          "other_force_factor": 10.0,
+          "robot_hard_guard_distance_m": 0.73,
+          "robot_soft_yield_distance_m": 0.9,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 2,
+        "max_vel": 0.266,
+        "model": "gazebo_actor",
+        "name": "ped_01",
+        "pos": [
+          20.5,
+          12.85,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.9,
+        "robot_hard_guard_distance_m": 0.73,
+        "robot_soft_yield_distance_m": 0.9,
+        "type": "adult",
+        "waypoints": [
+          [
+            20.5,
+            12.85,
+            3.141592653589793
+          ],
+          [
+            5.0,
+            12.85,
+            3.141592653589793
+          ]
+        ]
+      },
+      {
+        "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+        "actor_update_frequency_hz": 5.0,
+        "behavior": {
+          "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+          "actor_update_frequency_hz": 5.0,
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": true,
+          "other_force_factor": 10.0,
+          "robot_hard_guard_distance_m": 0.73,
+          "robot_soft_yield_distance_m": 0.9,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 3,
+        "max_vel": 0.3043,
+        "model": "gazebo_actor",
+        "name": "ped_02",
+        "pos": [
+          22.0,
+          12.85,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.9,
+        "robot_hard_guard_distance_m": 0.73,
+        "robot_soft_yield_distance_m": 0.9,
+        "type": "adult",
+        "waypoints": [
+          [
+            22.0,
+            12.85,
+            3.141592653589793
+          ],
+          [
+            5.0,
+            12.85,
+            3.141592653589793
+          ]
+        ]
+      },
+      {
+        "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+        "actor_update_frequency_hz": 5.0,
+        "behavior": {
+          "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+          "actor_update_frequency_hz": 5.0,
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": true,
+          "other_force_factor": 10.0,
+          "robot_hard_guard_distance_m": 0.73,
+          "robot_soft_yield_distance_m": 0.9,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 4,
+        "max_vel": 0.2762,
+        "model": "gazebo_actor",
+        "name": "ped_03",
+        "pos": [
+          23.5,
+          12.85,
+          3.141592653589793
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.9,
+        "robot_hard_guard_distance_m": 0.73,
+        "robot_soft_yield_distance_m": 0.9,
+        "type": "adult",
+        "waypoints": [
+          [
+            23.5,
+            12.85,
+            3.141592653589793
+          ],
+          [
+            5.0,
+            12.85,
+            3.141592653589793
+          ]
+        ]
+      }
+    ],
+    "interactive": [],
+    "static": [
+      {
+        "model": "shelf",
+        "name": "doorwall_south_moderate_00",
+        "pos": [
+          15.5,
+          3.0,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_south_moderate_01",
+        "pos": [
+          15.5,
+          3.8875,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_south_moderate_02",
+        "pos": [
+          15.5,
+          4.775,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_south_moderate_03",
+        "pos": [
+          15.5,
+          5.6625,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_south_moderate_04",
+        "pos": [
+          15.5,
+          6.55,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_south_moderate_05",
+        "pos": [
+          15.5,
+          7.4375,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_south_moderate_06",
+        "pos": [
+          15.5,
+          8.325,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_south_moderate_07",
+        "pos": [
+          15.5,
+          9.212499999999999,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_south_moderate_08",
+        "pos": [
+          15.5,
+          10.1,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_north_moderate_00",
+        "pos": [
+          15.5,
+          14.1,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_north_moderate_01",
+        "pos": [
+          15.5,
+          14.9625,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_north_moderate_02",
+        "pos": [
+          15.5,
+          15.825,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_north_moderate_03",
+        "pos": [
+          15.5,
+          16.6875,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_north_moderate_04",
+        "pos": [
+          15.5,
+          17.55,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_north_moderate_05",
+        "pos": [
+          15.5,
+          18.4125,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_north_moderate_06",
+        "pos": [
+          15.5,
+          19.275,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_north_moderate_07",
+        "pos": [
+          15.5,
+          20.1375,
+          1.5707963267948966
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "doorwall_north_moderate_08",
+        "pos": [
+          15.5,
+          21.0,
+          1.5707963267948966
+        ]
+      }
+    ]
+  },
+  "ramp_metadata": {
+    "actor_behavior_parameters": {
+      "actor_update_frequency_hz": 5.0,
+      "robot_hard_guard_distance_m": 0.73,
+      "robot_soft_yield_distance_m": 0.9
+    },
+    "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+    "benchmark_id": "moderate_social_navigation_v6",
+    "density": "high",
+    "difficulty": "moderate",
+    "doorway_stream": {
+      "lane_offset_m": 0.75,
+      "lane_preserving": true,
+      "lane_side": 1,
+      "lane_y_m": 12.85,
+      "recovery_channel_y_m": 11.35
+    },
+    "family": "doorway_bottleneck",
+    "human_behavior_model": "deterministic_one_shot_swept_guard_v1",
+    "human_speed_range_mps": [
+      0.25,
+      0.45
+    ],
+    "map_id": "map_empty",
+    "moderation": {
+      "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+      "actor_update_frequency_hz": 5.0,
+      "blind_corner_horizontal_start_x_m": 16.25,
+      "blind_corner_vertical_end_y_m": 8.75,
+      "corridor_footprint_clear_width_m": 2.6,
+      "doorway_exit_x_m": 5.0,
+      "doorway_footprint_clear_width_m": 2.3,
+      "group_clear_channel_width_m": 1.3,
+      "group_nearest_actor_offset_m": 1.15,
+      "head_on_exit_x_m": 3.0,
+      "lane_offset_range_m": [
+        0.65,
+        0.9
+      ],
+      "opposite_stream_lane_offset_range_m": [
+        0.96,
+        1.16
+      ],
+      "overtaking_lane_offset_range_m": [
+        0.96,
+        1.16
+      ],
+      "pedestrian_longitudinal_stagger_m": 1.5,
+      "robot_avoidance_distance_m": 0.9,
+      "robot_hard_guard_distance_m": 0.73,
+      "robot_soft_yield_distance_m": 0.9,
+      "temporary_crossing_half_span_m": 1.0,
+      "temporary_crossing_lead_in_m": 1.4,
+      "temporary_crossing_x_spacing_m": 0.8,
+      "temporary_doorway_center_half_gap_m": 2.2,
+      "validate_actor_static_clearance": true
+    },
+    "replicate": 2,
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
+    "scenario_id": "doorway_bottleneck_high_train_moderate_v6_r02_s76122",
+    "schema_version": 1,
+    "seed": 76122,
+    "split": "train"
+  },
+  "robots": [
+    {
+      "goal": [
+        24.0,
+        12.0,
+        0.0
+      ],
+      "start": [
+        7.0,
+        12.0,
+        0.0
+      ]
+    }
+  ]
+}

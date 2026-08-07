@@ -1,5 +1,27 @@
 # Current status
 
+## 2026-08-07 — moderate-v6 preregistered and compiled (current)
+
+Moderate-v6 is the validation-only successor to the rejected moderate-v5
+benchmark. It retains every v5 static-clearance and lane parameter and changes
+only the Crossing Flow actor speed band from 0.35--0.55 m/s to 0.18--0.28 m/s.
+This addresses a specific v5 validation defect: Base reached 9/9 Crossing Flow
+goals with a 3.124 m family-mean minimum human distance because the one-shot
+actors cleared the first intersection before the robot arrived. The slower band
+places actor arrival at approximately 22--34 s around the observed roughly 29 s
+robot arrival, without changing routes, collision radii, or the recovery method.
+
+The compiled catalog has 264 scenarios: 72 train, 72 validation, and 120 sealed
+test conditions. It uses new seed blocks 76000, 77000, and 87000, respectively.
+The catalog SHA-256 is
+`efaf573294d2484a616f039e9e2e4380ae89e60411a2ad12b04c36072cfe404f`;
+the validation and test split hashes are
+`f5847bcea4999bc5537f0e648cf76020fcf148e839b9908cc38eaffe21844d0f`
+and `3f70dd3472c0447d6a5695051f0b16d7eecf166133b604a7011cdf7fc45b04f6`.
+All 23 moderate-benchmark unit tests pass. No moderate-v6 test episode has been
+run or inspected. The Makefile and final configuration remain on rejected v5
+until v6 passes the unchanged Base calibration gate.
+
 ## 2026-08-07 — moderate-v5 calibration rejected; held-out test remains sealed (current)
 
 All four comparator validation runs are complete on the same 72-condition

@@ -1,5 +1,18 @@
 # Progress log
 
+## 2026-08-07 — moderate-v6 preregistration
+
+- Declared `moderate_social_navigation_v6` with new train/validation/test seed
+  blocks 76000/77000/87000 before running any v6 simulation.
+- Retained all v5 geometry and changed only Crossing Flow speed from
+  0.35--0.55 m/s to 0.18--0.28 m/s. The rationale is the unfiltered v5 Base
+  aggregate: 9/9 goals and 3.124 m mean minimum human distance in that family.
+- Compiled 264 split-safe scenarios and previews: 72 train, 72 validation, and
+  120 sealed test conditions. The scenario-ID set hash is
+  `9f30f98734cde81b185015abba84d0d3add7326081442a2a6f9ae10dd413b301`.
+- Passed all 23 moderate-benchmark compiler tests. The unchanged Base calibration
+  thresholds will decide whether v6 may replace v5 in final wiring.
+
 ## 2026-08-07 — moderate-v5 comparator validation and calibration gate
 
 - Completed all 288 comparator validation tasks across Base, Standard, Heuristic,
