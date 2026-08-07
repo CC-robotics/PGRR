@@ -316,6 +316,39 @@ def test_emergency_forward_rejects_clearance_below_strict_entry_margin() -> None
     ) == (True, EmergencyEscapeMode.TURN_RIGHT)
 
 
+def test_forward_escape_starts_only_after_obstacle_crosses_transverse_plane() -> None:
+    controller = _controller()
+    controller.update(
+        now_s=0.0,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=0.0,
+        rear_observed=False,
+        obstacle_angle_rad=math.radians(89.0),
+        obstacle_clearance_m=0.4,
+    )
+    assert controller.update(
+        now_s=0.5,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=0.0,
+        rear_observed=False,
+        obstacle_angle_rad=math.radians(89.0),
+        obstacle_clearance_m=0.4,
+        forward_clearance_m=1.0,
+    ) == (True, EmergencyEscapeMode.TURN_RIGHT)
+    assert controller.update(
+        now_s=1.4,
+        hazard=True,
+        linear_speed_mps=0.0,
+        rear_clearance_m=0.0,
+        rear_observed=False,
+        obstacle_angle_rad=math.radians(91.0),
+        obstacle_clearance_m=0.4,
+        forward_clearance_m=1.0,
+    ) == (True, EmergencyEscapeMode.FORWARD)
+
+
 def test_emergency_turn_direction_persists_across_bearing_sign_change() -> None:
     controller = _controller()
     controller.update(
