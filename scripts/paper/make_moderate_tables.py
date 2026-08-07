@@ -420,6 +420,7 @@ def result_macros(
     lines.append(
         rf"\providecommand{{\ModerateExcludedEpisodeCount}}{{{len(results) - len(valid)}}}"
     )
+    planner_failure_rates: dict[str, float] = {}
     for method, prefix in (("base", "ModerateBase"), ("pgrr", "ModeratePGRR")):
         selected = valid.loc[valid["source_policy"] == method]
         total = len(selected)
@@ -428,11 +429,19 @@ def result_macros(
             ("SuccessRate", "GOAL_REACHED"),
             ("CollisionRate", "COLLISION"),
             ("TimeoutRate", "TIMEOUT"),
+            ("PlannerFailureRate", "PLANNER_FAILURE"),
         ):
             count = int((selected["outcome"] == outcome).sum())
             rate = 100.0 * count / total if total else math.nan
             value = "--" if not math.isfinite(rate) else f"{rate:.1f}\\%"
             lines.append(rf"\providecommand{{\{prefix}{suffix}}}{{{value}}}")
+            if outcome == "PLANNER_FAILURE":
+                planner_failure_rates[method] = rate
+    planner_difference = planner_failure_rates["pgrr"] - planner_failure_rates["base"]
+    lines.append(
+        rf"\providecommand{{\ModeratePGRRPlannerFailureDifference}}"
+        rf"{{\ensuremath{{{planner_difference:+.1f}\,\mathrm{{pp}}}}}}"
+    )
     base_comparison = statistics["comparisons"]["base"]  # type: ignore[index]
     lines.append(
         rf"\providecommand{{\ModerateBasePGRRValidPairCount}}"
@@ -453,6 +462,52 @@ def result_macros(
             rf"{{\ensuremath{{{estimate:+.1f}\,[{lower:+.1f},\,{upper:+.1f}]\,\mathrm{{pp}}}}}}"
         )
         test = analysis["mcnemar_exact"]
+        lines.append(
+            rf"\providecommand{{\ModeratePGRR{suffix}HolmP}}"
+            rf"{{{_macro_p_value(float(test['pvalue_holm']))}}}"
+        )
+    continuous = base_comparison["continuous_metrics"]
+    duration = continuous["successful_episode_duration_s"]
+    path_length = continuous["successful_path_length_m"]
+    pair_counts = {int(duration["pair_count"]), int(path_length["pair_count"])}
+    if len(pair_counts) != 1:
+        raise ModerateArtifactError("joint-success duration and path-length pair counts must agree")
+    joint_success_pairs = pair_counts.pop()
+    efficiency_available = (
+        joint_success_pairs > 0
+        and duration.get("status") == "ok"
+        and path_length.get("status") == "ok"
+    )
+    lines.extend(
+        (
+            r"\newif\ifModerateJointSuccessEfficiencyAvailable",
+            (
+                r"\ModerateJointSuccessEfficiencyAvailabletrue"
+                if efficiency_available
+                else r"\ModerateJointSuccessEfficiencyAvailablefalse"
+            ),
+            rf"\providecommand{{\ModerateBasePGRRJointSuccessPairCount}}"
+            rf"{{{joint_success_pairs}}}",
+        )
+    )
+    for analysis, suffix, unit in (
+        (duration, "DurationDifference", "s"),
+        (path_length, "PathLengthDifference", "m"),
+    ):
+        if not efficiency_available:
+            lines.append(rf"\providecommand{{\ModeratePGRR{suffix}}}{{--}}")
+            lines.append(rf"\providecommand{{\ModeratePGRR{suffix}HolmP}}{{--}}")
+            continue
+        interval = analysis["difference_treatment_minus_reference"]
+        estimate = float(interval["estimate"])
+        lower = float(interval["lower"])
+        upper = float(interval["upper"])
+        lines.append(
+            rf"\providecommand{{\ModeratePGRR{suffix}}}"
+            rf"{{\ensuremath{{{estimate:+.3f}\,[{lower:+.3f},\,{upper:+.3f}]\,"
+            rf"\mathrm{{{unit}}}}}}}"
+        )
+        test = analysis["wilcoxon"]
         lines.append(
             rf"\providecommand{{\ModeratePGRR{suffix}HolmP}}"
             rf"{{{_macro_p_value(float(test['pvalue_holm']))}}}"

@@ -263,6 +263,7 @@ def test_paper_build_checks_overfull_boxes_and_embedded_fonts() -> None:
     assert "pdfinfo main.pdf" in source
     assert '[[ "${paper_pages}" != "8" ]]' in source
     assert "conference paper must contain exactly 8 pages" in source
+    assert "validate_final_pdf_text.py" in source
     assert "grep -Fq 'Overfull \\hbox' main.log" in source
     assert 'NR > 2 && $4 == "no"' in source
     assert "$(NF-4)" not in source

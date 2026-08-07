@@ -99,8 +99,9 @@ samples.  Full formulae and implementation pointers are in
 excluded only by the declared protocol; algorithm failures are never merged,
 removed, or retried.
 
-Methods are paired on identical condition keys.  Binary outcomes use exact
-McNemar tests and paired bootstrap intervals; continuous differences use
+Methods are paired on identical condition keys.  The preregistered goal,
+collision, and timeout endpoints use exact McNemar tests and paired bootstrap
+intervals; planner failure remains descriptive.  Continuous differences use
 two-sided Wilcoxon tests, paired intervals, and rank-biserial effects.  A single
 Holm correction covers all predeclared comparator--endpoint tests.  Confidence
 intervals use 10,000 resamples with seed 20260804; estimates, intervals, and

@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import shutil
 import subprocess
@@ -26,6 +27,11 @@ from typing import Any
 import pandas as pd
 import yaml
 from PIL import Image
+
+try:
+    from validate_final_pdf_text import FinalPdfTextError, validate_final_pdf
+except ModuleNotFoundError:  # Imported as a namespace module by pytest.
+    from scripts.paper.validate_final_pdf_text import FinalPdfTextError, validate_final_pdf
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -1167,6 +1173,118 @@ def _validate_report_data(
     }
     if observed_pairs != expected_pairs:
         raise ArtifactError("technical-report paired comparison matrix is incomplete")
+    planner_failure = payload.get("base_pgrr_planner_failure")
+    if (
+        not isinstance(planner_failure, Mapping)
+        or planner_failure.get("endpoint") != "PLANNER_FAILURE"
+        or planner_failure.get("analysis") != "descriptive_marginal_rate_difference"
+        or planner_failure.get("preregistered_inferential_endpoint") is not False
+        or planner_failure.get("post_hoc_significance_test") is not False
+    ):
+        raise ArtifactError("technical-report data must label PLANNER_FAILURE as descriptive only")
+    planner_rates: dict[str, float] = {}
+    for method in ("base", "pgrr"):
+        record = planner_failure.get(method)
+        if not isinstance(record, Mapping):
+            raise ArtifactError(f"technical-report data omits {method} planner-failure rate")
+        try:
+            denominator = int(record["valid_episode_count"])
+            count = int(record["count"])
+            rate = float(record["rate"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ArtifactError(
+                f"technical-report data has invalid {method} planner-failure fields"
+            ) from error
+        if (
+            denominator <= 0
+            or not 0 <= count <= denominator
+            or not 0.0 <= rate <= 1.0
+            or not math.isclose(rate, count / denominator, rel_tol=1.0e-12, abs_tol=1.0e-12)
+        ):
+            raise ArtifactError(
+                f"technical-report data has inconsistent {method} planner-failure rate"
+            )
+        planner_rates[method] = rate
+    try:
+        planner_difference = float(planner_failure["rate_difference_pgrr_minus_base"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ArtifactError("technical-report planner-failure difference is invalid") from error
+    if not math.isclose(
+        planner_difference,
+        planner_rates["pgrr"] - planner_rates["base"],
+        rel_tol=1.0e-12,
+        abs_tol=1.0e-12,
+    ):
+        raise ArtifactError("technical-report planner-failure difference is inconsistent")
+
+    efficiency = payload.get("base_pgrr_joint_success_efficiency")
+    if (
+        not isinstance(efficiency, Mapping)
+        or efficiency.get("reference_policy") != "base"
+        or efficiency.get("treatment_policy") != "pgrr"
+        or efficiency.get("population") != "joint_success"
+    ):
+        raise ArtifactError("technical-report data omits Base--PGRR joint-success efficiency")
+    metrics = efficiency.get("metrics")
+    if not isinstance(metrics, Mapping) or set(metrics) != {"duration", "path_length"}:
+        raise ArtifactError(
+            "technical-report joint-success efficiency must contain duration and path length"
+        )
+    metric_pair_counts: set[int] = set()
+    metric_availability: list[bool] = []
+    for key, unit in (("duration", "s"), ("path_length", "m")):
+        record = metrics[key]
+        if (
+            not isinstance(record, Mapping)
+            or record.get("population") != "joint_success"
+            or record.get("unit") != unit
+        ):
+            raise ArtifactError(f"technical-report joint-success {key} record is malformed")
+        try:
+            pair_count = int(record["pair_count"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ArtifactError(
+                f"technical-report joint-success {key} pair count is invalid"
+            ) from error
+        if pair_count < 0:
+            raise ArtifactError(
+                f"technical-report joint-success {key} pair count must be non-negative"
+            )
+        metric_pair_counts.add(pair_count)
+        available = record.get("available") is True
+        metric_availability.append(available)
+        if not available:
+            continue
+        for field in (
+            "difference_pgrr_minus_base",
+            "ci_lower",
+            "ci_upper",
+            "pvalue_raw",
+            "pvalue_holm",
+        ):
+            try:
+                value = float(record[field])
+            except (KeyError, TypeError, ValueError) as error:
+                raise ArtifactError(
+                    f"technical-report joint-success {key}/{field} is invalid"
+                ) from error
+            if not math.isfinite(value):
+                raise ArtifactError(f"technical-report joint-success {key}/{field} must be finite")
+        estimate = float(record["difference_pgrr_minus_base"])
+        if not float(record["ci_lower"]) <= estimate <= float(record["ci_upper"]):
+            raise ArtifactError(f"technical-report joint-success {key} interval omits its estimate")
+        for field in ("pvalue_raw", "pvalue_holm"):
+            if not 0.0 <= float(record[field]) <= 1.0:
+                raise ArtifactError(
+                    f"technical-report joint-success {key}/{field} is not a probability"
+                )
+    if len(metric_pair_counts) != 1:
+        raise ArtifactError("technical-report joint-success metric pair counts disagree")
+    declared_pair_count = int(efficiency.get("pair_count", -1))
+    if declared_pair_count != next(iter(metric_pair_counts)):
+        raise ArtifactError("technical-report joint-success pair count is inconsistent")
+    if bool(efficiency.get("available")) != all(metric_availability):
+        raise ArtifactError("technical-report joint-success availability is inconsistent")
 
 
 def _validate_presentation(pptx: Path, notes: Path, contact_sheet: Path) -> None:
@@ -1215,6 +1333,8 @@ def _validate_presentation(pptx: Path, notes: Path, contact_sheet: Path) -> None
         )
     if "阶段\uff1a`test`" not in notes_text:
         raise ArtifactError("presentation speaker notes are not bound to the locked test stage")
+    if "如果还是 pending" in notes_text:
+        raise ArtifactError("locked-test speaker notes still contain pending-stage guidance")
     _validate_png(contact_sheet, label="presentation contact sheet", require_contrast=True)
     with Image.open(contact_sheet) as image:
         width, height = image.size
@@ -1457,6 +1577,11 @@ def build_manifest(
         expected_episodes=int(provenance["expected_episodes"]),
     )
     paper_pages = _require_pdf_pages(resolved_paper, expected=8, label="conference paper")
+    if release:
+        try:
+            validate_final_pdf(resolved_paper)
+        except FinalPdfTextError as error:
+            raise ArtifactError(str(error)) from error
     report_pages = _require_pdf_pages(
         resolved_report,
         expected=32,

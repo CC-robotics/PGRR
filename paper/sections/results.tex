@@ -38,6 +38,24 @@ difference is \ModeratePGRRTimeoutDifference{}
 interpreted jointly: goal reaching measures task completion, while collision
 and timeout describe distinct failure modes.
 
+Planner-failure rates are \ModerateBasePlannerFailureRate{} for Base and
+\ModeratePGRRPlannerFailureRate{} for PGRR
+($\Delta=$\ModeratePGRRPlannerFailureDifference{}).  This is descriptive only:
+planner failure was not a preregistered inferential endpoint, so no post-hoc
+test is added.
+
+\ifModerateJointSuccessEfficiencyAvailable
+For \ModerateBasePGRRJointSuccessPairCount{} jointly successful pairs, the
+PGRR-minus-DWB duration difference is \ModeratePGRRDurationDifference{}
+($p_{\mathrm{Holm}}\ModeratePGRRDurationDifferenceHolmP$) and the path difference
+is \ModeratePGRRPathLengthDifference{}
+($p_{\mathrm{Holm}}\ModeratePGRRPathLengthDifferenceHolmP$).  These paired
+efficiency estimates condition on success and do not replace terminal outcomes.
+\else
+No finite jointly successful Base--PGRR pair is available, so paired duration
+and path-length efficiency are not estimable; terminal outcomes remain primary.
+\fi
+
 Table~\ref{tab:moderate-pairwise-results} extends the same paired analysis to
 Standard, Heuristic, and Uniform BC and reports raw and globally Holm-adjusted
 tests, confidence intervals, and effect sizes without selecting a favorable

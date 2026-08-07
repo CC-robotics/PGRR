@@ -552,10 +552,31 @@ def _validate_statistics(
     if bool(analysis_policy.get("scenario_or_seed_filtering", True)):
         raise ModerateArtifactError("statistics must explicitly prohibit scenario/seed filtering")
 
+    global_tests = payload.get("global_multiple_comparison")
+    if not isinstance(global_tests, Mapping) or global_tests.get("method") != "Holm":
+        raise ModerateArtifactError("statistics must include the global Holm family")
+    hypotheses = global_tests.get("hypotheses")
+    if not isinstance(hypotheses, list):
+        raise ModerateArtifactError("statistics global Holm family is malformed")
+    global_evidence: dict[str, Mapping[str, Any]] = {}
+    for row in hypotheses:
+        if not isinstance(row, Mapping):
+            raise ModerateArtifactError("statistics global Holm rows must be objects")
+        name = str(row.get("hypothesis", ""))
+        if not name or name in global_evidence:
+            raise ModerateArtifactError("statistics global Holm hypotheses must be unique")
+        global_evidence[name] = row
+
     pair_columns = _pair_columns(results)
     pgrr = results.loc[
         results["source_policy"] == "pgrr",
-        [*pair_columns, "_valid", "outcome"],
+        [
+            *pair_columns,
+            "_valid",
+            "outcome",
+            "episode_duration_s",
+            "path_length_m",
+        ],
     ]
     for comparator in comparators:
         comparison = comparisons[comparator]
@@ -571,7 +592,13 @@ def _validate_statistics(
             raise ModerateArtifactError(f"statistics omit binary endpoints for {comparator}")
         comparator_rows = results.loc[
             results["source_policy"] == comparator,
-            [*pair_columns, "_valid", "outcome"],
+            [
+                *pair_columns,
+                "_valid",
+                "outcome",
+                "episode_duration_s",
+                "path_length_m",
+            ],
         ]
         paired = comparator_rows.merge(
             pgrr,
@@ -650,9 +677,96 @@ def _validate_statistics(
                     raise ModerateArtifactError(
                         f"statistics {field} is invalid for {comparator}/{key}"
                     )
-    global_tests = payload.get("global_multiple_comparison")
-    if not isinstance(global_tests, Mapping) or global_tests.get("method") != "Holm":
-        raise ModerateArtifactError("statistics must include the global Holm family")
+        if comparator != "base":
+            continue
+        continuous = comparison.get("continuous_metrics")
+        if not isinstance(continuous, Mapping):
+            raise ModerateArtifactError("statistics omit continuous metrics for base")
+        joint_success = complete.loc[
+            (complete["outcome_reference"] == "GOAL_REACHED")
+            & (complete["outcome_treatment"] == "GOAL_REACHED")
+        ]
+        for metric, column in (
+            ("successful_episode_duration_s", "episode_duration_s"),
+            ("successful_path_length_m", "path_length_m"),
+        ):
+            analysis = continuous.get(metric)
+            if not isinstance(analysis, Mapping):
+                raise ModerateArtifactError(f"statistics omit base/{metric}")
+            if analysis.get("population") != "joint_success":
+                raise ModerateArtifactError(f"statistics {metric} must use joint_success pairs")
+            reference_values = joint_success[f"{column}_reference"].to_numpy(dtype=float)
+            treatment_values = joint_success[f"{column}_treatment"].to_numpy(dtype=float)
+            finite = np.isfinite(reference_values) & np.isfinite(treatment_values)
+            reference_values = reference_values[finite]
+            treatment_values = treatment_values[finite]
+            expected_count = int(reference_values.size)
+            if int(analysis.get("pair_count", -1)) != expected_count:
+                raise ModerateArtifactError(f"statistics pair count disagrees for base/{metric}")
+            if expected_count == 0:
+                if analysis.get("status") != "insufficient_finite_pairs":
+                    raise ModerateArtifactError(
+                        f"statistics base/{metric} must declare insufficient finite pairs"
+                    )
+                continue
+            if analysis.get("status") != "ok":
+                raise ModerateArtifactError(f"statistics base/{metric} is not successful")
+            for field, expected_value in (
+                ("reference_mean", float(np.mean(reference_values))),
+                ("treatment_mean", float(np.mean(treatment_values))),
+            ):
+                observed_value = analysis.get(field)
+                if observed_value is None or not np.isclose(
+                    float(observed_value), expected_value, rtol=1.0e-9, atol=1.0e-12
+                ):
+                    raise ModerateArtifactError(f"statistics {field} disagrees for base/{metric}")
+            interval = analysis.get("difference_treatment_minus_reference")
+            if not isinstance(interval, Mapping):
+                raise ModerateArtifactError(f"statistics omit paired difference for base/{metric}")
+            interval_values = [interval.get(field) for field in ("estimate", "lower", "upper")]
+            if any(value is None or not math.isfinite(float(value)) for value in interval_values):
+                raise ModerateArtifactError(f"statistics interval is invalid for base/{metric}")
+            estimate, lower, upper = map(float, interval_values)
+            expected_difference = float(np.mean(treatment_values - reference_values))
+            if not np.isclose(estimate, expected_difference, rtol=1.0e-9, atol=1.0e-12):
+                raise ModerateArtifactError(
+                    f"statistics difference estimate disagrees for base/{metric}"
+                )
+            if not lower <= estimate <= upper:
+                raise ModerateArtifactError(
+                    f"confidence interval does not contain estimate for base/{metric}"
+                )
+            test = analysis.get("wilcoxon")
+            if not isinstance(test, Mapping):
+                raise ModerateArtifactError(f"statistics omit Wilcoxon test for base/{metric}")
+            for field in ("pvalue_raw", "pvalue_holm"):
+                value = test.get(field)
+                if (
+                    value is None
+                    or not math.isfinite(float(value))
+                    or not 0.0 <= float(value) <= 1.0
+                ):
+                    raise ModerateArtifactError(f"statistics {field} is invalid for base/{metric}")
+            hypothesis = f"base::wilcoxon_{metric}"
+            global_row = global_evidence.get(hypothesis)
+            if (
+                global_row is None
+                or not np.isclose(
+                    float(global_row.get("pvalue_raw", math.nan)),
+                    float(test["pvalue_raw"]),
+                    rtol=1.0e-9,
+                    atol=1.0e-12,
+                )
+                or not np.isclose(
+                    float(global_row.get("pvalue_holm_global", math.nan)),
+                    float(test["pvalue_holm"]),
+                    rtol=1.0e-9,
+                    atol=1.0e-12,
+                )
+            ):
+                raise ModerateArtifactError(
+                    f"statistics global Holm row disagrees for {hypothesis}"
+                )
     return dict(payload)
 
 
