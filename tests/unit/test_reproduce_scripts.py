@@ -98,6 +98,7 @@ def test_paper_development_rebuild_uses_published_inputs_by_default() -> None:
     assert '[[ "${MODERATE_EXPECTED_CONDITIONS}" != "120" ]]' in source
     assert "REPORT_STAGE=test" in source
     assert 'REPORT_STATISTICS="${PROJECT_ROOT}/${STATISTICS}"' in source
+    assert 'REPORT_MATCHED_EVIDENCE="${PROJECT_ROOT}/${MATCHED_EVIDENCE}"' in source
     assert "REPORT_EXPECTED_CONDITIONS=120" in source
     assert "scripts/report/build_report.sh" in source
     assert "scripts/presentation/build_deck.py" in source
@@ -106,6 +107,9 @@ def test_paper_development_rebuild_uses_published_inputs_by_default() -> None:
     assert '--report "${REPORT_PDF}"' in source
     assert '--presentation-pptx "${PRESENTATION_PPTX}"' in source
     assert '--media-keyframes-pdf "${FINAL_KEYFRAMES_PDF}"' in source
+    assert '--matched-evidence "${MATCHED_EVIDENCE}"' in source
+    assert '--matched-trajectory "${MATCHED_TRAJECTORY}"' in source
+    assert '--matched-recovery-timeline "${MATCHED_TIMELINE}"' in source
     assert 'require_pdf_pages "paper/main.pdf" 8' in source
     assert 'require_pdf_page_range "${REPORT_PDF}" 30 40' in source
     assert 'require_pdf_pages "${PRESENTATION_PDF}" 30' in source
@@ -164,9 +168,13 @@ def test_raw_recollection_is_explicitly_guarded() -> None:
         "failure_analysis.py",
         "render_episode_media.py",
         "--raw-dir data/raw",
+        "--matched-final",
+        '--evidence-output "${MATCHED_EVIDENCE}"',
     ):
         assert required in raw_block
     assert "using published result/statistics/failure/media artifacts" in published_block
+    for required in ("${MATCHED_EVIDENCE}", "${MATCHED_TRAJECTORY}", "${MATCHED_TIMELINE}"):
+        assert required in published_block
 
 
 def test_clean_git_archive_contains_portable_offline_dataset(tmp_path: Path) -> None:

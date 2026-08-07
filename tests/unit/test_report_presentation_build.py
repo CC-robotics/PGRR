@@ -569,6 +569,12 @@ def test_makefile_exposes_report_and_presentation_targets() -> None:
     assert "presentation:" in makefile
     assert "REPORT_STAGE ?= pending" in makefile
     assert "REPORT_STATISTICS ?= outputs/moderate/final/pairwise_statistics.json" in makefile
+    assert (
+        "REPORT_MATCHED_EVIDENCE ?= outputs/moderate/final/matched_base_pgrr_evidence.json"
+        in makefile
+    )
+    assert '--matched-evidence "$(REPORT_MATCHED_EVIDENCE)"' in makefile
+    assert "--require-runtime-capture" in makefile
 
 
 def test_new_sources_do_not_contain_local_account_or_real_identity() -> None:

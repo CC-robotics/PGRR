@@ -282,16 +282,86 @@ def _complete_fixture(root: Path) -> None:
     results_frame["logical_episode_id"] = results_frame["episode_id"]
     results_frame["outcome"] = "GOAL_REACHED"
     results_frame.to_parquet(root / MODULE.DEFAULT_RESULTS, index=False)
+    _write_pdf(root / MODULE.DEFAULT_MATCHED_TRAJECTORY, 1)
+    _write_pdf(root / MODULE.DEFAULT_MATCHED_TIMELINE, 1)
+    matched_artifacts = {
+        "trajectory": {
+            "path": "media/moderate_matched_base_pgrr_trajectory.pdf",
+            "filename": "moderate_matched_base_pgrr_trajectory.pdf",
+            "sha256": _sha(root / MODULE.DEFAULT_MATCHED_TRAJECTORY),
+            "media_type": "application/pdf",
+        },
+        "recovery_timeline": {
+            "path": "media/moderate_pgrr_recovery_timeline.pdf",
+            "filename": "moderate_pgrr_recovery_timeline.pdf",
+            "sha256": _sha(root / MODULE.DEFAULT_MATCHED_TIMELINE),
+            "media_type": "application/pdf",
+        },
+    }
+    matched_payload = {
+        "schema_version": 2,
+        "artifact_type": "matched_base_pgrr_test_media",
+        "benchmark_id": "moderate_social_navigation_v6",
+        "stage": "test",
+        "selection_rule": MODULE.MATCHED_TEST_SELECTION_RULE,
+        "representation": MODULE.MATCHED_REPRESENTATION,
+        "results_file": "results.parquet",
+        "results_sha256": _sha(root / MODULE.DEFAULT_RESULTS),
+        "pair_id": "fixture-pair",
+        "scenario_id": "scenario_test_seed1",
+        "scenario_sha256": "1" * 64,
+        "family": "doorway_bottleneck",
+        "density": "medium",
+        "seed": 1,
+        "project_commit": evaluation_commit,
+        "runs": {
+            method: {
+                "episode_id": f"scenario_eval_{method}_a0_dwb",
+                "outcome": "GOAL_REACHED",
+                "raw_file": f"scenario_eval_{method}_a0_dwb.jsonl",
+                "raw_sha256": digest,
+                "metadata_sha256": digest,
+                "outcome_sha256": digest,
+                "sample_count": 2,
+            }
+            for method, digest in (("base", "2" * 64), ("pgrr", "3" * 64))
+        },
+        "artifacts": matched_artifacts,
+    }
+    _write_json(root / MODULE.DEFAULT_MATCHED_EVIDENCE, matched_payload)
     _write_json(
         root / MODULE.DEFAULT_REPORT_DATA,
         {
-            "schema_version": 2,
+            "schema_version": 3,
             "stage": "test",
             "results_available": True,
+            "public_name": MODULE.EXPECTED_PUBLIC_NAME,
+            "benchmark_id": MODULE.EXPECTED_BENCHMARK_ID,
             "results_path": MODULE.DEFAULT_RESULTS.as_posix(),
             "results_sha256": _sha(root / MODULE.DEFAULT_RESULTS),
             "statistics_path": MODULE.DEFAULT_STATISTICS.as_posix(),
             "statistics_sha256": _sha(root / MODULE.DEFAULT_STATISTICS),
+            "matched_evidence_path": MODULE.DEFAULT_MATCHED_EVIDENCE.as_posix(),
+            "matched_evidence_sha256": _sha(root / MODULE.DEFAULT_MATCHED_EVIDENCE),
+            "matched_run_evidence": {
+                "available": True,
+                **{
+                    field: matched_payload[field]
+                    for field in (
+                        "artifact_type",
+                        "pair_id",
+                        "scenario_id",
+                        "scenario_sha256",
+                        "family",
+                        "density",
+                        "seed",
+                        "project_commit",
+                        "selection_rule",
+                        "representation",
+                        "artifacts",
+                    )
+                },
+            },
             "condition_count": 1,
             "episode_count": 5,
             "valid_episode_count": 5,
@@ -363,9 +433,14 @@ def _set_successful_infrastructure_retry(root: Path, *, task_index: int, attempt
     results_frame.loc[selected, "logical_episode_id"] = logical_id
     results_frame.loc[selected, "episode_id"] = physical_id
     results_frame.to_parquet(results_path, index=False)
+    matched_path = root / MODULE.DEFAULT_MATCHED_EVIDENCE
+    matched = json.loads(matched_path.read_text(encoding="utf-8"))
+    matched["results_sha256"] = _sha(results_path)
+    _write_json(matched_path, matched)
     report_data_path = root / MODULE.DEFAULT_REPORT_DATA
     report_data = json.loads(report_data_path.read_text(encoding="utf-8"))
     report_data["results_sha256"] = _sha(results_path)
+    report_data["matched_evidence_sha256"] = _sha(matched_path)
     _write_json(report_data_path, report_data)
 
     run_manifest = json.loads(run_path.read_text(encoding="utf-8"))
@@ -464,6 +539,8 @@ def test_manifest_has_only_relative_checksummed_artifacts(tmp_path: Path) -> Non
     assert payload["category_counts"]["checkpoint"] == 2
     assert payload["category_counts"]["video"] == 1
     assert payload["category_counts"]["runtime_keyframe"] == 2
+    assert payload["category_counts"]["matched_evidence"] == 1
+    assert payload["category_counts"]["matched_runtime"] == 2
     assert payload["category_counts"]["technical_report"] == 1
     assert payload["category_counts"]["presentation"] == 2
     assert payload["category_counts"]["offline_ablation_dataset"] == 1
@@ -699,6 +776,34 @@ def test_manifest_rejects_report_bound_to_different_statistics(tmp_path: Path) -
     _write_json(report_data_path, report_data)
 
     with pytest.raises(MODULE.ArtifactError, match="pairwise statistics"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+        )
+
+
+def test_manifest_rejects_tampered_matched_runtime_media(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    trajectory = tmp_path / MODULE.DEFAULT_MATCHED_TRAJECTORY
+    trajectory.write_bytes(trajectory.read_bytes() + b"tampered")
+
+    with pytest.raises(MODULE.ArtifactError, match=r"trajectory.*SHA256 disagrees"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+        )
+
+
+def test_manifest_rejects_report_bound_to_different_matched_evidence(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    report_data_path = tmp_path / MODULE.DEFAULT_REPORT_DATA
+    report_data = json.loads(report_data_path.read_text(encoding="utf-8"))
+    report_data["matched_evidence_sha256"] = "0" * 64
+    _write_json(report_data_path, report_data)
+
+    with pytest.raises(MODULE.ArtifactError, match="locked matched evidence"):
         MODULE.build_manifest(
             tmp_path,
             project_commit="b" * 40,

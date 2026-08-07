@@ -27,6 +27,9 @@ FINAL_MEDIA_DIR="${MODERATE_ANALYSIS_DIR}/media"
 FINAL_KEYFRAMES_PDF="${FINAL_MEDIA_DIR}/pgrr_representative_telemetry_keyframes.pdf"
 FINAL_KEYFRAMES_PNG="${FINAL_MEDIA_DIR}/pgrr_representative_telemetry_keyframes.png"
 FINAL_VIDEO="${FINAL_MEDIA_DIR}/pgrr_representative_telemetry.mp4"
+MATCHED_EVIDENCE="${MODERATE_ANALYSIS_DIR}/matched_base_pgrr_evidence.json"
+MATCHED_TRAJECTORY="${FINAL_MEDIA_DIR}/moderate_matched_base_pgrr_trajectory.pdf"
+MATCHED_TIMELINE="${FINAL_MEDIA_DIR}/moderate_pgrr_recovery_timeline.pdf"
 REPORT_DATA="report/generated/report_data.json"
 REPORT_PDF="report/PGRR_technical_report_zh.pdf"
 PRESENTATION_PPTX="presentation/PGRR_report_zh.pptx"
@@ -165,6 +168,9 @@ manifest_command=(
     --media-keyframes-pdf "${FINAL_KEYFRAMES_PDF}"
     --media-keyframes-png "${FINAL_KEYFRAMES_PNG}"
     --video "${FINAL_VIDEO}"
+    --matched-evidence "${MATCHED_EVIDENCE}"
+    --matched-trajectory "${MATCHED_TRAJECTORY}"
+    --matched-recovery-timeline "${MATCHED_TIMELINE}"
     --paper paper/main.pdf
     --report "${REPORT_PDF}"
     --report-data "${REPORT_DATA}"
@@ -260,6 +266,13 @@ if [[ "${PGRR_RECOLLECT_RAW}" == "1" ]]; then
     install -m 0644 "${media_pdfs[0]}" "${FINAL_KEYFRAMES_PDF}"
     install -m 0644 "${media_pngs[0]}" "${FINAL_KEYFRAMES_PNG}"
     install -m 0644 "${media_videos[0]}" "${FINAL_VIDEO}"
+    offline python scripts/paper/render_episode_media.py \
+        --matched-final \
+        --results "${RESULTS}" \
+        --raw-dir data/raw \
+        --scenario-root . \
+        --figure-dir "${FINAL_MEDIA_DIR}" \
+        --evidence-output "${MATCHED_EVIDENCE}"
 else
     echo "[reproduce-paper] using published result/statistics/failure/media artifacts"
     for published in \
@@ -271,7 +284,10 @@ else
         "${OFFLINE_ABLATION_SIDECAR}" \
         "${FINAL_KEYFRAMES_PDF}" \
         "${FINAL_KEYFRAMES_PNG}" \
-        "${FINAL_VIDEO}"; do
+        "${FINAL_VIDEO}" \
+        "${MATCHED_EVIDENCE}" \
+        "${MATCHED_TRAJECTORY}" \
+        "${MATCHED_TIMELINE}"; do
         require_file "${published}" "published final artifact"
     done
 fi
@@ -307,6 +323,7 @@ clean_env \
     REPORT_STAGE=test \
     REPORT_RESULTS="${PROJECT_ROOT}/${RESULTS}" \
     REPORT_STATISTICS="${PROJECT_ROOT}/${STATISTICS}" \
+    REPORT_MATCHED_EVIDENCE="${PROJECT_ROOT}/${MATCHED_EVIDENCE}" \
     REPORT_EXPECTED_CONDITIONS=120 \
     CONDA_ENV_NAME="${CONDA_ENV_NAME}" \
     bash "${PROJECT_ROOT}/scripts/report/build_report.sh"

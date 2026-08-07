@@ -37,6 +37,7 @@ EVALUATION_TIMEOUT_S ?= 240
 REPORT_STAGE ?= pending
 REPORT_RESULTS ?= outputs/moderate/final/results.parquet
 REPORT_STATISTICS ?= outputs/moderate/final/pairwise_statistics.json
+REPORT_MATCHED_EVIDENCE ?= outputs/moderate/final/matched_base_pgrr_evidence.json
 REPORT_EXPECTED_CONDITIONS ?=
 REPORT_GENERATED_DIR ?= report/generated
 PRESENTATION_OUTPUT ?= presentation/PGRR_report_zh.pptx
@@ -195,9 +196,10 @@ paper: figures tables ## Compile the manuscript after validating generated artif
 	@scripts/paper/build_paper.sh
 
 report-assets: ## Generate fail-closed pending/validation/test report inputs.
-	@args=(--stage "$(REPORT_STAGE)" --output-dir "$(REPORT_GENERATED_DIR)"); \
+	@args=(--stage "$(REPORT_STAGE)" --output-dir "$(REPORT_GENERATED_DIR)" --require-runtime-capture); \
 	if [[ "$(REPORT_STAGE)" != "pending" ]]; then \
-		args+=(--results "$(REPORT_RESULTS)" --statistics "$(REPORT_STATISTICS)"); \
+		args+=(--results "$(REPORT_RESULTS)" --statistics "$(REPORT_STATISTICS)" \
+			--matched-evidence "$(REPORT_MATCHED_EVIDENCE)"); \
 	fi; \
 	if [[ -n "$(REPORT_EXPECTED_CONDITIONS)" ]]; then args+=(--expected-conditions "$(REPORT_EXPECTED_CONDITIONS)"); fi; \
 	$(OFFLINE_RUN) python scripts/report/build_report_assets.py "$${args[@]}"
@@ -205,6 +207,7 @@ report-assets: ## Generate fail-closed pending/validation/test report inputs.
 technical-report: ## Build and validate the 25--35 page Chinese technical report.
 	@REPORT_STAGE="$(REPORT_STAGE)" REPORT_RESULTS="$(if $(filter pending,$(REPORT_STAGE)),,$(REPORT_RESULTS))" \
 	REPORT_STATISTICS="$(if $(filter pending,$(REPORT_STAGE)),,$(REPORT_STATISTICS))" \
+	REPORT_MATCHED_EVIDENCE="$(if $(filter pending,$(REPORT_STAGE)),,$(REPORT_MATCHED_EVIDENCE))" \
 	REPORT_EXPECTED_CONDITIONS="$(REPORT_EXPECTED_CONDITIONS)" CONDA_ENV_NAME="$(CONDA_ENV_NAME)" \
 	scripts/report/build_report.sh
 
