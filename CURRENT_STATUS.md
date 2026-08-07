@@ -71,11 +71,13 @@ Base 0/24 and only 8/24 versus 5/24 goals, with a non-significant adjusted
 success comparison. It is historical evidence and is not mixed into the
 moderate-v6 test.
 
-The simulation, statistics, paper, report, presentation, and development-mode
-artifact build are complete. Remaining release work is limited to final QA,
-committing the generated bundle and these status records, running validate-only
-release/privacy checks from a clean tree, and pushing the same release state to
-both `home` and `main`.
+The simulation, statistics, paper, report, presentation, and artifact bundle are
+complete. Final QA passed with 703/703 tests plus Ruff, formatting, mypy, PDF,
+report, presentation, and privacy checks. Release commit `fe23ed6` then passed
+the validate-only artifact/privacy pipeline from a clean detached worktree:
+all 76 declared artifacts matched and the validator changed no file. The only
+remaining external operation is synchronizing this release state to both
+`home` and `main`.
 
 ## 2026-08-07 — moderate-v6 validation accepted (selection record; superseded by held-out test)
 

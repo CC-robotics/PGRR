@@ -1,18 +1,15 @@
 # Known issues
 
-## KI-088: Clean-tree release validation and synchronized branch pushes remain
+## KI-088: Clean-tree release validation is resolved; branch synchronization remains
 
-The development-mode publication pipeline has completed and generated an
-eight-page paper, 32-page report, 30-slide PPTX/PDF, and a 76-file artifact
-manifest. The manifest correctly records that it was generated from a dirty
-development worktree. This is not a clean release-validation pass.
-
-Resolution is procedural and does not require another simulation: finish QA,
-commit the generated bundle and status records, require an empty
-`git status --porcelain --untracked-files=all`, run
-`PGRR_RELEASE_MODE=1 PGRR_RECOLLECT_RAW=0 scripts/reproduce_paper.sh`, and then
-push the same release state to `home` and `main`. Release mode is validate-only
-and must not be used to generate files in an otherwise clean archive.
+The eight-page paper, 32-page report, 30-slide PPTX/PDF, and 76-file artifact
+manifest were committed as `fe23ed6`. A clean detached worktree at that commit
+passed `PGRR_RELEASE_MODE=1 PGRR_RECOLLECT_RAW=0
+scripts/reproduce_paper.sh`: the fresh manifest reconstruction matched all
+declared artifacts, privacy passed, and the validate-only command changed no
+file. The technical release-validation issue is therefore resolved without
+another simulation. Synchronizing the documented release to `home` and `main`
+is the only remaining external repository operation.
 
 ## KI-087: Final calibration and visual evidence have easy-to-confuse byproducts
 

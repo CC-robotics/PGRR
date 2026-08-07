@@ -489,3 +489,8 @@ from already published final inputs. `PGRR_RELEASE_MODE=1` is validate-only and
 may run only after the generated bundle and status records are committed and the
 worktree is clean. A dirty development manifest is not represented as a clean
 release pass.
+
+This gate was exercised on committed release candidate `fe23ed6` in a clean
+detached worktree. The 76-file manifest reconstruction, privacy audit, and
+no-worktree-mutation check all passed; therefore later branch synchronization
+does not require regenerating or reopening any simulation result.

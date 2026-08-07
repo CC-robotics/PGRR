@@ -35,8 +35,11 @@
   validation demonstration; the v6 same-pair Base--PGRR figures are real test
   telemetry reconstructions and are not described as camera screenshots.
 - Preserved the historical v1 64/64 safety--completion trade-off without mixing
-  its outcomes into v6. Remaining work is final QA, commit, clean-tree release
-  validation, and synchronized pushes to `home` and `main`.
+  its outcomes into v6.
+- Passed final QA: Ruff, formatting, mypy, privacy, document validators, and
+  703/703 pytest cases. Commit `fe23ed6` also passed the validate-only release
+  pipeline from a clean detached worktree with all 76 artifact hashes intact.
+  Only synchronized pushes to `home` and `main` remain.
 
 ## 2026-08-07 — moderate-v6 validation gate complete
 

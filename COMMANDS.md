@@ -129,11 +129,12 @@ assert manifest["document_pages"]["presentation/PGRR_report_zh.pdf"] == 30
 PY
 ```
 
-## Pending clean-tree release validation and two-branch publication
+## 2026-08-08 clean-tree release validation passed
 
 Do not run the release command while generated or source changes remain
-uncommitted. After final QA and the release commit, first require an empty
-worktree, then run validate-only release and privacy gates:
+uncommitted. After final QA and release commit `fe23ed6`, a fresh detached
+worktree was required to be empty before running the validate-only release and
+privacy gates:
 
 ```bash
 git status --short --untracked-files=all
@@ -148,10 +149,12 @@ git status --short --untracked-files=all
 # This command must also print nothing: release mode is validate-only.
 ```
 
-Only after that pass should the release commit be pushed to `home`, merged into
-`main` without rewriting either branch, and pushed to `main`. The exact push and
-merge commands belong to the final release log after they have actually run;
-they are not recorded here as completed yet.
+This completed with `Artifact manifest validation PASS` for 76 files,
+`Privacy audit PASS`, and `RELEASE VALIDATION PASS`; the before/after worktree
+checks were empty. No simulator, collector, bootstrap, renderer, or document
+builder ran in release mode. The remaining external step is to push the final
+documented release to `home`, merge it into `main` without rewriting either
+branch, and push `main`.
 
 ## 2026-08-07 complete and merge moderate-v6 validation
 
