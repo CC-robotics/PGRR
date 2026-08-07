@@ -112,11 +112,11 @@ emergency_release_hysteresis_m: 0.05
 # Do not let a safe static side-wall return sustain an omnidirectional stop;
 # commanded-motion clearance retains the 0.05 m release hysteresis above.
 footprint_release_hysteresis_m: 0.0
-# Gazebo's Jackal can drift slightly while turning even under a zero-linear
-# command. Keep 4 cm beyond the circular 0.36 m evaluation footprint and use
-# the post-retreat clearance commitment below rather than weakening this
-# swept-motion boundary. Translation retains its stricter 0.48 m threshold.
-emergency_rotation_clearance_m: 0.40
+# Gazebo's skid-steer Jackal drifts by up to about 7 cm during a nominally
+# in-place pulse, and an open shelf's sparse LiDAR returns can overestimate
+# clearance to its filled collision envelope. Require 0.60 m before rotation;
+# the controller keeps rear-gated retreat ownership until this margin exists.
+emergency_rotation_clearance_m: 0.60
 emergency_turn_duration_s: 0.8
 # At 0.6 rad/s this caps one persistent hazard at 1.92 rad of commanded turn.
 emergency_maximum_turn_pulses: 4

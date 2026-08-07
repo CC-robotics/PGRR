@@ -501,7 +501,7 @@ def test_clear_time_without_goal_progress_does_not_reset_escape_budgets() -> Non
 
 
 def test_recurrent_retreat_turns_before_nominal_motion_can_undo_clearance() -> None:
-    controller = _controller(minimum_retreat_pulses=3, rotation_clearance_m=0.40)
+    controller = _controller(minimum_retreat_pulses=3, rotation_clearance_m=0.60)
     common = {
         "linear_speed_mps": 0.0,
         "rear_clearance_m": 2.0,
@@ -541,18 +541,29 @@ def test_recurrent_retreat_turns_before_nominal_motion_can_undo_clearance() -> N
         True,
         EmergencyEscapeMode.BACKUP,
     )
-    # The third independently rear-gated retreat creates a safe 0.54 m swept
-    # margin.  Keep recovery ownership and turn before Nav2 can drive forward
-    # into the same 0.42 m corner again.
+    # The third independently rear-gated retreat is not yet sufficient for a
+    # drift-aware turn. Keep recovery ownership and add one bounded retreat
+    # instead of letting Nav2 erase the fresh clearance.
     assert controller.update(now_s=4.4, hazard=False, obstacle_clearance_m=0.54, **common) == (
         True,
-        EmergencyEscapeMode.TURN_RIGHT,
+        EmergencyEscapeMode.BACKUP,
     )
-    assert controller.update(now_s=4.8, hazard=False, obstacle_clearance_m=0.50, **common) == (
+    assert controller.update(now_s=4.8, hazard=False, obstacle_clearance_m=0.58, **common) == (
+        True,
+        EmergencyEscapeMode.BACKUP,
+    )
+    assert controller.backup_count == 4
+    # Once the independently observed margin exceeds 0.60 m, turn before
+    # nominal motion can re-enter the same corner.
+    assert controller.update(now_s=5.3, hazard=False, obstacle_clearance_m=0.62, **common) == (
         True,
         EmergencyEscapeMode.TURN_RIGHT,
     )
-    assert controller.update(now_s=5.3, hazard=False, obstacle_clearance_m=0.48, **common) == (
+    assert controller.update(now_s=5.7, hazard=False, obstacle_clearance_m=0.61, **common) == (
+        True,
+        EmergencyEscapeMode.TURN_RIGHT,
+    )
+    assert controller.update(now_s=6.2, hazard=False, obstacle_clearance_m=0.55, **common) == (
         False,
         EmergencyEscapeMode.STOP,
     )

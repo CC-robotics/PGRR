@@ -487,7 +487,7 @@ class RecoveryManagerNode(Node):
             "footprint_release_hysteresis_m": 0.0,
             # This nominal geometric floor is composed with the stricter
             # footprint stop-and-release boundary before any turn is allowed.
-            "emergency_rotation_clearance_m": 0.40,
+            "emergency_rotation_clearance_m": 0.60,
             "emergency_turn_duration_s": 0.8,
             "emergency_maximum_turn_pulses": 4,
             "emergency_forward_escape_angle_degrees": 80.0,

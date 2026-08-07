@@ -268,6 +268,20 @@ class EmergencyEscapeController:
                 self.turn_before_release = False
                 self.clear_turn_active = True
                 return True, self.mode
+            rear_safe = rear_observed and rear_clearance_m >= self.backup_clearance_m
+            if (
+                obstacle_clearance_m < self.rotation_clearance_m
+                and backup_permitted
+                and rear_safe
+                and self.backup_count < self.maximum_improving_backups
+            ):
+                self.mode = EmergencyEscapeMode.BACKUP
+                self.escape_until_s = now_s + self.backup_duration_s
+                self.backup_used_in_hazard = True
+                self.backup_count += 1
+                self.backup_start_clearance_m = obstacle_clearance_m
+                self.backup_peak_clearance_m = obstacle_clearance_m
+                return True, self.mode
             self.mode = EmergencyEscapeMode.STOP
             return True, self.mode
         if not hazard:
