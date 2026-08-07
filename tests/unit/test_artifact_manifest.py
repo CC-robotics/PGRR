@@ -117,7 +117,7 @@ def _complete_fixture(root: Path) -> None:
         MODULE.DEFAULT_STATE_MACHINE_CONFIG,
         MODULE.DEFAULT_ACTION_CONFIG,
         Path("configs/platform/arena_profile.yaml"),
-        Path("scenarios/splits/moderate_v5_validation.yaml"),
+        MODULE.DEFAULT_CALIBRATION_SPLIT,
     ):
         _write(root / relative)
     dataset_path = root / MODULE.DEFAULT_OFFLINE_ABLATION_DATASET
@@ -159,10 +159,16 @@ def _complete_fixture(root: Path) -> None:
     contact = Image.new("RGB", (1200, 600), color="white")
     contact.paste((30, 100, 180), (0, 0, 600, 600))
     contact.save(contact_sheet)
-    (root / "scenarios/splits/moderate_v5_validation.yaml").write_text(
-        "split: validation\nscenarios: []\n", encoding="utf-8"
+    (root / MODULE.DEFAULT_CONFIG).write_text(
+        "schema_version: 1\nbenchmark_id: moderate_social_navigation_v6\n",
+        encoding="utf-8",
+    )
+    (root / MODULE.DEFAULT_CALIBRATION_SPLIT).write_text(
+        "benchmark_id: moderate_social_navigation_v6\nsplit: validation\nscenarios: []\n",
+        encoding="utf-8",
     )
     (root / MODULE.DEFAULT_TEST_SPLIT).write_text(
+        "benchmark_id: moderate_social_navigation_v6\n"
         "split: test\nscenarios:\n"
         "  - scenario_id: fixture\n"
         "    family: doorway_bottleneck\n"
@@ -186,15 +192,17 @@ def _complete_fixture(root: Path) -> None:
             _sha(root / MODULE.DEFAULT_CHECKPOINT),
         ),
     }
-    validation_split = root / "scenarios/splits/moderate_v5_validation.yaml"
+    validation_split = root / MODULE.DEFAULT_CALIBRATION_SPLIT
     evaluation_config = {
         "schema_version": 2,
         "benchmark": {
+            "id": "moderate_social_navigation_v6",
             "catalog": MODULE.DEFAULT_CONFIG.as_posix(),
             "catalog_sha256": _sha(root / MODULE.DEFAULT_CONFIG),
-            "calibration_split": "scenarios/splits/moderate_v5_validation.yaml",
+            "calibration_split": MODULE.DEFAULT_CALIBRATION_SPLIT.as_posix(),
             "calibration_split_sha256": _sha(validation_split),
             "calibration_report": MODULE.DEFAULT_CALIBRATION_REPORT.as_posix(),
+            "calibration_report_sha256": _sha(root / MODULE.DEFAULT_CALIBRATION_REPORT),
         },
         "runtime": {
             "split": "test",
@@ -274,16 +282,86 @@ def _complete_fixture(root: Path) -> None:
     results_frame["logical_episode_id"] = results_frame["episode_id"]
     results_frame["outcome"] = "GOAL_REACHED"
     results_frame.to_parquet(root / MODULE.DEFAULT_RESULTS, index=False)
+    _write_pdf(root / MODULE.DEFAULT_MATCHED_TRAJECTORY, 1)
+    _write_pdf(root / MODULE.DEFAULT_MATCHED_TIMELINE, 1)
+    matched_artifacts = {
+        "trajectory": {
+            "path": "media/moderate_matched_base_pgrr_trajectory.pdf",
+            "filename": "moderate_matched_base_pgrr_trajectory.pdf",
+            "sha256": _sha(root / MODULE.DEFAULT_MATCHED_TRAJECTORY),
+            "media_type": "application/pdf",
+        },
+        "recovery_timeline": {
+            "path": "media/moderate_pgrr_recovery_timeline.pdf",
+            "filename": "moderate_pgrr_recovery_timeline.pdf",
+            "sha256": _sha(root / MODULE.DEFAULT_MATCHED_TIMELINE),
+            "media_type": "application/pdf",
+        },
+    }
+    matched_payload = {
+        "schema_version": 2,
+        "artifact_type": "matched_base_pgrr_test_media",
+        "benchmark_id": "moderate_social_navigation_v6",
+        "stage": "test",
+        "selection_rule": MODULE.MATCHED_TEST_SELECTION_RULE,
+        "representation": MODULE.MATCHED_REPRESENTATION,
+        "results_file": "results.parquet",
+        "results_sha256": _sha(root / MODULE.DEFAULT_RESULTS),
+        "pair_id": "fixture-pair",
+        "scenario_id": "scenario_test_seed1",
+        "scenario_sha256": "1" * 64,
+        "family": "doorway_bottleneck",
+        "density": "medium",
+        "seed": 1,
+        "project_commit": evaluation_commit,
+        "runs": {
+            method: {
+                "episode_id": f"scenario_eval_{method}_a0_dwb",
+                "outcome": "GOAL_REACHED",
+                "raw_file": f"scenario_eval_{method}_a0_dwb.jsonl",
+                "raw_sha256": digest,
+                "metadata_sha256": digest,
+                "outcome_sha256": digest,
+                "sample_count": 2,
+            }
+            for method, digest in (("base", "2" * 64), ("pgrr", "3" * 64))
+        },
+        "artifacts": matched_artifacts,
+    }
+    _write_json(root / MODULE.DEFAULT_MATCHED_EVIDENCE, matched_payload)
     _write_json(
         root / MODULE.DEFAULT_REPORT_DATA,
         {
-            "schema_version": 2,
+            "schema_version": 3,
             "stage": "test",
             "results_available": True,
+            "public_name": MODULE.EXPECTED_PUBLIC_NAME,
+            "benchmark_id": MODULE.EXPECTED_BENCHMARK_ID,
             "results_path": MODULE.DEFAULT_RESULTS.as_posix(),
             "results_sha256": _sha(root / MODULE.DEFAULT_RESULTS),
             "statistics_path": MODULE.DEFAULT_STATISTICS.as_posix(),
             "statistics_sha256": _sha(root / MODULE.DEFAULT_STATISTICS),
+            "matched_evidence_path": MODULE.DEFAULT_MATCHED_EVIDENCE.as_posix(),
+            "matched_evidence_sha256": _sha(root / MODULE.DEFAULT_MATCHED_EVIDENCE),
+            "matched_run_evidence": {
+                "available": True,
+                **{
+                    field: matched_payload[field]
+                    for field in (
+                        "artifact_type",
+                        "pair_id",
+                        "scenario_id",
+                        "scenario_sha256",
+                        "family",
+                        "density",
+                        "seed",
+                        "project_commit",
+                        "selection_rule",
+                        "representation",
+                        "artifacts",
+                    )
+                },
+            },
             "condition_count": 1,
             "episode_count": 5,
             "valid_episode_count": 5,
@@ -355,9 +433,14 @@ def _set_successful_infrastructure_retry(root: Path, *, task_index: int, attempt
     results_frame.loc[selected, "logical_episode_id"] = logical_id
     results_frame.loc[selected, "episode_id"] = physical_id
     results_frame.to_parquet(results_path, index=False)
+    matched_path = root / MODULE.DEFAULT_MATCHED_EVIDENCE
+    matched = json.loads(matched_path.read_text(encoding="utf-8"))
+    matched["results_sha256"] = _sha(results_path)
+    _write_json(matched_path, matched)
     report_data_path = root / MODULE.DEFAULT_REPORT_DATA
     report_data = json.loads(report_data_path.read_text(encoding="utf-8"))
     report_data["results_sha256"] = _sha(results_path)
+    report_data["matched_evidence_sha256"] = _sha(matched_path)
     _write_json(report_data_path, report_data)
 
     run_manifest = json.loads(run_path.read_text(encoding="utf-8"))
@@ -430,6 +513,11 @@ def _complete_runtime_capture(root: Path) -> None:
 
 
 def test_manifest_has_only_relative_checksummed_artifacts(tmp_path: Path) -> None:
+    assert MODULE.DEFAULT_CONFIG == Path("configs/experiments/scenario_catalog_moderate_v6.yaml")
+    assert MODULE.DEFAULT_TEST_SPLIT == Path("scenarios/splits/moderate_v6_test.yaml")
+    assert MODULE.DEFAULT_CALIBRATION_REPORT == Path(
+        "outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json"
+    )
     _complete_fixture(tmp_path)
 
     payload = MODULE.build_manifest(
@@ -451,6 +539,8 @@ def test_manifest_has_only_relative_checksummed_artifacts(tmp_path: Path) -> Non
     assert payload["category_counts"]["checkpoint"] == 2
     assert payload["category_counts"]["video"] == 1
     assert payload["category_counts"]["runtime_keyframe"] == 2
+    assert payload["category_counts"]["matched_evidence"] == 1
+    assert payload["category_counts"]["matched_runtime"] == 2
     assert payload["category_counts"]["technical_report"] == 1
     assert payload["category_counts"]["presentation"] == 2
     assert payload["category_counts"]["offline_ablation_dataset"] == 1
@@ -693,6 +783,34 @@ def test_manifest_rejects_report_bound_to_different_statistics(tmp_path: Path) -
         )
 
 
+def test_manifest_rejects_tampered_matched_runtime_media(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    trajectory = tmp_path / MODULE.DEFAULT_MATCHED_TRAJECTORY
+    trajectory.write_bytes(trajectory.read_bytes() + b"tampered")
+
+    with pytest.raises(MODULE.ArtifactError, match=r"trajectory.*SHA256 disagrees"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+        )
+
+
+def test_manifest_rejects_report_bound_to_different_matched_evidence(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    report_data_path = tmp_path / MODULE.DEFAULT_REPORT_DATA
+    report_data = json.loads(report_data_path.read_text(encoding="utf-8"))
+    report_data["matched_evidence_sha256"] = "0" * 64
+    _write_json(report_data_path, report_data)
+
+    with pytest.raises(MODULE.ArtifactError, match="locked matched evidence"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+        )
+
+
 @pytest.mark.parametrize("pages", [29, 41])
 def test_manifest_rejects_report_outside_page_range(tmp_path: Path, pages: int) -> None:
     _complete_fixture(tmp_path)
@@ -827,8 +945,42 @@ def test_manifest_rejects_test_split_calibration_report(tmp_path: Path) -> None:
         tmp_path / MODULE.DEFAULT_CALIBRATION_REPORT,
         (json.dumps({"split": "test", "status": "rejected", "passed": False}) + "\n").encode(),
     )
+    evaluation_path = tmp_path / MODULE.DEFAULT_EVALUATION_CONFIG
+    evaluation = yaml.safe_load(evaluation_path.read_text(encoding="utf-8"))
+    evaluation["benchmark"]["calibration_report_sha256"] = _sha(
+        tmp_path / MODULE.DEFAULT_CALIBRATION_REPORT
+    )
+    evaluation_path.write_text(yaml.safe_dump(evaluation), encoding="utf-8")
 
     with pytest.raises(MODULE.ArtifactError, match="validation-only"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="e" * 40,
+            git_dirty=True,
+        )
+
+
+def test_manifest_rejects_calibration_report_hash_mismatch(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    report = tmp_path / MODULE.DEFAULT_CALIBRATION_REPORT
+    report.write_bytes(report.read_bytes() + b" ")
+
+    with pytest.raises(MODULE.ArtifactError, match="hash mismatch"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="e" * 40,
+            git_dirty=True,
+        )
+
+
+def test_manifest_rejects_non_v6_evaluation_identity(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    evaluation_path = tmp_path / MODULE.DEFAULT_EVALUATION_CONFIG
+    evaluation = yaml.safe_load(evaluation_path.read_text(encoding="utf-8"))
+    evaluation["benchmark"]["id"] = "moderate_social_navigation_v5"
+    evaluation_path.write_text(yaml.safe_dump(evaluation), encoding="utf-8")
+
+    with pytest.raises(MODULE.ArtifactError, match="moderate_social_navigation_v6"):
         MODULE.build_manifest(
             tmp_path,
             project_commit="e" * 40,

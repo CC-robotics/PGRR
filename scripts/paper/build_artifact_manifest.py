@@ -29,7 +29,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 
-DEFAULT_CONFIG = Path("configs/experiments/scenario_catalog_moderate_v5.yaml")
+DEFAULT_CONFIG = Path("configs/experiments/scenario_catalog_moderate_v6.yaml")
 DEFAULT_EVALUATION_CONFIG = Path("configs/final/ei_gazebo.yaml")
 DEFAULT_BASELINE_CONFIG = Path("configs/planner/baselines.yaml")
 DEFAULT_UNIFORM_CHECKPOINT = Path("checkpoints/bc/uniform_scenario/best.onnx")
@@ -37,7 +37,10 @@ DEFAULT_CHECKPOINT = Path("checkpoints/dagger/coverage_safety_aligned/best.onnx"
 DEFAULT_RESULTS = Path("outputs/moderate/final/results.parquet")
 DEFAULT_SUMMARY = Path("outputs/moderate/final/summary.csv")
 DEFAULT_STATISTICS = Path("outputs/moderate/final/pairwise_statistics.json")
-DEFAULT_CALIBRATION_REPORT = Path("outputs/moderate/v5_validation/calibration_report.json")
+DEFAULT_CALIBRATION_SPLIT = Path("scenarios/splits/moderate_v6_validation.yaml")
+DEFAULT_CALIBRATION_REPORT = Path(
+    "outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json"
+)
 DEFAULT_FAILURE_ANALYSIS = Path("outputs/moderate/final/failure_analysis.md")
 DEFAULT_EPISODE_MANIFEST = Path("outputs/moderate/final/episode_manifest.parquet")
 DEFAULT_RUN_MANIFEST = Path("outputs/moderate/final/run_manifest.json")
@@ -55,6 +58,11 @@ DEFAULT_MEDIA_KEYFRAMES_PNG = Path(
     "outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.png"
 )
 DEFAULT_VIDEO = Path("outputs/moderate/final/media/pgrr_representative_telemetry.mp4")
+DEFAULT_MATCHED_EVIDENCE = Path("outputs/moderate/final/matched_base_pgrr_evidence.json")
+DEFAULT_MATCHED_TRAJECTORY = Path(
+    "outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf"
+)
+DEFAULT_MATCHED_TIMELINE = Path("outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf")
 DEFAULT_PAPER = Path("paper/main.pdf")
 DEFAULT_REPORT = Path("report/PGRR_technical_report_zh.pdf")
 DEFAULT_REPORT_DATA = Path("report/generated/report_data.json")
@@ -69,7 +77,7 @@ DEFAULT_ENVIRONMENT_LOCK = Path("environment.lock.yml")
 DEFAULT_REQUIREMENTS_LOCK = Path("requirements-offline.lock.txt")
 DEFAULT_ARENA_LOCK = Path("third_party/arena_commits.lock")
 DEFAULT_DEPENDENCY_MANIFEST = Path("third_party/dependency_manifest.md")
-DEFAULT_TEST_SPLIT = Path("scenarios/splits/moderate_v5_test.yaml")
+DEFAULT_TEST_SPLIT = Path("scenarios/splits/moderate_v6_test.yaml")
 DEFAULT_FAILURE_CONFIG = Path("configs/failure/rules.yaml")
 DEFAULT_STATE_MACHINE_CONFIG = Path("configs/failure/recovery_state_machine.yaml")
 DEFAULT_ACTION_CONFIG = Path("configs/planner/recovery_actions.yaml")
@@ -90,6 +98,16 @@ ALGORITHM_OUTCOMES = {
     "TIMEOUT",
     "PLANNER_FAILURE",
 }
+EXPECTED_BENCHMARK_ID = "moderate_social_navigation_v6"
+EXPECTED_PUBLIC_NAME = (
+    "PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation"
+)
+MATCHED_TEST_SELECTION_RULE = (
+    "eligible: PGRR trigger + configured static geometry + actor routes; order: "
+    "Base failure/PGRR goal, outcome contrast, PGRR goal, density, trigger count, "
+    "family, seed, pair_id"
+)
+MATCHED_REPRESENTATION = "telemetry reconstruction; not a simulator camera screenshot"
 
 EXPECTED_FIGURES = (
     "system_architecture.pdf",
@@ -308,7 +326,7 @@ def _validate_evaluation_provenance(
     comparison = _mapping(evaluation_config.get("primary_comparison"), label="primary_comparison")
     frozen_inputs = _mapping(evaluation_config.get("frozen_inputs"), label="frozen_inputs")
 
-    _validate_declared_file(
+    catalog = _validate_declared_file(
         project_root,
         benchmark,
         path_key="catalog",
@@ -316,6 +334,11 @@ def _validate_evaluation_provenance(
         expected_path=config_path,
         label="benchmark catalog",
     )
+    if benchmark.get("id") != EXPECTED_BENCHMARK_ID:
+        raise ArtifactError(f"final evaluation benchmark must be {EXPECTED_BENCHMARK_ID}")
+    catalog_document = _load_yaml_object(catalog, label="benchmark catalog")
+    if catalog_document.get("benchmark_id") != EXPECTED_BENCHMARK_ID:
+        raise ArtifactError("benchmark catalog identity disagrees with moderate-v6")
     validation_split = _validate_declared_file(
         project_root,
         benchmark,
@@ -325,14 +348,19 @@ def _validate_evaluation_provenance(
         label="validation split",
     )
     validation_document = _load_yaml_object(validation_split, label="validation split")
-    if validation_document.get("split") != "validation":
+    if (
+        validation_document.get("split") != "validation"
+        or validation_document.get("benchmark_id") != EXPECTED_BENCHMARK_ID
+    ):
         raise ArtifactError("configured calibration split is not a validation split")
-    configured_report = str(benchmark.get("calibration_report", ""))
-    report = _inside_root(
-        project_root, calibration_report_path, label="moderate calibration report"
+    _validate_declared_file(
+        project_root,
+        benchmark,
+        path_key="calibration_report",
+        hash_key="calibration_report_sha256",
+        expected_path=calibration_report_path,
+        label="moderate calibration report",
     )
-    if configured_report != _relative(project_root, report):
-        raise ArtifactError("calibration report path disagrees with final configuration")
 
     if runtime.get("split") != "test":
         raise ArtifactError("final evaluation runtime split must be test")
@@ -345,7 +373,10 @@ def _validate_evaluation_provenance(
         label="test split",
     )
     test_document = _load_yaml_object(test_split, label="test split")
-    if test_document.get("split") != "test":
+    if (
+        test_document.get("split") != "test"
+        or test_document.get("benchmark_id") != EXPECTED_BENCHMARK_ID
+    ):
         raise ArtifactError("configured test split is not a test split")
 
     frozen_specs = (
@@ -954,6 +985,92 @@ def _validate_video(path: Path) -> dict[str, Any]:
     }
 
 
+def _validate_matched_evidence_bundle(
+    evidence_path: Path,
+    *,
+    results_path: Path,
+    results_sha256: str,
+    trajectory_path: Path,
+    timeline_path: Path,
+) -> dict[str, Any]:
+    """Bind the published matched sidecar to its fixed test media and results."""
+
+    payload = _load_json_object(evidence_path, label="matched Base--PGRR evidence")
+    expected_header = {
+        "schema_version": 2,
+        "artifact_type": "matched_base_pgrr_test_media",
+        "benchmark_id": EXPECTED_BENCHMARK_ID,
+        "stage": "test",
+        "selection_rule": MATCHED_TEST_SELECTION_RULE,
+        "representation": MATCHED_REPRESENTATION,
+        "results_file": results_path.name,
+        "results_sha256": results_sha256,
+    }
+    for field, expected in expected_header.items():
+        if payload.get(field) != expected:
+            raise ArtifactError(f"matched Base--PGRR evidence {field} does not equal {expected!r}")
+    for field in ("pair_id", "scenario_id", "scenario_sha256", "family", "density"):
+        if not str(payload.get(field, "")).strip():
+            raise ArtifactError(f"matched Base--PGRR evidence omits {field}")
+    project_commit = str(payload.get("project_commit", ""))
+    if not COMMIT_PATTERN.fullmatch(project_commit):
+        raise ArtifactError("matched Base--PGRR evidence has an invalid project_commit")
+    try:
+        int(payload["seed"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ArtifactError("matched Base--PGRR evidence has an invalid seed") from error
+
+    runs = payload.get("runs")
+    if not isinstance(runs, Mapping) or set(runs) != {"base", "pgrr"}:
+        raise ArtifactError("matched Base--PGRR evidence must contain Base and PGRR runs")
+    for method in ("base", "pgrr"):
+        run = _mapping(runs[method], label=f"matched {method} run")
+        for field in ("episode_id", "outcome", "raw_file"):
+            if not str(run.get(field, "")).strip():
+                raise ArtifactError(f"matched {method} run omits {field}")
+        if str(run["outcome"]) not in ALGORITHM_OUTCOMES:
+            raise ArtifactError(f"matched {method} run uses an excluded outcome")
+        for field in ("raw_sha256", "metadata_sha256", "outcome_sha256"):
+            if not SHA256_PATTERN.fullmatch(str(run.get(field, ""))):
+                raise ArtifactError(f"matched {method} run has an invalid {field}")
+        try:
+            if int(run["sample_count"]) < 2:
+                raise ValueError
+        except (KeyError, TypeError, ValueError) as error:
+            raise ArtifactError(f"matched {method} run has an invalid sample_count") from error
+
+    expected_artifacts = {
+        "trajectory": (
+            "moderate_matched_base_pgrr_trajectory.pdf",
+            trajectory_path,
+        ),
+        "recovery_timeline": (
+            "moderate_pgrr_recovery_timeline.pdf",
+            timeline_path,
+        ),
+    }
+    declarations = payload.get("artifacts")
+    if not isinstance(declarations, Mapping) or set(declarations) != set(expected_artifacts):
+        raise ArtifactError("matched evidence must declare both fixed PDF artifacts")
+    evidence_directory = evidence_path.parent.resolve()
+    for field, (filename, expected_path) in expected_artifacts.items():
+        declaration = _mapping(declarations[field], label=f"matched {field} artifact")
+        if declaration.get("filename") != filename:
+            raise ArtifactError(f"matched {field} artifact does not use fixed filename {filename}")
+        if declaration.get("media_type") != "application/pdf":
+            raise ArtifactError(f"matched {field} artifact must be application/pdf")
+        relative = Path(str(declaration.get("path", "")))
+        if relative.is_absolute() or relative.name != filename:
+            raise ArtifactError(f"matched {field} artifact path is not portable")
+        resolved = (evidence_directory / relative).resolve()
+        if resolved != expected_path.resolve():
+            raise ArtifactError(f"matched {field} artifact path disagrees with the release input")
+        declared_sha = str(declaration.get("sha256", ""))
+        if not SHA256_PATTERN.fullmatch(declared_sha) or sha256_file(expected_path) != declared_sha:
+            raise ArtifactError(f"matched {field} artifact SHA256 disagrees")
+    return payload
+
+
 def _validate_report_data(
     path: Path,
     *,
@@ -962,16 +1079,23 @@ def _validate_report_data(
     results_sha256: str,
     statistics_path: Path,
     statistics_sha256: str,
+    matched_evidence_path: Path,
+    matched_evidence_sha256: str,
+    matched_evidence: Mapping[str, Any],
     expected_conditions: int,
     expected_episodes: int,
 ) -> None:
     """Bind the detailed report and deck to the same locked test result."""
 
     payload = _load_json_object(path, label="technical-report data")
-    if payload.get("schema_version") != 2:
-        raise ArtifactError("technical-report data must use schema_version 2")
+    if payload.get("schema_version") != 3:
+        raise ArtifactError("technical-report data must use schema_version 3")
     if payload.get("stage") != "test" or payload.get("results_available") is not True:
         raise ArtifactError("technical-report data must declare the locked test stage")
+    if payload.get("public_name") != EXPECTED_PUBLIC_NAME:
+        raise ArtifactError("technical-report data does not use the exact public PGRR name")
+    if payload.get("benchmark_id") != EXPECTED_BENCHMARK_ID:
+        raise ArtifactError("technical-report data is not bound to moderate-v6")
     if payload.get("author_alias") != "Charles Chen":
         raise ArtifactError("technical-report data must use the approved Charles Chen alias")
     expected_path = _relative(project_root, results_path)
@@ -988,6 +1112,30 @@ def _validate_report_data(
         raise ArtifactError(
             "technical-report data hash disagrees with the locked pairwise statistics"
         )
+    expected_evidence_path = _relative(project_root, matched_evidence_path)
+    if payload.get("matched_evidence_path") != expected_evidence_path:
+        raise ArtifactError("technical-report data does not reference the locked matched evidence")
+    if payload.get("matched_evidence_sha256") != matched_evidence_sha256:
+        raise ArtifactError("technical-report data hash disagrees with the locked matched evidence")
+    matched_summary = payload.get("matched_run_evidence")
+    if not isinstance(matched_summary, Mapping) or matched_summary.get("available") is not True:
+        raise ArtifactError("technical-report data omits matched Base--PGRR evidence")
+    for field in (
+        "artifact_type",
+        "pair_id",
+        "scenario_id",
+        "scenario_sha256",
+        "family",
+        "density",
+        "seed",
+        "project_commit",
+        "selection_rule",
+        "representation",
+    ):
+        if matched_summary.get(field) != matched_evidence.get(field):
+            raise ArtifactError(f"technical-report matched evidence disagrees on {field}")
+    if matched_summary.get("artifacts") != matched_evidence.get("artifacts"):
+        raise ArtifactError("technical-report matched media declarations disagree with the sidecar")
     try:
         condition_count = int(payload["condition_count"])
         episode_count = int(payload["episode_count"])
@@ -1092,6 +1240,9 @@ def build_manifest(
     media_keyframes_pdf_path: Path = DEFAULT_MEDIA_KEYFRAMES_PDF,
     media_keyframes_png_path: Path = DEFAULT_MEDIA_KEYFRAMES_PNG,
     video_path: Path = DEFAULT_VIDEO,
+    matched_evidence_path: Path = DEFAULT_MATCHED_EVIDENCE,
+    matched_trajectory_path: Path = DEFAULT_MATCHED_TRAJECTORY,
+    matched_timeline_path: Path = DEFAULT_MATCHED_TIMELINE,
     paper_path: Path = DEFAULT_PAPER,
     report_path: Path = DEFAULT_REPORT,
     report_data_path: Path = DEFAULT_REPORT_DATA,
@@ -1192,6 +1343,9 @@ def build_manifest(
             presentation_contact_sheet_path,
             "presentation contact sheet",
         ),
+        ("matched_evidence", matched_evidence_path, "matched Base--PGRR evidence"),
+        ("matched_runtime", matched_trajectory_path, "matched Base--PGRR trajectory"),
+        ("matched_runtime", matched_timeline_path, "matched PGRR recovery timeline"),
     )
     artifacts: list[tuple[str, Path]] = []
     for category, path, label in singleton_specs:
@@ -1223,6 +1377,28 @@ def build_manifest(
 
     resolved_results = _require_file(root, results_path, label="episode results")
     resolved_statistics = _require_file(root, statistics_path, label="statistics report")
+    resolved_matched_evidence = _require_file(
+        root,
+        matched_evidence_path,
+        label="matched Base--PGRR evidence",
+    )
+    resolved_matched_trajectory = _require_file(
+        root,
+        matched_trajectory_path,
+        label="matched Base--PGRR trajectory",
+    )
+    resolved_matched_timeline = _require_file(
+        root,
+        matched_timeline_path,
+        label="matched PGRR recovery timeline",
+    )
+    matched_evidence = _validate_matched_evidence_bundle(
+        resolved_matched_evidence,
+        results_path=resolved_results,
+        results_sha256=provenance["results_sha256"],
+        trajectory_path=resolved_matched_trajectory,
+        timeline_path=resolved_matched_timeline,
+    )
     resolved_paper = _require_file(root, paper_path, label="paper PDF")
     resolved_report = _require_file(root, report_path, label="technical-report PDF")
     resolved_report_data = _require_file(root, report_data_path, label="technical-report data")
@@ -1245,6 +1421,9 @@ def build_manifest(
         results_sha256=provenance["results_sha256"],
         statistics_path=resolved_statistics,
         statistics_sha256=sha256_file(resolved_statistics),
+        matched_evidence_path=resolved_matched_evidence,
+        matched_evidence_sha256=sha256_file(resolved_matched_evidence),
+        matched_evidence=matched_evidence,
         expected_conditions=int(provenance["expected_conditions_per_method"]),
         expected_episodes=int(provenance["expected_episodes"]),
     )
@@ -1471,6 +1650,13 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--media-keyframes-pdf", type=Path, default=DEFAULT_MEDIA_KEYFRAMES_PDF)
     parser.add_argument("--media-keyframes-png", type=Path, default=DEFAULT_MEDIA_KEYFRAMES_PNG)
     parser.add_argument("--video", type=Path, default=DEFAULT_VIDEO)
+    parser.add_argument("--matched-evidence", type=Path, default=DEFAULT_MATCHED_EVIDENCE)
+    parser.add_argument("--matched-trajectory", type=Path, default=DEFAULT_MATCHED_TRAJECTORY)
+    parser.add_argument(
+        "--matched-recovery-timeline",
+        type=Path,
+        default=DEFAULT_MATCHED_TIMELINE,
+    )
     parser.add_argument("--paper", type=Path, default=DEFAULT_PAPER)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--report-data", type=Path, default=DEFAULT_REPORT_DATA)
@@ -1522,6 +1708,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             media_keyframes_pdf_path=args.media_keyframes_pdf,
             media_keyframes_png_path=args.media_keyframes_png,
             video_path=args.video,
+            matched_evidence_path=args.matched_evidence,
+            matched_trajectory_path=args.matched_trajectory,
+            matched_timeline_path=args.matched_recovery_timeline,
             paper_path=args.paper,
             report_path=args.report,
             report_data_path=args.report_data,

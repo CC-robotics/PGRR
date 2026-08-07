@@ -7,15 +7,15 @@ also changes behavior in routine states where the classical stack is already
 competent.
 
 This work asks whether learning can instead be confined to the short interval in
-which a classical planner is at risk of failure.  Planning-Guided Recovery and
-Rejoin (PGRR) operates as a failure-triggered layer and leaves Nav2 DWB in
+which a classical planner is at risk of failure.  PGRR, Planning-Guided
+Failure-Triggered Recovery and Rejoin, operates as a layer and leaves Nav2 DWB in
 control during normal PointGoal navigation.  An observable detector and a
-hysteretic state machine invoke recovery only for collision risk, freeze, oscillation, or
-deadlock.  The policy never commands wheel velocity: it selects one of 21 local
-temporary goals or WAIT, BACKUP, REPLAN, and CONTINUE.  Nav2 executes the
-decision, after which PGRR restores the original task goal.  A planning-derived
-action mask restricts selectable actions, and an independent braking supervisor
-constrains executed motion.
+hysteretic state machine invoke recovery only for collision risk, freeze,
+oscillation, deadlock, or explicit planner failure.  The policy never commands
+wheel velocity: it selects one of 21 local temporary goals or WAIT, BACKUP,
+REPLAN, and CONTINUE.  Nav2 executes the decision, after which PGRR restores the
+original task goal.  A planning-derived action mask restricts selectable
+actions, and an independent braking supervisor constrains executed motion.
 
 Training exploits simulator state without leaking it to deployment.  A
 short-horizon expert rolls out every legal recovery action using the map and
@@ -41,3 +41,8 @@ The evaluation reports contact, task completion, timeout, planner failure, and
 intervention behavior separately.  Its numerical claims are generated from the
 same five-method result table used for confidence intervals and paired tests;
 the fail-closed paper build accepts no incomplete or exploratory result stream.
+For historical context only, the earlier v1 frozen test recorded 0/24 PGRR
+collisions versus 19/24 for Base, but 16/24 PGRR timeouts versus 0/24 and only
+8/24 versus 5/24 goal reaches; the adjusted goal-reaching comparison was not
+significant.  This safety--completion trade-off is not moderate-v6 evidence and
+is never pooled with the new benchmark.

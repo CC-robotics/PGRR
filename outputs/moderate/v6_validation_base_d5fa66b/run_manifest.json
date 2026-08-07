@@ -1,0 +1,1712 @@
+{
+  "checkpoint": null,
+  "checkpoint_sha256": null,
+  "completed_task_count": 72,
+  "created_at": "2026-08-07T13:28:22.313187+00:00",
+  "effective_jobs": 1,
+  "episode_manifest": "outputs/moderate/v6_validation_base_d5fa66b/episode_manifest.parquet",
+  "expected_task_count": 72,
+  "high_density_methods": [],
+  "method_checkpoints": {},
+  "methods": [
+    "base"
+  ],
+  "project_commit": "d5fa66bf9800a61c0bb9d0b729df07ab563383cf",
+  "recovery_tau_on_override": "",
+  "requested_jobs": 1,
+  "results": [
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_low_validation_moderate_v6_r00_s77000_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_low_validation_moderate_v6_r00_s77000_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/head_on_corridor_low_validation_moderate_v6_r00_s77000_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "1e57c2b0f075a5ac7c039deda9bdb4739c87bd0d698f2bcd9a65c4a98bc45081",
+          "resumed": true,
+          "sample_count": 914,
+          "stream_path": "data/raw/head_on_corridor_low_validation_moderate_v6_r00_s77000_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "head_on_corridor_low_validation_moderate_v6_r00_s77000_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "head_on_corridor_low_validation_moderate_v6_r00_s77000",
+      "status": "complete",
+      "task_index": 0
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_low_validation_moderate_v6_r01_s77001_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_low_validation_moderate_v6_r01_s77001_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/head_on_corridor_low_validation_moderate_v6_r01_s77001_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "54c0a76e61d3dc0655af8b1d1c1135e0799a47cff805cbcfd3908fadb1edb7f4",
+          "resumed": true,
+          "sample_count": 894,
+          "stream_path": "data/raw/head_on_corridor_low_validation_moderate_v6_r01_s77001_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "head_on_corridor_low_validation_moderate_v6_r01_s77001_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "head_on_corridor_low_validation_moderate_v6_r01_s77001",
+      "status": "complete",
+      "task_index": 1
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_low_validation_moderate_v6_r02_s77002_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_low_validation_moderate_v6_r02_s77002_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/head_on_corridor_low_validation_moderate_v6_r02_s77002_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "b293d119505d8ab1d7ab50971347f057a0fe0c0f7c349f139514c2e5b0147e29",
+          "resumed": true,
+          "sample_count": 333,
+          "stream_path": "data/raw/head_on_corridor_low_validation_moderate_v6_r02_s77002_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "head_on_corridor_low_validation_moderate_v6_r02_s77002_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "head_on_corridor_low_validation_moderate_v6_r02_s77002",
+      "status": "complete",
+      "task_index": 2
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_medium_validation_moderate_v6_r00_s77010_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_medium_validation_moderate_v6_r00_s77010_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/head_on_corridor_medium_validation_moderate_v6_r00_s77010_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "c77620459120cf7c4ed983d49e584273d8a324f518fe4bcb99c48e8d69d5aaf9",
+          "resumed": true,
+          "sample_count": 904,
+          "stream_path": "data/raw/head_on_corridor_medium_validation_moderate_v6_r00_s77010_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "head_on_corridor_medium_validation_moderate_v6_r00_s77010_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "head_on_corridor_medium_validation_moderate_v6_r00_s77010",
+      "status": "complete",
+      "task_index": 3
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_medium_validation_moderate_v6_r01_s77011_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_medium_validation_moderate_v6_r01_s77011_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/head_on_corridor_medium_validation_moderate_v6_r01_s77011_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "36ebec08c4bf54c4407194acc8a2efc12d05f94bf65b88591d057c4d097f065d",
+          "resumed": true,
+          "sample_count": 893,
+          "stream_path": "data/raw/head_on_corridor_medium_validation_moderate_v6_r01_s77011_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "head_on_corridor_medium_validation_moderate_v6_r01_s77011_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "head_on_corridor_medium_validation_moderate_v6_r01_s77011",
+      "status": "complete",
+      "task_index": 4
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_medium_validation_moderate_v6_r02_s77012_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_medium_validation_moderate_v6_r02_s77012_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/head_on_corridor_medium_validation_moderate_v6_r02_s77012_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "a287235ebc53703c3b1a7f78cd5100a42a6e319aa124bcf799ae37ab5aeadb36",
+          "resumed": true,
+          "sample_count": 884,
+          "stream_path": "data/raw/head_on_corridor_medium_validation_moderate_v6_r02_s77012_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "head_on_corridor_medium_validation_moderate_v6_r02_s77012_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "head_on_corridor_medium_validation_moderate_v6_r02_s77012",
+      "status": "complete",
+      "task_index": 5
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_high_validation_moderate_v6_r00_s77020_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_high_validation_moderate_v6_r00_s77020_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/head_on_corridor_high_validation_moderate_v6_r00_s77020_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "172dc411d63f03c57bde4952e85fa6b689dbb0a4fec8d8216d386933b4d96265",
+          "resumed": true,
+          "sample_count": 933,
+          "stream_path": "data/raw/head_on_corridor_high_validation_moderate_v6_r00_s77020_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "head_on_corridor_high_validation_moderate_v6_r00_s77020_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "head_on_corridor_high_validation_moderate_v6_r00_s77020",
+      "status": "complete",
+      "task_index": 6
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_high_validation_moderate_v6_r01_s77021_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_high_validation_moderate_v6_r01_s77021_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/head_on_corridor_high_validation_moderate_v6_r01_s77021_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "efa9e626444f12360c3b6edbbb859ab5142498007fb25f8c49f5df857b9c9bd1",
+          "resumed": true,
+          "sample_count": 884,
+          "stream_path": "data/raw/head_on_corridor_high_validation_moderate_v6_r01_s77021_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "head_on_corridor_high_validation_moderate_v6_r01_s77021_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "head_on_corridor_high_validation_moderate_v6_r01_s77021",
+      "status": "complete",
+      "task_index": 7
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_high_validation_moderate_v6_r02_s77022_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_high_validation_moderate_v6_r02_s77022_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/head_on_corridor_high_validation_moderate_v6_r02_s77022_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "9e3e01bfcc73bb1f8a6789011735620f02d9de92d7b2f08f1cb647e212f7bad2",
+          "resumed": true,
+          "sample_count": 229,
+          "stream_path": "data/raw/head_on_corridor_high_validation_moderate_v6_r02_s77022_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "head_on_corridor_high_validation_moderate_v6_r02_s77022_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "head_on_corridor_high_validation_moderate_v6_r02_s77022",
+      "status": "complete",
+      "task_index": 8
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_low_validation_moderate_v6_r00_s77100_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_low_validation_moderate_v6_r00_s77100_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/doorway_bottleneck_low_validation_moderate_v6_r00_s77100_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "e4520a8a86e6e178727caa59b59a3e5f0c057a7783d445707ced73bbec061a75",
+          "resumed": true,
+          "sample_count": 713,
+          "stream_path": "data/raw/doorway_bottleneck_low_validation_moderate_v6_r00_s77100_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "doorway_bottleneck_low_validation_moderate_v6_r00_s77100_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "doorway_bottleneck_low_validation_moderate_v6_r00_s77100",
+      "status": "complete",
+      "task_index": 9
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_low_validation_moderate_v6_r01_s77101_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_low_validation_moderate_v6_r01_s77101_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/doorway_bottleneck_low_validation_moderate_v6_r01_s77101_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "e4be884d878014bdd8900f6c734181e20dd41369d335035dc16430704f82e521",
+          "resumed": true,
+          "sample_count": 724,
+          "stream_path": "data/raw/doorway_bottleneck_low_validation_moderate_v6_r01_s77101_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "doorway_bottleneck_low_validation_moderate_v6_r01_s77101_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "doorway_bottleneck_low_validation_moderate_v6_r01_s77101",
+      "status": "complete",
+      "task_index": 10
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_low_validation_moderate_v6_r02_s77102_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_low_validation_moderate_v6_r02_s77102_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/doorway_bottleneck_low_validation_moderate_v6_r02_s77102_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "bce801b3cab1598d865ec6865b464f78de4cb46f5f54eb5490010f19223af158",
+          "resumed": true,
+          "sample_count": 228,
+          "stream_path": "data/raw/doorway_bottleneck_low_validation_moderate_v6_r02_s77102_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "doorway_bottleneck_low_validation_moderate_v6_r02_s77102_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "doorway_bottleneck_low_validation_moderate_v6_r02_s77102",
+      "status": "complete",
+      "task_index": 11
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_medium_validation_moderate_v6_r00_s77110_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_medium_validation_moderate_v6_r00_s77110_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/doorway_bottleneck_medium_validation_moderate_v6_r00_s77110_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "b5d4433270c033b8c6478a68fafba618d50c1e1732409d76b4e08df5ebe608d3",
+          "resumed": true,
+          "sample_count": 741,
+          "stream_path": "data/raw/doorway_bottleneck_medium_validation_moderate_v6_r00_s77110_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "doorway_bottleneck_medium_validation_moderate_v6_r00_s77110_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "doorway_bottleneck_medium_validation_moderate_v6_r00_s77110",
+      "status": "complete",
+      "task_index": 12
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_medium_validation_moderate_v6_r01_s77111_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_medium_validation_moderate_v6_r01_s77111_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/doorway_bottleneck_medium_validation_moderate_v6_r01_s77111_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "921ae838e2ea815d8003576cfad5c9ec861efb8c4b5797db406838416ed280bd",
+          "resumed": true,
+          "sample_count": 734,
+          "stream_path": "data/raw/doorway_bottleneck_medium_validation_moderate_v6_r01_s77111_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "doorway_bottleneck_medium_validation_moderate_v6_r01_s77111_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "doorway_bottleneck_medium_validation_moderate_v6_r01_s77111",
+      "status": "complete",
+      "task_index": 13
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_medium_validation_moderate_v6_r02_s77112_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_medium_validation_moderate_v6_r02_s77112_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/doorway_bottleneck_medium_validation_moderate_v6_r02_s77112_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "de36945c66089e7bbdb02d0be6835bfa928d5f11aeb24db27e82500ca9f70853",
+          "resumed": true,
+          "sample_count": 203,
+          "stream_path": "data/raw/doorway_bottleneck_medium_validation_moderate_v6_r02_s77112_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "doorway_bottleneck_medium_validation_moderate_v6_r02_s77112_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "doorway_bottleneck_medium_validation_moderate_v6_r02_s77112",
+      "status": "complete",
+      "task_index": 14
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_high_validation_moderate_v6_r00_s77120_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_high_validation_moderate_v6_r00_s77120_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/doorway_bottleneck_high_validation_moderate_v6_r00_s77120_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "093cf5f4e71f02424de144aa764f4afdfb576f0f6f68f9cfd24bb327778e6fb7",
+          "resumed": true,
+          "sample_count": 721,
+          "stream_path": "data/raw/doorway_bottleneck_high_validation_moderate_v6_r00_s77120_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "doorway_bottleneck_high_validation_moderate_v6_r00_s77120_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "doorway_bottleneck_high_validation_moderate_v6_r00_s77120",
+      "status": "complete",
+      "task_index": 15
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_high_validation_moderate_v6_r01_s77121_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_high_validation_moderate_v6_r01_s77121_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/doorway_bottleneck_high_validation_moderate_v6_r01_s77121_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "f93da5020a266f7f363ec8b8e76f12a53daa6e38b8bd691364f75c9919fa2b83",
+          "resumed": true,
+          "sample_count": 722,
+          "stream_path": "data/raw/doorway_bottleneck_high_validation_moderate_v6_r01_s77121_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "doorway_bottleneck_high_validation_moderate_v6_r01_s77121_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "doorway_bottleneck_high_validation_moderate_v6_r01_s77121",
+      "status": "complete",
+      "task_index": 16
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_high_validation_moderate_v6_r02_s77122_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_high_validation_moderate_v6_r02_s77122_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/doorway_bottleneck_high_validation_moderate_v6_r02_s77122_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "1673103af6c760a0f317f36dbb07f7a344597ca61ba2a3c909cd7dc758fea861",
+          "resumed": true,
+          "sample_count": 181,
+          "stream_path": "data/raw/doorway_bottleneck_high_validation_moderate_v6_r02_s77122_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "doorway_bottleneck_high_validation_moderate_v6_r02_s77122_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "doorway_bottleneck_high_validation_moderate_v6_r02_s77122",
+      "status": "complete",
+      "task_index": 17
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_low_validation_moderate_v6_r00_s77200_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_low_validation_moderate_v6_r00_s77200_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_low_validation_moderate_v6_r00_s77200_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "4170f04a25e1cf45308e9044df96c3dc2d5cfac75b66098afa90bfffdc0574be",
+          "resumed": true,
+          "sample_count": 893,
+          "stream_path": "data/raw/crossing_flow_low_validation_moderate_v6_r00_s77200_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "crossing_flow_low_validation_moderate_v6_r00_s77200_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "crossing_flow_low_validation_moderate_v6_r00_s77200",
+      "status": "complete",
+      "task_index": 18
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_low_validation_moderate_v6_r01_s77201_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_low_validation_moderate_v6_r01_s77201_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/crossing_flow_low_validation_moderate_v6_r01_s77201_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "e0220ea09427da0f8991bdea3c1ae1744d7a0b87c29f83edbd30e580ad05cfb1",
+          "resumed": true,
+          "sample_count": 273,
+          "stream_path": "data/raw/crossing_flow_low_validation_moderate_v6_r01_s77201_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "crossing_flow_low_validation_moderate_v6_r01_s77201_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "crossing_flow_low_validation_moderate_v6_r01_s77201",
+      "status": "complete",
+      "task_index": 19
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_low_validation_moderate_v6_r02_s77202_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_low_validation_moderate_v6_r02_s77202_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_low_validation_moderate_v6_r02_s77202_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "1906b986921a1b0793c00a65f385e9ec01c0a67a26024881fb40a81bf62de88f",
+          "resumed": true,
+          "sample_count": 891,
+          "stream_path": "data/raw/crossing_flow_low_validation_moderate_v6_r02_s77202_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "crossing_flow_low_validation_moderate_v6_r02_s77202_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "crossing_flow_low_validation_moderate_v6_r02_s77202",
+      "status": "complete",
+      "task_index": 20
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_medium_validation_moderate_v6_r00_s77210_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_medium_validation_moderate_v6_r00_s77210_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/crossing_flow_medium_validation_moderate_v6_r00_s77210_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "6b488122a656bf846fd9e8a64de719c7dfa279dcdc7e232c7e560dca3a76bf0c",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 258,
+          "stream_path": "data/raw/crossing_flow_medium_validation_moderate_v6_r00_s77210_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "crossing_flow_medium_validation_moderate_v6_r00_s77210_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "crossing_flow_medium_validation_moderate_v6_r00_s77210",
+      "status": "complete",
+      "task_index": 21
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_medium_validation_moderate_v6_r01_s77211_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_medium_validation_moderate_v6_r01_s77211_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/crossing_flow_medium_validation_moderate_v6_r01_s77211_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "f4d06c0448241ec66e4d26601e5c21fedbbe89a2de0ecef15b1b7142dafdbf54",
+          "resumed": true,
+          "sample_count": 262,
+          "stream_path": "data/raw/crossing_flow_medium_validation_moderate_v6_r01_s77211_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "crossing_flow_medium_validation_moderate_v6_r01_s77211_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "crossing_flow_medium_validation_moderate_v6_r01_s77211",
+      "status": "complete",
+      "task_index": 22
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_medium_validation_moderate_v6_r02_s77212_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_medium_validation_moderate_v6_r02_s77212_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_medium_validation_moderate_v6_r02_s77212_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "2e58b5a9b87680899751d7d7419e1e32fd0004d12b81b91af06d8fc868e09e9f",
+          "resumed": true,
+          "sample_count": 892,
+          "stream_path": "data/raw/crossing_flow_medium_validation_moderate_v6_r02_s77212_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "crossing_flow_medium_validation_moderate_v6_r02_s77212_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "crossing_flow_medium_validation_moderate_v6_r02_s77212",
+      "status": "complete",
+      "task_index": 23
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_high_validation_moderate_v6_r00_s77220_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_high_validation_moderate_v6_r00_s77220_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_high_validation_moderate_v6_r00_s77220_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "efd45d8b9e37bebac1f5919eebad838efb90cb8e90162ced2ff244a38680458f",
+          "resumed": true,
+          "sample_count": 924,
+          "stream_path": "data/raw/crossing_flow_high_validation_moderate_v6_r00_s77220_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "crossing_flow_high_validation_moderate_v6_r00_s77220_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "crossing_flow_high_validation_moderate_v6_r00_s77220",
+      "status": "complete",
+      "task_index": 24
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_high_validation_moderate_v6_r01_s77221_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_high_validation_moderate_v6_r01_s77221_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_high_validation_moderate_v6_r01_s77221_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "eb801c92f00eef43da030ac76d8988d1be984dce545360167e57277c4a71489e",
+          "resumed": true,
+          "sample_count": 911,
+          "stream_path": "data/raw/crossing_flow_high_validation_moderate_v6_r01_s77221_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "crossing_flow_high_validation_moderate_v6_r01_s77221_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "crossing_flow_high_validation_moderate_v6_r01_s77221",
+      "status": "complete",
+      "task_index": 25
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_high_validation_moderate_v6_r02_s77222_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_high_validation_moderate_v6_r02_s77222_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_high_validation_moderate_v6_r02_s77222_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "46afb5695a662b9c04a80a8f8a9222dcbb0684321ed1097e436a8534f10ff7a2",
+          "resumed": true,
+          "sample_count": 892,
+          "stream_path": "data/raw/crossing_flow_high_validation_moderate_v6_r02_s77222_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "crossing_flow_high_validation_moderate_v6_r02_s77222_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "crossing_flow_high_validation_moderate_v6_r02_s77222",
+      "status": "complete",
+      "task_index": 26
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_low_validation_moderate_v6_r00_s77300_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_low_validation_moderate_v6_r00_s77300_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/blind_corner_low_validation_moderate_v6_r00_s77300_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "ab9f6c6fe8225c9b6761bec8383b88c6688a92d26a3193952300fb74f52bdd4f",
+          "resumed": true,
+          "sample_count": 872,
+          "stream_path": "data/raw/blind_corner_low_validation_moderate_v6_r00_s77300_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "blind_corner_low_validation_moderate_v6_r00_s77300_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "blind_corner_low_validation_moderate_v6_r00_s77300",
+      "status": "complete",
+      "task_index": 27
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_low_validation_moderate_v6_r01_s77301_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_low_validation_moderate_v6_r01_s77301_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/blind_corner_low_validation_moderate_v6_r01_s77301_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "a246a94da1d423e6cf7c4e5bb9954ef324a5b6c0e4674093b5636832a7e4dacd",
+          "resumed": true,
+          "sample_count": 870,
+          "stream_path": "data/raw/blind_corner_low_validation_moderate_v6_r01_s77301_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "blind_corner_low_validation_moderate_v6_r01_s77301_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "blind_corner_low_validation_moderate_v6_r01_s77301",
+      "status": "complete",
+      "task_index": 28
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_low_validation_moderate_v6_r02_s77302_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_low_validation_moderate_v6_r02_s77302_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/blind_corner_low_validation_moderate_v6_r02_s77302_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "dd56d5ce1c83edd0da6e8994dd8d72654462a001b241e1df12143b3cfa17be50",
+          "resumed": true,
+          "sample_count": 883,
+          "stream_path": "data/raw/blind_corner_low_validation_moderate_v6_r02_s77302_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "blind_corner_low_validation_moderate_v6_r02_s77302_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "blind_corner_low_validation_moderate_v6_r02_s77302",
+      "status": "complete",
+      "task_index": 29
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_medium_validation_moderate_v6_r00_s77310_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_medium_validation_moderate_v6_r00_s77310_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/blind_corner_medium_validation_moderate_v6_r00_s77310_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "0ab53a85ea049021aeec4ebfa7d46cafef3f5105c5729b1462eebe3a56d2ec49",
+          "resumed": true,
+          "sample_count": 665,
+          "stream_path": "data/raw/blind_corner_medium_validation_moderate_v6_r00_s77310_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "blind_corner_medium_validation_moderate_v6_r00_s77310_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "blind_corner_medium_validation_moderate_v6_r00_s77310",
+      "status": "complete",
+      "task_index": 30
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_medium_validation_moderate_v6_r01_s77311_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_medium_validation_moderate_v6_r01_s77311_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/blind_corner_medium_validation_moderate_v6_r01_s77311_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "5204ecf00231693598f54d62f48aaae1d88dee6a3e247546dd420815e0c9b910",
+          "resumed": true,
+          "sample_count": 662,
+          "stream_path": "data/raw/blind_corner_medium_validation_moderate_v6_r01_s77311_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "blind_corner_medium_validation_moderate_v6_r01_s77311_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "blind_corner_medium_validation_moderate_v6_r01_s77311",
+      "status": "complete",
+      "task_index": 31
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_medium_validation_moderate_v6_r02_s77312_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_medium_validation_moderate_v6_r02_s77312_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/blind_corner_medium_validation_moderate_v6_r02_s77312_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "cd91505420decd404deb3a61d36605c1235b5fe04eef985fec1e6cb38e34ec33",
+          "resumed": true,
+          "sample_count": 894,
+          "stream_path": "data/raw/blind_corner_medium_validation_moderate_v6_r02_s77312_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "blind_corner_medium_validation_moderate_v6_r02_s77312_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "blind_corner_medium_validation_moderate_v6_r02_s77312",
+      "status": "complete",
+      "task_index": 32
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_high_validation_moderate_v6_r00_s77320_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_high_validation_moderate_v6_r00_s77320_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/blind_corner_high_validation_moderate_v6_r00_s77320_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "7e2acc34c976139b784f50360b100b02640fcb250536538b3dab6b1089aef38a",
+          "resumed": true,
+          "sample_count": 872,
+          "stream_path": "data/raw/blind_corner_high_validation_moderate_v6_r00_s77320_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "blind_corner_high_validation_moderate_v6_r00_s77320_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "blind_corner_high_validation_moderate_v6_r00_s77320",
+      "status": "complete",
+      "task_index": 33
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_high_validation_moderate_v6_r01_s77321_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_high_validation_moderate_v6_r01_s77321_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/blind_corner_high_validation_moderate_v6_r01_s77321_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "8dc89e512e78136ed28cfa3c17228a0f8ecd887f52cb58011464057613c4fe88",
+          "resumed": true,
+          "sample_count": 658,
+          "stream_path": "data/raw/blind_corner_high_validation_moderate_v6_r01_s77321_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "blind_corner_high_validation_moderate_v6_r01_s77321_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "blind_corner_high_validation_moderate_v6_r01_s77321",
+      "status": "complete",
+      "task_index": 34
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_high_validation_moderate_v6_r02_s77322_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_high_validation_moderate_v6_r02_s77322_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/blind_corner_high_validation_moderate_v6_r02_s77322_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "af024918a80cff9ca409a341cca8c7cc51a5eebf9cf5fa0768f0a2a3703df2d2",
+          "resumed": true,
+          "sample_count": 659,
+          "stream_path": "data/raw/blind_corner_high_validation_moderate_v6_r02_s77322_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "blind_corner_high_validation_moderate_v6_r02_s77322_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "blind_corner_high_validation_moderate_v6_r02_s77322",
+      "status": "complete",
+      "task_index": 35
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_low_validation_moderate_v6_r00_s77400_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_low_validation_moderate_v6_r00_s77400_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_low_validation_moderate_v6_r00_s77400_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "5a2353fb7b61d6d634282dd4874108a0e41b233a7cfc7509bc9ff5e6a7d59d1c",
+          "resumed": true,
+          "sample_count": 883,
+          "stream_path": "data/raw/group_blocking_low_validation_moderate_v6_r00_s77400_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "group_blocking_low_validation_moderate_v6_r00_s77400_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "group_blocking_low_validation_moderate_v6_r00_s77400",
+      "status": "complete",
+      "task_index": 36
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_low_validation_moderate_v6_r01_s77401_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_low_validation_moderate_v6_r01_s77401_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_low_validation_moderate_v6_r01_s77401_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "28061eff599bc48d0851377aed3f51dfe165ab1c972829df2615e7f6fc559faa",
+          "resumed": true,
+          "sample_count": 892,
+          "stream_path": "data/raw/group_blocking_low_validation_moderate_v6_r01_s77401_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "group_blocking_low_validation_moderate_v6_r01_s77401_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "group_blocking_low_validation_moderate_v6_r01_s77401",
+      "status": "complete",
+      "task_index": 37
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_low_validation_moderate_v6_r02_s77402_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_low_validation_moderate_v6_r02_s77402_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_low_validation_moderate_v6_r02_s77402_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "dde9e53ffa8344b5c113335efd0db1572e7b7fc488cc2767ba61772424067830",
+          "resumed": true,
+          "sample_count": 882,
+          "stream_path": "data/raw/group_blocking_low_validation_moderate_v6_r02_s77402_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "group_blocking_low_validation_moderate_v6_r02_s77402_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "group_blocking_low_validation_moderate_v6_r02_s77402",
+      "status": "complete",
+      "task_index": 38
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_medium_validation_moderate_v6_r00_s77410_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_medium_validation_moderate_v6_r00_s77410_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_medium_validation_moderate_v6_r00_s77410_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "54022856305b558c9713671837cb881bd43220b08bb704ab15b7c62cf588b03c",
+          "resumed": true,
+          "sample_count": 892,
+          "stream_path": "data/raw/group_blocking_medium_validation_moderate_v6_r00_s77410_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "group_blocking_medium_validation_moderate_v6_r00_s77410_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "group_blocking_medium_validation_moderate_v6_r00_s77410",
+      "status": "complete",
+      "task_index": 39
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_medium_validation_moderate_v6_r01_s77411_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_medium_validation_moderate_v6_r01_s77411_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_medium_validation_moderate_v6_r01_s77411_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "b2797ec44f2782db7212429aff7b32358c4470d8512fc8c5744090996f24c7aa",
+          "resumed": true,
+          "sample_count": 884,
+          "stream_path": "data/raw/group_blocking_medium_validation_moderate_v6_r01_s77411_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "group_blocking_medium_validation_moderate_v6_r01_s77411_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "group_blocking_medium_validation_moderate_v6_r01_s77411",
+      "status": "complete",
+      "task_index": 40
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_medium_validation_moderate_v6_r02_s77412_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_medium_validation_moderate_v6_r02_s77412_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_medium_validation_moderate_v6_r02_s77412_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "92b8d614230a0e8ab49de67e55e43b3e04446961cbff9ab62a250a2542e15e4b",
+          "resumed": true,
+          "sample_count": 891,
+          "stream_path": "data/raw/group_blocking_medium_validation_moderate_v6_r02_s77412_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "group_blocking_medium_validation_moderate_v6_r02_s77412_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "group_blocking_medium_validation_moderate_v6_r02_s77412",
+      "status": "complete",
+      "task_index": 41
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_high_validation_moderate_v6_r00_s77420_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": null,
+          "outcome": "SIMULATOR_FAILURE",
+          "outcome_path": "data/raw/group_blocking_high_validation_moderate_v6_r00_s77420_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "resumed": true,
+          "stream_path": null
+        },
+        {
+          "attempt": 1,
+          "episode_id": "group_blocking_high_validation_moderate_v6_r00_s77420_eval_base_rcd9387f1414a_a1_dwb",
+          "metadata_path": "data/raw/group_blocking_high_validation_moderate_v6_r00_s77420_eval_base_rcd9387f1414a_a1_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_high_validation_moderate_v6_r00_s77420_eval_base_rcd9387f1414a_a1_dwb.outcome.json",
+          "raw_sha256": "8a8bcc69c8c486a39bdf952fffff8844b960f16579c46033aee01d768648c59b",
+          "resumed": true,
+          "sample_count": 884,
+          "stream_path": "data/raw/group_blocking_high_validation_moderate_v6_r00_s77420_eval_base_rcd9387f1414a_a1_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "group_blocking_high_validation_moderate_v6_r00_s77420_eval_base_rcd9387f1414a_a1_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "group_blocking_high_validation_moderate_v6_r00_s77420",
+      "status": "complete",
+      "task_index": 42
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_high_validation_moderate_v6_r01_s77421_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_high_validation_moderate_v6_r01_s77421_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_high_validation_moderate_v6_r01_s77421_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "bcd16d23e1fef4c3cb05737d74fe62ad0d811d26b908c15d6b55d8b87489582e",
+          "resumed": true,
+          "sample_count": 883,
+          "stream_path": "data/raw/group_blocking_high_validation_moderate_v6_r01_s77421_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "group_blocking_high_validation_moderate_v6_r01_s77421_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "group_blocking_high_validation_moderate_v6_r01_s77421",
+      "status": "complete",
+      "task_index": 43
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_high_validation_moderate_v6_r02_s77422_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_high_validation_moderate_v6_r02_s77422_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_high_validation_moderate_v6_r02_s77422_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "b2d436b79c5d7384baf460369ee012ba23cfc5f819e96d90eac63e4887bdac2f",
+          "resumed": true,
+          "sample_count": 883,
+          "stream_path": "data/raw/group_blocking_high_validation_moderate_v6_r02_s77422_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "group_blocking_high_validation_moderate_v6_r02_s77422_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "group_blocking_high_validation_moderate_v6_r02_s77422",
+      "status": "complete",
+      "task_index": 44
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_low_validation_moderate_v6_r00_s77500_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/overtaking_low_validation_moderate_v6_r00_s77500_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/overtaking_low_validation_moderate_v6_r00_s77500_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "ec1a7008c5dc29f58710a821b10c64418a57b301fee7930f22161451353cc0ef",
+          "resumed": true,
+          "sample_count": 893,
+          "stream_path": "data/raw/overtaking_low_validation_moderate_v6_r00_s77500_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "overtaking_low_validation_moderate_v6_r00_s77500_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "overtaking_low_validation_moderate_v6_r00_s77500",
+      "status": "complete",
+      "task_index": 45
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_low_validation_moderate_v6_r01_s77501_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/overtaking_low_validation_moderate_v6_r01_s77501_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/overtaking_low_validation_moderate_v6_r01_s77501_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "f622028eb6fcb7557f8adb816abdc4745c39d977ece509dbebd4fd5fcffe9c63",
+          "resumed": true,
+          "sample_count": 884,
+          "stream_path": "data/raw/overtaking_low_validation_moderate_v6_r01_s77501_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "overtaking_low_validation_moderate_v6_r01_s77501_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "overtaking_low_validation_moderate_v6_r01_s77501",
+      "status": "complete",
+      "task_index": 46
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_low_validation_moderate_v6_r02_s77502_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/overtaking_low_validation_moderate_v6_r02_s77502_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/overtaking_low_validation_moderate_v6_r02_s77502_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "248a84c8b80af838aa8f54126bdaa3cd46bc918e5c8faf9cbe3859221c5da5b8",
+          "resumed": true,
+          "sample_count": 883,
+          "stream_path": "data/raw/overtaking_low_validation_moderate_v6_r02_s77502_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "overtaking_low_validation_moderate_v6_r02_s77502_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "overtaking_low_validation_moderate_v6_r02_s77502",
+      "status": "complete",
+      "task_index": 47
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_medium_validation_moderate_v6_r00_s77510_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/overtaking_medium_validation_moderate_v6_r00_s77510_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/overtaking_medium_validation_moderate_v6_r00_s77510_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "8c2390e64b33a4e872d87e6aa444e30589cacc261f5f6efa3eaa3809d7a8ccb9",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 893,
+          "stream_path": "data/raw/overtaking_medium_validation_moderate_v6_r00_s77510_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "overtaking_medium_validation_moderate_v6_r00_s77510_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "overtaking_medium_validation_moderate_v6_r00_s77510",
+      "status": "complete",
+      "task_index": 48
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_medium_validation_moderate_v6_r01_s77511_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/overtaking_medium_validation_moderate_v6_r01_s77511_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/overtaking_medium_validation_moderate_v6_r01_s77511_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "88fda09c07c335bf2ed567b304c18242502b8e6587301f77ae299f2acb604c22",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 883,
+          "stream_path": "data/raw/overtaking_medium_validation_moderate_v6_r01_s77511_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "overtaking_medium_validation_moderate_v6_r01_s77511_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "overtaking_medium_validation_moderate_v6_r01_s77511",
+      "status": "complete",
+      "task_index": 49
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_medium_validation_moderate_v6_r02_s77512_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/overtaking_medium_validation_moderate_v6_r02_s77512_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/overtaking_medium_validation_moderate_v6_r02_s77512_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "0daecd6263ffbe72535e847873fbfc62febce635d45109d0e8d6d56cb7fdc1eb",
+          "resumed": true,
+          "sample_count": 892,
+          "stream_path": "data/raw/overtaking_medium_validation_moderate_v6_r02_s77512_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "overtaking_medium_validation_moderate_v6_r02_s77512_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "overtaking_medium_validation_moderate_v6_r02_s77512",
+      "status": "complete",
+      "task_index": 50
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_high_validation_moderate_v6_r00_s77520_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/overtaking_high_validation_moderate_v6_r00_s77520_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/overtaking_high_validation_moderate_v6_r00_s77520_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "410c63e3ab5234b070df0680419c9d06f1dc329c1deaea720f0386c2ad941ea2",
+          "resumed": true,
+          "sample_count": 891,
+          "stream_path": "data/raw/overtaking_high_validation_moderate_v6_r00_s77520_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "overtaking_high_validation_moderate_v6_r00_s77520_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "overtaking_high_validation_moderate_v6_r00_s77520",
+      "status": "complete",
+      "task_index": 51
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_high_validation_moderate_v6_r01_s77521_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/overtaking_high_validation_moderate_v6_r01_s77521_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "INVALID_RESET",
+          "outcome_path": "data/raw/overtaking_high_validation_moderate_v6_r01_s77521_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "resumed": true,
+          "stream_path": "data/raw/overtaking_high_validation_moderate_v6_r01_s77521_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        },
+        {
+          "attempt": 1,
+          "episode_id": "overtaking_high_validation_moderate_v6_r01_s77521_eval_base_rcd9387f1414a_a1_dwb",
+          "metadata_path": "data/raw/overtaking_high_validation_moderate_v6_r01_s77521_eval_base_rcd9387f1414a_a1_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/overtaking_high_validation_moderate_v6_r01_s77521_eval_base_rcd9387f1414a_a1_dwb.outcome.json",
+          "raw_sha256": "0a8363e2869a01f124292dda20243b8734f2d3b622b0dae4e0493a832925de1a",
+          "resumed": true,
+          "sample_count": 892,
+          "stream_path": "data/raw/overtaking_high_validation_moderate_v6_r01_s77521_eval_base_rcd9387f1414a_a1_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "overtaking_high_validation_moderate_v6_r01_s77521_eval_base_rcd9387f1414a_a1_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "overtaking_high_validation_moderate_v6_r01_s77521",
+      "status": "complete",
+      "task_index": 52
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_high_validation_moderate_v6_r02_s77522_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/overtaking_high_validation_moderate_v6_r02_s77522_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/overtaking_high_validation_moderate_v6_r02_s77522_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "ea1e8516403dd138e516696d4d793ad9d10c84df5c257be2d80dab2ad06c55db",
+          "resumed": true,
+          "sample_count": 883,
+          "stream_path": "data/raw/overtaking_high_validation_moderate_v6_r02_s77522_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "overtaking_high_validation_moderate_v6_r02_s77522_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "overtaking_high_validation_moderate_v6_r02_s77522",
+      "status": "complete",
+      "task_index": 53
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_low_validation_moderate_v6_r00_s77600_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_low_validation_moderate_v6_r00_s77600_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/opposite_streams_low_validation_moderate_v6_r00_s77600_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "a357e004092db5972ddf7e529597df58c4edc740f33e4f71c1b3c2bcd7c5a972",
+          "resumed": true,
+          "sample_count": 893,
+          "stream_path": "data/raw/opposite_streams_low_validation_moderate_v6_r00_s77600_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "opposite_streams_low_validation_moderate_v6_r00_s77600_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "opposite_streams_low_validation_moderate_v6_r00_s77600",
+      "status": "complete",
+      "task_index": 54
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_low_validation_moderate_v6_r01_s77601_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_low_validation_moderate_v6_r01_s77601_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/opposite_streams_low_validation_moderate_v6_r01_s77601_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "968d60daf7bb212d23a3fd122209cac7e79d82ec3f24e37a0ddfe88dc6e5d398",
+          "resumed": true,
+          "sample_count": 892,
+          "stream_path": "data/raw/opposite_streams_low_validation_moderate_v6_r01_s77601_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "opposite_streams_low_validation_moderate_v6_r01_s77601_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "opposite_streams_low_validation_moderate_v6_r01_s77601",
+      "status": "complete",
+      "task_index": 55
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_low_validation_moderate_v6_r02_s77602_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_low_validation_moderate_v6_r02_s77602_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/opposite_streams_low_validation_moderate_v6_r02_s77602_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "15f1051dd7cd8df10f9f51dd74d6591638936d43e422f8267c404a5472598d4b",
+          "resumed": true,
+          "sample_count": 893,
+          "stream_path": "data/raw/opposite_streams_low_validation_moderate_v6_r02_s77602_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "opposite_streams_low_validation_moderate_v6_r02_s77602_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "opposite_streams_low_validation_moderate_v6_r02_s77602",
+      "status": "complete",
+      "task_index": 56
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_medium_validation_moderate_v6_r00_s77610_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_medium_validation_moderate_v6_r00_s77610_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/opposite_streams_medium_validation_moderate_v6_r00_s77610_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "bd76306d4689d4d050960eb9344359ea0c394906f4e49e7a532eaa3779e167c7",
+          "resumed": true,
+          "sample_count": 882,
+          "stream_path": "data/raw/opposite_streams_medium_validation_moderate_v6_r00_s77610_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "opposite_streams_medium_validation_moderate_v6_r00_s77610_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "opposite_streams_medium_validation_moderate_v6_r00_s77610",
+      "status": "complete",
+      "task_index": 57
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_medium_validation_moderate_v6_r01_s77611_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_medium_validation_moderate_v6_r01_s77611_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/opposite_streams_medium_validation_moderate_v6_r01_s77611_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "69ad991133bec6e5169a2c93dacd5aa3a54e40469b6ff6ab9ab28cba5ae8f381",
+          "resumed": true,
+          "sample_count": 891,
+          "stream_path": "data/raw/opposite_streams_medium_validation_moderate_v6_r01_s77611_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "opposite_streams_medium_validation_moderate_v6_r01_s77611_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "opposite_streams_medium_validation_moderate_v6_r01_s77611",
+      "status": "complete",
+      "task_index": 58
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_medium_validation_moderate_v6_r02_s77612_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_medium_validation_moderate_v6_r02_s77612_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/opposite_streams_medium_validation_moderate_v6_r02_s77612_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "741e890f7e288749ba32312390b6ba80bcffd1e42fdae958948e59a236055a93",
+          "resumed": true,
+          "sample_count": 893,
+          "stream_path": "data/raw/opposite_streams_medium_validation_moderate_v6_r02_s77612_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "opposite_streams_medium_validation_moderate_v6_r02_s77612_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "opposite_streams_medium_validation_moderate_v6_r02_s77612",
+      "status": "complete",
+      "task_index": 59
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_high_validation_moderate_v6_r00_s77620_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_high_validation_moderate_v6_r00_s77620_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/opposite_streams_high_validation_moderate_v6_r00_s77620_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "335bf42dc848727403ec73b4ed3acd466df650c194234a242a885d9186fe383a",
+          "resumed": true,
+          "sample_count": 893,
+          "stream_path": "data/raw/opposite_streams_high_validation_moderate_v6_r00_s77620_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "opposite_streams_high_validation_moderate_v6_r00_s77620_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "opposite_streams_high_validation_moderate_v6_r00_s77620",
+      "status": "complete",
+      "task_index": 60
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_high_validation_moderate_v6_r01_s77621_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": null,
+          "outcome": "SIMULATOR_FAILURE",
+          "outcome_path": "data/raw/opposite_streams_high_validation_moderate_v6_r01_s77621_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "resumed": true,
+          "stream_path": null
+        },
+        {
+          "attempt": 1,
+          "episode_id": "opposite_streams_high_validation_moderate_v6_r01_s77621_eval_base_rcd9387f1414a_a1_dwb",
+          "metadata_path": "data/raw/opposite_streams_high_validation_moderate_v6_r01_s77621_eval_base_rcd9387f1414a_a1_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/opposite_streams_high_validation_moderate_v6_r01_s77621_eval_base_rcd9387f1414a_a1_dwb.outcome.json",
+          "raw_sha256": "70cf4f4bfc9ef904ad445b7e96b2f47d62771968c0768a291745c15eb466d985",
+          "resumed": true,
+          "sample_count": 892,
+          "stream_path": "data/raw/opposite_streams_high_validation_moderate_v6_r01_s77621_eval_base_rcd9387f1414a_a1_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "opposite_streams_high_validation_moderate_v6_r01_s77621_eval_base_rcd9387f1414a_a1_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "opposite_streams_high_validation_moderate_v6_r01_s77621",
+      "status": "complete",
+      "task_index": 61
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_high_validation_moderate_v6_r02_s77622_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_high_validation_moderate_v6_r02_s77622_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/opposite_streams_high_validation_moderate_v6_r02_s77622_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "9ed1c47f84bcdd59e5dc41e8f6f3b4a77bde5ac547a7911136ee71cd98e6cfb5",
+          "resumed": true,
+          "sample_count": 903,
+          "stream_path": "data/raw/opposite_streams_high_validation_moderate_v6_r02_s77622_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "opposite_streams_high_validation_moderate_v6_r02_s77622_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "opposite_streams_high_validation_moderate_v6_r02_s77622",
+      "status": "complete",
+      "task_index": 62
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_low_validation_moderate_v6_r00_s77700_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_low_validation_moderate_v6_r00_s77700_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/temporary_blockage_low_validation_moderate_v6_r00_s77700_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "c83c88a5b7c933e0ddc9a0d1c89e8cfc5619413c45f2fff917c6ffa6962ee567",
+          "resumed": true,
+          "sample_count": 714,
+          "stream_path": "data/raw/temporary_blockage_low_validation_moderate_v6_r00_s77700_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "temporary_blockage_low_validation_moderate_v6_r00_s77700_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "temporary_blockage_low_validation_moderate_v6_r00_s77700",
+      "status": "complete",
+      "task_index": 63
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_low_validation_moderate_v6_r01_s77701_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_low_validation_moderate_v6_r01_s77701_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/temporary_blockage_low_validation_moderate_v6_r01_s77701_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "ee514d61c8cc2ea8191233404d3c7883ff9106468406cb95eab0b86d5ee874dd",
+          "resumed": true,
+          "sample_count": 341,
+          "stream_path": "data/raw/temporary_blockage_low_validation_moderate_v6_r01_s77701_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "temporary_blockage_low_validation_moderate_v6_r01_s77701_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "temporary_blockage_low_validation_moderate_v6_r01_s77701",
+      "status": "complete",
+      "task_index": 64
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_low_validation_moderate_v6_r02_s77702_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_low_validation_moderate_v6_r02_s77702_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/temporary_blockage_low_validation_moderate_v6_r02_s77702_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "90515e5ef878a0ea25cee0a92fa77acce647a649b28ab1590e5f2cfe8aa5b928",
+          "resumed": true,
+          "sample_count": 337,
+          "stream_path": "data/raw/temporary_blockage_low_validation_moderate_v6_r02_s77702_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "temporary_blockage_low_validation_moderate_v6_r02_s77702_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "temporary_blockage_low_validation_moderate_v6_r02_s77702",
+      "status": "complete",
+      "task_index": 65
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_medium_validation_moderate_v6_r00_s77710_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_medium_validation_moderate_v6_r00_s77710_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/temporary_blockage_medium_validation_moderate_v6_r00_s77710_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "8b0ca442e7094b7c8f58ce9a25960ffa169c13d2995b849d39ceecf792cd5c4a",
+          "resumed": true,
+          "sample_count": 387,
+          "stream_path": "data/raw/temporary_blockage_medium_validation_moderate_v6_r00_s77710_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "temporary_blockage_medium_validation_moderate_v6_r00_s77710_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "temporary_blockage_medium_validation_moderate_v6_r00_s77710",
+      "status": "complete",
+      "task_index": 66
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_medium_validation_moderate_v6_r01_s77711_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_medium_validation_moderate_v6_r01_s77711_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/temporary_blockage_medium_validation_moderate_v6_r01_s77711_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "472ef8a9844dfe00749c7aaaddb719a2a395b8a525e8b32e2e1db89f5d60ea47",
+          "resumed": true,
+          "sample_count": 321,
+          "stream_path": "data/raw/temporary_blockage_medium_validation_moderate_v6_r01_s77711_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "temporary_blockage_medium_validation_moderate_v6_r01_s77711_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "temporary_blockage_medium_validation_moderate_v6_r01_s77711",
+      "status": "complete",
+      "task_index": 67
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_medium_validation_moderate_v6_r02_s77712_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_medium_validation_moderate_v6_r02_s77712_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/temporary_blockage_medium_validation_moderate_v6_r02_s77712_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "38abae7e890265c74cee6d3fc7bde44c4e7b9099b7456f3585d2f9e52ca143dd",
+          "resumed": true,
+          "sample_count": 752,
+          "stream_path": "data/raw/temporary_blockage_medium_validation_moderate_v6_r02_s77712_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "temporary_blockage_medium_validation_moderate_v6_r02_s77712_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "temporary_blockage_medium_validation_moderate_v6_r02_s77712",
+      "status": "complete",
+      "task_index": 68
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_high_validation_moderate_v6_r00_s77720_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_high_validation_moderate_v6_r00_s77720_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/temporary_blockage_high_validation_moderate_v6_r00_s77720_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "8ca014f415d9f718d1e61b83020a0f6dbd8b4aa25bc7d24d782098686a079163",
+          "resumed": true,
+          "sample_count": 319,
+          "stream_path": "data/raw/temporary_blockage_high_validation_moderate_v6_r00_s77720_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "temporary_blockage_high_validation_moderate_v6_r00_s77720_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 0,
+      "scenario_id": "temporary_blockage_high_validation_moderate_v6_r00_s77720",
+      "status": "complete",
+      "task_index": 69
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_high_validation_moderate_v6_r01_s77721_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_high_validation_moderate_v6_r01_s77721_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/temporary_blockage_high_validation_moderate_v6_r01_s77721_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "a78d4f1ff98ba6406beb5204ec9d51aec93a08e1b743979306cc9a46e3cf4496",
+          "resumed": true,
+          "sample_count": 293,
+          "stream_path": "data/raw/temporary_blockage_high_validation_moderate_v6_r01_s77721_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "temporary_blockage_high_validation_moderate_v6_r01_s77721_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 1,
+      "scenario_id": "temporary_blockage_high_validation_moderate_v6_r01_s77721",
+      "status": "complete",
+      "task_index": 70
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_high_validation_moderate_v6_r02_s77722_eval_base_rcd9387f1414a_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_high_validation_moderate_v6_r02_s77722_eval_base_rcd9387f1414a_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/temporary_blockage_high_validation_moderate_v6_r02_s77722_eval_base_rcd9387f1414a_a0_dwb.outcome.json",
+          "raw_sha256": "26633f48d92fd7a2327a90011e3840ea1cd5878a843832e46c410bf3d690a6e6",
+          "resumed": true,
+          "sample_count": 286,
+          "stream_path": "data/raw/temporary_blockage_high_validation_moderate_v6_r02_s77722_eval_base_rcd9387f1414a_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "",
+      "checkpoint_sha256": "",
+      "episode_id": "temporary_blockage_high_validation_moderate_v6_r02_s77722_eval_base_rcd9387f1414a_a0_dwb",
+      "method": "base",
+      "replicate": 2,
+      "scenario_id": "temporary_blockage_high_validation_moderate_v6_r02_s77722",
+      "status": "complete",
+      "task_index": 71
+    }
+  ],
+  "run_id": "cd9387f1414a",
+  "schema_version": 1,
+  "split": "validation",
+  "split_manifest": "scenarios/splits/moderate_v6_validation.yaml",
+  "split_manifest_sha256": "f5847bcea4999bc5537f0e648cf76020fcf148e839b9908cc38eaffe21844d0f",
+  "timeout_s": 240.0,
+  "worker_errors": []
+}

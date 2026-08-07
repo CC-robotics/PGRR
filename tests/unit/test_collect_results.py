@@ -217,6 +217,47 @@ def test_collection_resolves_retry_and_computes_navigation_metrics(tmp_path: Pat
     assert statistics["valid_pair_count"] == 1
     assert statistics["excluded_episode_counts"]["bc"]["simulator_failure"] == 1
 
+    collection_dir = tmp_path / "collection_only"
+    collection_results = collection_dir / "results.parquet"
+    collection_summary = collection_dir / "collector_summary.csv"
+    module.main(
+        [
+            "--manifest",
+            str(manifest_path),
+            "--run-manifest",
+            str(tmp_path / "run_manifest.json"),
+            "--raw-dir",
+            str(raw_dir),
+            "--results",
+            str(collection_results),
+            "--summary",
+            str(collection_summary),
+            "--collection-only",
+        ]
+    )
+    collected = pd.read_parquet(collection_results)
+    method_summary = pd.read_csv(collection_summary)
+    assert len(collected) == 2
+    assert set(method_summary["row_type"]) == {"method_summary"}
+    assert int(method_summary["simulator_failure_count"].sum()) == 1
+    assert int(method_summary["excluded_attempt_count"].sum()) == 1
+    assert not (collection_dir / "statistics.json").exists()
+
+    with pytest.raises(ValueError, match=r"must differ.*collection-only"):
+        module.write_outputs(
+            manifest_path=manifest_path,
+            raw_dir=raw_dir,
+            run_manifest_path=tmp_path / "run_manifest.json",
+            results_path=tmp_path / "unsafe_results.parquet",
+            summary_path=tmp_path / "unsafe_summary.csv",
+            statistics_path=tmp_path / "unsafe_statistics.json",
+            reference_policy="base",
+            treatment_policy="base",
+            bootstrap_samples=25,
+            bootstrap_seed=4,
+        )
+    assert not (tmp_path / "unsafe_statistics.json").exists()
+
 
 def test_collection_refuses_missing_algorithm_artifact(tmp_path: Path) -> None:
     module = _module()

@@ -28,6 +28,7 @@ def _minimal_catalog() -> dict[str, object]:
     }
     return {
         "schema_version": 1,
+        "benchmark_id": MODULE.EXPECTED_BENCHMARK_ID,
         "densities": {"low": 1, "medium": 2, "high": 4},
         "families": [
             {"id": family, "layout": layouts[family]} for family in MODULE.EXPECTED_FAMILIES
@@ -47,6 +48,10 @@ def _write_catalog(path: Path, payload: dict[str, object] | None = None) -> Path
 
 
 def test_method_figure_inventory_and_palette_are_fixed() -> None:
+    assert MODULE.DEFAULT_SCENARIO_CONFIG == (
+        ROOT / "configs/experiments/scenario_catalog_moderate_v6.yaml"
+    )
+    assert MODULE.EXPECTED_BENCHMARK_ID == "moderate_social_navigation_v6"
     assert len(MODULE._candidate_actions()) == 21
     assert MODULE.SPECIAL_ACTIONS == (
         (21, "WAIT"),
@@ -127,6 +132,19 @@ def test_scenario_inventory_rejects_semantic_drift(tmp_path: Path) -> None:
         assert "unexpected density inventory" in str(error)
     else:  # pragma: no cover - explicit assertion gives a better failure message.
         raise AssertionError("density drift was accepted")
+
+
+def test_scenario_inventory_rejects_non_v6_catalog(tmp_path: Path) -> None:
+    payload = _minimal_catalog()
+    payload["benchmark_id"] = "moderate_social_navigation_v5"
+    catalog = _write_catalog(tmp_path / "old_catalog.yaml", payload)
+
+    try:
+        MODULE._load_scenario_inventory(catalog)
+    except ValueError as error:
+        assert "benchmark drift" in str(error)
+    else:  # pragma: no cover - explicit assertion gives a better failure message.
+        raise AssertionError("non-v6 catalog was accepted")
 
 
 def test_method_generator_has_no_result_or_split_manifest_dependency() -> None:

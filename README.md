@@ -1,4 +1,4 @@
-# PGRR: Planning-Guided Recovery and Rejoin
+# PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation
 
 PGRR is a failure-triggered recovery layer for dynamic social navigation. A
 classical ROS2 navigation stack controls routine PointGoal motion. Learning is
@@ -7,16 +7,10 @@ oscillation, deadlock, or planner failure. The learned policy selects an
 interpretable temporary subgoal or recovery mode; it does not continuously
 replace the local planner or command base velocity.
 
-The four letters expand to **Planning-Guided Recovery and Rejoin**. The phrase
-*failure-triggered* describes when the layer intervenes: the nominal planner
-retains control until observable failure evidence persists. PGRR is an internal
-and descriptive system name, not a claim that the acronym is unique in the
-robotics literature.
-
-The paper title is:
-
-> *Planning-Guided Failure-Triggered Recovery via Imitation Learning for
-> Dynamic Social Navigation*
+The release and paper name is exactly **PGRR: Planning-Guided
+Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation**.
+Historical `ramp_*`/`RAMP_*` package, environment, and runtime identifiers are
+compatibility interfaces, not the public method name.
 
 > **Evidence status.** The selected release uses a privileged rollout expert,
 > Uniform BC, a completed two-round DAgger workflow, planning/action masking,
@@ -25,9 +19,19 @@ The paper title is:
 > aggregate with a train-only coverage shard; the second-round candidate was
 > evaluated but not selected. PPO and a learned failure detector are not
 > claimed as completed contributions. Final paper numbers are accepted only
-> from the complete moderate-v5 five-method artifacts under
+> from the complete moderate-v6 five-method artifacts under
 > `outputs/moderate/final/`; validation probes and previous evaluations are
-> never copied into the paper.
+> never copied into the paper. Moderate-v5 is retained as a rejected
+> calibration audit and cannot be promoted into a v6 result snapshot.
+
+> **Frozen historical v1 evidence—not a moderate-v6 result.** The completed
+> 64/64 logical-episode audit assigned 24 matched conditions each to Base and
+> PGRR, plus eight high-density conditions each to Standard and Heuristic.
+> PGRR recorded 0/24 collisions versus Base 19/24, but PGRR also timed out in
+> 16/24 episodes versus Base 0/24. Goal reaching was 8/24 for PGRR versus 5/24
+> for Base, and the adjusted success comparison was not significant. This is a
+> safety--completion trade-off, not proof of a v6 advantage; it remains visible
+> in summaries but can never populate moderate-v6 final tables or figures.
 
 The closed-loop evaluation is a five-method suite: four baselines plus the
 PGRR main method. The baselines are DWB, Standard Nav2 recovery, deterministic
@@ -119,9 +123,12 @@ The expert/action illustration is explicitly schematic and is available at
 
 ## Environments
 
-The verified online runtime is the pinned Arena ROS2 Humble Gazebo fallback
-with Jackal, Nav2 DWB, Xvfb, and software rendering. The release does not claim
-Flatland, Arena 5, cross-simulator transfer, or hardware validation. Exact
+The verified online runtime is Ubuntu 22.04 with the pinned Arena ROS2 Humble
+Gazebo fallback, Jackal, Nav2 DWB, planar LiDAR, Xvfb, and software rendering.
+Seeded LiDAR-visible cylindrical pedestrian proxies provide deterministic
+dynamic interactions; they are not a validated model of human intent. The
+release does not claim Flatland, Arena 5, a second planner, cross-simulator
+transfer, hardware validation, or formal safety. Exact
 runtime provenance is in
 [`third_party/arena_commits.lock`](third_party/arena_commits.lock) and
 [`third_party/dependency_manifest.md`](third_party/dependency_manifest.md).
@@ -138,8 +145,8 @@ remove Conda and foreign ROS variables before starting the pinned Humble stack.
 
 ## Verified Arena/Gazebo evidence
 
-The repository contains a real Arena/Gazebo GUI capture from a validation
-doorway-bottleneck episode with Jackal and Nav2 DWB:
+The repository contains a real Arena/Gazebo GUI capture from an audited frozen
+moderate-v5 validation demonstration with Jackal and Nav2 DWB:
 
 - [`paper/figures/runtime_gazebo_doorway_bottleneck_medium.png`](paper/figures/runtime_gazebo_doorway_bottleneck_medium.png);
 - [`outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json`](outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json);
@@ -148,7 +155,10 @@ doorway-bottleneck episode with Jackal and Nav2 DWB:
 The metadata binds the pixels to the scenario, runtime, terminal record,
 project/Arena revisions, and screenshot checksum. This is qualitative evidence
 that the declared runtime and scenario actually executed. It is not substituted
-for the complete paired benchmark or used to infer an aggregate success rate.
+for the complete paired benchmark, is not a camera frame from the locked v6
+statistical run, and is not used to infer an aggregate success rate. Generated
+trajectory/keyframe figures are labelled telemetry reconstructions and are
+never described as simulator camera screenshots.
 
 ## Installation and build
 
@@ -186,9 +196,9 @@ The smoke test checks bounded startup and cleanup, `/clock`, TF, LiDAR,
 odometry, robot spawning, and Nav2 goal submission. Goal acceptance is not an
 algorithm-success result.
 
-## Moderate-v5 benchmark
+## Moderate-v6 benchmark
 
-The test-frozen benchmark contains eight interaction families:
+The preregistered, test-sealed benchmark candidate contains eight interaction families:
 
 1. head-on corridor;
 2. doorway bottleneck;
@@ -201,7 +211,7 @@ The test-frozen benchmark contains eight interaction families:
 
 Low, medium, and high density contain one, two, and four pedestrians. All three
 splits share the same map and eight family templates; train, validation, and
-test use disjoint seed blocks, scenario IDs, and compiled physical
+test use disjoint v6 seed blocks, scenario IDs, and compiled physical
 realizations. This is held-out-interaction evaluation, not unseen-map or
 unseen-template generalization. The scenario overview is
 [`paper/figures/scenario_overview.pdf`](paper/figures/scenario_overview.pdf).
@@ -209,14 +219,20 @@ unseen-template generalization. The scenario overview is
 Validation has three repetitions per family--density cell: 72 conditions per
 method and 360 logical method--episodes across the five compared methods. It is
 the only split used for checkpoint and configuration selection. The planned held-out
-[`moderate_v5_test.yaml`](scenarios/splits/moderate_v5_test.yaml) manifest has
+[`moderate_v6_test.yaml`](scenarios/splits/moderate_v6_test.yaml) manifest has
 five repetitions per family--density cell: 120 conditions per method and 600
 logical method--episodes total across five methods.
-Moderate-v5 was constructed only from moderate-v4 validation evidence to repair
-invalid static overlaps and preserve physically recoverable interactions. Its
-test seeds and hashes were held out until the code and configuration were
-frozen; the complete rationale is in
-[`docs/moderate_v5_benchmark.md`](docs/moderate_v5_benchmark.md).
+
+Moderate-v5 remains an immutable rejected-calibration audit: Base reached
+57/72 validation goals (79.17%), above the preregistered 75% ceiling, so its
+test was never opened. Moderate-v6 retains all v5 static geometry and changes
+only the preregistered Crossing Flow timing band, using new train, validation,
+and test seed blocks. The change was motivated solely by v5 validation evidence
+that actors cleared the intersection before the robot arrived. V6 must pass the
+unchanged Base calibration before its sealed test is eligible. The declaration
+is [`scenario_catalog_moderate_v6.yaml`](configs/experiments/scenario_catalog_moderate_v6.yaml),
+and the audit trail is preserved in [`CURRENT_STATUS.md`](CURRENT_STATUS.md)
+and [`DECISIONS.md`](DECISIONS.md).
 
 The publication comparison uses the same 120 conditions for all five methods:
 
@@ -267,6 +283,7 @@ Then start the complete five-method test:
 
 ```bash
 make evaluate-flatland \
+  MODERATE_SPLIT_MANIFEST=scenarios/splits/moderate_v6_test.yaml \
   EVALUATION_JOBS=6 \
   EVALUATION_TIMEOUT_S=240 \
   MODERATE_ANALYSIS_DIR=outputs/moderate/final
@@ -350,10 +367,15 @@ white background, 2D vector graphics, three functional color groups at most,
 shape/hatch redundancy, and double-column-readable typography. Telemetry media
 are explicitly labelled reconstructions; simulator screenshots must come from
 an actual captured run and are never synthesized by the paper scripts.
-When a verified capture is available, the manuscript includes
+The verified frozen-scene capture is
 `paper/figures/runtime_gazebo_doorway_bottleneck_medium.png` together with its
-machine-readable provenance in `outputs/figures/runtime/`. The paper compiles
-without that optional qualitative image until a real capture has succeeded.
+machine-readable provenance in `outputs/figures/runtime/`. It is qualitative
+runtime evidence, not a camera frame from a locked v6 statistical episode.
+Result-bearing report/PPT builds also require a matched Base--PGRR telemetry
+sidecar generated from raw JSONL whose SHA256 agrees with the approved Parquet.
+The validation selector is outcome-independent and preregistered. The locked
+test uses the frozen deterministic media rule implemented by
+`render_episode_media.py --matched-final` and records that rule verbatim.
 
 ## Paper, technical report, and presentation
 
@@ -377,23 +399,41 @@ dedicated immutable snapshot location; it is never read directly while a
 runner may still be writing it:
 
 ```bash
+python scripts/report/build_matched_run_evidence.py \
+  --stage validation \
+  --results outputs/moderate/v6_validation/results.parquet \
+  --raw-dir data/raw \
+  --output outputs/moderate/v6_validation/matched_base_pgrr_evidence.json
+
+# Copy results, statistics, and matched evidence into the read-only snapshot.
 REPORT_STAGE=validation \
 REPORT_RESULTS=outputs/report_inputs/validation/results.parquet \
 REPORT_STATISTICS=outputs/report_inputs/validation/pairwise_statistics.json \
+REPORT_MATCHED_EVIDENCE=outputs/report_inputs/validation/matched_base_pgrr_evidence.json \
 make technical-report presentation
 ```
 
-The final test documents accept only the locked moderate-v5 result:
+The final test documents accept only the locked moderate-v6 result:
 
 ```bash
+python scripts/paper/render_episode_media.py \
+  --matched-final \
+  --results outputs/moderate/final/results.parquet \
+  --raw-dir data/raw \
+  --scenario-root . \
+  --figure-dir outputs/moderate/final/media \
+  --evidence-output outputs/moderate/final/matched_base_pgrr_evidence.json
+
 REPORT_STAGE=test \
 REPORT_RESULTS=outputs/moderate/final/results.parquet \
 REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
+REPORT_MATCHED_EVIDENCE=outputs/moderate/final/matched_base_pgrr_evidence.json \
 make technical-report presentation
 ```
 
 The stage-aware builder rejects historical `outputs/final`, pilot,
-calibration, smoke, and live validation paths before opening them. Therefore
+calibration, smoke, rejected v5, `outputs/moderate/v6_validation`, and every
+`outputs/moderate/v6_validation_*` path before opening them. Therefore
 the old 64-episode artifact and exploratory runs can never populate a final
 report slide, table, macro, or claim. Validation documents remain explicitly
 labelled as non-test evidence.
@@ -402,17 +442,20 @@ labelled as non-test evidence.
 
 ```text
 configs/final/ei_gazebo.yaml
-configs/experiments/scenario_catalog_moderate_v5.yaml
+configs/experiments/scenario_catalog_moderate_v6.yaml
 configs/planner/baselines.yaml
-scenarios/splits/moderate_v5_test.yaml
+scenarios/splits/moderate_v6_test.yaml
 checkpoints/bc/uniform_scenario/best.onnx
 checkpoints/dagger/coverage_safety_aligned/best.onnx
-outputs/moderate/v5_validation/calibration_report.json
+outputs/moderate/v6_validation/calibration_report.json
 outputs/moderate/final/episode_manifest.parquet
 outputs/moderate/final/run_manifest.json
 outputs/moderate/final/results.parquet
 outputs/moderate/final/summary.csv
 outputs/moderate/final/pairwise_statistics.json
+outputs/moderate/final/matched_base_pgrr_evidence.json
+outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf
+outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf
 outputs/moderate/final/failure_analysis.md
 outputs/moderate/final/artifact_manifest.json
 outputs/moderate/final/offline_policy_ablation.csv
@@ -467,8 +510,9 @@ to evidence in
   formal collision-avoidance guarantee.
 - Closed-loop outcomes combine the detector, mask, policy, Nav2, and supervisor;
   they do not identify a causal contribution for one component.
-- PPO, learned failure prediction, cross-simulator transfer, and hardware tests
-  are not completed claims.
+- PPO, a learned failure detector, a second planner, Flatland,
+  cross-simulator transfer, hardware tests, and formal safety are not completed
+  claims.
 
 ## Repository map
 

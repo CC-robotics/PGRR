@@ -41,13 +41,39 @@ def test_moderate_targets_forward_expected_condition_count_override() -> None:
         assert '--expected-condition-count "120"' not in command
 
 
-def test_final_runner_uses_real_python_entrypoint_and_five_methods() -> None:
-    command = _dry_run("evaluate-flatland")
+def test_final_runner_uses_frozen_v6_protocol_and_six_workers() -> None:
+    command = _dry_run("evaluate-final")
+    assert "calibrate_moderate.py" in command
+    assert (
+        '--verify-report "outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json"'
+        in command
+    )
     assert "scripts/evaluate/run_experiment.py" in command
     assert "scripts/evaluate/run_experiment.sh" not in command
-    assert '--split-manifest "scenarios/splits/moderate_v5_test.yaml"' in command
+    assert '--split-manifest "scenarios/splits/moderate_v6_test.yaml"' in command
     assert "--methods base standard heuristic bc_uniform pgrr" in command
+    assert '--jobs "6"' in command
     assert '--output-dir "outputs/moderate/final"' in command
+
+
+def test_legacy_flatland_target_is_an_exact_final_evaluation_alias() -> None:
+    assert _dry_run("evaluate-flatland") == _dry_run("evaluate-final")
+
+
+def test_base_only_calibration_never_opens_the_test_split() -> None:
+    command = _dry_run("evaluate-calibration")
+    assert (
+        '--split validation --split-manifest "scenarios/splits/moderate_v6_validation.yaml"'
+        in command
+    )
+    assert "--methods base" in command
+    assert "--methods base standard" not in command
+    assert '--jobs "6"' in command
+    assert "collect_results.py" in command
+    assert "calibrate_moderate.py" in command
+    assert "--expected-conditions 72" in command
+    assert "moderate_v6_test.yaml" not in command
+    assert "--split test" not in command
 
 
 def test_paper_target_orders_complete_moderate_pipeline() -> None:

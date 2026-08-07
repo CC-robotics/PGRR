@@ -9,10 +9,15 @@
 \usepackage{url}
 
 \graphicspath{{figures/}}
-\input{generated/moderate_result_macros.tex}
+\newif\ifmoderateresults
+\IfFileExists{generated/moderate_result_macros.tex}{%
+  \moderateresultstrue
+  \input{generated/moderate_result_macros.tex}%
+}{%
+  \moderateresultsfalse
+}
 
-\title{Planning-Guided Failure-Triggered Recovery via Imitation Learning\\
-for Dynamic Social Navigation}
+\title{PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation}
 
 \author{\IEEEauthorblockN{Anonymous Authors}}
 
@@ -21,8 +26,8 @@ for Dynamic Social Navigation}
 
 \begin{abstract}
 Classical navigation is reliable in routine mapped environments yet remains
-brittle under reciprocal pedestrian interactions.  We present
-Planning-Guided Recovery and Rejoin (PGRR), a failure-triggered layer that
+brittle under reciprocal pedestrian interactions.  We present PGRR,
+Planning-Guided Failure-Triggered Recovery and Rejoin, a layer that
 preserves Nav2 DWB for nominal navigation and invokes a learned policy only
 when observable risk or progress rules persist.  Rather than commanding
 velocity, the policy selects among 21 temporary subgoals and four interpretable
@@ -30,15 +35,25 @@ recovery modes.  A planning mask rejects infeasible decisions, and an
 independent stopping-distance supervisor may override motion.  A privileged
 short-horizon planner supplies recovery demonstrations for behavior cloning
 and a two-round DAgger workflow; checkpoint selection uses validation only.
-Deployment uses only LiDAR and navigation history.  The held-out,
-three-density Gazebo benchmark evaluates \ModerateMethodCount{} methods on the same
-\ModeratePairCount{} conditions each (\ModerateEpisodeCount{} method--episodes).
+Deployment uses only LiDAR and navigation history.
+\ifmoderateresults
+The held-out, three-density Gazebo benchmark evaluates
+\ModerateMethodCount{} methods on the same \ModeratePairCount{} conditions each
+(\ModerateEpisodeCount{} method--episodes).
 PGRR reaches \ModeratePGRRSuccessRate{} of goals versus
 \ModerateBaseSuccessRate{} for DWB, with paired PGRR-minus-DWB goal, collision,
 and timeout differences of \ModeratePGRRSuccessDifference{},
 \ModeratePGRRCollisionDifference{}, and \ModeratePGRRTimeoutDifference{},
 respectively.  Reporting all terminal outcomes separately prevents reduced
 contact from being conflated with task completion.
+\else
+The final five-method benchmark is artifact-gated: this source revision makes
+no held-out numerical claim until the complete v6 result manifest, raw logs,
+and generated paired statistics are present.  The preceding v5 validation
+protocol was rejected before test execution because Base DWB exceeded its
+predeclared success-rate ceiling; v6 was then frozen with new validation and
+test seeds while its test split remained sealed.
+\fi
 \end{abstract}
 
 \section{Introduction}
@@ -76,10 +91,10 @@ contact from being conflated with task completion.
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.96\textwidth]{scenario_overview.pdf}
-  \caption{The eight deterministic interaction-family templates used in the
-  held-out three-density Gazebo benchmark.  Arrows show
-  nominal robot and pedestrian routes; each split compiles separate seeded
-  physical realizations at low, medium, and high density on the same map.}
+  \caption{Schematic, not runtime imagery: the eight deterministic
+  interaction-family templates in the three-density Gazebo benchmark.  Arrows
+  show nominal robot and pedestrian routes; each split compiles separate
+  seeded physical realizations on the same map.}
   \label{fig:scenarios}
 \end{figure*}
 \input{sections/experimental_setup.tex}

@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import re
 import shutil
 import subprocess
@@ -96,6 +98,17 @@ def validate_deck(pptx: Path, notes: Path, pdf: Path | None = None) -> None:
         ]
         if text_found:
             raise DeckValidationError(f"PPTX contains forbidden visible placeholders: {text_found}")
+        required_visible = (
+            "Planning-Guided Failure-Triggered Recovery and Rejoin",
+            "Ubuntu 22.04 / ROS2 Humble",
+            "遥测重建",
+            "不是 camera screenshot",
+        )
+        missing_visible = [token for token in required_visible if token not in joined_visible_text]
+        if missing_visible:
+            raise DeckValidationError(
+                f"PPTX omits required public-name/runtime/evidence labels: {missing_visible}"
+            )
         core = archive.read("docProps/core.xml").decode("utf-8", errors="replace")
         creator = re.search(r"<dc:creator>(.*?)</dc:creator>", core)
         if creator and creator.group(1) not in {"", "Charles Chen"}:
@@ -103,6 +116,41 @@ def validate_deck(pptx: Path, notes: Path, pdf: Path | None = None) -> None:
         media = [name for name in archive.namelist() if name.startswith("ppt/media/")]
         if any(archive.getinfo(name).file_size == 0 for name in media):
             raise DeckValidationError("PPTX contains an empty media relationship")
+        runtime_metadata = json.loads(
+            (
+                PROJECT_ROOT
+                / "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json"
+            ).read_text(encoding="utf-8")
+        )
+        runtime_sha = str(runtime_metadata.get("artifacts", {}).get("screenshot_sha256", ""))
+        media_hashes = {hashlib.sha256(archive.read(name)).hexdigest() for name in media}
+        if runtime_sha not in media_hashes:
+            raise DeckValidationError("PPTX does not embed the SHA-verified Gazebo GUI capture")
+        if "stage=test" in core:
+            required_final_text = (
+                "episode ID",
+                "pixel SHA256",
+                "PGRR 恢复时序",
+                "telemetry reconstruction",
+            )
+            missing_final_text = [
+                token for token in required_final_text if token not in joined_visible_text
+            ]
+            if missing_final_text:
+                raise DeckValidationError(
+                    f"locked-test PPTX omits final evidence provenance: {missing_final_text}"
+                )
+            final_rasters = (
+                PROJECT_ROOT / "presentation/generated/result_matched_trajectory.png",
+                PROJECT_ROOT / "presentation/generated/result_matched_recovery_timeline.png",
+            )
+            for raster in final_rasters:
+                if not raster.is_file() or hashlib.sha256(raster.read_bytes()).hexdigest() not in (
+                    media_hashes
+                ):
+                    raise DeckValidationError(
+                        f"locked-test PPTX does not embed verified matched media: {raster.name}"
+                    )
 
     if not notes.is_file():
         raise DeckValidationError(f"speaker notes are missing: {notes}")

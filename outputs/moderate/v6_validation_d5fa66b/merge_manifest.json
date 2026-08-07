@@ -1,0 +1,135 @@
+{
+  "artifact_type": "validation_results_merge",
+  "condition_count": 72,
+  "inputs": [
+    {
+      "effective_jobs": 1,
+      "episode_manifest": "outputs/moderate/v6_validation_base_d5fa66b/episode_manifest.parquet",
+      "methods": [
+        "base"
+      ],
+      "requested_jobs": 1,
+      "results_path": "outputs/moderate/v6_validation_base_d5fa66b/results.parquet",
+      "results_sha256": "08171f5c334ad2a7faf5edf45bf20964c715ba53578f2190bd4fcf44861b85f3",
+      "row_count": 72,
+      "run_id": "cd9387f1414a",
+      "run_manifest_path": "outputs/moderate/v6_validation_base_d5fa66b/run_manifest.json",
+      "run_manifest_sha256": "6d6b2e81f5789c0a3ce1748a659db4554d8432c542c82e31ae86217ace9a5921",
+      "source_attempt_manifests": [],
+      "split_manifest": "scenarios/splits/moderate_v6_validation.yaml",
+      "split_manifest_sha256": "f5847bcea4999bc5537f0e648cf76020fcf148e839b9908cc38eaffe21844d0f"
+    },
+    {
+      "effective_jobs": 1,
+      "episode_manifest": "outputs/moderate/v6_validation_methods_d5fa66b/episode_manifest.parquet",
+      "methods": [
+        "standard",
+        "heuristic",
+        "bc_uniform",
+        "pgrr"
+      ],
+      "requested_jobs": 1,
+      "results_path": "outputs/moderate/v6_validation_methods_d5fa66b/results.parquet",
+      "results_sha256": "0d95701900ee0f7722db7d4e8c95abd5e941e9132a2f8c7c7284f262dfbb2b82",
+      "row_count": 288,
+      "run_id": "f5430f849348",
+      "run_manifest_path": "outputs/moderate/v6_validation_methods_d5fa66b/run_manifest.json",
+      "run_manifest_sha256": "4cb5b5697925fcbfe59c408cacb383814f90e597ec7cf35d3a1a2ee7aaf4ea15",
+      "source_attempt_manifests": [
+        {
+          "algorithm_outcomes_added_to_results": 0,
+          "completed_task_count": 255,
+          "effective_jobs": 8,
+          "expected_task_count": 288,
+          "no_outcome_error_count": 33,
+          "other_error_count": 0,
+          "path": "outputs/moderate/v6_validation_methods_d5fa66b/attempt_manifests/run_manifest_jobs8_first_pass.json",
+          "requested_jobs": 8,
+          "run_id": "f5430f849348",
+          "sha256": "dc2d1ff5bb8c3bd56c7d62e4db6076b0305f7f62009d5ceffbedc8f78a3d5e3d",
+          "status_counts": {
+            "complete": 255,
+            "error": 33
+          },
+          "worker_error_count": 0
+        },
+        {
+          "algorithm_outcomes_added_to_results": 0,
+          "completed_task_count": 287,
+          "effective_jobs": 4,
+          "expected_task_count": 288,
+          "no_outcome_error_count": 1,
+          "other_error_count": 0,
+          "path": "outputs/moderate/v6_validation_methods_d5fa66b/attempt_manifests/run_manifest_jobs4_resume.json",
+          "requested_jobs": 4,
+          "run_id": "f5430f849348",
+          "sha256": "119ed5955a82b82a226185532e09e1b314e5ba9942905cb1d5a3474ad41c52f8",
+          "status_counts": {
+            "complete": 287,
+            "error": 1
+          },
+          "worker_error_count": 0
+        }
+      ],
+      "split_manifest": "scenarios/splits/moderate_v6_validation.yaml",
+      "split_manifest_sha256": "f5847bcea4999bc5537f0e648cf76020fcf148e839b9908cc38eaffe21844d0f"
+    }
+  ],
+  "methods": [
+    "base",
+    "standard",
+    "heuristic",
+    "bc_uniform",
+    "pgrr"
+  ],
+  "output": {
+    "results_path": "outputs/moderate/v6_validation_d5fa66b/results.parquet",
+    "results_sha256": "439e822afb01230ff3b05a3f5ba92a13da40b8d7401b1779d8413ba87836984f",
+    "row_count": 360
+  },
+  "project_commit": "d5fa66bf9800a61c0bb9d0b729df07ab563383cf",
+  "provenance_policy": {
+    "attempt_manifest_records_are_not_algorithm_outcomes": true,
+    "condition_filtering": false,
+    "source_run_manifests_are_final_completeness_snapshots": true,
+    "source_run_manifests_claim_complete_attempt_history": false,
+    "source_run_manifests_preserved": true,
+    "synthetic_run_manifest_created": false
+  },
+  "row_count": 360,
+  "schema_version": 1,
+  "shared_condition_columns": [
+    "scenario_id",
+    "family",
+    "density",
+    "seed",
+    "split",
+    "replicate",
+    "map",
+    "map_id",
+    "scenario",
+    "robot_start",
+    "robot_goal",
+    "pedestrian_config_hash",
+    "scenario_path",
+    "scenario_sha256",
+    "planner_id",
+    "timeout_s",
+    "recovery_tau_on_override",
+    "arena_commit"
+  ],
+  "source_run_count": 2,
+  "source_run_ids": [
+    "cd9387f1414a",
+    "f5430f849348"
+  ],
+  "split": "validation",
+  "technical_attempt_provenance": {
+    "algorithm_outcomes_added_to_results": 0,
+    "attempt_manifest_count": 2,
+    "history_status": "supplied",
+    "no_outcome_error_record_count": 34,
+    "other_error_record_count": 0,
+    "unique_no_outcome_error_record_count": 33
+  }
+}

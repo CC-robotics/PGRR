@@ -1,14 +1,15 @@
 schema_version: 2
-experiment_id: moderate_v5_five_method_gazebo_test_v1
+experiment_id: moderate_v6_five_method_gazebo_test_v1
 purpose: locked_ei_conference_test
 
 benchmark:
-  id: moderate_social_navigation_v5
-  catalog: configs/experiments/scenario_catalog_moderate_v5.yaml
-  catalog_sha256: 7e4d25520b67e798271fff220df0c648c31705c1adcab7f412c5f44e4404e096
-  calibration_split: scenarios/splits/moderate_v5_validation.yaml
-  calibration_split_sha256: 9fdf930f5e0e073b6e2ef622c07cf45c2d800194e6f99c943fd5100487a504ae
-  calibration_report: outputs/moderate/v5_validation/calibration_report.json
+  id: moderate_social_navigation_v6
+  catalog: configs/experiments/scenario_catalog_moderate_v6.yaml
+  catalog_sha256: efaf573294d2484a616f039e9e2e4380ae89e60411a2ad12b04c36072cfe404f
+  calibration_split: scenarios/splits/moderate_v6_validation.yaml
+  calibration_split_sha256: f5847bcea4999bc5537f0e648cf76020fcf148e839b9908cc38eaffe21844d0f
+  calibration_report: outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json
+  calibration_report_sha256: 0fbf8a159a1e1b96e940bec0efb31e5952ba5b0333439992f370a9a9fb41e15f
   calibration_policy: validation_only_before_test
 
 runtime:
@@ -17,8 +18,8 @@ runtime:
   robot: jackal
   classical_planner: dwb
   split: test
-  split_manifest: scenarios/splits/moderate_v5_test.yaml
-  split_manifest_sha256: 67de50557b7444abeb3421686b34ec8e43f7584d487f13716c36cd63cd9536f7
+  split_manifest: scenarios/splits/moderate_v6_test.yaml
+  split_manifest_sha256: 3f70dd3472c0447d6a5695051f0b16d7eecf166133b604a7011cdf7fc45b04f6
   episode_timeout_s: 240.0
   parallel_jobs: 6
   headless: true

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -16,6 +17,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 class ReportValidationError(RuntimeError):
     """Raised when the generated technical report is not releasable."""
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _run(command: list[str]) -> str:
@@ -69,6 +74,32 @@ def validate_report(pdf: Path, data_path: Path, log_path: Path | None = None) ->
         raise ReportValidationError(f"report contains forbidden metadata/text tokens: {found}")
     if "Charles Chen" not in text:
         raise ReportValidationError("report author alias is missing")
+    if data.get("public_name") != (
+        "PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation"
+    ):
+        raise ReportValidationError("report data does not use the exact public PGRR name")
+    runtime_capture = data.get("runtime_capture")
+    if not isinstance(runtime_capture, dict) or not bool(runtime_capture.get("available")):
+        raise ReportValidationError("report is not bound to the verified Gazebo runtime capture")
+    required_text = (
+        "Dynamic Social Navigation",
+        "Ubuntu 22.04",
+        "telemetry reconstruction",
+        "64/64",
+        "0/24",
+        "19/24",
+        "16/24",
+        "8/24",
+        "5/24",
+    )
+    missing_text = [token for token in required_text if token not in text]
+    if missing_text:
+        raise ReportValidationError(
+            f"report omits required runtime/evidence labels: {missing_text}"
+        )
+    matched = data.get("matched_run_evidence")
+    if not isinstance(matched, dict) or bool(matched.get("available")) != (stage != "pending"):
+        raise ReportValidationError("report matched-run evidence availability disagrees with stage")
     if stage == "pending":
         if "结果尚未锁定" not in text and "结果待锁定" not in text:
             raise ReportValidationError("pending report lacks an explicit pending-stage label")
@@ -76,6 +107,34 @@ def validate_report(pdf: Path, data_path: Path, log_path: Path | None = None) ->
         raise ReportValidationError(
             "validation report must state that it is not final test evidence"
         )
+    elif stage == "test":
+        for field in ("episode_id", "episode_outcome", "screenshot_sha256", "metadata_sha256"):
+            if not str(runtime_capture.get(field, "")).strip():
+                raise ReportValidationError(f"test report runtime provenance omits {field}")
+        if matched.get("artifact_type") != "matched_base_pgrr_test_media":
+            raise ReportValidationError("test report is not bound to fixed matched test media")
+        artifacts = matched.get("artifacts")
+        expected = {
+            "trajectory": (
+                "moderate_matched_base_pgrr_trajectory.pdf",
+                PROJECT_ROOT / "report/generated/result_matched_trajectory.pdf",
+            ),
+            "recovery_timeline": (
+                "moderate_pgrr_recovery_timeline.pdf",
+                PROJECT_ROOT / "report/generated/result_matched_recovery_timeline.pdf",
+            ),
+        }
+        if not isinstance(artifacts, dict) or set(artifacts) != set(expected):
+            raise ReportValidationError("test report omits a required matched-media artifact")
+        for field, (filename, copied_asset) in expected.items():
+            declaration = artifacts[field]
+            if not isinstance(declaration, dict) or declaration.get("filename") != filename:
+                raise ReportValidationError(f"test report {field} filename is not fixed")
+            declared_sha = str(declaration.get("sha256", ""))
+            if not copied_asset.is_file() or len(declared_sha) != 64:
+                raise ReportValidationError(f"test report {field} artifact is incomplete")
+            if _sha256(copied_asset) != declared_sha:
+                raise ReportValidationError(f"test report {field} artifact SHA256 disagrees")
 
     pdfinfo = _run([shutil.which("pdfinfo") or "pdfinfo", str(pdf)])
     if "/home/" in pdfinfo or "file:///" in pdfinfo:

@@ -2,18 +2,136 @@
 
 Commands are copied here when a gate is accepted. Raw command output is stored under `outputs/logs/`.
 
+## 2026-08-07 complete and merge moderate-v6 validation
+
+The Base calibration and four-method comparison were deliberately retained as
+two real source runs. Every command below used the validation split; no test
+manifest was passed.
+
+```bash
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/run_experiment.py \
+  --split validation \
+  --split-manifest scenarios/splits/moderate_v6_validation.yaml \
+  --methods base --jobs 4 --timeout 240 \
+  --output-dir outputs/moderate/v6_validation_base_d5fa66b
+
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/run_experiment.py \
+  --split validation \
+  --split-manifest scenarios/splits/moderate_v6_validation.yaml \
+  --methods base --jobs 1 --timeout 240 \
+  --output-dir outputs/moderate/v6_validation_base_d5fa66b --resume
+
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/run_experiment.py \
+  --split validation \
+  --split-manifest scenarios/splits/moderate_v6_validation.yaml \
+  --methods standard heuristic bc_uniform pgrr \
+  --jobs 8 --timeout 240 \
+  --output-dir outputs/moderate/v6_validation_methods_d5fa66b
+
+# The first pass retained 33 pre-logger no-outcome records. Its run-manifest
+# snapshot was preserved before resuming only incomplete logical tasks.
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/run_experiment.py \
+  --split validation \
+  --split-manifest scenarios/splits/moderate_v6_validation.yaml \
+  --methods standard heuristic bc_uniform pgrr \
+  --jobs 4 --timeout 240 \
+  --output-dir outputs/moderate/v6_validation_methods_d5fa66b --resume
+
+# Preserve the four-worker 287/288 snapshot, then close the one genuinely
+# incomplete task without changing the run ID, commit, method set, or timeout.
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/run_experiment.py \
+  --split validation \
+  --split-manifest scenarios/splits/moderate_v6_validation.yaml \
+  --methods standard heuristic bc_uniform pgrr \
+  --jobs 1 --timeout 240 \
+  --output-dir outputs/moderate/v6_validation_methods_d5fa66b --resume
+```
+
+Collect each source independently, then merge it with strict condition and
+provenance checks. `--collection-only` prevents a single-method source from
+inventing a pairwise comparison:
+
+```bash
+env -u PYTHONPATH conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/collect_results.py \
+  --manifest outputs/moderate/v6_validation_base_d5fa66b/episode_manifest.parquet \
+  --run-manifest outputs/moderate/v6_validation_base_d5fa66b/run_manifest.json \
+  --raw-dir data/raw \
+  --results outputs/moderate/v6_validation_base_d5fa66b/results.parquet \
+  --summary outputs/moderate/v6_validation_base_d5fa66b/collector_summary.csv \
+  --collection-only
+
+env -u PYTHONPATH conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/collect_results.py \
+  --manifest outputs/moderate/v6_validation_methods_d5fa66b/episode_manifest.parquet \
+  --run-manifest outputs/moderate/v6_validation_methods_d5fa66b/run_manifest.json \
+  --raw-dir data/raw \
+  --results outputs/moderate/v6_validation_methods_d5fa66b/results.parquet \
+  --summary outputs/moderate/v6_validation_methods_d5fa66b/collector_summary.csv \
+  --collection-only
+
+env -u PYTHONPATH conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/merge_validation_results.py \
+  --results outputs/moderate/v6_validation_base_d5fa66b/results.parquet \
+  --run-manifest outputs/moderate/v6_validation_base_d5fa66b/run_manifest.json \
+  --results outputs/moderate/v6_validation_methods_d5fa66b/results.parquet \
+  --run-manifest outputs/moderate/v6_validation_methods_d5fa66b/run_manifest.json \
+  --attempt-manifest outputs/moderate/v6_validation_methods_d5fa66b/attempt_manifests/run_manifest_jobs8_first_pass.json \
+  --attempt-manifest outputs/moderate/v6_validation_methods_d5fa66b/attempt_manifests/run_manifest_jobs4_resume.json \
+  --output outputs/moderate/v6_validation_d5fa66b/results.parquet \
+  --merge-manifest outputs/moderate/v6_validation_d5fa66b/merge_manifest.json
+
+env -u PYTHONPATH conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/summarize_moderate.py \
+  --results outputs/moderate/v6_validation_d5fa66b/results.parquet \
+  --output-dir outputs/moderate/v6_validation_d5fa66b \
+  --methods base standard heuristic bc_uniform pgrr \
+  --main-method pgrr --reference-method base \
+  --bootstrap-samples 10000 --bootstrap-seed 20260807
+
+env -u PYTHONPATH conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/calibrate_moderate.py \
+  --results outputs/moderate/v6_validation_base_d5fa66b/results.parquet \
+  --split-manifest scenarios/splits/moderate_v6_validation.yaml \
+  --output outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json \
+  --expected-conditions 72
+```
+
+Result: Base and the four-method source runs are 72/72 and 288/288 complete.
+The strict merge contains 360 rows and no synthetic `run_manifest.json`. Base
+calibration is accepted on all four checks. The PGRR--Base success difference
+is validation-only and not significant after global Holm correction; the
+collision reduction is significant. Twelve classified technical attempts and
+33 unique pre-logger no-outcome events remain provenance, not algorithm
+outcomes. The moderate-v6 test was not run or read.
+
 ## 2026-08-07 compile and freeze moderate-v6 before simulation
 
 ```bash
 env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
   -u CMAKE_PREFIX_PATH \
-  /home/diy/anaconda3/envs/ramp-offline/bin/python \
+  conda run -n ramp-offline python \
   scripts/data/compile_moderate_benchmark.py \
   --config configs/experiments/scenario_catalog_moderate_v6.yaml
 
 env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
   -u CMAKE_PREFIX_PATH \
-  /home/diy/anaconda3/envs/ramp-offline/bin/python -m pytest -q \
+  conda run -n ramp-offline python -m pytest -q \
   tests/unit/test_moderate_benchmark.py
 
 sha256sum \
@@ -51,7 +169,7 @@ env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
 
 env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
   -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
-  /home/diy/anaconda3/envs/ramp-offline/bin/python \
+  conda run -n ramp-offline python \
   scripts/evaluate/collect_results.py \
   --manifest outputs/moderate/v5_validation_comparators_d26d835/episode_manifest.parquet \
   --run-manifest outputs/moderate/v5_validation_comparators_d26d835/run_manifest.json \
@@ -62,7 +180,7 @@ env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
   --reference-policy base --treatment-policy bc_uniform \
   --bootstrap-samples 10000 --bootstrap-seed 20260807
 
-env -u PYTHONPATH /home/diy/anaconda3/envs/ramp-offline/bin/python \
+env -u PYTHONPATH conda run -n ramp-offline python \
   scripts/evaluate/summarize_moderate.py \
   --results outputs/moderate/v5_validation_comparators_d26d835/results.parquet \
   --output-dir outputs/moderate/v5_validation_comparators_d26d835/analysis \

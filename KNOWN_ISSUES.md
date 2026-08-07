@@ -10,9 +10,10 @@ must not be used for final claims. Resolution requires a newly named and newly s
 successor benchmark, declared from validation evidence and calibrated before test;
 changing the acceptance threshold or filtering the v5 validation results is forbidden.
 
-Moderate-v6 is the declared resolution candidate. It changes only Crossing Flow
-temporal phasing and uses entirely new seed blocks; it is not considered resolved
-until the complete, unfiltered v6 Base validation passes every unchanged check.
+Moderate-v6 is the accepted resolution. It changes only Crossing Flow temporal
+phasing and uses entirely new seed blocks; its complete, unfiltered Base
+validation passed every unchanged check. This resolves the benchmark-ceiling
+gate without retroactively making moderate-v5 eligible for test claims.
 
 ## KI-083: Emergency clearance chatter could restore a blocked task path indefinitely
 
@@ -415,15 +416,15 @@ After no-auto-reset and command mux were restored, a recovery-heavy run ended wi
 
 On independent validation seed 2202, Base physically reached the goal, while the first learned attempt was classified `SIMULATOR_FAILURE`: localized distance was 0.232 m and the latest Gazebo pose was 0.308 m from goal, only 8 mm outside the physical threshold with 0.077 m cross-topic offset. The logger had made a terminal decision on the first success callback instead of waiting for the asynchronous actual-pose stream. Goal confirmation now waits a fixed one-second steady-clock window for physical distance to enter 0.30 m; exceeding the window still produces `SIMULATOR_FAILURE`. The original outcome remains unchanged and a fresh replay is required.
 
-## KI-063: Dynamic-person margins caused a static blind-corner limit cycle
+## KI-087: Dynamic-person margins caused a static blind-corner limit cycle
 
 The selected hierarchy applied the 0.85 m collision-latched human-safety margin to every nearest LiDAR return. In both held-out and train blind-corner scenarios, the closest return belonged to declared shelf geometry; the robot remained collision-free but spent roughly 70 s alternating STOP, BACKUP, TURN, and short FORWARD pulses near the wall. A nearest-endpoint static classifier improved blind-corner progress, and a no-radial-braking refinement reached the train goal. Cross-scenario safety checks rejected both: the latter drifted into a door frame during rotation, while the classifier with braking restored misclassified a pedestrian return next to the doorway and collided at 0.705 m centre distance. All static-aware control changes are removed. Exact shelf geometry remains evaluation-only for terminal static collision classification.
 
-## KI-064: Centimetre-scale backup gains trade collision avoidance for recovery live-lock
+## KI-088: Centimetre-scale backup gains trade collision avoidance for recovery live-lock
 
 A current temporary-blockage repeat exposed premature rotation after two bounded reverse pulses and ended in human collision. Reducing the required pulse gain from 0.05 m to 0.02 m retained reverse motion long enough to avoid collision and restore minimum human distance from 0.698 m to 0.795 m, but the episode timed out with 1,317 non-CONTINUE samples. More importantly, the same candidate regressed the frozen overtaking success to a 200 s timeout with 1,425 recovery samples. The candidate is removed. The historical temporary-blockage success is no longer cited as repeatable positive evidence.
 
-## KI-065: Offline expert and Heuristic retain a legacy LiDAR field-of-view calibration
+## KI-089: Offline expert and Heuristic retain a legacy LiDAR field-of-view calibration
 
 The final Jackal GPU scan covers 360 degrees with 360 samples and is resampled over its
 full angular range to 180 policy bins. Online PGRR action masking uses the scan
@@ -435,7 +436,7 @@ had started. The algorithm, labels, and checkpoint are not changed post-test; th
 paper reports the mismatch as a limitation, and a corrected calibration requires a
 newly versioned training and complete evaluation rather than selective reruns.
 
-## KI-066: Empty model-path overrides invalidated a diagnostic multi-method batch
+## KI-090: Empty model-path overrides invalidated a diagnostic multi-method batch
 
 The shared recovery-manager launch supplied `model_path:=` for non-learned policies,
 which ROS 2 rejects before the node starts. A diagnostic validation batch could still
@@ -444,3 +445,29 @@ the runner's pre-cleanup traceback check correctly rejected those episodes. The
 launcher now always supplies a portable non-empty default and has a regression test.
 Files from the interrupted batch are excluded from evidence; all compared methods are
 rerun under fresh episode identifiers after the fix.
+
+## KI-085: Eight concurrent Gazebo workers caused pre-logger launch loss
+
+The moderate-v6 four-method validation first pass completed 255/288 logical
+tasks but recorded 33 launch-wrapper errors before an outcome logger existed.
+These have no algorithm trajectory and cannot be relabeled as timeout,
+collision, planner failure, or simulator failure. A four-worker resume reached
+287/288 and retained one no-outcome record; a final one-worker resume completed
+288/288 with no worker error. Static task striding also left a slow tail after
+most containers had exited. The held-out configuration is frozen at six jobs to
+reduce startup pressure while retaining parallel throughput. It must not be
+raised after seeing test outcomes, and any interruption must retain the same
+run identity and retry only incomplete or explicitly retryable infrastructure
+work.
+
+## KI-086: Validation collision reduction does not establish overall superiority
+
+On 72 moderate-v6 validation pairs, PGRR has zero collisions versus Base's 19,
+but it also has two timeouts and seven planner failures and takes 15.481 s longer
+and 1.894 m farther on the 50 joint successes. The observed goal-reach gain is
+13.89 percentage points, yet its global Holm-adjusted McNemar value is
+`p=0.595581`. Mean personal-space violation is descriptively 5.345 points higher
+and is not significant after global correction (`p=1`). These are selection-set
+limitations, not held-out conclusions. The v6 test remains unopened; reports
+must keep validation labels and must also preserve the historical v1 result in
+which collision avoidance traded against 16/24 PGRR timeouts.

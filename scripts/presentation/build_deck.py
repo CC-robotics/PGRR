@@ -12,6 +12,7 @@ builder.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import math
@@ -23,6 +24,9 @@ from pathlib import Path
 from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PUBLIC_NAME = (
+    "PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation"
+)
 DEFAULT_REPORT_DATA = PROJECT_ROOT / "report/generated/report_data.json"
 DEFAULT_OUTPUT = PROJECT_ROOT / "presentation/PGRR_report_zh.pptx"
 DEFAULT_NOTES = PROJECT_ROOT / "presentation/speaker_notes_zh.md"
@@ -40,6 +44,9 @@ RESULT_ASSETS = {
     "report/generated/result_family.pdf",
     "report/generated/result_safety_efficiency.pdf",
     "report/generated/result_paired_effects.pdf",
+    "report/generated/result_matched_run_evidence.pdf",
+    "report/generated/result_matched_trajectory.pdf",
+    "report/generated/result_matched_recovery_timeline.pdf",
 }
 
 
@@ -103,8 +110,12 @@ def load_report_data(path: Path, *, stage: str) -> dict[str, Any]:
         expected = {"base", "standard", "heuristic", "bc_uniform", "pgrr"}
         if methods != expected:
             raise DeckBuildError("report data does not contain the complete five-method summary")
-        if data.get("schema_version") != 2:
-            raise DeckBuildError("result-bearing deck requires report data schema version 2")
+        if data.get("schema_version") != 3:
+            raise DeckBuildError("result-bearing deck requires report data schema version 3")
+        if data.get("public_name") != PUBLIC_NAME:
+            raise DeckBuildError("report data does not use the exact public PGRR name")
+        if data.get("benchmark_id") != "moderate_social_navigation_v6":
+            raise DeckBuildError("result-bearing deck accepts only moderate-v6 evidence")
         if not str(data.get("statistics_sha256", "")).strip():
             raise DeckBuildError("report data omits paired-statistics provenance")
         paired = data.get("paired_comparisons")
@@ -122,6 +133,46 @@ def load_report_data(path: Path, *, stage: str) -> dict[str, Any]:
         }
         if observed != expected_effects:
             raise DeckBuildError("report data paired effects are incomplete or duplicated")
+        matched = data.get("matched_run_evidence")
+        if not isinstance(matched, dict) or not bool(matched.get("available")):
+            raise DeckBuildError("result-bearing deck requires matched Base--PGRR raw evidence")
+        if matched.get("representation") != (
+            "telemetry reconstruction; not a simulator camera screenshot"
+        ):
+            raise DeckBuildError("matched evidence must be labelled as telemetry reconstruction")
+        if stage == "test":
+            runtime = data.get("runtime_capture")
+            if not isinstance(runtime, dict) or not bool(runtime.get("available")):
+                raise DeckBuildError("locked-test deck requires verified Gazebo GUI evidence")
+            for field in ("episode_id", "episode_outcome", "screenshot_sha256", "metadata_sha256"):
+                if not str(runtime.get(field, "")).strip():
+                    raise DeckBuildError(f"locked-test deck runtime provenance omits {field}")
+            if len(str(runtime["screenshot_sha256"])) != 64:
+                raise DeckBuildError("locked-test deck runtime screenshot SHA256 is invalid")
+            if matched.get("artifact_type") != "matched_base_pgrr_test_media":
+                raise DeckBuildError("locked-test deck requires schema-v2 matched test media")
+            artifacts = matched.get("artifacts")
+            expected_artifacts = {
+                "trajectory": (
+                    "moderate_matched_base_pgrr_trajectory.pdf",
+                    PROJECT_ROOT / "report/generated/result_matched_trajectory.pdf",
+                ),
+                "recovery_timeline": (
+                    "moderate_pgrr_recovery_timeline.pdf",
+                    PROJECT_ROOT / "report/generated/result_matched_recovery_timeline.pdf",
+                ),
+            }
+            if not isinstance(artifacts, dict) or set(artifacts) != set(expected_artifacts):
+                raise DeckBuildError("locked-test deck requires trajectory and recovery timeline")
+            for field, (filename, copied_asset) in expected_artifacts.items():
+                declaration = artifacts[field]
+                if not isinstance(declaration, dict) or declaration.get("filename") != filename:
+                    raise DeckBuildError(f"locked-test deck {field} filename is not fixed")
+                declared_sha = str(declaration.get("sha256", ""))
+                if len(declared_sha) != 64 or not copied_asset.is_file():
+                    raise DeckBuildError(f"locked-test deck {field} asset is incomplete")
+                if _sha256(copied_asset) != declared_sha:
+                    raise DeckBuildError(f"locked-test deck {field} asset disagrees with SHA256")
     return data
 
 
@@ -167,13 +218,19 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
                 None,
             ),
             26: (
-                "恢复行为要检查 WAIT/BACKUP 滥用和过度介入",
-                _pending_result_bullets("触发、重接成功、恢复时长和介入比例"),
+                "matched 运行页等待 hash-linked raw/Parquet sidecar",
+                _pending_result_bullets(
+                    "预注册 doorway/medium/r00 的 Base--PGRR 空间轨迹与事件时间线；"
+                    "遥测重建，不是 camera screenshot"
+                ),
                 None,
             ),
             27: (
-                "离线准确率不能替代闭环导航证据",
-                _pending_result_bullets("BC、DAgger、mask 与 checkpoint 选择消融"),
+                "恢复时序素材与轨迹素材必须来自同一 test pair",
+                _pending_result_bullets(
+                    "固定文件名的 PGRR 目标距离、failure score、恢复状态与触发时间线；"
+                    "遥测重建，不是 camera screenshot"
+                ),
                 None,
             ),
         }
@@ -184,6 +241,8 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
     paired = {
         (str(row["comparator"]), str(row["endpoint"])): row for row in data["paired_comparisons"]
     }
+    matched = data["matched_run_evidence"]
+    matched_runs = matched["runs"]
     stage_label = "锁定 test" if data["stage"] == "test" else "validation 快照（非最终 test）"
     densities = {(row["density"], row["method"]): row for row in data["density_summary"]}
     density_lines = tuple(
@@ -191,7 +250,7 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
         f"PGRR {_percent(densities[(density, 'pgrr')]['goal_rate'])}"
         for density in ("low", "medium", "high")
     )
-    return {
+    result = {
         21: (
             f"{stage_label}：终止结果按四类完整报告",
             (
@@ -249,20 +308,21 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
             "report/generated/result_safety_efficiency.pdf",
         ),
         26: (
-            "恢复活跃程度与任务完成必须并列审计",
+            "固定 matched pair 公开 Base--PGRR 空间轨迹与真实终局",
             (
-                f"PGRR 平均触发：{float(pgrr['mean_recovery_triggers']):.2f} 次/episode",
-                "聚合恢复成功率："
-                + (
-                    _percent(pgrr["aggregate_recovery_success_rate"])
-                    if pgrr["aggregate_recovery_success_rate"] is not None
-                    else "无触发，未定义"
-                ),
-                f"平均恢复时长：{float(pgrr['mean_recovery_duration_s']):.2f} s",
-                f"平均介入比例：{_percent(pgrr['mean_intervention_ratio'])}",
-                "同时检查长期 WAIT、重复 BACKUP 和紧急停止",
+                f"选择规则：{matched['selection_rule']}",
+                f"DWB 终局：{matched_runs['base']['outcome']}；"
+                f"raw SHA {matched_runs['base']['raw_sha256'][:12]}",
+                f"PGRR 终局：{matched_runs['pgrr']['outcome']}；"
+                f"raw SHA {matched_runs['pgrr']['raw_sha256'][:12]}",
+                f"pair：{matched['pair_id']}；scenario：{matched['scenario_id']}",
+                "轨迹是 JSONL/Parquet 遥测重建，不是 camera screenshot",
             ),
-            None,
+            (
+                "report/generated/result_matched_trajectory.pdf"
+                if data["stage"] == "test"
+                else "report/generated/result_matched_run_evidence.pdf"
+            ),
         ),
         27: (
             "模型选择保留负面结果，不把离线指标包装成闭环收益",
@@ -276,10 +336,32 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
             "paper/figures/action_space_expert.pdf",
         ),
     }
+    if data["stage"] == "test":
+        result[27] = (
+            "恢复触发、状态切换和目标进展来自同一 PGRR raw stream",
+            (
+                f"pair：{matched['pair_id']}；PGRR episode：{matched_runs['pgrr']['episode_id']}",
+                f"PGRR 终局：{matched_runs['pgrr']['outcome']}；"
+                f"raw SHA {matched_runs['pgrr']['raw_sha256'][:12]}",
+                "时间线包含记录的目标距离、failure score、恢复状态与触发事件",
+                "时间线是 telemetry reconstruction，不是 camera screenshot",
+                "n=1 描述性运行证据；总体结论仍来自完整 outcome 分解",
+            ),
+            "report/generated/result_matched_recovery_timeline.pdf",
+        )
+    return result
 
 
 def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]:
     result = _result_content(data)
+    runtime = data.get("runtime_capture")
+    if isinstance(runtime, dict) and bool(runtime.get("available")):
+        runtime_provenance = (
+            f"episode ID：{runtime.get('episode_id')}；pixel SHA256："
+            f"{str(runtime.get('screenshot_sha256', ''))[:12]}"
+        )
+    else:
+        runtime_provenance = "截图、窗口、日志、episode、commit 与 SHA256 均由元数据绑定"
     stage_name = {
         "pending": "验证执行中｜数值待锁定",
         "validation": "Validation 快照｜非最终 Test",
@@ -289,8 +371,8 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
     specs = (
         SlideSpec(
             1,
-            "规划引导、失败触发的动态社会导航恢复与重接",
-            "PGRR：让经典规划器保持常态控制，只在可观测失败前兆持续时介入",
+            "PGRR：规划引导、失败触发的动态社会导航恢复与重接",
+            PUBLIC_NAME,
             ("EI 会议项目汇报", stage_name, "Charles Chen"),
             "先明确今天汇报的范围：方法、真实运行证据和严格阶段化结果。当前阶段标签会出现在每一页。",
             "paper/figures/system_architecture.pdf",
@@ -304,6 +386,8 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
                 "持续风险、冻结、振荡或死锁证据才触发恢复",
                 "策略选择临时子目标或 WAIT / BACKUP / REPLAN / CONTINUE",
                 "完成后恢复原始 PointGoal 并重新接回经典导航",
+                "历史 v1 64/64（非 v6）：PGRR/Base 碰撞 0/24 vs 19/24、超时 "
+                "16/24 vs 0/24、到达 8/24 vs 5/24；校正成功差异不显著",
             ),
             "用一句话把层级关系讲清楚，避免听众把 PGRR 误解为端到端速度策略。",
         ),
@@ -354,7 +438,7 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
                 "特权短时域规划自动生成恢复示范",
                 "Behavior Cloning + 两轮 DAgger 覆盖策略诱导状态",
                 "规划 action mask + 独立安全监督 + 有界状态机",
-                "不声称首次结合、不声称无碰撞保证、不把 PPO 写成完成贡献",
+                "PPO、学习 detector、第二 planner、Flatland、硬件与形式安全均非完成声明",
             ),
             "最后一条很重要：主动说明当前版本不依赖 PPO 或学习检测器来成立。",
         ),
@@ -482,13 +566,14 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
             "真实 Arena/Gazebo 运行证据",
             "不是概念图：Jackal、动态行人、静态瓶颈和 Nav2 在同一 episode 实际运行",
             (
-                "场景：doorway_bottleneck / medium / validation",
-                "规划器：Nav2 DWB；仿真器：Gazebo",
-                "关联 episode 结局：GOAL_REACHED",
-                "截图、窗口、日志、commit 与 SHA256 均有元数据",
-                "该截图只作运行证明，不替代完整定量实验",
+                "环境：Ubuntu 22.04 / ROS2 Humble / Arena Gazebo",
+                "机器人与感知：Jackal / Nav2 DWB / 平面 LiDAR",
+                "冻结 v5 演示：doorway_bottleneck / medium / validation",
+                runtime_provenance,
+                "它不是锁定 v6 统计回合的 camera frame，也不替代定量实验",
             ),
-            "指出图中 Jackal、红色行人圆柱和门口几何，并主动区分定性证据与定量结论。",
+            "指出 Jackal、LiDAR 可见行人代理和门口几何；明确这是冻结场景运行证明，"
+            "不能把遥测重建或该演示图冒充锁定 test 截图。",
             "paper/figures/runtime_gazebo_doorway_bottleneck_medium.png",
         ),
         SlideSpec(
@@ -509,7 +594,8 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
             "Split、规模与锁定规则",
             "validation 用于选择，test 只在代码、配置和 checkpoint 冻结后打开",
             (
-                "Train / validation / test 使用不相交 seed 和 scenario ID",
+                "moderate-v6：Train / validation / test 使用不相交 seed 和 scenario ID",
+                "v5 Base validation 57/72，超过 75% ceiling，故 rejected 且 test 未打开",
                 "Validation：72 条件 × 5 方法 = 360 method-episodes",
                 "锁定 Test：120 条件 × 5 方法 = 600 method-episodes",
                 "同一 pair 的场景、地图、seed 和行人配置跨方法一致",
@@ -590,19 +676,28 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
         ),
         SlideSpec(
             26,
-            "恢复行为审计",
+            "Matched Base--PGRR 真实运行对比",
             result[26][0],
             result[26][1],
-            "恢复次数越多不一定越好；结合最终到达与失败类别检查介入是否有效。",
+            "先核对 pair 与 raw SHA，再读轨迹和事件线；这是遥测重建，不是相机截图。",
             result[26][2],
             True,
         ),
         SlideSpec(
             27,
-            "训练与消融",
+            (
+                "PGRR 恢复时序（同一 Matched Pair）"
+                if stage in {"pending", "test"}
+                else "训练与消融"
+            ),
             result[27][0],
             result[27][1],
-            "把 checkpoint 选择和负面结果讲清楚：未带来验证提升的模块不进入贡献结论。",
+            (
+                "核对同一 pair、PGRR episode 和 raw SHA 后再读触发与状态线；"
+                "这是遥测重建，不是相机画面。"
+                if stage in {"pending", "test"}
+                else "把 checkpoint 选择和负面结果讲清楚：未带来验证提升的模块不进入贡献结论。"
+            ),
             result[27][2],
             True,
         ),
@@ -614,7 +709,9 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
                 "重点检查长期 WAIT、持续 BACKUP、左右切换和重复恢复",
                 "规则触发可能误报或漏报，action mask 可能过于保守",
                 "二维 LiDAR、已知地图、离散动作和仿真人群限制外推",
-                "没有形式化安全保证，也没有实机泛化结论",
+                "历史 v1 64/64（非 v6）显示碰撞下降伴随 timeout 上升；"
+                "到达 8/24 vs 5/24 的校正比较不显著",
+                "PPO、学习 detector、第二 planner、Flatland、硬件和形式安全均未完成",
             ),
             "结合代表性轨迹解释根因；不要用截图代替总体失败统计。",
             "paper/figures/recovery_state_machine.pdf",
@@ -653,7 +750,58 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
     return specs
 
 
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def validate_runtime_capture() -> None:
+    screenshot = PROJECT_ROOT / "paper/figures/runtime_gazebo_doorway_bottleneck_medium.png"
+    source = PROJECT_ROOT / "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.png"
+    metadata_path = (
+        PROJECT_ROOT / "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json"
+    )
+    window_path = (
+        PROJECT_ROOT / "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.window.json"
+    )
+    for path in (screenshot, source, metadata_path, window_path):
+        if not path.is_file():
+            raise DeckBuildError(f"verified Gazebo capture artifact is missing: {path.name}")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if metadata.get("artifact_type") != "real_arena_gazebo_gui_screenshot":
+        raise DeckBuildError("runtime capture is not declared as a real Gazebo GUI screenshot")
+    declared = str(metadata.get("artifacts", {}).get("screenshot_sha256", ""))
+    if len(declared) != 64 or _sha256(source) != declared or _sha256(screenshot) != declared:
+        raise DeckBuildError("runtime capture pixels disagree with their declared SHA256")
+    launch = metadata.get("launch_profile", {})
+    if (
+        launch.get("simulator") != "gazebo"
+        or launch.get("robot") != "jackal"
+        or launch.get("local_planner") != "dwb"
+    ):
+        raise DeckBuildError("runtime capture must document Gazebo/Jackal/Nav2 DWB")
+    scenario = metadata.get("scenario", {})
+    if scenario.get("split") != "validation" or "moderate_v5" not in str(
+        scenario.get("scenario_id", "")
+    ):
+        raise DeckBuildError("runtime capture must remain the audited frozen-v5 demo")
+    for field in ("episode_id", "episode_outcome", "git_commit", "arena_commit"):
+        if not str(metadata.get(field, "")).strip():
+            raise DeckBuildError(f"runtime capture provenance omits {field}")
+    if len(str(metadata["git_commit"])) != 40 or len(str(metadata["arena_commit"])) != 40:
+        raise DeckBuildError("runtime capture provenance contains an invalid revision")
+    if "same Arena/Nav2 episode" not in str(metadata.get("provenance_note", "")):
+        raise DeckBuildError("runtime capture pixels are not episode-bound")
+    window = json.loads(window_path.read_text(encoding="utf-8"))
+    if window.get("selected_window", {}).get("title") != "Gazebo":
+        raise DeckBuildError("runtime capture window metadata is invalid")
+
+
 def validate_assets(specs: tuple[SlideSpec, ...], *, stage: str) -> None:
+    validate_runtime_capture()
     allowed = STATIC_ASSETS | (RESULT_ASSETS if stage != "pending" else set())
     for spec in specs:
         if spec.asset is None:
@@ -829,7 +977,7 @@ def generate_pptx(specs: tuple[SlideSpec, ...], *, stage: str, output: Path) -> 
     presentation = api["Presentation"]()
     presentation.slide_width = api["Inches"](13.333)
     presentation.slide_height = api["Inches"](7.5)
-    presentation.core_properties.title = "PGRR 动态社会导航技术汇报"
+    presentation.core_properties.title = PUBLIC_NAME
     presentation.core_properties.subject = f"stage={stage}; 30-slide reproducible briefing"
     presentation.core_properties.author = "Charles Chen"
     presentation.core_properties.last_modified_by = "Charles Chen"
