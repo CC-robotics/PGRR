@@ -1,0 +1,65 @@
+{
+  "checks": [
+    {
+      "maximum_inclusive": 0.75,
+      "minimum_inclusive": 0.55,
+      "name": "success_rate",
+      "passed": true,
+      "value": 0.7361111111111112
+    },
+    {
+      "maximum_inclusive": 0.45,
+      "minimum_inclusive": 0.2,
+      "name": "collision_plus_timeout_rate",
+      "passed": true,
+      "value": 0.2638888888888889
+    },
+    {
+      "maximum_inclusive": null,
+      "minimum_inclusive": 0.8,
+      "name": "interaction_episode_ratio",
+      "passed": true,
+      "value": 0.9861111111111112
+    },
+    {
+      "maximum_inclusive": null,
+      "minimum_inclusive": 6,
+      "name": "interaction_family_count",
+      "passed": true,
+      "value": 8
+    }
+  ],
+  "condition_sha256": "89689c1f6863ad7fd71fba63719cd3c5bac0832228d70490282410474fe0ae49",
+  "counts": {
+    "excluded_episode_count": 0,
+    "family_count": 8,
+    "interaction_episode_count": 71,
+    "interaction_family_count": 8,
+    "manifest_episode_count": 72,
+    "scenario_count": 72,
+    "seed_count": 72,
+    "valid_episode_count": 72
+  },
+  "metrics": {
+    "collision_plus_timeout_rate": 0.2638888888888889,
+    "finite_human_distance_ratio": 1.0,
+    "interaction_episode_ratio": 0.9861111111111112,
+    "success_rate": 0.7361111111111112
+  },
+  "no_scenario_or_seed_filtering": true,
+  "passed": true,
+  "reference_method": "base",
+  "schema_version": 1,
+  "selection_policy": "all reference-method validation episodes; no family/seed filtering",
+  "split": "validation",
+  "status": "accepted",
+  "thresholds": {
+    "collision_plus_timeout_rate_max": 0.45,
+    "collision_plus_timeout_rate_min": 0.2,
+    "interaction_distance_m": 2.0,
+    "interaction_episode_ratio_min": 0.8,
+    "interaction_family_count_min": 6,
+    "success_rate_max": 0.75,
+    "success_rate_min": 0.55
+  }
+}
