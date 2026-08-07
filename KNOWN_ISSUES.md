@@ -1,5 +1,15 @@
 # Known issues
 
+## KI-084: moderate-v5 is rejected as too easy for the classical Base planner
+
+The complete validation-only Base run reaches the goal in 57/72 conditions
+(79.17%), exceeding the preregistered 75% maximum. The collision-plus-timeout and
+interaction-coverage checks pass, so the failure is specifically benchmark ceiling,
+not missing interactions or incomplete data. The moderate-v5 test remains sealed and
+must not be used for final claims. Resolution requires a newly named and newly seeded
+successor benchmark, declared from validation evidence and calibrated before test;
+changing the acceptance threshold or filtering the v5 validation results is forbidden.
+
 ## KI-083: Emergency clearance chatter could restore a blocked task path indefinitely
 
 The pre-change low-density blind-corner validation episode timed out after repeatedly

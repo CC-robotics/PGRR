@@ -1,5 +1,20 @@
 # Progress log
 
+## 2026-08-07 — moderate-v5 comparator validation and calibration gate
+
+- Completed all 288 comparator validation tasks across Base, Standard, Heuristic,
+  and Uniform BC on the 72-condition moderate-v5 validation manifest.
+- Preserved 12 no-outcome Gazebo startup failures and used the runner's single-worker
+  resume path to complete only the missing logical tasks.
+- Collected immutable results: Base 57 goals / 15 collisions; Standard 58 / 14;
+  Heuristic 63 goals / four planner failures / five timeouts; Uniform BC 64 goals /
+  eight planner failures.
+- Ran the preregistered Base calibration with no condition filtering. It rejected
+  moderate-v5 because Base success was 79.17%, above the frozen 75% maximum. The
+  other three checks passed.
+- Kept every moderate-v5 test scenario sealed. The next gate is a newly identified,
+  newly seeded validation-only benchmark revision; v5 test execution is prohibited.
+
 ## 2026-08-07 — validation-only timeout remediation
 
 - Replayed the retained low-density blind-corner timeout and traced it to recurrent
