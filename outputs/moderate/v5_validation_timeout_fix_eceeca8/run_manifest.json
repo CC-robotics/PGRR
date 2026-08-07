@@ -1,0 +1,55 @@
+{
+  "checkpoint": null,
+  "checkpoint_sha256": null,
+  "completed_task_count": 1,
+  "created_at": "2026-08-07T07:32:48.996827+00:00",
+  "effective_jobs": 1,
+  "episode_manifest": "outputs/moderate/v5_validation_timeout_fix_eceeca8/episode_manifest.parquet",
+  "expected_task_count": 1,
+  "high_density_methods": [],
+  "method_checkpoints": {
+    "pgrr": {
+      "path": "checkpoints/dagger/coverage_safety_aligned/best.onnx",
+      "sha256": "78807ce56f575943ca3f965be9b71c0d83c0ca3f2a23f267fe04fd6a00c119d2"
+    }
+  },
+  "methods": [
+    "pgrr"
+  ],
+  "project_commit": "eceeca8fc492a806543d3ab3dbef2b6e6a01378a",
+  "recovery_tau_on_override": "",
+  "requested_jobs": 1,
+  "results": [
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_low_validation_moderate_v5_r00_s75300_eval_pgrr_r0ab1e277724d_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_low_validation_moderate_v5_r00_s75300_eval_pgrr_r0ab1e277724d_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/blind_corner_low_validation_moderate_v5_r00_s75300_eval_pgrr_r0ab1e277724d_a0_dwb.outcome.json",
+          "raw_sha256": "5b188c0fdc04a233cc770a4b634e18a7e4eaa30216f04aaab8df7c2429f88e71",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 1266,
+          "stream_path": "data/raw/blind_corner_low_validation_moderate_v5_r00_s75300_eval_pgrr_r0ab1e277724d_a0_dwb.jsonl"
+        }
+      ],
+      "checkpoint_path": "checkpoints/dagger/coverage_safety_aligned/best.onnx",
+      "checkpoint_sha256": "78807ce56f575943ca3f965be9b71c0d83c0ca3f2a23f267fe04fd6a00c119d2",
+      "episode_id": "blind_corner_low_validation_moderate_v5_r00_s75300_eval_pgrr_r0ab1e277724d_a0_dwb",
+      "method": "pgrr",
+      "replicate": 0,
+      "scenario_id": "blind_corner_low_validation_moderate_v5_r00_s75300",
+      "status": "complete",
+      "task_index": 0
+    }
+  ],
+  "run_id": "0ab1e277724d",
+  "schema_version": 1,
+  "split": "validation",
+  "split_manifest": "scenarios/splits/moderate_v5_validation_timeout_probe.yaml",
+  "split_manifest_sha256": "b052a2d76822294ac2561adf929384128fb06bb6e4eabcb7d9a1e215b225f764",
+  "timeout_s": 240.0,
+  "worker_errors": []
+}

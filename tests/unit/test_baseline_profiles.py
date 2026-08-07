@@ -267,7 +267,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         config["collision_latched_stop_clearance_m"] + config["emergency_release_hysteresis_m"]
     )
     assert config["maximum_recovery_path_deviation_m"] == 0.65
-    assert config["recurrent_escape_maximum_path_deviation_m"] == 1.5
+    assert config["recurrent_escape_maximum_path_deviation_m"] == 2.5
     assert (
         config["recurrent_escape_maximum_path_deviation_m"]
         > config["maximum_recovery_path_deviation_m"]
@@ -287,14 +287,15 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         config["backup_speed_mps"] * config["backup_maximum_duration_s"]
         <= config["backup_mask_validated_distance_m"]
     )
-    assert config["emergency_rotation_clearance_m"] == 0.40
+    assert config["emergency_rotation_clearance_m"] == 0.60
     assert config["emergency_turn_duration_s"] == 0.8
     assert config["emergency_maximum_turn_pulses"] == 4
     assert config["emergency_maximum_turn_pulses"] * config["emergency_turn_duration_s"] * config[
         "emergency_turn_speed_radps"
     ] == pytest.approx(1.92)
     assert config["emergency_rotation_clearance_m"] > 0.36
-    assert config["emergency_rotation_clearance_m"] < config["footprint_stop_clearance_m"]
+    assert config["emergency_rotation_clearance_m"] > config["footprint_stop_clearance_m"]
+    assert config["emergency_forward_escape_angle_degrees"] == 80.0
     assert config["emergency_forward_entry_clearance_m"] == 0.85
     assert config["emergency_backup_reset_clear_s"] == 3.0
     assert config["emergency_minimum_retreat_pulses"] == 3
@@ -362,21 +363,25 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert manager.count("self._bc_closing_side_latch.reset()") >= 3
     assert "latched_right={int(self._bc_closing_side_latch.right_occupied)}" in manager
     assert "latched_left={int(self._bc_closing_side_latch.left_occupied)}" in manager
-    assert '"emergency_rotation_clearance_m": 0.40' in manager
+    assert '"emergency_rotation_clearance_m": 0.60' in manager
     assert '"emergency_turn_duration_s": 0.8' in manager
     assert '"emergency_maximum_turn_pulses": 4' in manager
+    assert '"emergency_forward_escape_angle_degrees": 80.0' in manager
     assert "self._effective_emergency_rotation_clearance()" in manager
     assert '"collision_latched_stop_clearance_m": 0.85' in manager
     assert '"collision_latched_action_clearance_m": 0.90' in manager
     assert "the latched margin is" in manager
     assert '"emergency_backup_reset_clear_s": 3.0' in manager
+    assert "goal_progress_observed=meaningful_progress" in manager
     assert '"emergency_minimum_retreat_pulses": 3' in manager
     assert '"backup_maximum_duration_s": 3.0' in manager
     assert '"bc_unilateral_backup_maximum_duration_s": 1.0' in manager
     assert '"maximum_recovery_sequence_duration_s": 45.0' in manager
     assert '"bc_recurrent_escape_after_recoveries": 2' in manager
-    assert '"recurrent_escape_maximum_path_deviation_m": 1.5' in manager
+    assert '"recurrent_escape_maximum_path_deviation_m": 2.5' in manager
     assert manager.count("self._effective_recovery_path_deviation()") == 2
+    assert "self._effective_emergency_path_deviation()" in manager
+    assert "self._emergency_escape.turn_count > 0" in manager
     assert "self._bc_yield_latch.latched" in manager
     assert '"recurrent_escape_minimum_lateral_displacement_m": 0.25' in manager
     assert '"bc_subgoal_minimum_execution_s": 2.0' in manager

@@ -332,3 +332,21 @@ zero collisions, and `PLANNER_FAILURE` in both blind-corner cases. The two hard
 blind-corner outcomes are retained rather than concealed by another difficulty
 change. The catalog, splits, and state-machine hashes are frozen at `3406c08`, and
 the held-out test remains unseen.
+
+## D-067: Reset recurrent escape only after task progress and use drift-aware turns
+
+The retained blind-corner timeout showed that three seconds of local clearance is not
+evidence that the task-level obstruction was escaped. Emergency budgets therefore reset
+only after both stable clearance and measurable progress toward the original goal.
+After a successful retreat, the controller retains ownership until it has turned toward
+an observable escape; forward and reverse sectors meet at 80 degrees, and emergency
+escalation itself is sufficient to activate the bounded 2.5 m recurrent path envelope.
+These rules use only deployed observations and controller history.
+
+The Jackal's skid-steer turn is not a perfectly stationary rotation in Gazebo. A
+validation candidate using the nominal 0.36 m circular-footprint radius collided with
+the shelf and is rejected. The selected 0.60 m turn-entry clearance preserves a drift
+margin and requires additional bounded retreat when it is unavailable. The correction
+converted the target validation timeout and passed the eight-family low-density
+regression, but is not frozen for test until the complete 72-condition PGRR validation
+gate passes. No moderate-v5 test row was inspected while making this decision.

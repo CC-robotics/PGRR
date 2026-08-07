@@ -1,0 +1,21 @@
+schema_version: 1
+benchmark_id: moderate_social_navigation_v5_timeout_probe
+difficulty: moderate
+manifest_suffix: moderate_v5_timeout_probe
+split: validation
+selection_rule: >-
+  Validation-only regression probe containing the sole PGRR timeout observed
+  in the predeclared eight-family low-density r0 pilot. The probe was selected
+  before any moderate-v5 test episode was run and is never eligible for final
+  test statistics.
+scenarios:
+  - scenario_id: blind_corner_low_validation_moderate_v5_r00_s75300
+    family: blind_corner
+    density: low
+    map_id: map_empty
+    seed: 75300
+    replicate: 0
+    difficulty: moderate
+    path: moderate_v5/arena/map_empty/blind_corner_low_validation_moderate_v5_r00_s75300.json
+    preview: previews/moderate_v5/blind_corner_low_validation_moderate_v5_r00_s75300.png
+    sha256: 338cbe89dc91409c8c6cd5ad923fd4f2b402ac574cf899733faad7d6f265a967

@@ -97,9 +97,10 @@ robot_clearance_m: 0.25
 # The shortest lateral action is exactly 0.60 m. Keep a 5 cm path-tracking
 # tolerance so centimetre-scale localization/path discretization cannot mask
 # only one of the two symmetric choices. Static-map and observable-LiDAR masks
-# remain authoritative; recurrent recovery still uses the wider envelope.
+# remain authoritative. Recurrent recovery uses a wider but finite envelope
+# that covers the observable 2.35 m detour around the unmodeled v5 shelf tip.
 maximum_recovery_path_deviation_m: 0.65
-recurrent_escape_maximum_path_deviation_m: 1.5
+recurrent_escape_maximum_path_deviation_m: 2.5
 braking_acceleration_mps2: 0.8
 control_latency_s: 0.15
 stopping_margin_m: 0.45
@@ -111,15 +112,22 @@ emergency_release_hysteresis_m: 0.05
 # Do not let a safe static side-wall return sustain an omnidirectional stop;
 # commanded-motion clearance retains the 0.05 m release hysteresis above.
 footprint_release_hysteresis_m: 0.0
-# In-place rotation has no translational braking corridor for the circular
-# 0.36 m evaluation footprint.  Keep a separate 4 cm swept-radius margin so a
-# harmless side wall cannot forbid every bounded turn; translation continues
-# to use the stricter 0.48 m footprint stop threshold above.
-emergency_rotation_clearance_m: 0.40
+# Gazebo's skid-steer Jackal drifts by up to about 7 cm during a nominally
+# in-place pulse, and an open shelf's sparse LiDAR returns can overestimate
+# clearance to its filled collision envelope. Require 0.60 m before rotation;
+# the controller keeps rear-gated retreat ownership until this margin exists.
+emergency_rotation_clearance_m: 0.60
 emergency_turn_duration_s: 0.8
 # At 0.6 rad/s this caps one persistent hazard at 1.92 rad of commanded turn.
 emergency_maximum_turn_pulses: 4
+# Close the no-action wedge at the 80-degree BACKUP direction boundary. A
+# forward pulse is still issued only when the complete swept LiDAR capsule and
+# path-corridor gates pass; the angle alone never authorizes translation.
+emergency_forward_escape_angle_degrees: 80.0
 emergency_forward_entry_clearance_m: 0.85
+# Escape budgets reset only after this much continuously clear time *and* the
+# existing observable goal-progress budget reports at least 0.25 m of net task
+# progress. A short Nav2 advance into the same corner cannot renew the budgets.
 emergency_backup_reset_clear_s: 3.0
 emergency_minimum_retreat_pulses: 3
 emergency_maximum_improving_backups: 8

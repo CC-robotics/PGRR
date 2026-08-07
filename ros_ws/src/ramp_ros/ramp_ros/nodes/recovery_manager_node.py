@@ -344,6 +344,9 @@ class RecoveryManagerNode(Node):
             rotation_clearance_m=self._effective_emergency_rotation_clearance(),
             turn_duration_s=self._float("emergency_turn_duration_s"),
             maximum_turn_pulses=self._integer("emergency_maximum_turn_pulses"),
+            rear_obstacle_angle_rad=math.radians(
+                self._float("emergency_forward_escape_angle_degrees")
+            ),
             forward_entry_clearance_m=self._float("emergency_forward_entry_clearance_m"),
             backup_reset_clear_s=self._float("emergency_backup_reset_clear_s"),
             minimum_retreat_pulses=self._integer("emergency_minimum_retreat_pulses"),
@@ -434,7 +437,7 @@ class RecoveryManagerNode(Node):
             "deadlock_replan_after_decisions": 4,
             "robot_clearance_m": 0.25,
             "maximum_recovery_path_deviation_m": 0.65,
-            "recurrent_escape_maximum_path_deviation_m": 1.5,
+            "recurrent_escape_maximum_path_deviation_m": 2.5,
             "backup_speed_mps": 0.15,
             "backup_minimum_duration_s": 0.8,
             "backup_maximum_duration_s": 3.0,
@@ -484,9 +487,10 @@ class RecoveryManagerNode(Node):
             "footprint_release_hysteresis_m": 0.0,
             # This nominal geometric floor is composed with the stricter
             # footprint stop-and-release boundary before any turn is allowed.
-            "emergency_rotation_clearance_m": 0.40,
+            "emergency_rotation_clearance_m": 0.60,
             "emergency_turn_duration_s": 0.8,
             "emergency_maximum_turn_pulses": 4,
+            "emergency_forward_escape_angle_degrees": 80.0,
             "emergency_forward_entry_clearance_m": 0.85,
             "emergency_backup_reset_clear_s": 3.0,
             "emergency_minimum_retreat_pulses": 3,
@@ -900,7 +904,7 @@ class RecoveryManagerNode(Node):
                 (pose.x, pose.y),
                 target,
                 corridor_path,
-                maximum_deviation_m=self._effective_recovery_path_deviation(),
+                maximum_deviation_m=self._effective_emergency_path_deviation(),
             ):
                 return 0.0
         if not scan_segment_is_free(
@@ -936,6 +940,22 @@ class RecoveryManagerNode(Node):
         """Return the separately configured circular swept-rotation margin."""
 
         return self._float("emergency_rotation_clearance_m")
+
+    def _effective_emergency_path_deviation(self) -> float:
+        """Use the recurrent corridor after observable emergency escalation."""
+
+        deviation = self._effective_recovery_path_deviation()
+        emergency_recurrent = (
+            self._emergency_escape.turn_count > 0
+            or self._emergency_escape.backup_count
+            >= self._integer("emergency_minimum_retreat_pulses")
+        )
+        if emergency_recurrent:
+            deviation = max(
+                deviation,
+                self._float("recurrent_escape_maximum_path_deviation_m"),
+            )
+        return deviation
 
     def _motion_stop_distance(self, linear_velocity: float) -> float:
         """Return the directional stop distance, including a collision latch."""
@@ -1750,6 +1770,7 @@ class RecoveryManagerNode(Node):
             obstacle_clearance_m=nearest_clearance,
             forward_clearance_m=self._forward_escape_clearance(),
             rear_observed=rear_clearance is not None,
+            goal_progress_observed=meaningful_progress,
         )
         self._emergency_escape_active = self._emergency_escape_mode is EmergencyEscapeMode.BACKUP
         action_complete = self._machine.state is RecoveryState.RECOVERY and self._action_complete(

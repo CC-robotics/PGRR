@@ -1,0 +1,88 @@
+schema_version: 1
+benchmark_id: moderate_social_navigation_v5
+difficulty: moderate
+manifest_suffix: ei_pilot_v5_low_r0
+split: validation
+scenarios:
+- scenario_id: head_on_corridor_low_validation_moderate_v5_r00_s75000
+  family: head_on_corridor
+  density: low
+  map_id: map_empty
+  seed: 75000
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/head_on_corridor_low_validation_moderate_v5_r00_s75000.json
+  preview: previews/moderate_v5/head_on_corridor_low_validation_moderate_v5_r00_s75000.png
+  sha256: a8bb87e4468a2c649f4297efabd4852a74579eec1ce9edc11a3635974c304497
+- scenario_id: doorway_bottleneck_low_validation_moderate_v5_r00_s75100
+  family: doorway_bottleneck
+  density: low
+  map_id: map_empty
+  seed: 75100
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/doorway_bottleneck_low_validation_moderate_v5_r00_s75100.json
+  preview: previews/moderate_v5/doorway_bottleneck_low_validation_moderate_v5_r00_s75100.png
+  sha256: 53c373a3253925571393f70fde241022913a68fc82c7203bddbacc0e34b74584
+- scenario_id: crossing_flow_low_validation_moderate_v5_r00_s75200
+  family: crossing_flow
+  density: low
+  map_id: map_empty
+  seed: 75200
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/crossing_flow_low_validation_moderate_v5_r00_s75200.json
+  preview: previews/moderate_v5/crossing_flow_low_validation_moderate_v5_r00_s75200.png
+  sha256: 05bc84143b0843e25ca7d6de4f4003e9baab018ca624b3ce4acd66176ac3c27f
+- scenario_id: blind_corner_low_validation_moderate_v5_r00_s75300
+  family: blind_corner
+  density: low
+  map_id: map_empty
+  seed: 75300
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/blind_corner_low_validation_moderate_v5_r00_s75300.json
+  preview: previews/moderate_v5/blind_corner_low_validation_moderate_v5_r00_s75300.png
+  sha256: 338cbe89dc91409c8c6cd5ad923fd4f2b402ac574cf899733faad7d6f265a967
+- scenario_id: group_blocking_low_validation_moderate_v5_r00_s75400
+  family: group_blocking
+  density: low
+  map_id: map_empty
+  seed: 75400
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/group_blocking_low_validation_moderate_v5_r00_s75400.json
+  preview: previews/moderate_v5/group_blocking_low_validation_moderate_v5_r00_s75400.png
+  sha256: 26e08f805a0d31a9a3645eb9a40b0866adac7a91150e4bdae88d8d982c57af69
+- scenario_id: overtaking_low_validation_moderate_v5_r00_s75500
+  family: overtaking
+  density: low
+  map_id: map_empty
+  seed: 75500
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/overtaking_low_validation_moderate_v5_r00_s75500.json
+  preview: previews/moderate_v5/overtaking_low_validation_moderate_v5_r00_s75500.png
+  sha256: de45f892a9cd98ee6e956b9493ee5c3b9f2570ba1893c5379ee6260fa1faa861
+- scenario_id: opposite_streams_low_validation_moderate_v5_r00_s75600
+  family: opposite_streams
+  density: low
+  map_id: map_empty
+  seed: 75600
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/opposite_streams_low_validation_moderate_v5_r00_s75600.json
+  preview: previews/moderate_v5/opposite_streams_low_validation_moderate_v5_r00_s75600.png
+  sha256: 698ae6baf7c371cb77301b76f974b74a1cfd3f0791970f9e339a21cc925a7cca
+- scenario_id: temporary_blockage_low_validation_moderate_v5_r00_s75700
+  family: temporary_blockage
+  density: low
+  map_id: map_empty
+  seed: 75700
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/temporary_blockage_low_validation_moderate_v5_r00_s75700.json
+  preview: previews/moderate_v5/temporary_blockage_low_validation_moderate_v5_r00_s75700.png
+  sha256: 394341da1e6806460d0bfc6db0121f4dd2d3ec0af544247c9c0d3dbf322acf6f
+selection_rule: Report pilot split with low-density v5 scenarios, replicate 0 only.
+scenarios_count: 8
