@@ -437,7 +437,7 @@ class RecoveryManagerNode(Node):
             "deadlock_replan_after_decisions": 4,
             "robot_clearance_m": 0.25,
             "maximum_recovery_path_deviation_m": 0.65,
-            "recurrent_escape_maximum_path_deviation_m": 1.5,
+            "recurrent_escape_maximum_path_deviation_m": 2.5,
             "backup_speed_mps": 0.15,
             "backup_minimum_duration_s": 0.8,
             "backup_maximum_duration_s": 3.0,

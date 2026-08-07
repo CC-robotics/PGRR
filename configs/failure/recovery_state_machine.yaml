@@ -97,9 +97,10 @@ robot_clearance_m: 0.25
 # The shortest lateral action is exactly 0.60 m. Keep a 5 cm path-tracking
 # tolerance so centimetre-scale localization/path discretization cannot mask
 # only one of the two symmetric choices. Static-map and observable-LiDAR masks
-# remain authoritative; recurrent recovery still uses the wider envelope.
+# remain authoritative. Recurrent recovery uses a wider but finite envelope
+# that covers the observable 2.35 m detour around the unmodeled v5 shelf tip.
 maximum_recovery_path_deviation_m: 0.65
-recurrent_escape_maximum_path_deviation_m: 1.5
+recurrent_escape_maximum_path_deviation_m: 2.5
 braking_acceleration_mps2: 0.8
 control_latency_s: 0.15
 stopping_margin_m: 0.45
