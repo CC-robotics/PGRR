@@ -119,10 +119,10 @@ emergency_rotation_clearance_m: 0.40
 emergency_turn_duration_s: 0.8
 # At 0.6 rad/s this caps one persistent hazard at 1.92 rad of commanded turn.
 emergency_maximum_turn_pulses: 4
-# Once the closest return crosses the transverse plane, a forward pulse moves
-# non-decreasingly away from it. The swept segment and path-corridor gates must
-# still pass independently before translation is commanded.
-emergency_forward_separating_angle_degrees: 90.0
+# Close the no-action wedge at the 80-degree BACKUP direction boundary. A
+# forward pulse is still issued only when the complete swept LiDAR capsule and
+# path-corridor gates pass; the angle alone never authorizes translation.
+emergency_forward_escape_angle_degrees: 80.0
 emergency_forward_entry_clearance_m: 0.85
 # Escape budgets reset only after this much continuously clear time *and* the
 # existing observable goal-progress budget reports at least 0.25 m of net task

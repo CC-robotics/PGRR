@@ -345,7 +345,7 @@ class RecoveryManagerNode(Node):
             turn_duration_s=self._float("emergency_turn_duration_s"),
             maximum_turn_pulses=self._integer("emergency_maximum_turn_pulses"),
             rear_obstacle_angle_rad=math.radians(
-                self._float("emergency_forward_separating_angle_degrees")
+                self._float("emergency_forward_escape_angle_degrees")
             ),
             forward_entry_clearance_m=self._float("emergency_forward_entry_clearance_m"),
             backup_reset_clear_s=self._float("emergency_backup_reset_clear_s"),
@@ -490,7 +490,7 @@ class RecoveryManagerNode(Node):
             "emergency_rotation_clearance_m": 0.40,
             "emergency_turn_duration_s": 0.8,
             "emergency_maximum_turn_pulses": 4,
-            "emergency_forward_separating_angle_degrees": 90.0,
+            "emergency_forward_escape_angle_degrees": 80.0,
             "emergency_forward_entry_clearance_m": 0.85,
             "emergency_backup_reset_clear_s": 3.0,
             "emergency_minimum_retreat_pulses": 3,

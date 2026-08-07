@@ -295,7 +295,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     ] == pytest.approx(1.92)
     assert config["emergency_rotation_clearance_m"] > 0.36
     assert config["emergency_rotation_clearance_m"] < config["footprint_stop_clearance_m"]
-    assert config["emergency_forward_separating_angle_degrees"] == 90.0
+    assert config["emergency_forward_escape_angle_degrees"] == 80.0
     assert config["emergency_forward_entry_clearance_m"] == 0.85
     assert config["emergency_backup_reset_clear_s"] == 3.0
     assert config["emergency_minimum_retreat_pulses"] == 3
@@ -366,7 +366,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"emergency_rotation_clearance_m": 0.40' in manager
     assert '"emergency_turn_duration_s": 0.8' in manager
     assert '"emergency_maximum_turn_pulses": 4' in manager
-    assert '"emergency_forward_separating_angle_degrees": 90.0' in manager
+    assert '"emergency_forward_escape_angle_degrees": 80.0' in manager
     assert "self._effective_emergency_rotation_clearance()" in manager
     assert '"collision_latched_stop_clearance_m": 0.85' in manager
     assert '"collision_latched_action_clearance_m": 0.90' in manager

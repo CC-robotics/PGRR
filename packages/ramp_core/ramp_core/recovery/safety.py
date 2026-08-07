@@ -135,7 +135,7 @@ class EmergencyEscapeController:
     rotation_clearance_m: float = 0.30
     turn_duration_s: float = 0.8
     maximum_turn_pulses: int = 4
-    rear_obstacle_angle_rad: float = math.radians(90.0)
+    rear_obstacle_angle_rad: float = math.radians(80.0)
     forward_entry_clearance_m: float = 0.85
     backup_reset_clear_s: float = 3.0
     minimum_retreat_pulses: int = 3
