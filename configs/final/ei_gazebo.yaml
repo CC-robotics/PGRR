@@ -21,7 +21,7 @@ runtime:
   split_manifest: scenarios/splits/moderate_v6_test.yaml
   split_manifest_sha256: 3f70dd3472c0447d6a5695051f0b16d7eecf166133b604a7011cdf7fc45b04f6
   episode_timeout_s: 240.0
-  parallel_jobs: 8
+  parallel_jobs: 6
   headless: true
   max_physical_attempts: 3
   infrastructure_retry_limit: 2

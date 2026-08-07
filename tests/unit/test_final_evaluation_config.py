@@ -36,7 +36,7 @@ def test_final_evaluation_covers_full_test_split_and_locked_checkpoint() -> None
     assert _sha256(split_path) == config["runtime"]["split_manifest_sha256"]
 
     assert config["runtime"]["episode_timeout_s"] == 240.0
-    assert config["runtime"]["parallel_jobs"] == 8
+    assert config["runtime"]["parallel_jobs"] == 6
     assert config["learned_method"]["source_policy"] == "pgrr"
     assert config["learned_baseline"]["source_policy"] == "bc_uniform"
     for model in ("learned_baseline", "learned_method"):
