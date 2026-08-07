@@ -370,6 +370,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"collision_latched_action_clearance_m": 0.90' in manager
     assert "the latched margin is" in manager
     assert '"emergency_backup_reset_clear_s": 3.0' in manager
+    assert "goal_progress_observed=meaningful_progress" in manager
     assert '"emergency_minimum_retreat_pulses": 3' in manager
     assert '"backup_maximum_duration_s": 3.0' in manager
     assert '"bc_unilateral_backup_maximum_duration_s": 1.0' in manager

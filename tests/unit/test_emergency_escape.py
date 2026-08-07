@@ -241,6 +241,7 @@ def test_continuous_hazard_cannot_repeat_backup_limit_cycle() -> None:
         hazard=False,
         linear_speed_mps=0.0,
         rear_clearance_m=2.0,
+        goal_progress_observed=True,
     )
     assert controller.update(
         now_s=7.5,
@@ -417,7 +418,52 @@ def test_turn_pulses_recheck_direction_and_have_a_persistent_hazard_limit() -> N
         rear_observed=False,
         obstacle_clearance_m=0.60,
     ) == (False, EmergencyEscapeMode.STOP)
+    assert controller.turn_count == 2
+    assert controller.update(
+        now_s=13.1,
+        hazard=False,
+        linear_speed_mps=0.0,
+        rear_clearance_m=0.0,
+        rear_observed=False,
+        obstacle_clearance_m=0.60,
+        goal_progress_observed=True,
+    ) == (False, EmergencyEscapeMode.STOP)
     assert controller.turn_count == 0
+
+
+def test_clear_time_without_goal_progress_does_not_reset_escape_budgets() -> None:
+    controller = _controller(minimum_retreat_pulses=1)
+    common = {
+        "linear_speed_mps": 0.0,
+        "rear_clearance_m": 2.0,
+        "obstacle_angle_rad": 0.2,
+        "obstacle_clearance_m": 0.4,
+    }
+    assert controller.update(now_s=0.0, hazard=True, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.update(now_s=0.5, hazard=True, **common) == (
+        True,
+        EmergencyEscapeMode.BACKUP,
+    )
+    assert controller.update(now_s=1.4, hazard=False, **common) == (
+        False,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.update(now_s=5.0, hazard=False, **common) == (
+        False,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.backup_count == 1
+    assert controller.update(now_s=5.1, hazard=True, **common) == (
+        True,
+        EmergencyEscapeMode.STOP,
+    )
+    assert controller.update(now_s=5.6, hazard=True, **common) == (
+        True,
+        EmergencyEscapeMode.TURN_RIGHT,
+    )
 
 
 def test_continuous_hazard_can_repeat_only_when_backup_improves_clearance() -> None:

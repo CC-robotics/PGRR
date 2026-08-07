@@ -120,6 +120,9 @@ emergency_turn_duration_s: 0.8
 # At 0.6 rad/s this caps one persistent hazard at 1.92 rad of commanded turn.
 emergency_maximum_turn_pulses: 4
 emergency_forward_entry_clearance_m: 0.85
+# Escape budgets reset only after this much continuously clear time *and* the
+# existing observable goal-progress budget reports at least 0.25 m of net task
+# progress. A short Nav2 advance into the same corner cannot renew the budgets.
 emergency_backup_reset_clear_s: 3.0
 emergency_minimum_retreat_pulses: 3
 emergency_maximum_improving_backups: 8

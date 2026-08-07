@@ -1750,6 +1750,7 @@ class RecoveryManagerNode(Node):
             obstacle_clearance_m=nearest_clearance,
             forward_clearance_m=self._forward_escape_clearance(),
             rear_observed=rear_clearance is not None,
+            goal_progress_observed=meaningful_progress,
         )
         self._emergency_escape_active = self._emergency_escape_mode is EmergencyEscapeMode.BACKUP
         action_complete = self._machine.state is RecoveryState.RECOVERY and self._action_complete(

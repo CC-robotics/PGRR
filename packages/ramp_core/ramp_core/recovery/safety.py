@@ -150,6 +150,7 @@ class EmergencyEscapeController:
     backup_start_clearance_m: float | None = None
     backup_peak_clearance_m: float | None = None
     turn_count: int = 0
+    progress_observed_after_hazard: bool = False
 
     def __post_init__(self) -> None:
         values = (
@@ -185,6 +186,7 @@ class EmergencyEscapeController:
         obstacle_clearance_m: float = math.inf,
         forward_clearance_m: float = math.inf,
         rear_observed: bool = True,
+        goal_progress_observed: bool = False,
     ) -> tuple[bool, EmergencyEscapeMode]:
         """Return emergency state and a safety-directed maneuver mode."""
 
@@ -204,9 +206,6 @@ class EmergencyEscapeController:
                 if self.backup_peak_clearance_m is not None
                 else self.backup_start_clearance_m,
             )
-        if not hazard:
-            self.turn_count = 0
-
         turning = self.mode in {
             EmergencyEscapeMode.TURN_LEFT,
             EmergencyEscapeMode.TURN_RIGHT,
@@ -241,15 +240,29 @@ class EmergencyEscapeController:
             self.mode = EmergencyEscapeMode.STOP
             if self.hazard_clear_since_s is None or now_s < self.hazard_clear_since_s:
                 self.hazard_clear_since_s = now_s
-            if now_s - self.hazard_clear_since_s >= self.backup_reset_clear_s:
+            self.progress_observed_after_hazard |= goal_progress_observed
+            # A short clear interval is not sufficient evidence of escape:
+            # the nominal planner can briefly drive back into the same static
+            # corner and otherwise renew the BACKUP/TURN budgets forever.  A
+            # reset now requires both a stable clear interval and observable
+            # progress toward the original task goal.  Retreat cannot create
+            # this pulse because the caller's progress reference never moves
+            # backward.
+            if (
+                now_s - self.hazard_clear_since_s >= self.backup_reset_clear_s
+                and self.progress_observed_after_hazard
+            ):
                 self.backup_used_in_hazard = False
                 self.backup_count = 0
                 self.backup_start_clearance_m = None
                 self.backup_peak_clearance_m = None
+                self.turn_count = 0
+                self.progress_observed_after_hazard = False
             return False, self.mode
         self.hazard_clear_since_s = None
         if self.hazard_since_s is None or now_s < self.hazard_since_s:
             self.hazard_since_s = now_s
+            self.progress_observed_after_hazard = False
         stopped = abs(linear_speed_mps) <= self.release_speed_mps
         held = now_s - self.hazard_since_s >= self.hold_s
         if not stopped or not held:
