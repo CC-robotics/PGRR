@@ -1,1 +1,26 @@
-% Paired statistics are intentionally unavailable in pending mode.
+\begin{table}[htbp]
+\centering
+\scriptsize
+\caption{PGRR 相对四个 baseline 的预注册二元端点配对统计。差值为 PGRR--baseline 的百分点差；区间为配对 bootstrap 95\% CI；$p_H$ 是所有比较与指标统一 Holm 校正后的精确 McNemar $p$ 值；$\mathrm{OR}_H$ 是 Haldane 校正的 matched odds ratio。}
+\begin{tabular}{llrrrr}
+\toprule
+Baseline & 端点 & 有效对数 & 差值 [95\% CI] & $p_H$ & $\mathrm{OR}_H$ \\
+\midrule
+DWB & 目标到达 & 120 & +20.0 [+12.5, +28.3] & <0.001 & 10.60 \\
+DWB & 碰撞 & 120 & -29.2 [-37.5, -21.7] & <0.001 & 0.01 \\
+DWB & 超时 & 120 & +1.7 [+0.0, +4.2] & 1.000 & 5.00 \\
+\addlinespace
+Standard & 目标到达 & 120 & +23.3 [+15.0, +31.7] & <0.001 & 12.20 \\
+Standard & 碰撞 & 120 & -32.5 [-40.8, -24.2] & <0.001 & 0.01 \\
+Standard & 超时 & 120 & +1.7 [+0.0, +4.2] & 1.000 & 5.00 \\
+\addlinespace
+Heuristic & 目标到达 & 120 & +7.5 [+0.0, +15.8] & 1.000 & 2.20 \\
+Heuristic & 碰撞 & 120 & -0.8 [-2.5, +0.0] & 1.000 & 0.33 \\
+Heuristic & 超时 & 120 & -3.3 [-7.5, +0.0] & 1.000 & 0.27 \\
+\addlinespace
+Uniform BC & 目标到达 & 120 & +4.2 [-1.7, +10.8] & 1.000 & 1.91 \\
+Uniform BC & 碰撞 & 120 & -0.8 [-2.5, +0.0] & 1.000 & 0.33 \\
+Uniform BC & 超时 & 120 & -2.5 [-6.7, +1.7] & 1.000 & 0.45 \\
+\bottomrule
+\end{tabular}
+\end{table}

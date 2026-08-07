@@ -110,8 +110,10 @@ def test_paper_development_rebuild_uses_published_inputs_by_default() -> None:
     assert '--matched-evidence "${MATCHED_EVIDENCE}"' in source
     assert '--matched-trajectory "${MATCHED_TRAJECTORY}"' in source
     assert '--matched-recovery-timeline "${MATCHED_TIMELINE}"' in source
+    assert '--paper-matched-trajectory "${PAPER_MATCHED_TRAJECTORY}"' in source
+    assert '--paper-matched-recovery-timeline "${PAPER_MATCHED_TIMELINE}"' in source
     assert 'require_pdf_pages "paper/main.pdf" 8' in source
-    assert 'require_pdf_page_range "${REPORT_PDF}" 30 40' in source
+    assert 'require_pdf_pages "${REPORT_PDF}" 32' in source
     assert 'require_pdf_pages "${PRESENTATION_PDF}" 30' in source
     assert "DEVELOPMENT REBUILD PASS" in source
     assert "not a privacy/release PASS" in source
@@ -177,6 +179,20 @@ def test_raw_recollection_is_explicitly_guarded() -> None:
         assert required in published_block
 
 
+def test_paper_matched_media_are_installed_and_byte_verified_before_build() -> None:
+    source = _source("reproduce_paper.sh")
+    build_offset = source.index("scripts/paper/build_paper.sh")
+    for source_path, paper_path in (
+        ("${MATCHED_TRAJECTORY}", "${PAPER_MATCHED_TRAJECTORY}"),
+        ("${MATCHED_TIMELINE}", "${PAPER_MATCHED_TIMELINE}"),
+    ):
+        install = f'install -m 0644 "{source_path}" "{paper_path}"'
+        compare = f'cmp -s "{source_path}" "{paper_path}"'
+        assert install in source
+        assert compare in source
+        assert source.index(install) < source.index(compare) < build_offset
+
+
 def test_clean_git_archive_contains_portable_offline_dataset(tmp_path: Path) -> None:
     """A clean source archive retains the no-raw rebuild inputs."""
 
@@ -240,11 +256,19 @@ def test_paper_build_checks_overfull_boxes_and_embedded_fonts() -> None:
     source = (ROOT / "scripts" / "paper" / "build_paper.sh").read_text(encoding="utf-8")
     assert "moderate_result_macros.tex" in source
     assert "moderate_outcomes_and_density.pdf" in source
+    assert "paper/figures/moderate_matched_base_pgrr_trajectory.pdf" in source
+    assert "paper/figures/moderate_pgrr_recovery_timeline.pdf" in source
     assert "make_figures.py" not in source
     assert "make_tables.py" not in source
     assert "pdfinfo main.pdf" in source
     assert '[[ "${paper_pages}" != "8" ]]' in source
     assert "conference paper must contain exactly 8 pages" in source
+    assert "validate_final_pdf_text.py" in source
     assert "grep -Fq 'Overfull \\hbox' main.log" in source
     assert 'NR > 2 && $4 == "no"' in source
     assert "$(NF-4)" not in source
+
+    results_source = (ROOT / "paper" / "sections" / "results.tex").read_text(encoding="utf-8")
+    assert "moderate_matched_base_pgrr_trajectory.pdf" in results_source
+    assert "moderate_pgrr_recovery_timeline.pdf" in results_source
+    assert "\\IfFileExists{figures/moderate_matched" not in results_source

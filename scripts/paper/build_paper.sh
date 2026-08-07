@@ -17,6 +17,8 @@ required_artifacts=(
     paper/figures/moderate_family_success.pdf
     paper/figures/moderate_paired_effects.pdf
     paper/figures/moderate_safety_efficiency.pdf
+    paper/figures/moderate_matched_base_pgrr_trajectory.pdf
+    paper/figures/moderate_pgrr_recovery_timeline.pdf
 )
 for artifact in "${required_artifacts[@]}"; do
     if [[ ! -s "${PROJECT_ROOT}/${artifact}" ]]; then
@@ -47,6 +49,7 @@ if [[ "${paper_pages}" != "8" ]]; then
     echo "ERROR: conference paper must contain exactly 8 pages; found ${paper_pages:-unknown}" >&2
     exit 1
 fi
+python "${PROJECT_ROOT}/scripts/paper/validate_final_pdf_text.py" main.pdf
 if grep -Eq "undefined references|Citation .* undefined|Reference .* undefined" main.log; then
     echo "ERROR: unresolved paper reference or citation" >&2
     exit 1

@@ -124,7 +124,6 @@ WAIT、BACKUP、REPLAN、CONTINUE 四个离散恢复动作之间选择。地图�
 
 系统的最低目标不是承诺无碰撞，而是形成一个有界、可审计、可回退的恢复层，并使用相同 episode manifest 对五种方法进行配对评价。
 
-\clearpage
 \section{典型失败模式}
 系统统一处理四类高层失败证据：碰撞风险、冻结、左右振荡和动态死锁。它们既可能由动态参与者引起，也可能由局部路径、几何角点和控制历史共同造成。
 
@@ -304,7 +303,7 @@ PGRR & 选定 DAgger checkpoint、规划 mask、有界状态机与安全监督 \
 恢复成功不等于最终导航成功。一次恢复可以成功重接但随后仍失败；反之，没有触发恢复的成功 episode 不会被记为恢复成功。
 
 \section{配对统计与基础设施排除}
-二元终止端点使用完全相同 pair key 的精确 McNemar 检验，连续配对差异使用双侧 Wilcoxon signed-rank。均值配对效应使用固定 seed 的 10,000 次 percentile bootstrap 95\% 区间，预注册比较族统一进行 Holm 校正，并同时报告效应量和区间。
+预注册的到达、碰撞和超时二元端点使用完全相同 pair key 的精确 McNemar 检验；规划失败只做描述性报告。连续配对差异使用双侧 Wilcoxon signed-rank。均值配对效应使用固定 seed 的 10,000 次 percentile bootstrap 95\% 区间，预注册比较族统一进行 Holm 校正，并同时报告效应量和区间。
 
 SIMULATOR\_FAILURE 和 INVALID\_RESET 可重试且从算法分母单独排除，但物理尝试、排除数、原因和哈希必须保留。COLLISION、TIMEOUT 和 PLANNER\_FAILURE 不允许重试美化。
 
@@ -315,6 +314,10 @@ SIMULATOR\_FAILURE 和 INVALID\_RESET 可重试且从算法分母单独排除，
   \ReportValidEpisodeCount{} 个进入算法指标，\ReportExcludedEpisodeCount{} 个为单独报告的基础设施排除。
   \input{generated/result_table.tex}
   \SafeFigure{generated/result_outcomes.pdf}{五种方法的完整终止结果。碰撞、超时和规划失败均未折叠。}
+  DWB 与 PGRR 的 \texttt{PLANNER\_FAILURE} 描述性率分别为
+  \ReportBasePlannerFailureRate{} 和 \ReportPGRRPlannerFailureRate{}，PGRR--DWB
+  边际率差为 \ReportPlannerFailureDifference{}。该类别完整保留，但不是预注册推断端点，
+  因此不补做事后显著性检验。
 \else
   \PendingResults
 \fi
@@ -338,6 +341,15 @@ SIMULATOR\_FAILURE 和 INVALID\_RESET 可重试且从算法分母单独排除，
   \input{generated/result_paired_statistics.tex}
   \SafeFigure{generated/result_paired_effects.pdf}{PGRR 相对四个 baseline 的十二个预注册二元端点。点为百分点配对差，线为 95\% paired-bootstrap CI；图内同时标注全局 Holm 校正后的 $p_H$ 与 Haldane 校正 matched odds ratio $\mathrm{OR}_H$。到达端点正值有利，碰撞和超时端点负值有利。}
   \SafeFigure{generated/result_safety_efficiency.pdf}{成功 episode 导航时间与全部有效 episode 最小人距的联合视图。两个轴不替代终止结果。}
+  \ifReportJointSuccessEfficiencyAvailable
+    在 DWB 与 PGRR 都到达目标的 \ReportJointSuccessPairCount{} 个 pair 中，PGRR--DWB
+    episode 时长配对差为 \ReportJointSuccessDurationDifference{}
+    （$p_{\mathrm{Holm}}\ReportJointSuccessDurationHolmP$），路径长度配对差为
+    \ReportJointSuccessPathDifference{}（$p_{\mathrm{Holm}}\ReportJointSuccessPathHolmP$）。
+    这两项直接来自 pairwise JSON，条件于共同成功，不能删除或替代失败终局。
+  \else
+    没有有限的 DWB--PGRR 共同到达 pair；时长和路径效率不可估计，终止结果仍为主证据。
+  \fi
 \else
   \PendingResults
 \fi
@@ -408,7 +420,6 @@ ID 范围 & 半径（m） & 相对角（度） & 类型 \\
 \bottomrule
 \end{longtable}
 
-\clearpage
 \section{结果构建的 fail-closed 规则}
 结果构建器执行以下硬检查：
 \begin{enumerate}
@@ -428,7 +439,6 @@ ID 范围 & 半径（m） & 相对角（度） & 类型 \\
   \item 报告 JSON、TeX 宏和图表同时保存结果、统计与 matched evidence 的 SHA256。
 \end{enumerate}
 
-\clearpage
 \section{汇报材料检查清单}
 最终交付同时检查 PDF 页数、PPTX slide 数、字体嵌入、图片关系、禁止占位符、个人信息、真实截图 SHA、结果阶段标签和 speaker notes。若任何一项失败，构建命令返回非零状态，不发布半成品。
 

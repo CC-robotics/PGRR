@@ -1,5 +1,46 @@
 # Progress log
 
+## 2026-08-08 — moderate-v6 held-out test and release bundle complete
+
+- Completed run `95ec74c511bb` at evaluation commit `6916e7c`: 600/600
+  held-out logical episodes, 120 identical conditions per method, five methods,
+  six parallel jobs, and `worker_errors=[]` in the final manifest.
+- Preserved all terminal classes. Base records 85 goals / 35 collisions / zero
+  timeouts / zero planner failures; Standard 81 / 39 / 0 / 0; Heuristic
+  100 / 1 / 6 / 13; Uniform BC 104 / 1 / 5 / 10; and PGRR 109 / 0 / 2 / 9.
+- Completed the preregistered 10,000-resample paired analysis with one global
+  Holm family. Against Base, PGRR has +20.00 percentage points goal reaching
+  (`p=1.031e-4`) and -29.17 points collision (`p=2.561e-9`). Its goal,
+  collision, and timeout differences relative to both Heuristic and Uniform BC
+  are all non-significant after the global correction.
+- Retained the efficiency and social-control costs. On 83 joint successes,
+  PGRR takes 15.88 s longer and travels 1.89 m farther than Base; both increases
+  are significant. Its personal-space violation ratio is descriptively higher,
+  and its mean absolute angular jerk is significantly higher. Final claims are
+  bounded to the observed safety--completion--efficiency trade-off.
+- Preserved 614 outcome-bearing physical attempts: 600 algorithm outcomes plus
+  eight `SIMULATOR_FAILURE` and six `INVALID_RESET` technical attempts. The two
+  immutable pre-completion snapshots retain 42 no-outcome command failures over
+  39 unique tasks; six-worker resumes filled only missing work and recovered all
+  600 logical outcomes.
+- Bound calibration to the accepted validation report with SHA-256
+  `0fbf8a159a1e1b96e940bec0efb31e5952ba5b0333439992f370a9a9fb41e15f`.
+  The empty rejected `outputs/moderate/final/calibration_report.json` byproduct
+  is explicitly ineligible for calibration claims.
+- Recollected the locked raw streams, regenerated results/statistics and real
+  telemetry evidence, then reran the publication build from published inputs.
+  The final bundle contains the exact eight-page paper, 32-page technical
+  report, 30-slide PPTX/PDF, and a 76-file checksummed artifact manifest.
+- Kept evidence provenance explicit: the Gazebo GUI image is a real, labeled v5
+  validation demonstration; the v6 same-pair Base--PGRR figures are real test
+  telemetry reconstructions and are not described as camera screenshots.
+- Preserved the historical v1 64/64 safety--completion trade-off without mixing
+  its outcomes into v6.
+- Passed final QA: Ruff, formatting, mypy, privacy, document validators, and
+  703/703 pytest cases. Commit `fe23ed6` also passed the validate-only release
+  pipeline from a clean detached worktree with all 76 artifact hashes intact.
+  Only synchronized pushes to `home` and `main` remain.
+
 ## 2026-08-07 — moderate-v6 validation gate complete
 
 - Completed 360/360 validation logical episodes across five methods on 72

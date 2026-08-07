@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import shutil
 import subprocess
@@ -26,6 +27,14 @@ from typing import Any
 import pandas as pd
 import yaml
 from PIL import Image
+
+try:
+    from validate_final_pdf_text import FinalPdfTextError, validate_final_pdf
+except ModuleNotFoundError:  # Loaded directly from its file path by unit tests.
+    script_directory = str(Path(__file__).resolve().parent)
+    if script_directory not in sys.path:
+        sys.path.insert(0, script_directory)
+    from validate_final_pdf_text import FinalPdfTextError, validate_final_pdf
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -63,6 +72,8 @@ DEFAULT_MATCHED_TRAJECTORY = Path(
     "outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf"
 )
 DEFAULT_MATCHED_TIMELINE = Path("outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf")
+DEFAULT_PAPER_MATCHED_TRAJECTORY = Path("paper/figures/moderate_matched_base_pgrr_trajectory.pdf")
+DEFAULT_PAPER_MATCHED_TIMELINE = Path("paper/figures/moderate_pgrr_recovery_timeline.pdf")
 DEFAULT_PAPER = Path("paper/main.pdf")
 DEFAULT_REPORT = Path("report/PGRR_technical_report_zh.pdf")
 DEFAULT_REPORT_DATA = Path("report/generated/report_data.json")
@@ -88,6 +99,9 @@ OPTIONAL_RUNTIME_SCREENSHOT_SOURCE = Path(
 )
 OPTIONAL_RUNTIME_CAPTURE_METADATA = Path(
     "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json"
+)
+OPTIONAL_RUNTIME_CAPTURE_WINDOW = Path(
+    "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.window.json"
 )
 
 COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
@@ -669,6 +683,7 @@ def _validate_runtime_capture(
     screenshot: Path,
     source_screenshot: Path,
     metadata_path: Path,
+    window_path: Path,
 ) -> None:
     metadata = _load_json_object(metadata_path, label="runtime screenshot metadata")
     if metadata.get("artifact_type") != "real_arena_gazebo_gui_screenshot":
@@ -702,6 +717,12 @@ def _validate_runtime_capture(
     window = _mapping(metadata.get("window"), label="runtime window")
     if re.search(r"Gazebo|gz sim", str(window.get("title", "")), re.IGNORECASE) is None:
         raise ArtifactError("runtime screenshot metadata does not identify a Gazebo window")
+    window_capture = _load_json_object(window_path, label="runtime window capture")
+    selected_window = _mapping(
+        window_capture.get("selected_window"), label="runtime selected_window"
+    )
+    if selected_window.get("title") != "Gazebo":
+        raise ArtifactError("runtime window capture does not identify the Gazebo window")
     visual = _mapping(metadata.get("visual_validation"), label="runtime visual_validation")
     try:
         viewport_stddev = float(visual["scene_viewport_grayscale_stddev"])
@@ -850,19 +871,6 @@ def _require_pdf_pages(path: Path, *, expected: int, label: str) -> int:
     return observed
 
 
-def _require_pdf_page_range(
-    path: Path,
-    *,
-    minimum: int,
-    maximum: int,
-    label: str,
-) -> int:
-    observed = _pdf_page_count(path, label=label)
-    if not minimum <= observed <= maximum:
-        raise ArtifactError(f"{label} must contain {minimum}--{maximum} pages; found {observed}")
-    return observed
-
-
 def _validate_offline_ablation(
     *,
     project_root: Path,
@@ -992,6 +1000,8 @@ def _validate_matched_evidence_bundle(
     results_sha256: str,
     trajectory_path: Path,
     timeline_path: Path,
+    paper_trajectory_path: Path,
+    paper_timeline_path: Path,
 ) -> dict[str, Any]:
     """Bind the published matched sidecar to its fixed test media and results."""
 
@@ -1043,17 +1053,19 @@ def _validate_matched_evidence_bundle(
         "trajectory": (
             "moderate_matched_base_pgrr_trajectory.pdf",
             trajectory_path,
+            paper_trajectory_path,
         ),
         "recovery_timeline": (
             "moderate_pgrr_recovery_timeline.pdf",
             timeline_path,
+            paper_timeline_path,
         ),
     }
     declarations = payload.get("artifacts")
     if not isinstance(declarations, Mapping) or set(declarations) != set(expected_artifacts):
         raise ArtifactError("matched evidence must declare both fixed PDF artifacts")
     evidence_directory = evidence_path.parent.resolve()
-    for field, (filename, expected_path) in expected_artifacts.items():
+    for field, (filename, expected_path, paper_copy) in expected_artifacts.items():
         declaration = _mapping(declarations[field], label=f"matched {field} artifact")
         if declaration.get("filename") != filename:
             raise ArtifactError(f"matched {field} artifact does not use fixed filename {filename}")
@@ -1068,6 +1080,8 @@ def _validate_matched_evidence_bundle(
         declared_sha = str(declaration.get("sha256", ""))
         if not SHA256_PATTERN.fullmatch(declared_sha) or sha256_file(expected_path) != declared_sha:
             raise ArtifactError(f"matched {field} artifact SHA256 disagrees")
+        if sha256_file(paper_copy) != declared_sha:
+            raise ArtifactError(f"paper matched {field} copy SHA256 disagrees")
     return payload
 
 
@@ -1162,6 +1176,118 @@ def _validate_report_data(
     }
     if observed_pairs != expected_pairs:
         raise ArtifactError("technical-report paired comparison matrix is incomplete")
+    planner_failure = payload.get("base_pgrr_planner_failure")
+    if (
+        not isinstance(planner_failure, Mapping)
+        or planner_failure.get("endpoint") != "PLANNER_FAILURE"
+        or planner_failure.get("analysis") != "descriptive_marginal_rate_difference"
+        or planner_failure.get("preregistered_inferential_endpoint") is not False
+        or planner_failure.get("post_hoc_significance_test") is not False
+    ):
+        raise ArtifactError("technical-report data must label PLANNER_FAILURE as descriptive only")
+    planner_rates: dict[str, float] = {}
+    for method in ("base", "pgrr"):
+        record = planner_failure.get(method)
+        if not isinstance(record, Mapping):
+            raise ArtifactError(f"technical-report data omits {method} planner-failure rate")
+        try:
+            denominator = int(record["valid_episode_count"])
+            count = int(record["count"])
+            rate = float(record["rate"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ArtifactError(
+                f"technical-report data has invalid {method} planner-failure fields"
+            ) from error
+        if (
+            denominator <= 0
+            or not 0 <= count <= denominator
+            or not 0.0 <= rate <= 1.0
+            or not math.isclose(rate, count / denominator, rel_tol=1.0e-12, abs_tol=1.0e-12)
+        ):
+            raise ArtifactError(
+                f"technical-report data has inconsistent {method} planner-failure rate"
+            )
+        planner_rates[method] = rate
+    try:
+        planner_difference = float(planner_failure["rate_difference_pgrr_minus_base"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ArtifactError("technical-report planner-failure difference is invalid") from error
+    if not math.isclose(
+        planner_difference,
+        planner_rates["pgrr"] - planner_rates["base"],
+        rel_tol=1.0e-12,
+        abs_tol=1.0e-12,
+    ):
+        raise ArtifactError("technical-report planner-failure difference is inconsistent")
+
+    efficiency = payload.get("base_pgrr_joint_success_efficiency")
+    if (
+        not isinstance(efficiency, Mapping)
+        or efficiency.get("reference_policy") != "base"
+        or efficiency.get("treatment_policy") != "pgrr"
+        or efficiency.get("population") != "joint_success"
+    ):
+        raise ArtifactError("technical-report data omits Base--PGRR joint-success efficiency")
+    metrics = efficiency.get("metrics")
+    if not isinstance(metrics, Mapping) or set(metrics) != {"duration", "path_length"}:
+        raise ArtifactError(
+            "technical-report joint-success efficiency must contain duration and path length"
+        )
+    metric_pair_counts: set[int] = set()
+    metric_availability: list[bool] = []
+    for key, unit in (("duration", "s"), ("path_length", "m")):
+        record = metrics[key]
+        if (
+            not isinstance(record, Mapping)
+            or record.get("population") != "joint_success"
+            or record.get("unit") != unit
+        ):
+            raise ArtifactError(f"technical-report joint-success {key} record is malformed")
+        try:
+            pair_count = int(record["pair_count"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ArtifactError(
+                f"technical-report joint-success {key} pair count is invalid"
+            ) from error
+        if pair_count < 0:
+            raise ArtifactError(
+                f"technical-report joint-success {key} pair count must be non-negative"
+            )
+        metric_pair_counts.add(pair_count)
+        available = record.get("available") is True
+        metric_availability.append(available)
+        if not available:
+            continue
+        for field in (
+            "difference_pgrr_minus_base",
+            "ci_lower",
+            "ci_upper",
+            "pvalue_raw",
+            "pvalue_holm",
+        ):
+            try:
+                value = float(record[field])
+            except (KeyError, TypeError, ValueError) as error:
+                raise ArtifactError(
+                    f"technical-report joint-success {key}/{field} is invalid"
+                ) from error
+            if not math.isfinite(value):
+                raise ArtifactError(f"technical-report joint-success {key}/{field} must be finite")
+        estimate = float(record["difference_pgrr_minus_base"])
+        if not float(record["ci_lower"]) <= estimate <= float(record["ci_upper"]):
+            raise ArtifactError(f"technical-report joint-success {key} interval omits its estimate")
+        for field in ("pvalue_raw", "pvalue_holm"):
+            if not 0.0 <= float(record[field]) <= 1.0:
+                raise ArtifactError(
+                    f"technical-report joint-success {key}/{field} is not a probability"
+                )
+    if len(metric_pair_counts) != 1:
+        raise ArtifactError("technical-report joint-success metric pair counts disagree")
+    declared_pair_count = int(efficiency.get("pair_count", -1))
+    if declared_pair_count != next(iter(metric_pair_counts)):
+        raise ArtifactError("technical-report joint-success pair count is inconsistent")
+    if bool(efficiency.get("available")) != all(metric_availability):
+        raise ArtifactError("technical-report joint-success availability is inconsistent")
 
 
 def _validate_presentation(pptx: Path, notes: Path, contact_sheet: Path) -> None:
@@ -1210,6 +1336,8 @@ def _validate_presentation(pptx: Path, notes: Path, contact_sheet: Path) -> None
         )
     if "阶段\uff1a`test`" not in notes_text:
         raise ArtifactError("presentation speaker notes are not bound to the locked test stage")
+    if "如果还是 pending" in notes_text:
+        raise ArtifactError("locked-test speaker notes still contain pending-stage guidance")
     _validate_png(contact_sheet, label="presentation contact sheet", require_contrast=True)
     with Image.open(contact_sheet) as image:
         width, height = image.size
@@ -1243,6 +1371,8 @@ def build_manifest(
     matched_evidence_path: Path = DEFAULT_MATCHED_EVIDENCE,
     matched_trajectory_path: Path = DEFAULT_MATCHED_TRAJECTORY,
     matched_timeline_path: Path = DEFAULT_MATCHED_TIMELINE,
+    paper_matched_trajectory_path: Path = DEFAULT_PAPER_MATCHED_TRAJECTORY,
+    paper_matched_timeline_path: Path = DEFAULT_PAPER_MATCHED_TIMELINE,
     paper_path: Path = DEFAULT_PAPER,
     report_path: Path = DEFAULT_REPORT,
     report_data_path: Path = DEFAULT_REPORT_DATA,
@@ -1346,6 +1476,16 @@ def build_manifest(
         ("matched_evidence", matched_evidence_path, "matched Base--PGRR evidence"),
         ("matched_runtime", matched_trajectory_path, "matched Base--PGRR trajectory"),
         ("matched_runtime", matched_timeline_path, "matched PGRR recovery timeline"),
+        (
+            "paper_matched_runtime",
+            paper_matched_trajectory_path,
+            "paper matched Base--PGRR trajectory",
+        ),
+        (
+            "paper_matched_runtime",
+            paper_matched_timeline_path,
+            "paper matched PGRR recovery timeline",
+        ),
     )
     artifacts: list[tuple[str, Path]] = []
     for category, path, label in singleton_specs:
@@ -1392,12 +1532,24 @@ def build_manifest(
         matched_timeline_path,
         label="matched PGRR recovery timeline",
     )
+    resolved_paper_matched_trajectory = _require_file(
+        root,
+        paper_matched_trajectory_path,
+        label="paper matched Base--PGRR trajectory",
+    )
+    resolved_paper_matched_timeline = _require_file(
+        root,
+        paper_matched_timeline_path,
+        label="paper matched PGRR recovery timeline",
+    )
     matched_evidence = _validate_matched_evidence_bundle(
         resolved_matched_evidence,
         results_path=resolved_results,
         results_sha256=provenance["results_sha256"],
         trajectory_path=resolved_matched_trajectory,
         timeline_path=resolved_matched_timeline,
+        paper_trajectory_path=resolved_paper_matched_trajectory,
+        paper_timeline_path=resolved_paper_matched_timeline,
     )
     resolved_paper = _require_file(root, paper_path, label="paper PDF")
     resolved_report = _require_file(root, report_path, label="technical-report PDF")
@@ -1428,10 +1580,14 @@ def build_manifest(
         expected_episodes=int(provenance["expected_episodes"]),
     )
     paper_pages = _require_pdf_pages(resolved_paper, expected=8, label="conference paper")
-    report_pages = _require_pdf_page_range(
+    if release:
+        try:
+            validate_final_pdf(resolved_paper)
+        except FinalPdfTextError as error:
+            raise ArtifactError(str(error)) from error
+    report_pages = _require_pdf_pages(
         resolved_report,
-        minimum=30,
-        maximum=40,
+        expected=32,
         label="technical report",
     )
     presentation_pages = _require_pdf_pages(
@@ -1549,6 +1705,11 @@ def build_manifest(
         OPTIONAL_RUNTIME_CAPTURE_METADATA,
         label="optional runtime screenshot metadata",
     )
+    runtime_window = _inside_root(
+        root,
+        OPTIONAL_RUNTIME_CAPTURE_WINDOW,
+        label="optional runtime window capture",
+    )
     runtime_source = _inside_root(
         root,
         OPTIONAL_RUNTIME_SCREENSHOT_SOURCE,
@@ -1558,6 +1719,7 @@ def build_manifest(
         runtime_screenshot.exists(),
         runtime_source.exists(),
         runtime_metadata.exists(),
+        runtime_window.exists(),
     }
     if len(capture_presence) != 1:
         raise ArtifactError(
@@ -1571,11 +1733,13 @@ def build_manifest(
         runtime_metadata = _require_file(
             root, runtime_metadata, label="runtime screenshot metadata"
         )
+        runtime_window = _require_file(root, runtime_window, label="runtime window capture")
         _validate_runtime_capture(
             root,
             screenshot=runtime_screenshot,
             source_screenshot=runtime_source,
             metadata_path=runtime_metadata,
+            window_path=runtime_window,
         )
         artifacts.append(
             (
@@ -1590,6 +1754,7 @@ def build_manifest(
                 runtime_metadata,
             )
         )
+        artifacts.append(("runtime_capture_window", runtime_window))
 
     timestamp = generated_at or datetime.now(timezone.utc).isoformat()
     records = [_artifact_record(root, category, path) for category, path in artifacts]
@@ -1657,6 +1822,16 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_MATCHED_TIMELINE,
     )
+    parser.add_argument(
+        "--paper-matched-trajectory",
+        type=Path,
+        default=DEFAULT_PAPER_MATCHED_TRAJECTORY,
+    )
+    parser.add_argument(
+        "--paper-matched-recovery-timeline",
+        type=Path,
+        default=DEFAULT_PAPER_MATCHED_TIMELINE,
+    )
     parser.add_argument("--paper", type=Path, default=DEFAULT_PAPER)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--report-data", type=Path, default=DEFAULT_REPORT_DATA)
@@ -1711,6 +1886,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             matched_evidence_path=args.matched_evidence,
             matched_trajectory_path=args.matched_trajectory,
             matched_timeline_path=args.matched_recovery_timeline,
+            paper_matched_trajectory_path=args.paper_matched_trajectory,
+            paper_matched_timeline_path=args.paper_matched_recovery_timeline,
             paper_path=args.paper,
             report_path=args.report,
             report_data_path=args.report_data,

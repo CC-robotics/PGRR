@@ -1,0 +1,51 @@
+{
+  "artifact_type": "matched_base_pgrr_test_media",
+  "artifacts": {
+    "recovery_timeline": {
+      "filename": "moderate_pgrr_recovery_timeline.pdf",
+      "media_type": "application/pdf",
+      "path": "media/moderate_pgrr_recovery_timeline.pdf",
+      "sha256": "f34e8654b71c883a768c72e116b2f08c91d5fa325b2e2fabcf7cb523a0034b17"
+    },
+    "trajectory": {
+      "filename": "moderate_matched_base_pgrr_trajectory.pdf",
+      "media_type": "application/pdf",
+      "path": "media/moderate_matched_base_pgrr_trajectory.pdf",
+      "sha256": "8058a5558a6e123020d0870884d8d6c53e141bde54c13d692906c30142d3b305"
+    }
+  },
+  "benchmark_id": "moderate_social_navigation_v6",
+  "density": "high",
+  "family": "blind_corner",
+  "pair_id": "blind_corner_high_test_moderate_v6_r00_s87320_seed87320",
+  "project_commit": "6916e7cd586acfbe200045e49b093039e2a6980e",
+  "representation": "telemetry reconstruction; not a simulator camera screenshot",
+  "results_file": "results.parquet",
+  "results_sha256": "77a1c2eb57279252e09624fad4aa57828f409426c2aa3f5c2b631556614aba97",
+  "runs": {
+    "base": {
+      "episode_id": "blind_corner_high_test_moderate_v6_r00_s87320_eval_base_r95ec74c511bb_a0_dwb",
+      "metadata_sha256": "37e2362c95ef70dff21742f38637fe1f7008ccd43178dc82c83e4757e17462a2",
+      "outcome": "COLLISION",
+      "outcome_sha256": "d0b68fdeec93dbffa96959a640dfcfe93dfc9ea8ee33958d58f105c3889697c8",
+      "raw_file": "blind_corner_high_test_moderate_v6_r00_s87320_eval_base_r95ec74c511bb_a0_dwb.jsonl",
+      "raw_sha256": "3b2969e6d15e86241c2e3c5ad5fe1800357259628367bb61301c26d8cd999c41",
+      "sample_count": 456
+    },
+    "pgrr": {
+      "episode_id": "blind_corner_high_test_moderate_v6_r00_s87320_eval_pgrr_r95ec74c511bb_a0_dwb",
+      "metadata_sha256": "41bcc0d7893ae4d4d5539dc86a7a338c91086c2750d22b84057d21c0104d7b74",
+      "outcome": "GOAL_REACHED",
+      "outcome_sha256": "a1218348260aa08c48e3d9de8f34212dc295efe8eb2d39b00a5b11719f065fc3",
+      "raw_file": "blind_corner_high_test_moderate_v6_r00_s87320_eval_pgrr_r95ec74c511bb_a0_dwb.jsonl",
+      "raw_sha256": "7c81c150788aff942c943fde1ae605ec3017a356f73d88f30ba9aefc6df751e1",
+      "sample_count": 1367
+    }
+  },
+  "scenario_id": "blind_corner_high_test_moderate_v6_r00_s87320",
+  "scenario_sha256": "6bb1697fc758f5fd501e8b56b7dec1c6acaf7431bfce3f7abea047b313a8fcbb",
+  "schema_version": 2,
+  "seed": 87320,
+  "selection_rule": "eligible: PGRR trigger + configured static geometry + actor routes; order: Base failure/PGRR goal, outcome contrast, PGRR goal, density, trigger count, family, seed, pair_id",
+  "stage": "test"
+}

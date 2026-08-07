@@ -204,7 +204,7 @@ report-assets: ## Generate fail-closed pending/validation/test report inputs.
 	if [[ -n "$(REPORT_EXPECTED_CONDITIONS)" ]]; then args+=(--expected-conditions "$(REPORT_EXPECTED_CONDITIONS)"); fi; \
 	$(OFFLINE_RUN) python scripts/report/build_report_assets.py "$${args[@]}"
 
-technical-report: ## Build and validate the 25--35 page Chinese technical report.
+technical-report: ## Build the stage-aware Chinese report; locked test must be exactly 32 pages.
 	@REPORT_STAGE="$(REPORT_STAGE)" REPORT_RESULTS="$(if $(filter pending,$(REPORT_STAGE)),,$(REPORT_RESULTS))" \
 	REPORT_STATISTICS="$(if $(filter pending,$(REPORT_STAGE)),,$(REPORT_STATISTICS))" \
 	REPORT_MATCHED_EVIDENCE="$(if $(filter pending,$(REPORT_STAGE)),,$(REPORT_MATCHED_EVIDENCE))" \

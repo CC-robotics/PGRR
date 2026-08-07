@@ -81,6 +81,7 @@ def _synthetic_report_results() -> pd.DataFrame:
                     "included_in_algorithm_metrics": True,
                     "episode_duration_s": 40.0 + condition_index,
                     "navigation_time_s": 39.0 + condition_index + method_index,
+                    "path_length_m": 8.0 + 0.1 * condition_index + 0.1 * method_index,
                     "min_human_distance_m": 0.55 + 0.04 * method_index,
                     "recovery_trigger_count": 0 if method == "base" else 4,
                     "recovery_success_count": 0 if method == "base" else method_index,
@@ -377,14 +378,30 @@ def test_result_report_requires_and_cross_checks_all_paired_statistics(tmp_path:
     assert data["schema_version"] == 3
     assert data["condition_count"] == 72
     assert len(data["paired_comparisons"]) == 12
+    planner_failure = data["base_pgrr_planner_failure"]
+    assert planner_failure["preregistered_inferential_endpoint"] is False
+    assert planner_failure["post_hoc_significance_test"] is False
+    assert planner_failure["base"]["rate"] == planner_failure["pgrr"]["rate"]
+    efficiency = data["base_pgrr_joint_success_efficiency"]
+    assert efficiency["population"] == "joint_success"
+    assert efficiency["pair_count"] == 42
+    assert set(efficiency["metrics"]) == {"duration", "path_length"}
+    assert efficiency["metrics"]["path_length"]["difference_pgrr_minus_base"] == pytest.approx(0.4)
     assert len(data["statistics_sha256"]) == 64
     assert (output / "result_paired_effects.pdf").read_bytes().startswith(b"%PDF")
+    assert (output / "result_joint_success_efficiency.pdf").read_bytes().startswith(b"%PDF")
     assert (output / "result_matched_run_evidence.pdf").read_bytes().startswith(b"%PDF")
     assert data["matched_run_evidence"]["representation"].startswith("telemetry")
     table = (output / "result_paired_statistics.tex").read_text(encoding="utf-8")
     assert all(label in table for label in ("DWB", "Standard", "Heuristic", "Uniform BC"))
     assert all(label in table for label in ("目标到达", "碰撞", "超时"))
     assert "95\\% CI" in table and "\\mathrm{OR}_H" in table
+    macros = (output / "report_stage.tex").read_text(encoding="utf-8")
+    assert r"\ReportBasePlannerFailureRate" in macros
+    assert r"\ReportPlannerFailureDifference" in macros
+    assert r"\newcommand{\ReportJointSuccessPairCount}{42}" in macros
+    assert r"\ReportJointSuccessDurationDifference" in macros
+    assert r"\ReportJointSuccessPathDifference" in macros
 
     loaded = DECK.load_report_data(output / "report_data.json", stage="validation")
     specs = DECK.build_slide_specs("validation", loaded)
@@ -394,6 +411,11 @@ def test_result_report_requires_and_cross_checks_all_paired_statistics(tmp_path:
         name in " ".join(slide.bullets) for name in ("DWB", "Standard", "Heuristic", "Uniform BC")
     )
     assert "95% CI" in slide.bullets[-1] and "Holm" in slide.bullets[-1]
+    efficiency_slide = specs[24]
+    assert efficiency_slide.asset == "report/generated/result_joint_success_efficiency.pdf"
+    assert "共同成功条件下" in efficiency_slide.title
+    assert any("共同到达 pair" in bullet and "42" in bullet for bullet in efficiency_slide.bullets)
+    assert all("如果还是 pending" not in spec.notes for spec in specs)
 
 
 def test_result_report_rejects_missing_or_tampered_statistics(tmp_path: Path) -> None:
@@ -436,6 +458,26 @@ def test_result_report_rejects_tampered_global_holm_adjustment(tmp_path: Path) -
             statistics_path=statistics,
             matched_evidence_path=evidence,
             output_dir=tmp_path / "tampered-holm",
+            project_root=tmp_path,
+            expected_conditions=72,
+        )
+
+
+def test_result_report_rejects_tampered_joint_success_efficiency(tmp_path: Path) -> None:
+    results, statistics, evidence = _write_synthetic_report_inputs(tmp_path)
+    payload = json.loads(statistics.read_text(encoding="utf-8"))
+    interval = payload["comparisons"]["base"]["continuous_metrics"]["successful_path_length_m"][
+        "difference_treatment_minus_reference"
+    ]
+    interval.update({"estimate": 50.0, "lower": 50.0, "upper": 50.0})
+    statistics.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(REPORT.ReportInputError, match="paired difference disagrees"):
+        REPORT.build_report_assets(
+            stage="validation",
+            results_path=results,
+            statistics_path=statistics,
+            matched_evidence_path=evidence,
+            output_dir=tmp_path / "tampered-efficiency",
             project_root=tmp_path,
             expected_conditions=72,
         )
@@ -485,6 +527,7 @@ def test_result_validation_requires_one_of_each_method_per_pair() -> None:
                 "scenario_sha256": "1" * 64,
                 "episode_duration_s": 1.0,
                 "navigation_time_s": 1.0,
+                "path_length_m": 1.0,
                 "min_human_distance_m": 1.0,
                 "recovery_trigger_count": 0,
                 "recovery_success_count": 0,
@@ -520,6 +563,7 @@ def test_pending_deck_has_30_substantive_chinese_slides() -> None:
 
     notes = DECK.render_notes(specs, stage="pending")
     assert notes.count("\n## ") == 30
+    assert "如果还是 pending" in notes
     assert "/home/" not in notes
 
 

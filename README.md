@@ -339,9 +339,9 @@ This default development rebuild never launches Arena and never opens
 `data/raw`. It accepts only the published `outputs/moderate/final` test result,
 statistics, failure analysis, telemetry media, and offline-ablation sidecar for
 120 paired conditions per method. It regenerates the figures, tables, anonymous
-8-page paper, 30--40-page detailed report, and 30-slide PPTX/PDF, then writes a
-checksummed candidate artifact manifest. Historical `outputs/final`, pilot,
-smoke, calibration, and validation results cannot be substituted.
+8-page paper, exact 32-page locked-test report, and 30-slide PPTX/PDF, then
+writes a checksummed candidate artifact manifest. Historical `outputs/final`,
+pilot, smoke, calibration, and validation results cannot be substituted.
 
 Raw recollection is a separate, explicit operation for maintainers who possess
 the unpublished episode streams:
@@ -371,6 +371,10 @@ The verified frozen-scene capture is
 `paper/figures/runtime_gazebo_doorway_bottleneck_medium.png` together with its
 machine-readable provenance in `outputs/figures/runtime/`. It is qualitative
 runtime evidence, not a camera frame from a locked v6 statistical episode.
+The release manifest binds the source pixels, paper copy, capture metadata, and
+the selected Gazebo-window record. The matched final-media PDFs are installed
+as byte-identical paper figure copies and checked against the sidecar SHA256;
+the conference manuscript cannot silently omit them.
 Result-bearing report/PPT builds also require a matched Base--PGRR telemetry
 sidecar generated from raw JSONL whose SHA256 agrees with the approved Parquet.
 The validation selector is outcome-independent and preregistered. The locked
@@ -447,7 +451,7 @@ configs/planner/baselines.yaml
 scenarios/splits/moderate_v6_test.yaml
 checkpoints/bc/uniform_scenario/best.onnx
 checkpoints/dagger/coverage_safety_aligned/best.onnx
-outputs/moderate/v6_validation/calibration_report.json
+outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json
 outputs/moderate/final/episode_manifest.parquet
 outputs/moderate/final/run_manifest.json
 outputs/moderate/final/results.parquet
@@ -467,6 +471,8 @@ outputs/figures/moderate_*.pdf
 outputs/tables/moderate_*.tex
 paper/generated/moderate_*.tex
 paper/figures/moderate_*.pdf
+paper/figures/moderate_matched_base_pgrr_trajectory.pdf
+paper/figures/moderate_pgrr_recovery_timeline.pdf
 paper/main.pdf
 report/PGRR_technical_report_zh.pdf
 presentation/PGRR_report_zh.pptx

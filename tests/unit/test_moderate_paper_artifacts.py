@@ -266,6 +266,13 @@ def test_synthetic_test_fixture_generates_vector_figures_and_booktabs(
     assert r"\mathrm{OR}_H" in pairwise and r"r_{\mathrm{rb}}" not in pairwise
     assert r"\providecommand{\ModerateMethodCount}{5}" in macros
     assert rf"\providecommand{{\ModeratePairCount}}{{{EXPECTED_CONDITION_COUNT}}}" in macros
+    assert r"\providecommand{\ModerateBasePlannerFailureRate}{4.2\%}" in macros
+    assert r"\providecommand{\ModeratePGRRPlannerFailureRate}{4.2\%}" in macros
+    assert r"\ModeratePGRRPlannerFailureDifference" in macros
+    assert r"\ModerateJointSuccessEfficiencyAvailabletrue" in macros
+    assert r"\ModerateBasePGRRJointSuccessPairCount}{75}" in macros
+    assert r"\ModeratePGRRDurationDifference" in macros and r"\mathrm{s}" in macros
+    assert r"\ModeratePGRRPathLengthDifference" in macros and r"\mathrm{m}" in macros
     assert r"\textbf{PGRR}" in main
     for table in (main, density, pairwise):
         assert all(rule in table for rule in (r"\toprule", r"\midrule", r"\bottomrule"))
@@ -325,6 +332,26 @@ def test_statistics_effect_tampering_is_rejected(tmp_path: Path) -> None:
     ]["estimate"] = 0.99
     statistics.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(moderate_artifacts.ModerateArtifactError, match="does not contain estimate"):
+        moderate_artifacts.load_moderate_artifacts(
+            results,
+            summary,
+            statistics,
+            expected_condition_count=EXPECTED_CONDITION_COUNT,
+        )
+
+
+def test_joint_success_efficiency_tampering_is_rejected(tmp_path: Path) -> None:
+    results, summary, statistics = _write_synthetic_test_artifacts(tmp_path)
+    payload = json.loads(statistics.read_text(encoding="utf-8"))
+    interval = payload["comparisons"]["base"]["continuous_metrics"][
+        "successful_episode_duration_s"
+    ]["difference_treatment_minus_reference"]
+    interval.update({"estimate": 99.0, "lower": 99.0, "upper": 99.0})
+    statistics.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(
+        moderate_artifacts.ModerateArtifactError,
+        match="difference estimate disagrees for base/successful_episode_duration_s",
+    ):
         moderate_artifacts.load_moderate_artifacts(
             results,
             summary,

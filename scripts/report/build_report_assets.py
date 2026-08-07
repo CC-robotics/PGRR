@@ -337,6 +337,7 @@ def validate_results(
         "scenario_sha256",
         "episode_duration_s",
         "navigation_time_s",
+        "path_length_m",
         "min_human_distance_m",
         "recovery_trigger_count",
         "recovery_success_count",
@@ -739,6 +740,191 @@ def validate_statistics(
     return records
 
 
+def validate_joint_success_efficiency(
+    payload: object,
+    *,
+    results: pd.DataFrame,
+    expected_conditions: int,
+) -> dict[str, Any]:
+    """Cross-check Base--PGRR joint-success efficiency against Parquet and JSON."""
+
+    if not isinstance(payload, Mapping):
+        raise ReportInputError("pairwise statistics must be an object")
+    comparisons = payload.get("comparisons")
+    if not isinstance(comparisons, Mapping):
+        raise ReportInputError("pairwise statistics omit comparisons")
+    base_comparison = comparisons.get("base")
+    if not isinstance(base_comparison, Mapping):
+        raise ReportInputError("pairwise statistics omit the Base--PGRR comparison")
+    continuous = base_comparison.get("continuous_metrics")
+    if not isinstance(continuous, Mapping):
+        raise ReportInputError("pairwise statistics omit Base--PGRR continuous metrics")
+    bootstrap = payload.get("bootstrap")
+    if not isinstance(bootstrap, Mapping):
+        raise ReportInputError("pairwise statistics omit bootstrap provenance")
+    bootstrap_samples = _integer(bootstrap.get("samples"), field="bootstrap.samples")
+    global_evidence = _global_holm_evidence(payload)
+
+    working = results.copy()
+    working["_valid"] = _valid_mask(working)
+    columns = (
+        "pair_id",
+        "outcome",
+        "_valid",
+        "episode_duration_s",
+        "path_length_m",
+    )
+    reference = working.loc[working["source_policy"] == "base", list(columns)]
+    treatment = working.loc[working["source_policy"] == "pgrr", list(columns)]
+    paired = reference.merge(
+        treatment,
+        on="pair_id",
+        validate="one_to_one",
+        suffixes=("_reference", "_treatment"),
+    )
+    if len(paired) != expected_conditions:
+        raise ReportInputError("joint-success efficiency pairing lost Base--PGRR conditions")
+    joint_success = paired.loc[
+        paired["_valid_reference"]
+        & paired["_valid_treatment"]
+        & paired["outcome_reference"].eq("GOAL_REACHED")
+        & paired["outcome_treatment"].eq("GOAL_REACHED")
+    ]
+
+    metric_records: dict[str, dict[str, Any]] = {}
+    for key, column, label, unit in (
+        ("duration", "episode_duration_s", "共同到达 episode 时长", "s"),
+        ("path_length", "path_length_m", "共同到达路径长度", "m"),
+    ):
+        json_key = (
+            "successful_episode_duration_s" if key == "duration" else "successful_path_length_m"
+        )
+        analysis = continuous.get(json_key)
+        if not isinstance(analysis, Mapping):
+            raise ReportInputError(f"pairwise statistics omit base/{json_key}")
+        if analysis.get("population") != "joint_success":
+            raise ReportInputError(f"base/{json_key} must use the joint_success population")
+        reference_values = pd.to_numeric(
+            joint_success[f"{column}_reference"], errors="coerce"
+        ).to_numpy(dtype=float)
+        treatment_values = pd.to_numeric(
+            joint_success[f"{column}_treatment"], errors="coerce"
+        ).to_numpy(dtype=float)
+        finite = np.isfinite(reference_values) & np.isfinite(treatment_values)
+        reference_values = reference_values[finite]
+        treatment_values = treatment_values[finite]
+        pair_count = int(reference_values.size)
+        if _integer(analysis.get("pair_count"), field=f"base/{json_key}.pair_count") != pair_count:
+            raise ReportInputError(f"statistics pair count disagrees for base/{json_key}")
+        if pair_count == 0:
+            if analysis.get("status") != "insufficient_finite_pairs":
+                raise ReportInputError(
+                    f"statistics base/{json_key} must declare insufficient finite pairs"
+                )
+            metric_records[key] = {
+                "json_metric": json_key,
+                "label": label,
+                "unit": unit,
+                "population": "joint_success",
+                "pair_count": 0,
+                "available": False,
+            }
+            continue
+        if analysis.get("status") != "ok":
+            raise ReportInputError(f"statistics base/{json_key} is not successful")
+        reference_mean = _finite(
+            analysis.get("reference_mean"), field=f"base/{json_key}.reference_mean"
+        )
+        treatment_mean = _finite(
+            analysis.get("treatment_mean"), field=f"base/{json_key}.treatment_mean"
+        )
+        for field, observed, expected in (
+            ("reference_mean", reference_mean, float(np.mean(reference_values))),
+            ("treatment_mean", treatment_mean, float(np.mean(treatment_values))),
+        ):
+            if not math.isclose(observed, expected, rel_tol=1.0e-12, abs_tol=1.0e-12):
+                raise ReportInputError(f"statistics {field} disagrees for base/{json_key}")
+        interval = analysis.get("difference_treatment_minus_reference")
+        if not isinstance(interval, Mapping):
+            raise ReportInputError(f"statistics omit paired difference for base/{json_key}")
+        difference = _finite(interval.get("estimate"), field=f"base/{json_key}.estimate")
+        ci_lower = _finite(interval.get("lower"), field=f"base/{json_key}.lower")
+        ci_upper = _finite(interval.get("upper"), field=f"base/{json_key}.upper")
+        expected_difference = float(np.mean(treatment_values - reference_values))
+        if not math.isclose(difference, expected_difference, rel_tol=1.0e-12, abs_tol=1.0e-12):
+            raise ReportInputError(f"statistics paired difference disagrees for base/{json_key}")
+        if not ci_lower <= difference <= ci_upper:
+            raise ReportInputError(f"invalid paired interval for base/{json_key}")
+        confidence = _probability(interval.get("confidence"), field=f"base/{json_key}.confidence")
+        if not math.isclose(confidence, 0.95, abs_tol=1.0e-12):
+            raise ReportInputError("joint-success efficiency must use 95% intervals")
+        if (
+            _integer(
+                interval.get("bootstrap_samples"),
+                field=f"base/{json_key}.bootstrap_samples",
+            )
+            != bootstrap_samples
+        ):
+            raise ReportInputError(
+                f"statistics bootstrap sample count disagrees for base/{json_key}"
+            )
+        test = analysis.get("wilcoxon")
+        if not isinstance(test, Mapping):
+            raise ReportInputError(f"statistics omit Wilcoxon test for base/{json_key}")
+        pvalue_raw = _probability(test.get("pvalue_raw"), field=f"base/{json_key}.raw p")
+        pvalue_holm = _probability(test.get("pvalue_holm"), field=f"base/{json_key}.Holm p")
+        nonzero_pairs = _integer(test.get("nonzero_pairs"), field=f"base/{json_key}.nonzero_pairs")
+        expected_nonzero = int(np.count_nonzero(treatment_values - reference_values))
+        if nonzero_pairs != expected_nonzero:
+            raise ReportInputError(f"statistics nonzero-pair count disagrees for base/{json_key}")
+        hypothesis = f"base::wilcoxon_{json_key}"
+        global_row = global_evidence.get(hypothesis)
+        if (
+            global_row is None
+            or global_row.get("comparator") != "base"
+            or global_row.get("test") != f"wilcoxon_{json_key}"
+            or not math.isclose(
+                float(global_row["pvalue_raw"]), pvalue_raw, rel_tol=1.0e-12, abs_tol=1.0e-12
+            )
+            or not math.isclose(
+                float(global_row["pvalue_holm_global"]),
+                pvalue_holm,
+                rel_tol=1.0e-12,
+                abs_tol=1.0e-12,
+            )
+        ):
+            raise ReportInputError(f"statistics global Holm row disagrees for {hypothesis}")
+        metric_records[key] = {
+            "json_metric": json_key,
+            "label": label,
+            "unit": unit,
+            "population": "joint_success",
+            "pair_count": pair_count,
+            "available": True,
+            "reference_mean": reference_mean,
+            "treatment_mean": treatment_mean,
+            "difference_pgrr_minus_base": difference,
+            "ci_lower": ci_lower,
+            "ci_upper": ci_upper,
+            "confidence": confidence,
+            "pvalue_raw": pvalue_raw,
+            "pvalue_holm": pvalue_holm,
+            "holm_scope": "all reported tests across every comparator versus PGRR",
+        }
+
+    pair_counts = {int(record["pair_count"]) for record in metric_records.values()}
+    if len(pair_counts) != 1:
+        raise ReportInputError("joint-success duration and path-length pair counts disagree")
+    return {
+        "reference_policy": "base",
+        "treatment_policy": "pgrr",
+        "population": "joint_success",
+        "pair_count": pair_counts.pop(),
+        "available": all(bool(record["available"]) for record in metric_records.values()),
+        "metrics": metric_records,
+    }
+
+
 def _validate_validation_matched_evidence(
     payload: object,
     *,
@@ -1114,6 +1300,35 @@ def _method_summary(results: pd.DataFrame) -> list[dict[str, Any]]:
     return rows
 
 
+def _base_pgrr_planner_failure(results: pd.DataFrame) -> dict[str, Any]:
+    """Return the declared descriptive-only planner-failure comparison."""
+
+    valid = _valid_rows(results)
+    records: dict[str, dict[str, Any]] = {}
+    for method in ("base", "pgrr"):
+        group = valid.loc[valid["source_policy"] == method]
+        denominator = len(group)
+        if denominator <= 0:
+            raise ReportInputError(f"planner-failure rate has no valid {method} episodes")
+        count = int(group["outcome"].eq("PLANNER_FAILURE").sum())
+        records[method] = {
+            "valid_episode_count": denominator,
+            "count": count,
+            "rate": count / denominator,
+        }
+    return {
+        "endpoint": "PLANNER_FAILURE",
+        "analysis": "descriptive_marginal_rate_difference",
+        "preregistered_inferential_endpoint": False,
+        "post_hoc_significance_test": False,
+        "base": records["base"],
+        "pgrr": records["pgrr"],
+        "rate_difference_pgrr_minus_base": (
+            float(records["pgrr"]["rate"]) - float(records["base"]["rate"])
+        ),
+    }
+
+
 def _density_summary(results: pd.DataFrame) -> list[dict[str, Any]]:
     valid = _valid_rows(results)
     rows: list[dict[str, Any]] = []
@@ -1386,6 +1601,10 @@ def _family_figure(results: pd.DataFrame, output_dir: Path) -> None:
 def _safety_efficiency_figure(results: pd.DataFrame, output_dir: Path) -> None:
     valid = _valid_rows(results)
     figure, axis = plt.subplots(figsize=(7.4, 3.9), constrained_layout=True)
+    label_layout = {
+        "base": {"xytext": (-8, 8), "ha": "right", "va": "bottom"},
+        "standard": {"xytext": (8, -10), "ha": "left", "va": "top"},
+    }
     for method in METHODS:
         group = valid.loc[valid["source_policy"] == method]
         successful = group.loc[group["outcome"] == "GOAL_REACHED"]
@@ -1393,12 +1612,83 @@ def _safety_efficiency_figure(results: pd.DataFrame, output_dir: Path) -> None:
         y = float(group["min_human_distance_m"].median())
         if math.isfinite(x) and math.isfinite(y):
             axis.scatter(x, y, s=72, color=METHOD_COLORS[method], label=METHOD_LABELS[method])
-            axis.annotate(METHOD_LABELS[method], (x, y), xytext=(5, 5), textcoords="offset points")
+            layout = label_layout.get(
+                method,
+                {"xytext": (5, 5), "ha": "left", "va": "bottom"},
+            )
+            axis.annotate(
+                METHOD_LABELS[method],
+                (x, y),
+                xytext=layout["xytext"],
+                textcoords="offset points",
+                ha=layout["ha"],
+                va=layout["va"],
+            )
     axis.set_xlabel("成功 episode 的中位导航时间（s）")
     axis.set_ylabel("全部有效 episode 的中位最小人距（m）")
     axis.grid(color="#D7DDE1", linewidth=0.6, alpha=0.8)
     axis.set_axisbelow(True)
     _save_figure(figure, output_dir / "result_safety_efficiency")
+
+
+def _joint_success_efficiency_figure(efficiency: Mapping[str, Any], output_dir: Path) -> None:
+    """Render Base--PGRR paired efficiency conditional on both methods succeeding."""
+
+    metrics = efficiency["metrics"]
+    assert isinstance(metrics, Mapping)
+    figure, axes = plt.subplots(1, 2, figsize=(10.8, 4.0), constrained_layout=True)
+    for axis, key, title in zip(
+        axes,
+        ("duration", "path_length"),
+        ("共同到达 episode 时长", "共同到达路径长度"),
+        strict=True,
+    ):
+        record = metrics[key]
+        assert isinstance(record, Mapping)
+        axis.axvline(0.0, color="#59636B", linewidth=0.9, linestyle="--")
+        if bool(record["available"]):
+            estimate = float(record["difference_pgrr_minus_base"])
+            lower = float(record["ci_lower"])
+            upper = float(record["ci_upper"])
+            axis.errorbar(
+                [estimate],
+                [0.0],
+                xerr=[[estimate - lower], [upper - estimate]],
+                fmt="o",
+                color=METHOD_COLORS["pgrr"],
+                capsize=4,
+                linewidth=1.7,
+            )
+            axis.set_yticks([])
+            axis.set_xlabel(f"PGRR - DWB（{record['unit']}）")
+            axis.text(
+                0.5,
+                0.88,
+                f"n={record['pair_count']}；95% CI；"
+                f"p_H={_format_pvalue(float(record['pvalue_holm']))}",
+                transform=axis.transAxes,
+                ha="center",
+                va="center",
+                fontsize=8.5,
+            )
+        else:
+            axis.set_axis_off()
+            axis.text(
+                0.5,
+                0.5,
+                "无有限的共同到达 pair；不可估计",
+                transform=axis.transAxes,
+                ha="center",
+                va="center",
+            )
+        axis.set_title(title, fontweight="bold")
+        axis.grid(axis="x", color="#D7DDE1", linewidth=0.6, alpha=0.8)
+    figure.suptitle(
+        "Base--PGRR joint-success 配对效率（失败终局仍在主结果中）",
+        fontsize=11.0,
+        fontweight="bold",
+    )
+    _save_figure(figure, output_dir / "result_joint_success_efficiency")
 
 
 def _format_pvalue(value: float) -> str:
@@ -1532,6 +1822,8 @@ def _pending_macros() -> str:
 \ReportResultsAvailablefalse
 \newif\ifReportFixedTestMediaAvailable
 \ReportFixedTestMediaAvailablefalse
+\newif\ifReportJointSuccessEfficiencyAvailable
+\ReportJointSuccessEfficiencyAvailablefalse
 \newcommand{\ReportStageKey}{pending}
 \newcommand{\ReportStageLabel}{验证执行中：结果尚未锁定}
 \newcommand{\ReportStageNotice}{本报告当前只展示方法、系统和预注册实验协议。%
@@ -1543,6 +1835,14 @@ def _pending_macros() -> str:
 \newcommand{\ReportBaseGoalRate}{--}
 \newcommand{\ReportPGRRGoalRate}{--}
 \newcommand{\ReportGoalDifference}{--}
+\newcommand{\ReportBasePlannerFailureRate}{--}
+\newcommand{\ReportPGRRPlannerFailureRate}{--}
+\newcommand{\ReportPlannerFailureDifference}{--}
+\newcommand{\ReportJointSuccessPairCount}{--}
+\newcommand{\ReportJointSuccessDurationDifference}{--}
+\newcommand{\ReportJointSuccessDurationHolmP}{--}
+\newcommand{\ReportJointSuccessPathDifference}{--}
+\newcommand{\ReportJointSuccessPathHolmP}{--}
 \newcommand{\ReportStatisticsSha}{--}
 """
 
@@ -1558,6 +1858,30 @@ def _result_macros(data: Mapping[str, Any]) -> str:
         else "数值仅用于验证阶段汇报，不得表述为最终测试结论。"
     )
     goal_difference = 100.0 * float(data["paired_effects"]["goal_difference"])
+    planner_failure = data["base_pgrr_planner_failure"]
+    efficiency = data["base_pgrr_joint_success_efficiency"]
+    efficiency_metrics = efficiency["metrics"]
+    duration = efficiency_metrics["duration"]
+    path_length = efficiency_metrics["path_length"]
+    efficiency_available = bool(efficiency["available"])
+
+    def interval_macro(record: Mapping[str, Any]) -> str:
+        if not bool(record["available"]):
+            return "--"
+        return (
+            r"\ensuremath{"
+            f"{float(record['difference_pgrr_minus_base']):+.3f}"
+            rf"\,[{float(record['ci_lower']):+.3f},\,{float(record['ci_upper']):+.3f}]"
+            rf"\,\mathrm{{{record['unit']}}}"
+            "}"
+        )
+
+    def pvalue_macro(record: Mapping[str, Any]) -> str:
+        if not bool(record["available"]):
+            return "--"
+        value = float(record["pvalue_holm"])
+        return r"\ensuremath{<0.001}" if value < 0.001 else rf"\ensuremath{{={value:.3f}}}"
+
     fixed_test_media = (
         r"\ReportFixedTestMediaAvailabletrue"
         if data["stage"] == "test"
@@ -1570,6 +1894,12 @@ def _result_macros(data: Mapping[str, Any]) -> str:
             r"\ReportResultsAvailabletrue",
             r"\newif\ifReportFixedTestMediaAvailable",
             fixed_test_media,
+            r"\newif\ifReportJointSuccessEfficiencyAvailable",
+            (
+                r"\ReportJointSuccessEfficiencyAvailabletrue"
+                if efficiency_available
+                else r"\ReportJointSuccessEfficiencyAvailablefalse"
+            ),
             rf"\newcommand{{\ReportStageKey}}{{{_tex_escape(data['stage'])}}}",
             rf"\newcommand{{\ReportStageLabel}}{{{_tex_escape(stage_label)}}}",
             rf"\newcommand{{\ReportStageNotice}}{{{_tex_escape(notice)}}}",
@@ -1580,6 +1910,23 @@ def _result_macros(data: Mapping[str, Any]) -> str:
             rf"\newcommand{{\ReportBaseGoalRate}}{{{100.0 * float(base['goal_rate']):.1f}\%}}",
             rf"\newcommand{{\ReportPGRRGoalRate}}{{{100.0 * float(pgrr['goal_rate']):.1f}\%}}",
             rf"\newcommand{{\ReportGoalDifference}}{{{goal_difference:+.1f}个百分点}}",
+            rf"\newcommand{{\ReportBasePlannerFailureRate}}"
+            rf"{{{100.0 * float(planner_failure['base']['rate']):.1f}\%}}",
+            rf"\newcommand{{\ReportPGRRPlannerFailureRate}}"
+            rf"{{{100.0 * float(planner_failure['pgrr']['rate']):.1f}\%}}",
+            rf"\newcommand{{\ReportPlannerFailureDifference}}"
+            "{"
+            f"{100.0 * float(planner_failure['rate_difference_pgrr_minus_base']):+.1f}"
+            "个百分点}",
+            rf"\newcommand{{\ReportJointSuccessPairCount}}{{{efficiency['pair_count']}}}",
+            rf"\newcommand{{\ReportJointSuccessDurationDifference}}"
+            rf"{{{interval_macro(duration)}}}",
+            rf"\newcommand{{\ReportJointSuccessDurationHolmP}}"
+            rf"{{{pvalue_macro(duration)}}}",
+            rf"\newcommand{{\ReportJointSuccessPathDifference}}"
+            rf"{{{interval_macro(path_length)}}}",
+            rf"\newcommand{{\ReportJointSuccessPathHolmP}}"
+            rf"{{{pvalue_macro(path_length)}}}",
             rf"\newcommand{{\ReportStatisticsSha}}{{{_tex_escape(data['statistics_sha256'][:12])}}}",
             "",
         )
@@ -1689,6 +2036,11 @@ def build_report_assets(
         results=results,
         expected_conditions=conditions,
     )
+    joint_success_efficiency = validate_joint_success_efficiency(
+        statistics_payload,
+        results=results,
+        expected_conditions=conditions,
+    )
     matched_payload = json.loads(approved_evidence.read_text(encoding="utf-8"))
     matched_summary = validate_matched_evidence(
         matched_payload,
@@ -1721,6 +2073,8 @@ def build_report_assets(
         "density_summary": _density_summary(results),
         "family_summary": _family_summary(results),
         "paired_effects": _paired_effects(results),
+        "base_pgrr_planner_failure": _base_pgrr_planner_failure(results),
+        "base_pgrr_joint_success_efficiency": joint_success_efficiency,
         "paired_comparisons": paired_comparisons,
         "author_alias": "Charles Chen",
     }
@@ -1730,6 +2084,7 @@ def build_report_assets(
     _family_figure(results, output_dir)
     _safety_efficiency_figure(results, output_dir)
     _paired_effect_figure(paired_comparisons, output_dir)
+    _joint_success_efficiency_figure(joint_success_efficiency, output_dir)
     if stage == "test":
         _copy_fixed_test_media(
             matched_summary,

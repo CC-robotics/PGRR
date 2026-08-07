@@ -1,0 +1,38 @@
+% Generated exclusively from outputs/moderate/final/results.parquet, outputs/moderate/final/summary.csv, and outputs/moderate/final/pairwise_statistics.json; project_commit=6916e7cd586acfbe200045e49b093039e2a6980e
+\begin{table*}[t]
+\caption{Paired PGRR-minus-baseline terminal-outcome comparisons on the held-out Gazebo benchmark.}
+\label{tab:moderate-pairwise-results}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.8pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}lllrrrrr@{}}
+\toprule
+Baseline & Endpoint & Test & $\Delta$ [95\% CI] & $p_{\mathrm{raw}}$
+& $p_{\mathrm{Holm}}$ & Effect & $n_{\mathrm{pairs}}$ \\
+\midrule
+DWB & Goal reached & McNemar & $+20.0\;[+12.5,\,+28.3] pp$ & $<0.001$ & $<0.001$ & $\mathrm{OR}_H=10.6$ & 120 \\
+DWB & Collision & McNemar & $-29.2\;[-37.5,\,-21.7] pp$ & $<0.001$ & $<0.001$ & $\mathrm{OR}_H=0.0141$ & 120 \\
+DWB & Timeout & McNemar & $+1.7\;[+0.0,\,+4.2] pp$ & 0.500 & 1.000 & $\mathrm{OR}_H=5$ & 120 \\
+\addlinespace[2pt]
+Standard & Goal reached & McNemar & $+23.3\;[+15.0,\,+31.7] pp$ & $<0.001$ & $<0.001$ & $\mathrm{OR}_H=12.2$ & 120 \\
+Standard & Collision & McNemar & $-32.5\;[-40.8,\,-24.2] pp$ & $<0.001$ & $<0.001$ & $\mathrm{OR}_H=0.0127$ & 120 \\
+Standard & Timeout & McNemar & $+1.7\;[+0.0,\,+4.2] pp$ & 0.500 & 1.000 & $\mathrm{OR}_H=5$ & 120 \\
+\addlinespace[2pt]
+Heuristic & Goal reached & McNemar & $+7.5\;[+0.0,\,+15.8] pp$ & 0.093 & 1.000 & $\mathrm{OR}_H=2.2$ & 120 \\
+Heuristic & Collision & McNemar & $-0.8\;[-2.5,\,+0.0] pp$ & 1.000 & 1.000 & $\mathrm{OR}_H=0.333$ & 120 \\
+Heuristic & Timeout & McNemar & $-3.3\;[-7.5,\,+0.0] pp$ & 0.219 & 1.000 & $\mathrm{OR}_H=0.273$ & 120 \\
+\addlinespace[2pt]
+Uniform BC & Goal reached & McNemar & $+4.2\;[-1.7,\,+10.8] pp$ & 0.302 & 1.000 & $\mathrm{OR}_H=1.91$ & 120 \\
+Uniform BC & Collision & McNemar & $-0.8\;[-2.5,\,+0.0] pp$ & 1.000 & 1.000 & $\mathrm{OR}_H=0.333$ & 120 \\
+Uniform BC & Timeout & McNemar & $-2.5\;[-6.7,\,+1.7] pp$ & 0.453 & 1.000 & $\mathrm{OR}_H=0.455$ & 120 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+
+\parbox{0.98\textwidth}{\scriptsize \emph{Note.} Differences are PGRR minus the
+named baseline. Binary-rate differences use percentage points (pp), episode-pair bootstrap
+95\% CIs, exact McNemar tests, and Haldane-corrected matched odds ratios
+$\mathrm{OR}_H$. Continuous paired endpoints remain available in the technical report and
+machine-readable statistics. The reported Holm value belongs to one global family of 52 predeclared binary and continuous tests across all four baselines.}
+\end{table*}

@@ -1,0 +1,30 @@
+% Generated exclusively from outputs/moderate/final/results.parquet, outputs/moderate/final/summary.csv, and outputs/moderate/final/pairwise_statistics.json; project_commit=6916e7cd586acfbe200045e49b093039e2a6980e
+\begin{table*}[t]
+\caption{Held-out three-density Gazebo outcomes.}
+\label{tab:moderate-main-results}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+Method & $n$ & Success [95\% CI] $\uparrow$ (\%) & Collision $\downarrow$ (\%)
+& Timeout $\downarrow$ (\%) & Planner fail. $\downarrow$ (\%) & SPL $\uparrow$
+& Goal time $\downarrow$ (s) & $d_{\min}\uparrow$ (m) \\
+\midrule
+DWB & 120 & 70.8 [62.2, 78.2] & 29.2 & 0.0 & 0.0 & 0.703 $\pm$ 0.454 & 86.7 $\pm$ 7.1 & 0.89 $\pm$ 0.30 \\
+Standard & 120 & 67.5 [58.7, 75.2] & 32.5 & 0.0 & 0.0 & 0.671 $\pm$ 0.468 & 86.2 $\pm$ 7.2 & 0.91 $\pm$ 0.42 \\
+Heuristic & 120 & 83.3 [75.7, 88.9] & 0.8 & 5.0 & 10.8 & 0.795 $\pm$ 0.362 & 96.2 $\pm$ 16.3 & 0.93 $\pm$ 0.15 \\
+Uniform BC & 120 & 86.7 [79.4, 91.6] & 0.8 & 4.2 & 8.3 & 0.823 $\pm$ 0.330 & 100.5 $\pm$ 19.8 & 0.95 $\pm$ 0.15 \\
+\textbf{PGRR} & 120 & 90.8 [84.3, 94.8] & 0.0 & 1.7 & 7.5 & 0.831 $\pm$ 0.280 & 103.3 $\pm$ 21.1 & 0.95 $\pm$ 0.15 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+
+\parbox{0.98\textwidth}{\footnotesize \emph{Note.} All methods use identical
+scenario--density--seed conditions. Success intervals are two-sided 95\% Wilson intervals.
+Collision, timeout, and planner failure are reported as distinct terminal outcomes and are not
+merged or omitted. SPL and $d_{\min}$ use all valid episodes; goal time is conditional on
+goal reaching. Continuous entries are mean $\pm$ sample SD. Simulator/reset rows are excluded
+from algorithm rates but retained in the artifacts (counts: DWB: 0; Standard: 0; Heuristic: 0; Uniform BC: 0; PGRR: 0). Bold identifies the proposed method.}
+\end{table*}

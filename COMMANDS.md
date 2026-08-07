@@ -2,6 +2,160 @@
 
 Commands are copied here when a gate is accepted. Raw command output is stored under `outputs/logs/`.
 
+## 2026-08-08 complete moderate-v6 held-out execution
+
+The frozen test used all five methods on all 120 moderate-v6 test conditions,
+the checked-in checkpoints, a 240 s horizon, and six workers. The first pass and
+both resumes used the same output directory and run ID; `--resume` reused
+completed hash-verified outcomes and launched only incomplete logical tasks.
+
+```bash
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/run_experiment.py \
+  --split test \
+  --split-manifest scenarios/splits/moderate_v6_test.yaml \
+  --methods base standard heuristic bc_uniform pgrr \
+  --jobs 6 --timeout 240 \
+  --output-dir outputs/moderate/final
+
+mkdir -p outputs/moderate/final/attempt_manifests
+install -m 0644 \
+  outputs/moderate/final/run_manifest.json \
+  outputs/moderate/final/attempt_manifests/run_manifest_jobs6_first_pass.json
+
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/run_experiment.py \
+  --split test \
+  --split-manifest scenarios/splits/moderate_v6_test.yaml \
+  --methods base standard heuristic bc_uniform pgrr \
+  --jobs 6 --timeout 240 \
+  --output-dir outputs/moderate/final --resume
+
+install -m 0644 \
+  outputs/moderate/final/run_manifest.json \
+  outputs/moderate/final/attempt_manifests/run_manifest_jobs6_resume01.json
+
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
+  conda run --no-capture-output -n ramp-offline \
+  python scripts/evaluate/run_experiment.py \
+  --split test \
+  --split-manifest scenarios/splits/moderate_v6_test.yaml \
+  --methods base standard heuristic bc_uniform pgrr \
+  --jobs 6 --timeout 240 \
+  --output-dir outputs/moderate/final --resume
+```
+
+The snapshots record 561/600 and 597/600 complete logical tasks. The final
+manifest records 600/600, run ID `95ec74c511bb`, evaluation commit `6916e7c`,
+`requested_jobs=effective_jobs=6`, and `worker_errors=[]`. The snapshots retain
+42 no-outcome command failures over 39 unique tasks. The final attempt history
+retains 600 algorithm outcomes plus eight `SIMULATOR_FAILURE` and six
+`INVALID_RESET` technical attempts.
+
+The accepted calibration must be checked against the validation artifact, not
+the rejected empty-test byproduct under `outputs/moderate/final`:
+
+```bash
+sha256sum \
+  outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json
+
+conda run -n ramp-offline python - <<'PY'
+import json
+from pathlib import Path
+
+path = Path("outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json")
+report = json.loads(path.read_text(encoding="utf-8"))
+assert report["split"] == "validation"
+assert report["passed"] is True
+assert report["status"] == "accepted"
+PY
+```
+
+The expected SHA-256 is
+`0fbf8a159a1e1b96e940bec0efb31e5952ba5b0333439992f370a9a9fb41e15f`.
+
+## 2026-08-08 rebuild final evidence and publication products
+
+Use `PGRR_RECOLLECT_RAW=1` only when the immutable `data/raw` streams are
+available and the published Parquet/CSV/JSON results and media need to be
+reconstructed. This mode reads raw files and renders telemetry; it does **not**
+launch Arena or Gazebo simulation:
+
+```bash
+PGRR_RELEASE_MODE=0 \
+PGRR_RECOLLECT_RAW=1 \
+CONDA_ENV_NAME=ramp-offline \
+scripts/reproduce_paper.sh
+```
+
+Use `PGRR_RECOLLECT_RAW=0` for the normal repeat build. It verifies and consumes
+the already published final results, statistics, failure analysis, ablation, and
+media, then regenerates figures, tables, the paper, report, presentation, and
+artifact manifest:
+
+```bash
+PGRR_RELEASE_MODE=0 \
+PGRR_RECOLLECT_RAW=0 \
+CONDA_ENV_NAME=ramp-offline \
+scripts/reproduce_paper.sh
+```
+
+The development build requires exactly 8 paper pages, 32 report pages, and 30
+presentation pages. The current artifact manifest contains 76 files. These
+read-only spot checks reproduce the structural acceptance facts:
+
+```bash
+pdfinfo paper/main.pdf | awk '/^Pages:/ {print $2}'
+pdfinfo report/PGRR_technical_report_zh.pdf | awk '/^Pages:/ {print $2}'
+pdfinfo presentation/PGRR_report_zh.pdf | awk '/^Pages:/ {print $2}'
+
+conda run -n ramp-offline python - <<'PY'
+import json
+from pathlib import Path
+
+manifest = json.loads(
+    Path("outputs/moderate/final/artifact_manifest.json").read_text(encoding="utf-8")
+)
+assert manifest["artifact_count"] == 76
+assert manifest["evaluation_commit"].startswith("6916e7c")
+assert manifest["document_pages"]["paper/main.pdf"] == 8
+assert manifest["document_pages"]["report/PGRR_technical_report_zh.pdf"] == 32
+assert manifest["document_pages"]["presentation/PGRR_report_zh.pdf"] == 30
+PY
+```
+
+## 2026-08-08 clean-tree release validation passed
+
+Do not run the release command while generated or source changes remain
+uncommitted. After final QA and release commit `fe23ed6`, a fresh detached
+worktree was required to be empty before running the validate-only release and
+privacy gates:
+
+```bash
+git status --short --untracked-files=all
+# The preceding command must print nothing.
+
+PGRR_RELEASE_MODE=1 \
+PGRR_RECOLLECT_RAW=0 \
+CONDA_ENV_NAME=ramp-offline \
+scripts/reproduce_paper.sh
+
+git status --short --untracked-files=all
+# This command must also print nothing: release mode is validate-only.
+```
+
+This completed with `Artifact manifest validation PASS` for 76 files,
+`Privacy audit PASS`, and `RELEASE VALIDATION PASS`; the before/after worktree
+checks were empty. No simulator, collector, bootstrap, renderer, or document
+builder ran in release mode. The remaining external step is to push the final
+documented release to `home`, merge it into `main` without rewriting either
+branch, and push `main`.
+
 ## 2026-08-07 complete and merge moderate-v6 validation
 
 The Base calibration and four-method comparison were deliberately retained as

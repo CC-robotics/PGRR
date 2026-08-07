@@ -423,3 +423,74 @@ outcomes. For the complete held-out run, concurrency is fixed at six as the
 throughput/startup-pressure compromise. A resume may fill only genuinely
 incomplete work under the same commit, split, five-method set, timeout, paths,
 and six-worker setting; it may not retry an algorithm outcome.
+
+## D-072: Freeze moderate-v6 held-out outcomes and bound the final claim
+
+Run `95ec74c511bb` completed all 600 held-out logical method--episodes at
+evaluation commit `6916e7c`, with 120 shared conditions for each of Base,
+Standard, Heuristic, Uniform BC, and PGRR. These outcomes are immutable: Base
+85/35/0/0, Standard 81/39/0/0, Heuristic 100/1/6/13, Uniform BC 104/1/5/10,
+and PGRR 109/0/2/9 for goal/collision/timeout/planner failure.
+
+PGRR's +20.00-point goal difference and -29.17-point collision difference
+relative to Base survive the preregistered global Holm correction. Its three
+binary terminal differences relative to Heuristic and Uniform BC do not. PGRR
+is also significantly slower and longer on the 83 joint successes, has a
+descriptively higher personal-space violation ratio, and has significantly
+higher mean absolute angular jerk than Base. The release may claim improved
+safety and completion over the classical Base planner in this test, while
+retaining the efficiency, social-space, smoothness, timeout, and planner-failure
+costs. It may not claim universal superiority or statistical superiority over
+Heuristic or Uniform BC.
+
+## D-073: Keep physical-attempt provenance separate from algorithm outcomes
+
+The final denominator is exactly 600 logical algorithm episodes. The run
+manifest also retains eight `SIMULATOR_FAILURE` and six `INVALID_RESET`
+attempts, yielding 614 outcome-bearing physical attempts. These 14 technical
+attempts are excluded under the frozen rule and are never converted into an
+algorithm terminal class.
+
+The first pass and first resume snapshots retain 42 command failures without
+an outcome file over 39 unique task indices. Because no trajectory-backed
+terminal class exists for them, they are execution provenance rather than
+physical or algorithm outcomes. Six-worker `--resume` calls were allowed only
+for incomplete tasks; the final manifest proves 600/600 completion with no
+worker error and does not replace any completed algorithm episode.
+
+## D-074: Bind calibration and visual evidence to their true provenance
+
+The accepted calibration source is exclusively
+`outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json`, SHA-256
+`0fbf8a159a1e1b96e940bec0efb31e5952ba5b0333439992f370a9a9fb41e15f`.
+The rejected, empty-test report at
+`outputs/moderate/final/calibration_report.json` is a pipeline byproduct and is
+not admissible evidence.
+
+The real Gazebo GUI screenshot is retained as a clearly labeled moderate-v5
+validation environment demonstration. It must not be called a v6 test camera
+frame. The v6 matched Base--PGRR trajectory and recovery timeline are generated
+from raw telemetry for the same held-out condition; they must be called
+telemetry reconstructions, not simulator screenshots. This distinction applies
+to the paper, technical report, slides, captions, notes, and summaries.
+
+## D-075: Make publication structure and clean-tree validation release gates
+
+The release bundle must contain an exact eight-page paper, a 32-page technical
+report, and a 30-slide PPTX/PDF. Its artifact manifest currently binds 76 files,
+including the frozen run evidence, statistics, calibration, real-environment
+capture, matched telemetry, generated tables and figures, and all three document
+products.
+
+Development rebuilding and release validation remain separate operations.
+`PGRR_RECOLLECT_RAW=1` may reconstruct published results and media from the
+locked raw streams but launches no simulator; `PGRR_RECOLLECT_RAW=0` rebuilds
+from already published final inputs. `PGRR_RELEASE_MODE=1` is validate-only and
+may run only after the generated bundle and status records are committed and the
+worktree is clean. A dirty development manifest is not represented as a clean
+release pass.
+
+This gate was exercised on committed release candidate `fe23ed6` in a clean
+detached worktree. The 76-file manifest reconstruction, privacy audit, and
+no-worktree-mutation check all passed; therefore later branch synchronization
+does not require regenerating or reopening any simulation result.

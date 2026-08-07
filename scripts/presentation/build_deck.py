@@ -43,6 +43,7 @@ RESULT_ASSETS = {
     "report/generated/result_density.pdf",
     "report/generated/result_family.pdf",
     "report/generated/result_safety_efficiency.pdf",
+    "report/generated/result_joint_success_efficiency.pdf",
     "report/generated/result_paired_effects.pdf",
     "report/generated/result_matched_run_evidence.pdf",
     "report/generated/result_matched_trajectory.pdf",
@@ -77,6 +78,12 @@ def _points(value: object) -> str:
     if not math.isfinite(number):
         raise DeckBuildError("non-finite paired effect in approved report data")
     return f"{100.0 * number:+.1f} 个百分点"
+
+
+def _format_pvalue(value: float) -> str:
+    if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+        raise DeckBuildError("invalid Holm p-value in approved report data")
+    return "<0.001" if value < 0.001 else f"{value:.3f}"
 
 
 def load_report_data(path: Path, *, stage: str) -> dict[str, Any]:
@@ -133,6 +140,46 @@ def load_report_data(path: Path, *, stage: str) -> dict[str, Any]:
         }
         if observed != expected_effects:
             raise DeckBuildError("report data paired effects are incomplete or duplicated")
+        planner_failure = data.get("base_pgrr_planner_failure")
+        if (
+            not isinstance(planner_failure, dict)
+            or planner_failure.get("endpoint") != "PLANNER_FAILURE"
+            or planner_failure.get("preregistered_inferential_endpoint") is not False
+            or planner_failure.get("post_hoc_significance_test") is not False
+        ):
+            raise DeckBuildError(
+                "report data must label PLANNER_FAILURE as descriptive and non-inferential"
+            )
+        for method in ("base", "pgrr"):
+            record = planner_failure.get(method)
+            if not isinstance(record, dict):
+                raise DeckBuildError(f"report data omit descriptive {method} planner failures")
+            _percent(record.get("rate"))
+        _points(planner_failure.get("rate_difference_pgrr_minus_base"))
+        efficiency = data.get("base_pgrr_joint_success_efficiency")
+        if (
+            not isinstance(efficiency, dict)
+            or efficiency.get("reference_policy") != "base"
+            or efficiency.get("treatment_policy") != "pgrr"
+            or efficiency.get("population") != "joint_success"
+        ):
+            raise DeckBuildError("report data omit Base--PGRR joint-success efficiency")
+        metrics = efficiency.get("metrics")
+        if not isinstance(metrics, dict) or set(metrics) != {"duration", "path_length"}:
+            raise DeckBuildError("joint-success efficiency must contain duration and path length")
+        for key, record in metrics.items():
+            if not isinstance(record, dict) or record.get("population") != "joint_success":
+                raise DeckBuildError(f"joint-success efficiency metric {key} is malformed")
+            if bool(record.get("available")):
+                for field in (
+                    "difference_pgrr_minus_base",
+                    "ci_lower",
+                    "ci_upper",
+                    "pvalue_holm",
+                ):
+                    value = float(record.get(field))
+                    if not math.isfinite(value):
+                        raise DeckBuildError(f"joint-success efficiency {key}/{field} is invalid")
         matched = data.get("matched_run_evidence")
         if not isinstance(matched, dict) or not bool(matched.get("available")):
             raise DeckBuildError("result-bearing deck requires matched Base--PGRR raw evidence")
@@ -213,8 +260,10 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
                 None,
             ),
             25: (
-                "安全、效率与完成率必须联合解释",
-                _pending_result_bullets("最小人距与成功 episode 导航时间"),
+                "共同成功条件下的配对效率不能替代完整终局",
+                _pending_result_bullets(
+                    "Base--PGRR joint-success pair 的时长、路径差、区间与 Holm p"
+                ),
                 None,
             ),
             26: (
@@ -243,6 +292,11 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
     }
     matched = data["matched_run_evidence"]
     matched_runs = matched["runs"]
+    planner_failure = data["base_pgrr_planner_failure"]
+    efficiency = data["base_pgrr_joint_success_efficiency"]
+    efficiency_metrics = efficiency["metrics"]
+    duration = efficiency_metrics["duration"]
+    path_length = efficiency_metrics["path_length"]
     stage_label = "锁定 test" if data["stage"] == "test" else "validation 快照（非最终 test）"
     densities = {(row["density"], row["method"]): row for row in data["density_summary"]}
     density_lines = tuple(
@@ -259,6 +313,10 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
                 f"{_percent(base['collision_rate'])} / {_percent(base['timeout_rate'])}",
                 f"PGRR 到达 / 碰撞 / 超时：{_percent(pgrr['goal_rate'])} / "
                 f"{_percent(pgrr['collision_rate'])} / {_percent(pgrr['timeout_rate'])}",
+                "规划失败（描述性、非预注册推断端点）：DWB "
+                f"{_percent(planner_failure['base']['rate'])}；PGRR "
+                f"{_percent(planner_failure['pgrr']['rate'])}；差 "
+                f"{_points(planner_failure['rate_difference_pgrr_minus_base'])}",
                 f"基础设施排除：{data['excluded_episode_count']}，未并入算法分母",
             ),
             "report/generated/result_outcomes.pdf",
@@ -297,15 +355,31 @@ def _result_content(data: dict[str, Any]) -> dict[int, tuple[str, tuple[str, ...
             "report/generated/result_paired_effects.pdf",
         ),
         25: (
-            "安全—效率视图是补充，不替代终止结果",
+            "只在两者都到达的同一 pair 内比较效率，并保留全部失败终局",
             (
-                "横轴：成功 episode 的中位导航时间",
-                "纵轴：全部有效 episode 的中位最小人距",
-                f"DWB 中位最小人距：{float(base['median_min_human_distance_m']):.2f} m",
-                f"PGRR 中位最小人距：{float(pgrr['median_min_human_distance_m']):.2f} m",
+                (f"共同到达 pair：{efficiency['pair_count']}；Base 与 PGRR 必须同时 GOAL_REACHED"),
+                (
+                    "时长差 PGRR-DWB："
+                    f"{float(duration['difference_pgrr_minus_base']):+.3f} "
+                    f"[{float(duration['ci_lower']):+.3f}, "
+                    f"{float(duration['ci_upper']):+.3f}] s；"
+                    f"Holm p={_format_pvalue(float(duration['pvalue_holm']))}"
+                    if bool(duration["available"])
+                    else "时长差：无有限共同到达 pair，无法估计"
+                ),
+                (
+                    "路径差 PGRR-DWB："
+                    f"{float(path_length['difference_pgrr_minus_base']):+.3f} "
+                    f"[{float(path_length['ci_lower']):+.3f}, "
+                    f"{float(path_length['ci_upper']):+.3f}] m；"
+                    f"Holm p={_format_pvalue(float(path_length['pvalue_holm']))}"
+                    if bool(path_length["available"])
+                    else "路径差：无有限共同到达 pair，无法估计"
+                ),
+                "条件于 joint success；不能删除或替代碰撞、超时和规划失败",
                 f"阶段：{stage_label}",
             ),
-            "report/generated/result_safety_efficiency.pdf",
+            "report/generated/result_joint_success_efficiency.pdf",
         ),
         26: (
             "固定 matched pair 公开 Base--PGRR 空间轨迹与真实终局",
@@ -366,6 +440,16 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
         "pending": "验证执行中｜数值待锁定",
         "validation": "Validation 快照｜非最终 Test",
         "test": "锁定 Test 结果",
+    }[stage]
+    conclusion_notes = {
+        "pending": (
+            "最后再次说明阶段：如果还是 pending，只总结已验证系统和协议，不口头补入未经锁定的数字。"
+        ),
+        "validation": "最后说明这是 validation 快照，不得表述为最终 test 结论。",
+        "test": (
+            "最后说明这是锁定 test 结果；同时保留失败类别、校正显著性、"
+            "joint-success 条件和局限声明。"
+        ),
     }[stage]
 
     specs = (
@@ -625,7 +709,8 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
                 "效率：SPL、路径长度、导航时间",
                 "安全：最小人距、个人空间侵入、不舒适时间、紧急停止",
                 "恢复：触发、重接成功、持续时间、介入比例",
-                "配对 McNemar / Wilcoxon + bootstrap 95% CI + 全局 Holm",
+                "到达/碰撞/超时：McNemar；连续端点：Wilcoxon + 全局 Holm",
+                "规划失败仅做描述性率与差值，不补做事后显著性检验",
             ),
             "这页为后面的结果解释定规则：显著性、效果量和失败类别都要一起看。",
         ),
@@ -667,10 +752,11 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
         ),
         SlideSpec(
             25,
-            "安全—效率视图",
+            "共同成功条件下的配对效率",
             result[25][0],
             result[25][1],
-            "先讲坐标含义，再强调它不能把失败 episode 从完成率中删除。",
+            "逐项读取 PGRR-DWB 配对差、95% CI 与全局 Holm p；强调只纳入共同到达 pair，"
+            "不能把失败 episode 从完成率中删除。",
             result[25][2],
             True,
         ),
@@ -724,7 +810,7 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
                 "锁定 episode manifest、run manifest 和 results.parquet",
                 "保存项目 commit、Arena commit、checkpoint 与场景 SHA256",
                 "图表和 TeX 表格全部自动生成",
-                "技术报告 25–35 页；PPTX/PDF 固定 30 页",
+                "发布门禁：test 技术报告固定 32 页；PPTX/PDF 固定 30 页",
                 "发布前执行测试、字体、关系、占位符和隐私审计",
             ),
             "展示一键命令，并说明任何完整性检查失败都会阻止生成“final”文档。",
@@ -740,8 +826,7 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
                 "规划 mask 与有界状态机限制学习策略作用域",
                 f"当前汇报阶段：{stage_name}",
             ),
-            "最后再次说明阶段：如果还是 pending，只总结已验证系统和协议，"
-            "不口头补入未经锁定的数字。",
+            conclusion_notes,
             "paper/figures/system_architecture.pdf",
         ),
     )

@@ -1,0 +1,26 @@
+% Generated exclusively from outputs/moderate/final/results.parquet, outputs/moderate/final/summary.csv, and outputs/moderate/final/pairwise_statistics.json; project_commit=6916e7cd586acfbe200045e49b093039e2a6980e
+\begin{table*}[t]
+\caption{Recovery behavior on valid held-out Gazebo episodes.}
+\label{tab:moderate-recovery-results}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4.0pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Method & $n$ & Triggers (ep.$^{-1}$) & Recovery success (\%)
+& Recovery time (s/ep.) & Intervention (\%) & E-stops (ep.$^{-1}$) \\
+\midrule
+DWB & 120 & 0.00 $\pm$ 0.00 & -- & 0.00 $\pm$ 0.00 & 3.3 $\pm$ 3.3 & 0.00 $\pm$ 0.00 \\
+Standard & 120 & 0.00 $\pm$ 0.00 & -- & 0.00 $\pm$ 0.00 & 3.4 $\pm$ 3.3 & 0.00 $\pm$ 0.00 \\
+Heuristic & 120 & 3.43 $\pm$ 5.52 & 67.0 $\pm$ 41.5 & 26.37 $\pm$ 41.52 & 23.2 $\pm$ 22.1 & 4.07 $\pm$ 7.03 \\
+Uniform BC & 120 & 3.36 $\pm$ 4.96 & 68.4 $\pm$ 38.7 & 26.64 $\pm$ 40.29 & 22.9 $\pm$ 20.6 & 3.90 $\pm$ 6.94 \\
+\textbf{PGRR} & 120 & 3.55 $\pm$ 4.96 & 70.5 $\pm$ 39.5 & 23.42 $\pm$ 31.09 & 22.0 $\pm$ 18.7 & 4.28 $\pm$ 7.43 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+
+\parbox{0.98\textwidth}{\footnotesize \emph{Note.} Entries are episode-level mean
+$\pm$ sample SD. Undefined recovery-success values for episodes or methods with no trigger are
+shown as dashes; they are not replaced by zeros. Bold identifies the proposed method.}
+\end{table*}

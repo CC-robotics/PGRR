@@ -70,6 +70,7 @@ def _page_count(pdf: Path) -> int:
 def validate_deck(pptx: Path, notes: Path, pdf: Path | None = None) -> None:
     if not pptx.is_file() or pptx.stat().st_size == 0:
         raise DeckValidationError(f"PPTX is missing or empty: {pptx}")
+    locked_test = False
     with zipfile.ZipFile(pptx) as archive:
         slides = _slide_names(archive)
         if len(slides) != 30:
@@ -126,12 +127,15 @@ def validate_deck(pptx: Path, notes: Path, pdf: Path | None = None) -> None:
         media_hashes = {hashlib.sha256(archive.read(name)).hexdigest() for name in media}
         if runtime_sha not in media_hashes:
             raise DeckValidationError("PPTX does not embed the SHA-verified Gazebo GUI capture")
-        if "stage=test" in core:
+        locked_test = "stage=test" in core
+        if locked_test:
             required_final_text = (
                 "episode ID",
                 "pixel SHA256",
                 "PGRR 恢复时序",
                 "telemetry reconstruction",
+                "共同成功条件下的配对效率",
+                "共同到达 pair",
             )
             missing_final_text = [
                 token for token in required_final_text if token not in joined_visible_text
@@ -162,6 +166,8 @@ def validate_deck(pptx: Path, notes: Path, pdf: Path | None = None) -> None:
         )
     if "/home/" in notes_text or "file:///" in notes_text:
         raise DeckValidationError("speaker notes leak a local path")
+    if locked_test and "如果还是 pending" in notes_text:
+        raise DeckValidationError("locked-test speaker notes still contain pending-stage guidance")
 
     if pdf is not None:
         if not pdf.is_file() or pdf.stat().st_size == 0:

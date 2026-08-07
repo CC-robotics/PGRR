@@ -11,21 +11,9 @@ its valid episodes.  PGRR reaches \ModeratePGRRSuccessRate{}, collides in
 
 \input{generated/moderate_main_results.tex}
 
-Figure~\ref{fig:moderate-outcomes-density} preserves each terminal category and
-shows goal-reaching uncertainty by density.  Timeout and planner failure
-remain explicit, so a lower contact rate cannot be misinterpreted as successful
-recovery.  Exact family--density counts remain in the generated evaluation
-artifacts and accompanying technical report.
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.96\textwidth]{moderate_outcomes_and_density.pdf}
-  \caption{Held-out three-density Gazebo outcomes.  (a) Stacked bars retain goal,
-  collision, timeout, and planner-failure terminations.  (b) Goal-reaching
-  rates by density include Wilson 95\% confidence intervals.  All methods use
-  identical condition keys.}
-  \label{fig:moderate-outcomes-density}
-\end{figure*}
+The table preserves every terminal category, so lower contact cannot be
+misread as successful recovery.  Density- and family-resolved plots remain in
+the generated artifact bundle and accompanying technical report.
 
 \subsection{Paired Effects Against Four Baselines}
 On the \ModerateBasePGRRValidPairCount{} valid Base--PGRR pairs, the PGRR-minus-DWB
@@ -38,6 +26,24 @@ difference is \ModeratePGRRTimeoutDifference{}
 interpreted jointly: goal reaching measures task completion, while collision
 and timeout describe distinct failure modes.
 
+Planner-failure rates are \ModerateBasePlannerFailureRate{} for Base and
+\ModeratePGRRPlannerFailureRate{} for PGRR
+($\Delta=$\ModeratePGRRPlannerFailureDifference{}).  This is descriptive only:
+planner failure was not a preregistered inferential endpoint, so no post-hoc
+test is added.
+
+\ifModerateJointSuccessEfficiencyAvailable
+For \ModerateBasePGRRJointSuccessPairCount{} jointly successful pairs, the
+PGRR-minus-DWB duration difference is \ModeratePGRRDurationDifference{}
+($p_{\mathrm{Holm}}\ModeratePGRRDurationDifferenceHolmP$) and the path difference
+is \ModeratePGRRPathLengthDifference{}
+($p_{\mathrm{Holm}}\ModeratePGRRPathLengthDifferenceHolmP$).  These paired
+efficiency estimates condition on success and do not replace terminal outcomes.
+\else
+No finite jointly successful Base--PGRR pair is available, so paired duration
+and path-length efficiency are not estimable; terminal outcomes remain primary.
+\fi
+
 Table~\ref{tab:moderate-pairwise-results} extends the same paired analysis to
 Standard, Heuristic, and Uniform BC and reports raw and globally Holm-adjusted
 tests, confidence intervals, and effect sizes without selecting a favorable
@@ -46,13 +52,10 @@ scenario or seed after evaluation.
 \input{generated/moderate_pairwise_statistics.tex}
 
 \subsection{Recovery Behavior}
-Table~\ref{tab:moderate-recovery-results} reports triggers, successful
-REJOIN-to-NORMAL transitions, time under recovery, intervention ratio, and
-emergency-stop entries.  These quantities audit whether completion is obtained
-through bounded recovery rather than persistent waiting; they do not replace
-terminal navigation outcomes.
-
-\input{generated/moderate_recovery_metrics.tex}
+The generated recovery audit retains triggers, successful REJOIN-to-NORMAL
+transitions, recovery time, intervention ratio, and emergency-stop entries for
+every method.  The full table remains in the artifact bundle and technical
+report; these diagnostics do not replace terminal navigation outcomes.
 
 \else
 \subsection{Artifact-Gated Outcome Status}
@@ -85,8 +88,6 @@ The top-down trajectory and timeline are telemetry reconstructions, not camera
 screenshots; Figure~\ref{fig:runtime-gazebo} separately provides an actual
 Gazebo GUI pixel capture of the frozen environment.
 
-\IfFileExists{figures/moderate_matched_base_pgrr_trajectory.pdf}{%
-\IfFileExists{figures/moderate_pgrr_recovery_timeline.pdf}{%
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.57\textwidth]{moderate_matched_base_pgrr_trajectory.pdf}\hfill
@@ -100,8 +101,6 @@ Gazebo GUI pixel capture of the frozen environment.
   Figure~\ref{fig:runtime-gazebo}.}
   \label{fig:matched-runtime}
 \end{figure*}
-}{}% timeline
-}{}% trajectory
 
 \subsection{Offline Imitation and Mask Diagnostics}
 The separate offline ablation in Table~\ref{tab:offline-ablation} compares

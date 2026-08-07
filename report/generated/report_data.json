@@ -1,10 +1,60 @@
 {
   "schema_version": 3,
-  "stage": "pending",
-  "results_available": false,
-  "notice": "Validation is running; no numerical result is approved for reporting.",
+  "stage": "test",
+  "results_available": true,
   "public_name": "PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation",
   "benchmark_id": "moderate_social_navigation_v6",
+  "results_path": "outputs/moderate/final/results.parquet",
+  "results_sha256": "77a1c2eb57279252e09624fad4aa57828f409426c2aa3f5c2b631556614aba97",
+  "statistics_path": "outputs/moderate/final/pairwise_statistics.json",
+  "statistics_sha256": "3a74d903c67c1135b9e76fda729d121030eb1ae45ad5e06227b2ea7956b5c9c3",
+  "matched_evidence_path": "outputs/moderate/final/matched_base_pgrr_evidence.json",
+  "matched_evidence_sha256": "ee7dd724fe4dfdf0609ed48366f8c0ee061f3067545547dff62797e4bb23b7bc",
+  "matched_run_evidence": {
+    "available": true,
+    "artifact_type": "matched_base_pgrr_test_media",
+    "pair_id": "blind_corner_high_test_moderate_v6_r00_s87320_seed87320",
+    "scenario_id": "blind_corner_high_test_moderate_v6_r00_s87320",
+    "scenario_sha256": "6bb1697fc758f5fd501e8b56b7dec1c6acaf7431bfce3f7abea047b313a8fcbb",
+    "family": "blind_corner",
+    "density": "high",
+    "seed": 87320,
+    "project_commit": "6916e7cd586acfbe200045e49b093039e2a6980e",
+    "selection_rule": "eligible: PGRR trigger + configured static geometry + actor routes; order: Base failure/PGRR goal, outcome contrast, PGRR goal, density, trigger count, family, seed, pair_id",
+    "representation": "telemetry reconstruction; not a simulator camera screenshot",
+    "runs": {
+      "base": {
+        "episode_id": "blind_corner_high_test_moderate_v6_r00_s87320_eval_base_r95ec74c511bb_a0_dwb",
+        "outcome": "COLLISION",
+        "raw_sha256": "3b2969e6d15e86241c2e3c5ad5fe1800357259628367bb61301c26d8cd999c41",
+        "metadata_sha256": "37e2362c95ef70dff21742f38637fe1f7008ccd43178dc82c83e4757e17462a2",
+        "outcome_sha256": "d0b68fdeec93dbffa96959a640dfcfe93dfc9ea8ee33958d58f105c3889697c8",
+        "sample_count": 456
+      },
+      "pgrr": {
+        "episode_id": "blind_corner_high_test_moderate_v6_r00_s87320_eval_pgrr_r95ec74c511bb_a0_dwb",
+        "outcome": "GOAL_REACHED",
+        "raw_sha256": "7c81c150788aff942c943fde1ae605ec3017a356f73d88f30ba9aefc6df751e1",
+        "metadata_sha256": "41bcc0d7893ae4d4d5539dc86a7a338c91086c2750d22b84057d21c0104d7b74",
+        "outcome_sha256": "a1218348260aa08c48e3d9de8f34212dc295efe8eb2d39b00a5b11719f065fc3",
+        "sample_count": 1367
+      }
+    },
+    "artifacts": {
+      "trajectory": {
+        "path": "media/moderate_matched_base_pgrr_trajectory.pdf",
+        "filename": "moderate_matched_base_pgrr_trajectory.pdf",
+        "sha256": "8058a5558a6e123020d0870884d8d6c53e141bde54c13d692906c30142d3b305",
+        "media_type": "application/pdf"
+      },
+      "recovery_timeline": {
+        "path": "media/moderate_pgrr_recovery_timeline.pdf",
+        "filename": "moderate_pgrr_recovery_timeline.pdf",
+        "sha256": "f34e8654b71c883a768c72e116b2f08c91d5fa325b2e2fabcf7cb523a0034b17",
+        "media_type": "application/pdf"
+      }
+    }
+  },
   "runtime_capture": {
     "available": true,
     "artifact_type": "real_arena_gazebo_gui_screenshot",
@@ -19,10 +69,720 @@
     "screenshot_sha256": "5313957c3032f54f16d6cf6fbce7aff7203a88d15dbfcd255991731822612712",
     "metadata_sha256": "9abb8b6c14bed9742d13a4f6c7a6fc886bc0c57da3ca9d5cc6e3e634f93d9f0d"
   },
-  "matched_run_evidence": {
-    "available": false,
-    "selection_rule": "doorway_bottleneck/medium/replicate-0; outcome-independent",
-    "representation": "telemetry reconstruction; not a simulator camera screenshot"
+  "condition_count": 120,
+  "episode_count": 600,
+  "valid_episode_count": 600,
+  "excluded_episode_count": 0,
+  "method_summary": [
+    {
+      "method": "base",
+      "label": "DWB",
+      "valid_episodes": 120,
+      "goal_rate": 0.7083333333333334,
+      "collision_rate": 0.2916666666666667,
+      "timeout_rate": 0.0,
+      "planner_failure_rate": 0.0,
+      "median_navigation_time_s": 88.82775000000001,
+      "median_min_human_distance_m": 0.8401027008909614,
+      "mean_recovery_triggers": 0.0,
+      "aggregate_recovery_success_rate": null,
+      "mean_recovery_duration_s": 0.0,
+      "mean_intervention_ratio": 0.03334730732691934
+    },
+    {
+      "method": "standard",
+      "label": "Standard",
+      "valid_episodes": 120,
+      "goal_rate": 0.675,
+      "collision_rate": 0.325,
+      "timeout_rate": 0.0,
+      "planner_failure_rate": 0.0,
+      "median_navigation_time_s": 87.9786,
+      "median_min_human_distance_m": 0.8402831762641583,
+      "mean_recovery_triggers": 0.0,
+      "aggregate_recovery_success_rate": null,
+      "mean_recovery_duration_s": 0.0,
+      "mean_intervention_ratio": 0.03418155636249086
+    },
+    {
+      "method": "heuristic",
+      "label": "Heuristic",
+      "valid_episodes": 120,
+      "goal_rate": 0.8333333333333334,
+      "collision_rate": 0.008333333333333333,
+      "timeout_rate": 0.05,
+      "planner_failure_rate": 0.10833333333333334,
+      "median_navigation_time_s": 95.5044,
+      "median_min_human_distance_m": 0.9101207812353662,
+      "mean_recovery_triggers": 3.433333333333333,
+      "aggregate_recovery_success_rate": 0.38349514563106796,
+      "mean_recovery_duration_s": 26.36916,
+      "mean_intervention_ratio": 0.2317313999926777
+    },
+    {
+      "method": "bc_uniform",
+      "label": "Uniform BC",
+      "valid_episodes": 120,
+      "goal_rate": 0.8666666666666667,
+      "collision_rate": 0.008333333333333333,
+      "timeout_rate": 0.041666666666666664,
+      "planner_failure_rate": 0.08333333333333333,
+      "median_navigation_time_s": 97.45245,
+      "median_min_human_distance_m": 0.9293755838177287,
+      "mean_recovery_triggers": 3.3583333333333334,
+      "aggregate_recovery_success_rate": 0.44168734491315137,
+      "mean_recovery_duration_s": 26.6369475,
+      "mean_intervention_ratio": 0.22907751653631153
+    },
+    {
+      "method": "pgrr",
+      "label": "PGRR",
+      "valid_episodes": 120,
+      "goal_rate": 0.9083333333333333,
+      "collision_rate": 0.0,
+      "timeout_rate": 0.016666666666666666,
+      "planner_failure_rate": 0.075,
+      "median_navigation_time_s": 97.78545,
+      "median_min_human_distance_m": 0.9450848379507866,
+      "mean_recovery_triggers": 3.55,
+      "aggregate_recovery_success_rate": 0.460093896713615,
+      "mean_recovery_duration_s": 23.41878,
+      "mean_intervention_ratio": 0.21968471909441903
+    }
+  ],
+  "density_summary": [
+    {
+      "density": "low",
+      "method": "base",
+      "valid_episodes": 40,
+      "goal_rate": 0.725
+    },
+    {
+      "density": "low",
+      "method": "standard",
+      "valid_episodes": 40,
+      "goal_rate": 0.7
+    },
+    {
+      "density": "low",
+      "method": "heuristic",
+      "valid_episodes": 40,
+      "goal_rate": 0.9
+    },
+    {
+      "density": "low",
+      "method": "bc_uniform",
+      "valid_episodes": 40,
+      "goal_rate": 0.95
+    },
+    {
+      "density": "low",
+      "method": "pgrr",
+      "valid_episodes": 40,
+      "goal_rate": 0.925
+    },
+    {
+      "density": "medium",
+      "method": "base",
+      "valid_episodes": 40,
+      "goal_rate": 0.725
+    },
+    {
+      "density": "medium",
+      "method": "standard",
+      "valid_episodes": 40,
+      "goal_rate": 0.7
+    },
+    {
+      "density": "medium",
+      "method": "heuristic",
+      "valid_episodes": 40,
+      "goal_rate": 0.85
+    },
+    {
+      "density": "medium",
+      "method": "bc_uniform",
+      "valid_episodes": 40,
+      "goal_rate": 0.825
+    },
+    {
+      "density": "medium",
+      "method": "pgrr",
+      "valid_episodes": 40,
+      "goal_rate": 0.9
+    },
+    {
+      "density": "high",
+      "method": "base",
+      "valid_episodes": 40,
+      "goal_rate": 0.675
+    },
+    {
+      "density": "high",
+      "method": "standard",
+      "valid_episodes": 40,
+      "goal_rate": 0.625
+    },
+    {
+      "density": "high",
+      "method": "heuristic",
+      "valid_episodes": 40,
+      "goal_rate": 0.75
+    },
+    {
+      "density": "high",
+      "method": "bc_uniform",
+      "valid_episodes": 40,
+      "goal_rate": 0.825
+    },
+    {
+      "density": "high",
+      "method": "pgrr",
+      "valid_episodes": 40,
+      "goal_rate": 0.9
+    }
+  ],
+  "family_summary": [
+    {
+      "family": "head_on_corridor",
+      "method": "base",
+      "goals": 11,
+      "valid_episodes": 15,
+      "goal_rate": 0.7333333333333333
+    },
+    {
+      "family": "head_on_corridor",
+      "method": "standard",
+      "goals": 9,
+      "valid_episodes": 15,
+      "goal_rate": 0.6
+    },
+    {
+      "family": "head_on_corridor",
+      "method": "heuristic",
+      "goals": 10,
+      "valid_episodes": 15,
+      "goal_rate": 0.6666666666666666
+    },
+    {
+      "family": "head_on_corridor",
+      "method": "bc_uniform",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "head_on_corridor",
+      "method": "pgrr",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "doorway_bottleneck",
+      "method": "base",
+      "goals": 12,
+      "valid_episodes": 15,
+      "goal_rate": 0.8
+    },
+    {
+      "family": "doorway_bottleneck",
+      "method": "standard",
+      "goals": 12,
+      "valid_episodes": 15,
+      "goal_rate": 0.8
+    },
+    {
+      "family": "doorway_bottleneck",
+      "method": "heuristic",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "doorway_bottleneck",
+      "method": "bc_uniform",
+      "goals": 13,
+      "valid_episodes": 15,
+      "goal_rate": 0.8666666666666667
+    },
+    {
+      "family": "doorway_bottleneck",
+      "method": "pgrr",
+      "goals": 13,
+      "valid_episodes": 15,
+      "goal_rate": 0.8666666666666667
+    },
+    {
+      "family": "crossing_flow",
+      "method": "base",
+      "goals": 7,
+      "valid_episodes": 15,
+      "goal_rate": 0.4666666666666667
+    },
+    {
+      "family": "crossing_flow",
+      "method": "standard",
+      "goals": 8,
+      "valid_episodes": 15,
+      "goal_rate": 0.5333333333333333
+    },
+    {
+      "family": "crossing_flow",
+      "method": "heuristic",
+      "goals": 14,
+      "valid_episodes": 15,
+      "goal_rate": 0.9333333333333333
+    },
+    {
+      "family": "crossing_flow",
+      "method": "bc_uniform",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "crossing_flow",
+      "method": "pgrr",
+      "goals": 14,
+      "valid_episodes": 15,
+      "goal_rate": 0.9333333333333333
+    },
+    {
+      "family": "blind_corner",
+      "method": "base",
+      "goals": 7,
+      "valid_episodes": 15,
+      "goal_rate": 0.4666666666666667
+    },
+    {
+      "family": "blind_corner",
+      "method": "standard",
+      "goals": 4,
+      "valid_episodes": 15,
+      "goal_rate": 0.26666666666666666
+    },
+    {
+      "family": "blind_corner",
+      "method": "heuristic",
+      "goals": 7,
+      "valid_episodes": 15,
+      "goal_rate": 0.4666666666666667
+    },
+    {
+      "family": "blind_corner",
+      "method": "bc_uniform",
+      "goals": 6,
+      "valid_episodes": 15,
+      "goal_rate": 0.4
+    },
+    {
+      "family": "blind_corner",
+      "method": "pgrr",
+      "goals": 12,
+      "valid_episodes": 15,
+      "goal_rate": 0.8
+    },
+    {
+      "family": "group_blocking",
+      "method": "base",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "group_blocking",
+      "method": "standard",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "group_blocking",
+      "method": "heuristic",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "group_blocking",
+      "method": "bc_uniform",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "group_blocking",
+      "method": "pgrr",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "overtaking",
+      "method": "base",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "overtaking",
+      "method": "standard",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "overtaking",
+      "method": "heuristic",
+      "goals": 14,
+      "valid_episodes": 15,
+      "goal_rate": 0.9333333333333333
+    },
+    {
+      "family": "overtaking",
+      "method": "bc_uniform",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "overtaking",
+      "method": "pgrr",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "opposite_streams",
+      "method": "base",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "opposite_streams",
+      "method": "standard",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "opposite_streams",
+      "method": "heuristic",
+      "goals": 13,
+      "valid_episodes": 15,
+      "goal_rate": 0.8666666666666667
+    },
+    {
+      "family": "opposite_streams",
+      "method": "bc_uniform",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "opposite_streams",
+      "method": "pgrr",
+      "goals": 15,
+      "valid_episodes": 15,
+      "goal_rate": 1.0
+    },
+    {
+      "family": "temporary_blockage",
+      "method": "base",
+      "goals": 3,
+      "valid_episodes": 15,
+      "goal_rate": 0.2
+    },
+    {
+      "family": "temporary_blockage",
+      "method": "standard",
+      "goals": 3,
+      "valid_episodes": 15,
+      "goal_rate": 0.2
+    },
+    {
+      "family": "temporary_blockage",
+      "method": "heuristic",
+      "goals": 12,
+      "valid_episodes": 15,
+      "goal_rate": 0.8
+    },
+    {
+      "family": "temporary_blockage",
+      "method": "bc_uniform",
+      "goals": 10,
+      "valid_episodes": 15,
+      "goal_rate": 0.6666666666666666
+    },
+    {
+      "family": "temporary_blockage",
+      "method": "pgrr",
+      "goals": 10,
+      "valid_episodes": 15,
+      "goal_rate": 0.6666666666666666
+    }
+  ],
+  "paired_effects": {
+    "pair_count": 120.0,
+    "goal_difference": 0.19999999999999996,
+    "collision_difference": -0.2916666666666667,
+    "timeout_difference": 0.016666666666666666
   },
+  "base_pgrr_planner_failure": {
+    "endpoint": "PLANNER_FAILURE",
+    "analysis": "descriptive_marginal_rate_difference",
+    "preregistered_inferential_endpoint": false,
+    "post_hoc_significance_test": false,
+    "base": {
+      "valid_episode_count": 120,
+      "count": 0,
+      "rate": 0.0
+    },
+    "pgrr": {
+      "valid_episode_count": 120,
+      "count": 9,
+      "rate": 0.075
+    },
+    "rate_difference_pgrr_minus_base": 0.075
+  },
+  "base_pgrr_joint_success_efficiency": {
+    "reference_policy": "base",
+    "treatment_policy": "pgrr",
+    "population": "joint_success",
+    "pair_count": 83,
+    "available": true,
+    "metrics": {
+      "duration": {
+        "json_metric": "successful_episode_duration_s",
+        "label": "共同到达 episode 时长",
+        "unit": "s",
+        "population": "joint_success",
+        "pair_count": 83,
+        "available": true,
+        "reference_mean": 86.80186626506026,
+        "treatment_mean": 102.67914578313251,
+        "difference_pgrr_minus_base": 15.877279518072289,
+        "ci_lower": 11.427466716867473,
+        "ci_upper": 20.83380397590361,
+        "confidence": 0.95,
+        "pvalue_raw": 7.716325405799555e-11,
+        "pvalue_holm": 3.3180199244938085e-09,
+        "holm_scope": "all reported tests across every comparator versus PGRR"
+      },
+      "path_length": {
+        "json_metric": "successful_path_length_m",
+        "label": "共同到达路径长度",
+        "unit": "m",
+        "population": "joint_success",
+        "pair_count": 83,
+        "available": true,
+        "reference_mean": 20.308346019248678,
+        "treatment_mean": 22.1939248216044,
+        "difference_pgrr_minus_base": 1.88557880235573,
+        "ci_lower": 1.2047007610328908,
+        "ci_upper": 2.6913070266913413,
+        "confidence": 0.95,
+        "pvalue_raw": 1.9526359634233142e-08,
+        "pvalue_holm": 7.420016661008593e-07,
+        "holm_scope": "all reported tests across every comparator versus PGRR"
+      }
+    }
+  },
+  "paired_comparisons": [
+    {
+      "comparator": "base",
+      "comparator_label": "DWB",
+      "endpoint": "goal_reached",
+      "endpoint_label": "目标到达",
+      "pair_count": 120,
+      "reference_rate": 0.7083333333333334,
+      "treatment_rate": 0.9083333333333333,
+      "difference": 0.2,
+      "ci_lower": 0.125,
+      "ci_upper": 0.2833333333333333,
+      "pvalue_raw": 3.032386302947998e-06,
+      "pvalue_holm": 0.00010310113430023193,
+      "matched_odds_ratio_haldane": 10.6,
+      "discordant_pairs": 28
+    },
+    {
+      "comparator": "base",
+      "comparator_label": "DWB",
+      "endpoint": "collision",
+      "endpoint_label": "碰撞",
+      "pair_count": 120,
+      "reference_rate": 0.2916666666666667,
+      "treatment_rate": 0.0,
+      "difference": -0.2916666666666667,
+      "ci_lower": -0.375,
+      "ci_upper": -0.21666666666666667,
+      "pvalue_raw": 5.820766091346741e-11,
+      "pvalue_holm": 2.561137080192566e-09,
+      "matched_odds_ratio_haldane": 0.014084507042253521,
+      "discordant_pairs": 35
+    },
+    {
+      "comparator": "base",
+      "comparator_label": "DWB",
+      "endpoint": "timeout",
+      "endpoint_label": "超时",
+      "pair_count": 120,
+      "reference_rate": 0.0,
+      "treatment_rate": 0.016666666666666666,
+      "difference": 0.016666666666666666,
+      "ci_lower": 0.0,
+      "ci_upper": 0.041666666666666664,
+      "pvalue_raw": 0.5,
+      "pvalue_holm": 1.0,
+      "matched_odds_ratio_haldane": 5.0,
+      "discordant_pairs": 2
+    },
+    {
+      "comparator": "standard",
+      "comparator_label": "Standard",
+      "endpoint": "goal_reached",
+      "endpoint_label": "目标到达",
+      "pair_count": 120,
+      "reference_rate": 0.675,
+      "treatment_rate": 0.9083333333333333,
+      "difference": 0.23333333333333334,
+      "ci_lower": 0.15,
+      "ci_upper": 0.31666666666666665,
+      "pvalue_raw": 2.4633482098579407e-07,
+      "pvalue_holm": 9.11438837647438e-06,
+      "matched_odds_ratio_haldane": 12.2,
+      "discordant_pairs": 32
+    },
+    {
+      "comparator": "standard",
+      "comparator_label": "Standard",
+      "endpoint": "collision",
+      "endpoint_label": "碰撞",
+      "pair_count": 120,
+      "reference_rate": 0.325,
+      "treatment_rate": 0.0,
+      "difference": -0.325,
+      "ci_lower": -0.4083333333333333,
+      "ci_upper": -0.24166666666666667,
+      "pvalue_raw": 3.637978807091713e-12,
+      "pvalue_holm": 1.673470251262188e-10,
+      "matched_odds_ratio_haldane": 0.012658227848101266,
+      "discordant_pairs": 39
+    },
+    {
+      "comparator": "standard",
+      "comparator_label": "Standard",
+      "endpoint": "timeout",
+      "endpoint_label": "超时",
+      "pair_count": 120,
+      "reference_rate": 0.0,
+      "treatment_rate": 0.016666666666666666,
+      "difference": 0.016666666666666666,
+      "ci_lower": 0.0,
+      "ci_upper": 0.041666666666666664,
+      "pvalue_raw": 0.5,
+      "pvalue_holm": 1.0,
+      "matched_odds_ratio_haldane": 5.0,
+      "discordant_pairs": 2
+    },
+    {
+      "comparator": "heuristic",
+      "comparator_label": "Heuristic",
+      "endpoint": "goal_reached",
+      "endpoint_label": "目标到达",
+      "pair_count": 120,
+      "reference_rate": 0.8333333333333334,
+      "treatment_rate": 0.9083333333333333,
+      "difference": 0.075,
+      "ci_lower": 0.0,
+      "ci_upper": 0.15833333333333333,
+      "pvalue_raw": 0.0931396484375,
+      "pvalue_holm": 1.0,
+      "matched_odds_ratio_haldane": 2.2,
+      "discordant_pairs": 23
+    },
+    {
+      "comparator": "heuristic",
+      "comparator_label": "Heuristic",
+      "endpoint": "collision",
+      "endpoint_label": "碰撞",
+      "pair_count": 120,
+      "reference_rate": 0.008333333333333333,
+      "treatment_rate": 0.0,
+      "difference": -0.008333333333333333,
+      "ci_lower": -0.025,
+      "ci_upper": 0.0,
+      "pvalue_raw": 1.0,
+      "pvalue_holm": 1.0,
+      "matched_odds_ratio_haldane": 0.3333333333333333,
+      "discordant_pairs": 1
+    },
+    {
+      "comparator": "heuristic",
+      "comparator_label": "Heuristic",
+      "endpoint": "timeout",
+      "endpoint_label": "超时",
+      "pair_count": 120,
+      "reference_rate": 0.05,
+      "treatment_rate": 0.016666666666666666,
+      "difference": -0.03333333333333333,
+      "ci_lower": -0.075,
+      "ci_upper": 0.0,
+      "pvalue_raw": 0.21875,
+      "pvalue_holm": 1.0,
+      "matched_odds_ratio_haldane": 0.2727272727272727,
+      "discordant_pairs": 6
+    },
+    {
+      "comparator": "bc_uniform",
+      "comparator_label": "Uniform BC",
+      "endpoint": "goal_reached",
+      "endpoint_label": "目标到达",
+      "pair_count": 120,
+      "reference_rate": 0.8666666666666667,
+      "treatment_rate": 0.9083333333333333,
+      "difference": 0.041666666666666664,
+      "ci_lower": -0.016666666666666666,
+      "ci_upper": 0.10833333333333334,
+      "pvalue_raw": 0.30175781249999994,
+      "pvalue_holm": 1.0,
+      "matched_odds_ratio_haldane": 1.9090909090909092,
+      "discordant_pairs": 15
+    },
+    {
+      "comparator": "bc_uniform",
+      "comparator_label": "Uniform BC",
+      "endpoint": "collision",
+      "endpoint_label": "碰撞",
+      "pair_count": 120,
+      "reference_rate": 0.008333333333333333,
+      "treatment_rate": 0.0,
+      "difference": -0.008333333333333333,
+      "ci_lower": -0.025,
+      "ci_upper": 0.0,
+      "pvalue_raw": 1.0,
+      "pvalue_holm": 1.0,
+      "matched_odds_ratio_haldane": 0.3333333333333333,
+      "discordant_pairs": 1
+    },
+    {
+      "comparator": "bc_uniform",
+      "comparator_label": "Uniform BC",
+      "endpoint": "timeout",
+      "endpoint_label": "超时",
+      "pair_count": 120,
+      "reference_rate": 0.041666666666666664,
+      "treatment_rate": 0.016666666666666666,
+      "difference": -0.025,
+      "ci_lower": -0.06666666666666667,
+      "ci_upper": 0.016666666666666666,
+      "pvalue_raw": 0.453125,
+      "pvalue_holm": 1.0,
+      "matched_odds_ratio_haldane": 0.45454545454545453,
+      "discordant_pairs": 7
+    }
+  ],
   "author_alias": "Charles Chen"
 }
