@@ -50,7 +50,17 @@
     \begin{minipage}{0.88\textwidth}
     \centering\bfseries
     本页结果尚未锁定。构建系统没有读取历史 64-episode、pilot、calibration
-    或正在写入的验证目录，也没有填入推测数值。
+    或正在写入的 v5/v6 验证目录，也没有填入推测数值。
+    \end{minipage}}
+  \end{center}}
+
+\newcommand{\EvidenceSlot}[1]{%
+  \begin{center}
+  \fcolorbox{PGRRBlue}{PGRRLight}{%
+    \begin{minipage}{0.88\textwidth}
+    \centering\bfseries
+    #1\par
+    缺少批准素材时保持空槽并拒绝 result-stage 发布；不得以示意图、旧结果或推测曲线代替。
     \end{minipage}}
   \end{center}}
 
@@ -61,8 +71,9 @@
   \caption{#3}
   \end{figure}}
 
-\title{\bfseries 规划引导、失败触发的动态社会导航恢复与重接\\
-\large PGRR 系统、算法、实验与复现技术报告}
+\title{\bfseries PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin\\
+for Dynamic Social Navigation\\
+\large 系统、算法、实验与复现技术报告}
 \author{Charles Chen}
 \date{2026 年 8 月}
 
@@ -72,7 +83,7 @@
   \centering
   \vspace*{22mm}
   {\sffamily\bfseries\fontsize{24}{30}\selectfont
-  规划引导、失败触发的\\动态社会导航恢复与重接\par}
+  PGRR: Planning-Guided Failure-Triggered\\Recovery and Rejoin for\\Dynamic Social Navigation\par}
   \vspace{7mm}
   {\sffamily\Large PGRR 技术报告\par}
   \vspace{14mm}
@@ -126,7 +137,7 @@ WAIT、BACKUP、REPLAN、CONTINUE 四个离散恢复动作之间选择。地图�
 
 \clearpage
 \section{贡献、边界与命名}
-PGRR 表示 Planning-Guided Recovery and Rejoin。当前可验证的贡献边界是：
+公开名称固定为 \textbf{PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation}。历史 \texttt{ramp\_*}/\texttt{RAMP\_*} 仅为兼容接口，不是公开方法名。当前可验证的贡献边界是：
 
 \begin{enumerate}
   \item 经典规划器常态运行、失败证据持续后才介入的分层架构；
@@ -136,7 +147,7 @@ PGRR 表示 Planning-Guided Recovery and Rejoin。当前可验证的贡献边界
   \item 覆盖八类动态交互、三档密度和完整终止类别的配对协议。
 \end{enumerate}
 
-PPO、学习型失败检测器、跨仿真器大规模迁移和实机部署不是当前版本的贡献。报告不会使用“首次结合”“保证安全”或“解决社会导航”等不可验证表述。
+PPO、学习型失败检测器、第二规划器、Flatland、硬件实验和形式化安全不是当前版本的完成声明。报告不会使用“首次结合”“保证安全”或“解决社会导航”等不可验证表述。
 
 \clearpage
 \section{总体系统架构}
@@ -223,11 +234,26 @@ ROS2 overlay 将核心逻辑、机器学习模块和 ROS 适配层分开。核�
 
 episode logger 同时保存正式观测、算法状态、评价真值和来源元数据，但数据层明确区分 observation 与 privileged 字段。所有路径、topic、service、action 和 frame 均由配置或 remap 提供。
 
+\section{真实运行环境与边界}
+在线运行环境是 Ubuntu 22.04、ROS2 Humble 和固定版本的 Arena/RosNav Gazebo profile；机器人为 Jackal，导航栈采用 Nav2 与 DWB，本体观测来自平面 LiDAR、里程计、TF、路径和 planner 状态。运行节点统一支持 \texttt{use\_sim\_time}。为避免 ROS ABI 与 Python 包污染，在线容器/venv 与离线 \texttt{ramp-offline} Conda 环境严格分离。
+
+Gazebo 中的动态行人由可见的确定性圆柱代理按 seeded route 运动。该 fallback 能产生可复现的 LiDAR 交互，但不是 HuNav 社会力、真实人体行为或硬件验证。软件渲染和仿真调度也可能影响 wall-clock，定量指标以仿真时间与终止证据为准。
+
 \clearpage
 \section{Arena/Gazebo 运行证据}
-\SafeFigure[0.78\textwidth]{runtime_gazebo_doorway_bottleneck_medium.png}{真实 Arena Gazebo GUI 截图：Jackal 在 doorway\_bottleneck、medium、validation 场景运行。关联 episode 结局为 GOAL\_REACHED；截图、窗口信息、运行日志和 SHA256 均有元数据。}
+\SafeFigure[0.78\textwidth]{runtime_gazebo_doorway_bottleneck_medium.png}{真实 Arena Gazebo GUI 冻结场景演示：Ubuntu 22.04 / ROS2 Humble 下，Jackal、Nav2 DWB、平面 LiDAR 可见动态代理在 doorway\_bottleneck、medium、validation 场景运行。截图像素、窗口、日志、commit 与 SHA256 有元数据。它来自审计过的 v5 validation 演示，不是锁定 v6 统计回合的 camera frame。}
 
-该截图只证明对应运行时、机器人、行人和场景能够实际启动与完成，不承担定量效果证据。定量结论只能来自完整 manifest 的 episode-level Parquet。
+该截图只证明对应运行时、机器人、行人和场景能够实际启动与完成，不承担定量效果证据。定量结论只能来自完整 manifest 的 episode-level Parquet。后文轨迹图由真实 JSONL 遥测重建，必须明确标为 telemetry reconstruction，绝不称为 simulator camera screenshot。
+
+\clearpage
+\section{Matched Base--PGRR 真实运行证据}
+为避免事后挑选“好看案例”，运行对比固定选择 moderate-v6 的 doorway\_bottleneck / medium / replicate 0，不依赖两个方法的终局。素材生成器从同一 Parquet 解析 Base 与 PGRR 的 episode ID，逐个校验 JSONL 的 SHA256，并导出平面轨迹、原目标距离、失败分数和恢复状态事件线。
+
+\ifReportResultsAvailable
+  \SafeFigure{generated/result_matched_run_evidence.pdf}{同一 pair 的 Base--PGRR 遥测对比。空间轨迹和时间线来自 SHA256 校验的真实 raw JSONL，并通过与 results.parquet 同目录的审计 sidecar 注入。该图是 telemetry reconstruction，不是 camera screenshot；其终局不能代替总体 outcome 分解。}
+\else
+  \EvidenceSlot{待生成：moderate-v6 doorway\_bottleneck / medium / r00 的 matched Base--PGRR raw/Parquet 轨迹与事件时间线。}
+\fi
 
 \clearpage
 \section{八类社会导航压力场景}
@@ -239,7 +265,9 @@ episode logger 同时保存正式观测、算法状态、评价真值和来源�
 \section{数据划分与协议锁定}
 train、validation 和 test 使用不相交的 scenario ID 与 seed block。训练只用于专家数据和 DAgger；validation 只用于阈值、checkpoint 和方法选择；test 只有在配置、代码、checkpoint 与 episode manifest 冻结后才可打开。
 
-最终 test 协议预注册 120 个条件，每个条件由 DWB、Standard、Heuristic、Uniform BC 和 PGRR 五种方法共享，总计 600 个 logical method--episodes。validation 快照则必须有独立标签，不得包装成 test 结论。
+权威基准为 moderate-v6。最终 test 协议预注册 120 个条件，每个条件由 DWB、Standard、Heuristic、Uniform BC 和 PGRR 五种方法共享，总计 600 个 logical method--episodes。validation 快照则必须有独立标签，不得包装成 test 结论。
+
+moderate-v5 的完整 validation Base 为 57/72 到达（79.17\%），超过预注册的 75\% 上限，因此校准状态为 rejected；其 test 从未打开。v6 保留 v5 静态几何，仅根据 v5 validation 中 Crossing Flow 9/9 到达且交互距离过大的审计证据，预注册较慢的 crossing 时序与全新 seed block。该拒绝历史必须保留，但 v5 数字不能进入 v6 final 结果表。
 
 \clearpage
 \section{对比方法}
@@ -323,7 +351,7 @@ SIMULATOR\_FAILURE 和 INVALID\_RESET 可重试且从算法分母单独排除，
 
 \clearpage
 \section{局限性与有效性威胁}
-当前系统依赖二维 LiDAR、已知静态地图、离散恢复动作和仿真行人模型。特权专家依赖仿真真值；安全监督器没有形式化保证；同一地图和场景模板上的 held-out seed 不等价于跨地图泛化；Gazebo 截图和小规模迁移不能代替实机实验。
+当前系统依赖二维 LiDAR、已知静态地图、离散恢复动作和仿真行人模型。特权专家依赖仿真真值；安全监督器没有形式化保证；同一地图和场景模板上的 held-out seed 不等价于跨地图泛化；Gazebo 截图不能代替实机实验。PPO、学习型失败检测器、第二规划器、Flatland、硬件与形式化安全均未完成。
 
 阈值、checkpoint 和场景校准只允许使用 validation。若最终 test 与 validation 方向不同，应报告差异，而不是根据 test 重新调参。
 
@@ -333,8 +361,9 @@ SIMULATOR\_FAILURE 和 INVALID\_RESET 可重试且从算法分母单独排除，
 \begin{verbatim}
 make statistics MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make figures tables paper
-REPORT_STAGE=test make technical-report
-REPORT_STAGE=test make presentation
+REPORT_STAGE=test \
+REPORT_MATCHED_EVIDENCE=outputs/moderate/final/matched_base_pgrr_evidence.json \
+make technical-report presentation
 \end{verbatim}
 
 artifact manifest 应保存 Git commit、Arena commit、checkpoint SHA256、scenario hash、结果文件 SHA256、生成命令和时间。发布前执行隐私审计，文档作者只使用化名 Charles Chen。
@@ -375,16 +404,20 @@ ID 范围 & 半径（m） & 相对角（度） & 类型 \\
 \section{结果构建的 fail-closed 规则}
 结果构建器执行以下硬检查：
 \begin{enumerate}
-  \item pending 模式不得接收任何 results 或 statistics 路径；
-  \item historical、pilot、calibration、smoke 与运行中的 validation 路径在打开前被拒绝；
+  \item pending 模式不得接收任何 results、statistics 或 matched-evidence 路径；
+  \item historical、pilot、calibration、smoke、rejected v5，以及
+  \nolinkurl{outputs/moderate/v6_validation} 和所有
+  \nolinkurl{outputs/moderate/v6_validation_*} 活跃/独立验证路径在打开前被拒绝；
   \item validation 只能读取显式完成快照；test 只能读取
-  \nolinkurl{outputs/moderate/final/results.parquet} 与
-  \nolinkurl{outputs/moderate/final/pairwise_statistics.json} 这一对同目录产物；
+  \nolinkurl{outputs/moderate/final/} 下同目录、同一结果哈希绑定的
+  results Parquet、pairwise statistics 与 matched evidence 三个产物；
+  \item scenario/pair ID 必须属于 moderate-v6，防止把 rejected v5 复制到批准目录；
   \item split 必须与报告阶段唯一一致；
   \item 每个 pair 必须恰好包含五种方法且场景元数据一致；
   \item 终止类型必须属于预声明集合；
   \item 配对 JSON 的有效对数、端点计数、差值、McNemar 格、全局 Holm $p$ 与 matched odds ratio 必须由 Parquet 逐项复算一致；
-  \item 报告 JSON、TeX 宏和图表同时保存结果与统计文件的 SHA256。
+  \item matched sidecar 必须绑定 results SHA、固定 selector、Base/PGRR episode ID、终局和 raw SHA；
+  \item 报告 JSON、TeX 宏和图表同时保存结果、统计与 matched evidence 的 SHA256。
 \end{enumerate}
 
 \clearpage

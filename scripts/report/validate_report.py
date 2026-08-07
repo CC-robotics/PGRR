@@ -69,6 +69,26 @@ def validate_report(pdf: Path, data_path: Path, log_path: Path | None = None) ->
         raise ReportValidationError(f"report contains forbidden metadata/text tokens: {found}")
     if "Charles Chen" not in text:
         raise ReportValidationError("report author alias is missing")
+    if data.get("public_name") != (
+        "PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation"
+    ):
+        raise ReportValidationError("report data does not use the exact public PGRR name")
+    runtime_capture = data.get("runtime_capture")
+    if not isinstance(runtime_capture, dict) or not bool(runtime_capture.get("available")):
+        raise ReportValidationError("report is not bound to the verified Gazebo runtime capture")
+    required_text = (
+        "Dynamic Social Navigation",
+        "Ubuntu 22.04",
+        "telemetry reconstruction",
+    )
+    missing_text = [token for token in required_text if token not in text]
+    if missing_text:
+        raise ReportValidationError(
+            f"report omits required runtime/evidence labels: {missing_text}"
+        )
+    matched = data.get("matched_run_evidence")
+    if not isinstance(matched, dict) or bool(matched.get("available")) != (stage != "pending"):
+        raise ReportValidationError("report matched-run evidence availability disagrees with stage")
     if stage == "pending":
         if "结果尚未锁定" not in text and "结果待锁定" not in text:
             raise ReportValidationError("pending report lacks an explicit pending-stage label")

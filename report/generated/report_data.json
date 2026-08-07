@@ -1,7 +1,19 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "stage": "pending",
   "results_available": false,
   "notice": "Validation is running; no numerical result is approved for reporting.",
+  "public_name": "PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation",
+  "benchmark_id": "moderate_social_navigation_v6",
+  "runtime_capture": {
+    "available": true,
+    "representation": "real Gazebo GUI screenshot from a frozen validation demo",
+    "not_locked_statistical_episode": true
+  },
+  "matched_run_evidence": {
+    "available": false,
+    "selection_rule": "doorway_bottleneck/medium/replicate-0; outcome-independent",
+    "representation": "telemetry reconstruction; not a simulator camera screenshot"
+  },
   "author_alias": "Charles Chen"
 }

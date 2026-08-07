@@ -1,8 +1,10 @@
 # Reproducing PGRR
 
-This document describes the frozen moderate-v5 release of **PGRR:
-Planning-Guided Recovery and Rejoin**. Commands resolve the Git root at runtime
-and remain valid after the repository is moved or renamed.
+This document describes the moderate-v6 release of **PGRR: Planning-Guided
+Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation**.
+Commands resolve the Git root at runtime and remain valid after the repository
+is moved or renamed. Historical `ramp_*`/`RAMP_*` identifiers remain compatibility
+interfaces only.
 
 The paper evaluates the imitation-learning method: a privileged short-horizon
 planning reference, Uniform BC, a completed two-round DAgger workflow, an
@@ -38,8 +40,8 @@ The report and presentation use the same stage contract:
 | Stage | Approved input | Meaning |
 |---|---|---|
 | `pending` | no results or statistics file | Method, runtime, and protocol only; numerical pages visibly pending |
-| `validation` | immutable `results.parquet` and `pairwise_statistics.json` under `outputs/report_inputs/validation/` | Selection evidence, always marked non-final |
-| `test` | sibling `results.parquet` and `pairwise_statistics.json` under `outputs/moderate/final/` | Locked held-out evidence after the complete test protocol |
+| `validation` | immutable results, statistics, and matched-run sidecar under `outputs/report_inputs/validation/` | Selection evidence, always marked non-final |
+| `test` | the same three sibling artifacts under `outputs/moderate/final/` | Locked held-out evidence after the complete test protocol |
 
 Build the current data-free documents without opening any result Parquet:
 
@@ -54,15 +56,24 @@ the report builder at the live validation output directory:
 ```bash
 mkdir -p outputs/report_inputs/validation
 install -m 0444 \
-  outputs/moderate/v5_validation/results.parquet \
+  outputs/moderate/v6_validation/results.parquet \
   outputs/report_inputs/validation/results.parquet
 install -m 0444 \
-  outputs/moderate/v5_validation/pairwise_statistics.json \
+  outputs/moderate/v6_validation/pairwise_statistics.json \
   outputs/report_inputs/validation/pairwise_statistics.json
+python scripts/report/build_matched_run_evidence.py \
+  --stage validation \
+  --results outputs/moderate/v6_validation/results.parquet \
+  --raw-dir data/raw \
+  --output outputs/moderate/v6_validation/matched_base_pgrr_evidence.json
+install -m 0444 \
+  outputs/moderate/v6_validation/matched_base_pgrr_evidence.json \
+  outputs/report_inputs/validation/matched_base_pgrr_evidence.json
 
 REPORT_STAGE=validation \
 REPORT_RESULTS=outputs/report_inputs/validation/results.parquet \
 REPORT_STATISTICS=outputs/report_inputs/validation/pairwise_statistics.json \
+REPORT_MATCHED_EVIDENCE=outputs/report_inputs/validation/matched_base_pgrr_evidence.json \
 make technical-report presentation
 ```
 
@@ -72,11 +83,13 @@ The locked test documents are generated only with:
 REPORT_STAGE=test \
 REPORT_RESULTS=outputs/moderate/final/results.parquet \
 REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
+REPORT_MATCHED_EVIDENCE=outputs/moderate/final/matched_base_pgrr_evidence.json \
 make technical-report presentation
 ```
 
 The input guard rejects the historical 64-episode result, pilot, calibration,
-smoke, and live validation paths before reading them. No old result can be used
+smoke, rejected v5, `outputs/moderate/v6_validation`, and every
+`outputs/moderate/v6_validation_*` path before reading them. No old result can be used
 as a fallback for a test report, presentation, paper table, or conclusion.
 
 ## 1. Establish the repository root
@@ -121,8 +134,11 @@ The declarations and locks are
 
 ### ROS2/Arena runtime
 
-The verified online profile is the isolated Arena ROS2 Humble/Gazebo container
-with Jackal and Nav2 DWB. It is not Conda, Flatland, Arena 5, or hardware.
+The verified online profile is Ubuntu 22.04 with the isolated Arena ROS2
+Humble/Gazebo container, Jackal, Nav2 DWB, and planar LiDAR. Seeded cylindrical
+pedestrian proxies are deterministic simulator actors, not validated human
+intent. It is not Conda, Flatland, Arena 5, a second planner, hardware, or a
+formal-safety platform.
 
 ```bash
 conda deactivate 2>/dev/null || true
@@ -157,7 +173,7 @@ This path exercises schema, mask, state-machine, expert, policy, and statistics
 contracts on small non-paper artifacts. It neither retrains the submitted model
 nor launches the 600-episode test.
 
-## 5. Frozen moderate-v5 inputs
+## 5. Preregistered moderate-v6 inputs
 
 The normative declaration is
 [`configs/final/ei_gazebo.yaml`](configs/final/ei_gazebo.yaml). Verify its
@@ -166,9 +182,9 @@ inputs before the first held-out test episode:
 ```bash
 sha256sum \
   configs/final/ei_gazebo.yaml \
-  configs/experiments/scenario_catalog_moderate_v5.yaml \
-  scenarios/splits/moderate_v5_validation.yaml \
-  scenarios/splits/moderate_v5_test.yaml \
+  configs/experiments/scenario_catalog_moderate_v6.yaml \
+  scenarios/splits/moderate_v6_validation.yaml \
+  scenarios/splits/moderate_v6_test.yaml \
   checkpoints/bc/uniform_scenario/best.onnx \
   checkpoints/dagger/coverage_safety_aligned/best.onnx \
   configs/planner/baselines.yaml \
@@ -177,7 +193,7 @@ sha256sum \
   configs/planner/recovery_actions.yaml
 ```
 
-Moderate-v5 contains eight interaction families, three densities, and five
+Moderate-v6 contains eight interaction families, three densities, and five
 held-out repetitions per family--density cell:
 
 ```text
@@ -186,9 +202,14 @@ held-out repetitions per family--density cell:
 ```
 
 The five methods are `base`, `standard`, `heuristic`, `bc_uniform`, and
-`pgrr`. Every method uses the identical 120 condition keys. The detailed v5
-construction rationale is in
-[`docs/moderate_v5_benchmark.md`](docs/moderate_v5_benchmark.md).
+`pgrr`. Every method uses the identical 120 condition keys.
+
+Moderate-v5 is preserved as a rejected audit: its complete Base validation
+reached 57/72 goals (79.17%), exceeding the preregistered 75% ceiling, so no v5
+test was opened. V6 retains its static geometry, changes only the predeclared
+Crossing Flow timing band based on v5 validation phasing evidence, and uses new
+seed blocks. See [`CURRENT_STATUS.md`](CURRENT_STATUS.md) and
+[`DECISIONS.md`](DECISIONS.md); never copy v5 rows into a v6 reporting snapshot.
 
 The selected PGRR artifact is
 `checkpoints/dagger/coverage_safety_aligned/best.onnx`. Its training set is the
@@ -199,7 +220,7 @@ pass validation selection and is not substituted into the test protocol.
 ## 6. Validation-only calibration and lock
 
 Benchmark construction and method selection use only train/validation data.
-The accepted calibration report must be generated from the complete v5
+The accepted calibration report must be generated from the complete v6
 validation manifest before test execution:
 
 ```bash
@@ -214,24 +235,24 @@ env \
   conda run --no-capture-output -n ramp-offline \
   python scripts/evaluate/run_experiment.py \
     --split validation \
-    --split-manifest scenarios/splits/moderate_v5_validation.yaml \
+    --split-manifest scenarios/splits/moderate_v6_validation.yaml \
     --methods base standard heuristic bc_uniform pgrr \
     --jobs 6 \
     --timeout 240 \
-    --output-dir outputs/moderate/v5_validation
+    --output-dir outputs/moderate/v6_validation
 
 make statistics \
-  MODERATE_ANALYSIS_DIR=outputs/moderate/v5_validation
+  MODERATE_ANALYSIS_DIR=outputs/moderate/v6_validation
 ```
 
 The authoritative calibration evidence is
-`outputs/moderate/v5_validation/calibration_report.json`. The artifact builder
+`outputs/moderate/v6_validation/calibration_report.json`. The artifact builder
 requires `split=validation`, `status=accepted`, and `passed=true`; a report
 computed from test rows is rejected. After validation selection, freeze the
 tree before opening the test split:
 
 ```bash
-git tag -a pre-final-eval-v5 -m "Frozen moderate-v5 evaluation inputs"
+git tag -a pre-final-eval-v6 -m "Frozen moderate-v6 evaluation inputs"
 ```
 
 ## 7. Complete held-out evaluation
@@ -240,7 +261,7 @@ Run the test once after the validation-selected tree is frozen:
 
 ```bash
 make evaluate-flatland \
-  MODERATE_SPLIT_MANIFEST=scenarios/splits/moderate_v5_test.yaml \
+  MODERATE_SPLIT_MANIFEST=scenarios/splits/moderate_v6_test.yaml \
   MODERATE_ANALYSIS_DIR=outputs/moderate/final \
   EVALUATION_JOBS=6 \
   EVALUATION_TIMEOUT_S=240
@@ -263,7 +284,7 @@ env \
   conda run --no-capture-output -n ramp-offline \
   python scripts/evaluate/run_experiment.py \
     --split test \
-    --split-manifest scenarios/splits/moderate_v5_test.yaml \
+    --split-manifest scenarios/splits/moderate_v6_test.yaml \
     --methods base standard heuristic bc_uniform pgrr \
     --jobs 6 \
     --timeout 240 \
@@ -287,11 +308,23 @@ make statistics MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make figures MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make tables MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
+python scripts/report/build_matched_run_evidence.py \
+  --stage test \
+  --results outputs/moderate/final/results.parquet \
+  --raw-dir data/raw \
+  --output outputs/moderate/final/matched_base_pgrr_evidence.json
 REPORT_STAGE=test \
   REPORT_RESULTS=outputs/moderate/final/results.parquet \
   REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
+  REPORT_MATCHED_EVIDENCE=outputs/moderate/final/matched_base_pgrr_evidence.json \
   make technical-report presentation
 ```
+
+The matched evidence selector is fixed at doorway-bottleneck / medium /
+replicate 0. The extractor verifies each Base/PGRR JSONL SHA against Parquet
+before exporting trajectories and event timelines. These plots are telemetry
+reconstructions, not simulator camera screenshots. Missing raw logs or a hash
+mismatch blocks result-stage report and deck generation.
 
 The collector verifies manifest membership, completion, outcome evidence, and
 paired metadata. The moderate summarizer requires exactly the same 120
@@ -303,7 +336,7 @@ For a complete document rebuild from the published, privacy-safe evidence:
 
 ```bash
 MODERATE_ANALYSIS_DIR=outputs/moderate/final \
-MODERATE_CALIBRATION_REPORT=outputs/moderate/v5_validation/calibration_report.json \
+MODERATE_CALIBRATION_REPORT=outputs/moderate/v6_validation/calibration_report.json \
 PGRR_RELEASE_MODE=0 \
 PGRR_RECOLLECT_RAW=0 \
 scripts/reproduce_paper.sh
@@ -313,7 +346,8 @@ This command never launches simulation and rejects every result source except
 the locked `outputs/moderate/final` test run with 120 paired conditions per
 method. With the default `PGRR_RECOLLECT_RAW=0`, it does not access `data/raw`:
 it consumes the published results, statistics, failure analysis, telemetry
-media, offline-ablation CSV/JSON, and tracked validation HDF5. It regenerates
+media, the hash-linked matched-run sidecar, offline-ablation CSV/JSON, and
+tracked validation HDF5. It regenerates
 figures and tables, verifies the anonymous IEEEtran paper at exactly 8 pages,
 builds a 30--40-page test-stage Chinese technical report, and builds the
 30-slide PPTX/PDF, speaker notes, and contact sheet. It records the actual report
@@ -342,23 +376,28 @@ commit, clean-validation sequence is closed rather than self-invalidating.
 
 ## 9. Runtime screenshot policy
 
-Publication charts and diagrams are generated as vector PDFs. A simulator
-screenshot is optional until a real capture succeeds and is never synthesized.
+Publication charts and diagrams are generated as vector PDFs. The repository's
+simulator screenshot is a real, audited frozen-v5 validation demonstration and
+is never synthesized.
 The validated capture command and provenance rules are documented in
 [`docs/runtime_screenshots.md`](docs/runtime_screenshots.md). When present, the
 paper-facing image is
 `paper/figures/runtime_gazebo_doorway_bottleneck_medium.png`, paired with
 `outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json`.
-The artifact builder rejects an unpaired screenshot or metadata file.
+The artifact builder rejects an unpaired screenshot or metadata file. It is not
+a camera frame from a locked v6 statistical episode. Spatial paths, keyframes,
+and event plots produced from JSONL/Parquet are explicitly labelled telemetry
+reconstructions and must not be described as camera screenshots.
 
 ## 10. Authoritative outputs
 
-- `outputs/moderate/v5_validation/calibration_report.json`
+- `outputs/moderate/v6_validation/calibration_report.json`
 - `outputs/moderate/final/episode_manifest.parquet`
 - `outputs/moderate/final/run_manifest.json`
 - `outputs/moderate/final/results.parquet`
 - `outputs/moderate/final/summary.csv`
 - `outputs/moderate/final/pairwise_statistics.json`
+- `outputs/moderate/final/matched_base_pgrr_evidence.json`
 - `outputs/moderate/final/failure_analysis.md`
 - `outputs/moderate/final/artifact_manifest.json`
 - `outputs/moderate/final/offline_policy_ablation.csv`
@@ -392,15 +431,17 @@ make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
 REPORT_STAGE=test \
   REPORT_RESULTS=outputs/moderate/final/results.parquet \
   REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
+  REPORT_MATCHED_EVIDENCE=outputs/moderate/final/matched_base_pgrr_evidence.json \
   make technical-report presentation
 make privacy-check
 
-test -s outputs/moderate/v5_validation/calibration_report.json
+test -s outputs/moderate/v6_validation/calibration_report.json
 test -s outputs/moderate/final/episode_manifest.parquet
 test -s outputs/moderate/final/run_manifest.json
 test -s outputs/moderate/final/results.parquet
 test -s outputs/moderate/final/summary.csv
 test -s outputs/moderate/final/pairwise_statistics.json
+test -s outputs/moderate/final/matched_base_pgrr_evidence.json
 test -s outputs/moderate/final/failure_analysis.md
 test -s outputs/moderate/final/artifact_manifest.json
 test -s outputs/moderate/final/offline_policy_ablation.csv
@@ -428,7 +469,8 @@ checkout; do not weaken its allowlist to admit stale paths or metadata.
 
 ## 12. No test-set tuning
 
-1. Train only with v5 train scenarios.
+1. Preserve the selected checkpoint's recorded train-only provenance; v6
+   validation and test rows may not be used for retraining.
 2. Select thresholds, masks, checkpoints, and stopping rules only with train and
    validation evidence.
 3. Freeze and tag code, configuration, scenarios, and checkpoints before the
@@ -452,6 +494,8 @@ checkout; do not weaken its allowlist to admit stale paths or metadata.
 - The expert uses privileged simulator state during label generation only.
 - The finite action set and empirical safety margins provide no formal
   completeness or collision-avoidance guarantee.
+- PPO, a learned failure detector, a second planner, Flatland evaluation,
+  hardware experiments, and formal safety are not completed claims.
 
 Current retained negative results and limitations are tracked in
 [`CURRENT_STATUS.md`](CURRENT_STATUS.md),

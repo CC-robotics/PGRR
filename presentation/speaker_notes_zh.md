@@ -2,9 +2,9 @@
 
 阶段：`pending`。讲稿与 PPT 由同一 30 页 slide specification 生成。
 
-## 01. 规划引导、失败触发的动态社会导航恢复与重接
+## 01. PGRR：规划引导、失败触发的动态社会导航恢复与重接
 
-核心句：PGRR：让经典规划器保持常态控制，只在可观测失败前兆持续时介入
+核心句：PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation
 
 先明确今天汇报的范围：方法、真实运行证据和严格阶段化结果。当前阶段标签会出现在每一页。
 
@@ -79,7 +79,7 @@
 - 特权短时域规划自动生成恢复示范
 - Behavior Cloning + 两轮 DAgger 覆盖策略诱导状态
 - 规划 action mask + 独立安全监督 + 有界状态机
-- 不声称首次结合、不声称无碰撞保证、不把 PPO 写成完成贡献
+- PPO、学习 detector、第二 planner、Flatland、硬件与形式安全均非完成声明
 
 ## 07. 总体架构
 
@@ -208,15 +208,15 @@
 
 核心句：不是概念图：Jackal、动态行人、静态瓶颈和 Nav2 在同一 episode 实际运行
 
-指出图中 Jackal、红色行人圆柱和门口几何，并主动区分定性证据与定量结论。
+指出 Jackal、LiDAR 可见行人代理和门口几何；明确这是冻结场景运行证明，不能把遥测重建或该演示图冒充锁定 test 截图。
 
 讲述要点：
 
-- 场景：doorway_bottleneck / medium / validation
-- 规划器：Nav2 DWB；仿真器：Gazebo
-- 关联 episode 结局：GOAL_REACHED
+- 环境：Ubuntu 22.04 / ROS2 Humble / Arena Gazebo
+- 机器人与感知：Jackal / Nav2 DWB / 平面 LiDAR
+- 冻结 v5 演示：doorway_bottleneck / medium / validation
 - 截图、窗口、日志、commit 与 SHA256 均有元数据
-- 该截图只作运行证明，不替代完整定量实验
+- 它不是锁定 v6 统计回合的 camera frame，也不替代定量实验
 
 ## 17. 八类场景 × 三档密度
 
@@ -239,7 +239,8 @@
 
 讲述要点：
 
-- Train / validation / test 使用不相交 seed 和 scenario ID
+- moderate-v6：Train / validation / test 使用不相交 seed 和 scenario ID
+- v5 Base validation 57/72，超过 75% ceiling，故 rejected 且 test 未打开
 - Validation：72 条件 × 5 方法 = 360 method-episodes
 - 锁定 Test：120 条件 × 5 方法 = 600 method-episodes
 - 同一 pair 的场景、地图、seed 和行人配置跨方法一致
@@ -316,7 +317,7 @@
 
 核心句：配对效应与显著性必须来自锁定统计 JSON
 
-正的目标差有利；碰撞和超时则负值有利。显著性只引用锁定统计 JSON。
+正的目标差有利；碰撞和超时则负值有利。逐项读取区间、全局 Holm pH 与 ORH。
 
 讲述要点：
 
@@ -338,16 +339,16 @@
 - 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
 - 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
 
-## 26. 恢复行为审计
+## 26. Matched Base--PGRR 真实运行对比
 
-核心句：恢复行为要检查 WAIT/BACKUP 滥用和过度介入
+核心句：matched 运行页等待 hash-linked raw/Parquet sidecar
 
-恢复次数越多不一定越好；结合最终到达与失败类别检查介入是否有效。
+先核对 pair 与 raw SHA，再读轨迹和事件线；这是遥测重建，不是相机截图。
 
 讲述要点：
 
 - 阶段标识：验证执行中，结果尚未锁定
-- 本页计划展示：触发、重接成功、恢复时长和介入比例
+- 本页计划展示：预注册 doorway/medium/r00 的 Base--PGRR 空间轨迹与事件时间线；遥测重建，不是 camera screenshot
 - 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
 - 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
 
@@ -375,7 +376,7 @@
 - 重点检查长期 WAIT、持续 BACKUP、左右切换和重复恢复
 - 规则触发可能误报或漏报，action mask 可能过于保守
 - 二维 LiDAR、已知地图、离散动作和仿真人群限制外推
-- 没有形式化安全保证，也没有实机泛化结论
+- PPO、学习 detector、第二 planner、Flatland、硬件和形式安全均未完成
 
 ## 29. 复现与工程交付
 

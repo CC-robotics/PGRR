@@ -1,5 +1,8 @@
 # PGRR presentation
 
+Public name: **PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for
+Dynamic Social Navigation**.
+
 The presentation contains exactly 30 Chinese slides. Its slide specification
 and speaker notes are usable in `pending` mode without any numerical results.
 
@@ -17,3 +20,9 @@ is produced by the fail-closed report asset builder. They do not read result
 Parquet files directly. Slide 24 displays all four PGRR-versus-baseline
 comparisons for goal reaching, collision, and timeout, including paired 95%
 confidence intervals, global Holm-adjusted p-values, and matched odds ratios.
+Slide 16 uses a SHA-verified real Gazebo GUI capture from an audited frozen
+validation demonstration and explicitly does not present it as a locked v6
+statistical frame. Slide 26 uses the fixed matched Base--PGRR raw/Parquet
+telemetry sidecar; the spatial path and event timeline are labelled
+reconstructions, not camera screenshots. Pending mode keeps that result slot
+visibly empty instead of substituting a schematic.

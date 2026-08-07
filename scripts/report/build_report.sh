@@ -7,8 +7,13 @@ CONDA_ENV_NAME="${CONDA_ENV_NAME:-ramp-offline}"
 REPORT_STAGE="${REPORT_STAGE:-pending}"
 REPORT_RESULTS="${REPORT_RESULTS:-}"
 REPORT_STATISTICS="${REPORT_STATISTICS:-}"
+REPORT_MATCHED_EVIDENCE="${REPORT_MATCHED_EVIDENCE:-}"
 REPORT_EXPECTED_CONDITIONS="${REPORT_EXPECTED_CONDITIONS:-}"
-ASSET_ARGS=(--stage "${REPORT_STAGE}" --output-dir "${PROJECT_ROOT}/report/generated")
+ASSET_ARGS=(
+    --stage "${REPORT_STAGE}"
+    --output-dir "${PROJECT_ROOT}/report/generated"
+    --require-runtime-capture
+)
 
 if [[ "${REPORT_STAGE}" != "pending" ]]; then
     if [[ -z "${REPORT_RESULTS}" ]]; then
@@ -19,7 +24,15 @@ if [[ "${REPORT_STAGE}" != "pending" ]]; then
         echo "ERROR: REPORT_STATISTICS is required for validation/test technical reports" >&2
         exit 2
     fi
-    ASSET_ARGS+=(--results "${REPORT_RESULTS}" --statistics "${REPORT_STATISTICS}")
+    if [[ -z "${REPORT_MATCHED_EVIDENCE}" ]]; then
+        echo "ERROR: REPORT_MATCHED_EVIDENCE is required for validation/test reports" >&2
+        exit 2
+    fi
+    ASSET_ARGS+=(
+        --results "${REPORT_RESULTS}"
+        --statistics "${REPORT_STATISTICS}"
+        --matched-evidence "${REPORT_MATCHED_EVIDENCE}"
+    )
 fi
 if [[ -n "${REPORT_EXPECTED_CONDITIONS}" ]]; then
     ASSET_ARGS+=(--expected-conditions "${REPORT_EXPECTED_CONDITIONS}")
