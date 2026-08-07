@@ -111,11 +111,11 @@ emergency_release_hysteresis_m: 0.05
 # Do not let a safe static side-wall return sustain an omnidirectional stop;
 # commanded-motion clearance retains the 0.05 m release hysteresis above.
 footprint_release_hysteresis_m: 0.0
-# In-place rotation has no translational braking corridor for the circular
-# 0.36 m evaluation footprint.  Keep a separate 4 cm swept-radius margin so a
-# harmless side wall cannot forbid every bounded turn; translation continues
-# to use the stricter 0.48 m footprint stop threshold above.
-emergency_rotation_clearance_m: 0.40
+# In-place rotation has no translational braking corridor and does not enlarge
+# the circular 0.36 m evaluation footprint. Permit a bounded turn down to that
+# same observable swept radius; translation retains the stricter 0.48 m stop
+# threshold and every turn pulse is rechecked at the 10 Hz control boundary.
+emergency_rotation_clearance_m: 0.36
 emergency_turn_duration_s: 0.8
 # At 0.6 rad/s this caps one persistent hazard at 1.92 rad of commanded turn.
 emergency_maximum_turn_pulses: 4

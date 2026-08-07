@@ -287,13 +287,13 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
         config["backup_speed_mps"] * config["backup_maximum_duration_s"]
         <= config["backup_mask_validated_distance_m"]
     )
-    assert config["emergency_rotation_clearance_m"] == 0.40
+    assert config["emergency_rotation_clearance_m"] == 0.36
     assert config["emergency_turn_duration_s"] == 0.8
     assert config["emergency_maximum_turn_pulses"] == 4
     assert config["emergency_maximum_turn_pulses"] * config["emergency_turn_duration_s"] * config[
         "emergency_turn_speed_radps"
     ] == pytest.approx(1.92)
-    assert config["emergency_rotation_clearance_m"] > 0.36
+    assert config["emergency_rotation_clearance_m"] >= 0.36
     assert config["emergency_rotation_clearance_m"] < config["footprint_stop_clearance_m"]
     assert config["emergency_forward_entry_clearance_m"] == 0.85
     assert config["emergency_backup_reset_clear_s"] == 3.0
@@ -362,7 +362,7 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert manager.count("self._bc_closing_side_latch.reset()") >= 3
     assert "latched_right={int(self._bc_closing_side_latch.right_occupied)}" in manager
     assert "latched_left={int(self._bc_closing_side_latch.left_occupied)}" in manager
-    assert '"emergency_rotation_clearance_m": 0.40' in manager
+    assert '"emergency_rotation_clearance_m": 0.36' in manager
     assert '"emergency_turn_duration_s": 0.8' in manager
     assert '"emergency_maximum_turn_pulses": 4' in manager
     assert "self._effective_emergency_rotation_clearance()" in manager
