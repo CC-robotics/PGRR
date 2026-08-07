@@ -389,7 +389,7 @@ that every timeout is solved. The held-out test remains blocked until Base calib
 and all five validation method sets are complete. No moderate-v5 test row was inspected
 while making this decision.
 
-## D-068: Accept moderate-v6 calibration and stop validation selection
+## D-070: Accept moderate-v6 calibration and stop validation selection
 
 The complete unfiltered Base validation falls inside every preregistered
 calibration interval: 53/72 goal reaches, 19/72 collision-plus-timeout
@@ -406,7 +406,7 @@ longer on joint successes. The higher personal-space violation ratio is retained
 as a non-significant descriptive warning. No parameter may be changed from
 these results, and no validation number may populate a held-out result slot.
 
-## D-069: Preserve split-run provenance and freeze final concurrency at six
+## D-071: Preserve split-run provenance and freeze final concurrency at six
 
 Validation was collected as two method-disjoint source runs because Base
 calibration had to complete before the remaining comparison suite. A strict
