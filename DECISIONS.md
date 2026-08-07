@@ -388,3 +388,38 @@ algorithm tuning and fix the candidate for comparator validation, but not to cla
 that every timeout is solved. The held-out test remains blocked until Base calibration
 and all five validation method sets are complete. No moderate-v5 test row was inspected
 while making this decision.
+
+## D-068: Accept moderate-v6 calibration and stop validation selection
+
+The complete unfiltered Base validation falls inside every preregistered
+calibration interval: 53/72 goal reaches, 19/72 collision-plus-timeout
+terminations, 71/72 interaction episodes, and interactions in all eight
+families. Moderate-v6 is therefore accepted as the held-out benchmark, and the
+algorithm, checkpoints, scenario catalog, split hashes, 240 s horizon, and
+analysis policy are frozen before test execution.
+
+Validation does not establish general superiority. PGRR records 63/72 goals and
+zero collisions versus Base 53/72 and 19 collisions. The collision difference
+survives the single global Holm family, but the goal-reach difference does not;
+PGRR also records two timeouts and seven planner failures and is slower and
+longer on joint successes. The higher personal-space violation ratio is retained
+as a non-significant descriptive warning. No parameter may be changed from
+these results, and no validation number may populate a held-out result slot.
+
+## D-069: Preserve split-run provenance and freeze final concurrency at six
+
+Validation was collected as two method-disjoint source runs because Base
+calibration had to complete before the remaining comparison suite. A strict
+360-row merge is admissible only after verifying identical condition keys and
+environment fields, disjoint method sets, source commit and checkpoint hashes,
+and complete real run manifests. The merge receives its own manifest and must
+never masquerade as one simulator run.
+
+Eight parallel Gazebo workers produced 33 pre-logger no-outcome events in the
+four-method first pass; four workers left one such event in the resume snapshot,
+and one worker closed the last logical task. These records and the classified
+technical attempts remain infrastructure provenance, not unfavorable algorithm
+outcomes. For the complete held-out run, concurrency is fixed at six as the
+throughput/startup-pressure compromise. A resume may fill only genuinely
+incomplete work under the same commit, split, five-method set, timeout, paths,
+and six-worker setting; it may not retry an algorithm outcome.

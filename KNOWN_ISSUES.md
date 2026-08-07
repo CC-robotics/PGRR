@@ -444,3 +444,29 @@ the runner's pre-cleanup traceback check correctly rejected those episodes. The
 launcher now always supplies a portable non-empty default and has a regression test.
 Files from the interrupted batch are excluded from evidence; all compared methods are
 rerun under fresh episode identifiers after the fix.
+
+## KI-067: Eight concurrent Gazebo workers caused pre-logger launch loss
+
+The moderate-v6 four-method validation first pass completed 255/288 logical
+tasks but recorded 33 launch-wrapper errors before an outcome logger existed.
+These have no algorithm trajectory and cannot be relabeled as timeout,
+collision, planner failure, or simulator failure. A four-worker resume reached
+287/288 and retained one no-outcome record; a final one-worker resume completed
+288/288 with no worker error. Static task striding also left a slow tail after
+most containers had exited. The held-out configuration is frozen at six jobs to
+reduce startup pressure while retaining parallel throughput. It must not be
+raised after seeing test outcomes, and any interruption must retain the same
+run identity and retry only incomplete or explicitly retryable infrastructure
+work.
+
+## KI-068: Validation collision reduction does not establish overall superiority
+
+On 72 moderate-v6 validation pairs, PGRR has zero collisions versus Base's 19,
+but it also has two timeouts and seven planner failures and takes 15.481 s longer
+and 1.894 m farther on the 50 joint successes. The observed goal-reach gain is
+13.89 percentage points, yet its global Holm-adjusted McNemar value is
+`p=0.595581`. Mean personal-space violation is descriptively 5.345 points higher
+and is not significant after global correction (`p=1`). These are selection-set
+limitations, not held-out conclusions. The v6 test remains unopened; reports
+must keep validation labels and must also preserve the historical v1 result in
+which collision avoidance traded against 16/24 PGRR timeouts.

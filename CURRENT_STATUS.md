@@ -1,6 +1,69 @@
 # Current status
 
-## 2026-08-07 — moderate-v6 preregistered and compiled (current)
+## 2026-08-07 — moderate-v6 validation accepted; held-out test remains sealed (current)
+
+The complete moderate-v6 validation gate now contains 360/360 logical
+method--episodes: 72 conditions for each of `base`, `standard`, `heuristic`,
+`bc_uniform`, and `pgrr`. The outcomes are validation-only:
+
+| Method | Goal reached | Collision | Timeout | Planner failure |
+|---|---:|---:|---:|---:|
+| Base | 53 | 19 | 0 | 0 |
+| Standard | 49 | 22 | 0 | 1 |
+| Heuristic | 57 | 0 | 8 | 7 |
+| Uniform BC | 63 | 2 | 1 | 6 |
+| PGRR | 63 | 0 | 2 | 7 |
+
+The unchanged, unfiltered Base calibration is accepted. Base success is 53/72
+(73.61%), collision plus timeout is 19/72 (26.39%), 71/72 episodes (98.61%)
+contain an interaction within 2 m, and all eight families contain an
+interaction. All four preregistered checks pass. The authoritative report is
+`outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json` with
+SHA-256
+`0fbf8a159a1e1b96e940bec0efb31e5952ba5b0333439992f370a9a9fb41e15f`.
+
+Against Base on the same 72 validation conditions, PGRR raises observed goal
+reaching by 13.89 percentage points (63/72 versus 53/72), but the global
+Holm-adjusted McNemar value is `p=0.595581`; this is not a statistically
+significant success claim. PGRR reduces collision by 26.39 points (0/72 versus
+19/72), with global Holm `p=0.000152588`. Among the 50 joint successes, PGRR
+takes 15.481 s longer and travels 1.894 m farther on average; both increases
+survive the same global Holm family (`p=2.74949e-6` and `p=4.87028e-5`). Its
+mean personal-space violation ratio is descriptively 5.345 points higher
+(14.923% versus 9.578%), but global Holm `p=1`. These results support a
+validation safety--completion--efficiency trade-off, not general navigation
+superiority and not a held-out paper conclusion.
+
+The evidence comes from two real runs at project commit `d5fa66b`: Base run
+`cd9387f1414a` (72 rows) and the four-method run `f5430f849348` (288 rows).
+`merge_validation_results.py` verified the shared condition keys, split,
+scenario hashes, checkpoints, commit, and method-disjoint union before writing
+the 360-row table. It created `merge_manifest.json`, not a synthetic simulator
+run manifest; both source manifests remain authoritative. The combined
+`results.parquet` SHA-256 is
+`439e822afb01230ff3b05a3f5ba92a13da40b8d7401b1779d8413ba87836984f`,
+and `pairwise_statistics.json` SHA-256 is
+`3653f30c29f3ca5a9892b24b6e4cebec3cd34bc0bffa2713a2a55113f6a0b688`.
+
+Execution provenance is retained separately from algorithm outcomes. The
+four-method eight-worker first pass recorded 33 pre-logger no-outcome errors;
+a four-worker resume snapshot had one remaining no-outcome record, and the
+one-worker resume completed 288/288 with no worker error. The two snapshots
+contain 34 records but 33 unique no-outcome events. Across both source result
+tables, six `SIMULATOR_FAILURE` and six `INVALID_RESET` physical attempts are
+preserved and excluded by the declared algorithm-metric rule. None of these
+technical events was converted into a collision, timeout, or planner failure.
+Based on the observed throughput and startup pressure, the frozen held-out
+configuration uses six parallel jobs rather than eight.
+
+No moderate-v6 held-out test episode has been run or read at this status point.
+The next gate is a clean code/configuration freeze followed by the complete
+600-episode, five-method test. The historical 64/64 v1 audit remains visible:
+PGRR had 0/24 collisions versus Base 19/24, but 16/24 PGRR timeouts versus Base
+0/24 and a non-significant adjusted success comparison. It is not copied into
+moderate-v6 validation or test artifacts.
+
+## 2026-08-07 — moderate-v6 preregistered and compiled (preregistration record)
 
 Moderate-v6 is the validation-only successor to the rejected moderate-v5
 benchmark. It retains every v5 static-clearance and lane parameter and changes
@@ -18,11 +81,11 @@ The catalog SHA-256 is
 the validation and test split hashes are
 `f5847bcea4999bc5537f0e648cf76020fcf148e839b9908cc38eaffe21844d0f`
 and `3f70dd3472c0447d6a5695051f0b16d7eecf166133b604a7011cdf7fc45b04f6`.
-All 23 moderate-benchmark unit tests pass. No moderate-v6 test episode has been
-run or inspected. The Makefile and final configuration remain on rejected v5
-until v6 passes the unchanged Base calibration gate.
+All 23 moderate-benchmark unit tests passed. At this preregistration point no
+moderate-v6 test episode had been run or inspected, and final wiring still
+awaited the unchanged Base calibration gate that is now recorded above.
 
-## 2026-08-07 — moderate-v5 calibration rejected; held-out test remains sealed (current)
+## 2026-08-07 — moderate-v5 calibration rejected (historical rejected gate)
 
 All four comparator validation runs are complete on the same 72-condition
 moderate-v5 validation manifest. Together with the previously frozen PGRR run,

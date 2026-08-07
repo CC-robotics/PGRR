@@ -1,5 +1,37 @@
 # Progress log
 
+## 2026-08-07 — moderate-v6 validation gate complete
+
+- Completed 360/360 validation logical episodes across five methods on 72
+  identical conditions per method. Outcomes are Base 53 goals / 19 collisions;
+  Standard 49 goals / 22 collisions / one planner failure; Heuristic 57 goals /
+  eight timeouts / seven planner failures; Uniform BC 63 goals / two collisions /
+  one timeout / six planner failures; and PGRR 63 goals / zero collisions / two
+  timeouts / seven planner failures.
+- Accepted all four preregistered Base calibration checks: 73.61% success,
+  26.39% collision-plus-timeout, 98.61% interaction episodes, and eight
+  interaction families. No condition or seed was filtered.
+- Ran the fixed 10,000-resample, seed-20260807 paired analysis over one global
+  52-hypothesis Holm family. PGRR's +13.89-point goal-reach difference versus
+  Base is not significant (`p=0.595581`), while its -26.39-point collision
+  difference is significant (`p=0.000152588`). Joint-success duration and path
+  length increase by 15.481 s and 1.894 m and both survive correction. The
+  descriptive +5.345-point personal-space violation difference does not
+  (`p=1`).
+- Kept Base run `cd9387f1414a` and four-method run `f5430f849348` as distinct
+  source runs. Strictly merged 72 plus 288 rows into one 360-row result table,
+  emitted a dedicated merge manifest, and did not synthesize a run manifest.
+- Preserved 33 unique pre-logger no-outcome events from the eight-/four-worker
+  attempt snapshots and 12 classified technical physical attempts from the
+  source runs. The final one-worker completeness snapshots report 72/72 and
+  288/288 with no worker errors; technical events contribute no algorithm
+  outcome.
+- Froze held-out execution at six parallel jobs after the eight-worker launch
+  showed startup pressure. This changes only execution concurrency, not the
+  scenario, method, checkpoint, timeout, or analysis protocol.
+- Kept all 120 moderate-v6 test conditions sealed. These validation numbers are
+  selection evidence only; the complete 600-episode test remains the next gate.
+
 ## 2026-08-07 — moderate-v6 preregistration
 
 - Declared `moderate_social_navigation_v6` with new train/validation/test seed
