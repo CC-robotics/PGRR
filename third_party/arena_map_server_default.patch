@@ -1,0 +1,26 @@
+--- map_server.launch.py
++++ map_server.launch.py
+@@ -1,8 +1,14 @@
++import os
++
+ import launch
+ import launch_ros.actions
++from ament_index_python.packages import get_package_share_directory
+ 
+ 
+ def generate_launch_description():
++    default_map_path = os.path.join(
++        get_package_share_directory('arena_simulation_setup'),
++        'worlds', 'map_empty', 'map', 'map.yaml')
+     ld = launch.LaunchDescription([
+         launch_ros.actions.Node(
+             package='nav2_lifecycle_manager',
+@@ -23,7 +29,7 @@
+             parameters=[{
+                 'topic_name': 'map',
+                 'frame_id': 'map',
+-                'yaml_filename': '',
++                'yaml_filename': default_map_path,
+                 'use_sim_time': True,
+             }],
+         )

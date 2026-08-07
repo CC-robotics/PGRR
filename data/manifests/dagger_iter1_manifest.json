@@ -1,0 +1,93 @@
+{
+  "base_datasets": [
+    {
+      "path": "data/interim/temporary_blockage_finite2_expert_smoke.h5",
+      "sha256": "711e88214dbbe7a3af473b658f9a1106e37c518175e3c56ad5561eba035260c8"
+    },
+    {
+      "path": "data/interim/temporary_blockage_medium_train_expert.h5",
+      "sha256": "1cb114be8902eb334ba175c1100d5a22fd9450be800d02739631f06088e45d00"
+    },
+    {
+      "path": "data/interim/temporary_blockage_low_train_expert.h5",
+      "sha256": "63b0d3d00dd13dbd1dcadb9585a3bf5a5c2aa382f6927e3e9dff782d85243380"
+    },
+    {
+      "path": "data/interim/doorway_high_train_expert.h5",
+      "sha256": "dbf205e143c7de05209fe9dd81d943a7e234c261e3bd03c6f34c90367aabf0e0"
+    },
+    {
+      "path": "data/interim/blind_corner_high_train_expert.h5",
+      "sha256": "30c769a3cf9dd4e9d0db7c0317713670a95eb004649b678c8bf53367fd0efe51"
+    },
+    {
+      "path": "data/interim/group_blocking_high_train_expert.h5",
+      "sha256": "7531869b031d7235e085e5b70f5a06a7b2b0e05e2508b7f857431ac5dee939f9"
+    }
+  ],
+  "best_validation_epoch": {
+    "epoch": 2,
+    "train": {
+      "catastrophic_action_rate": 0.03339115351257589,
+      "expert_cost_regret": 33391.5484385387,
+      "invalid_rate": 0.0,
+      "loss": 0.9251248758457479,
+      "near_optimal_rate": 0.6816999132697311,
+      "top1": 0.6418039895923677,
+      "top3": 0.9353859496964441
+    },
+    "validation": {
+      "catastrophic_action_rate": 0.9314285714285714,
+      "expert_cost_regret": 931427.0628571429,
+      "invalid_rate": 0.0,
+      "loss": 1.2513553776059831,
+      "near_optimal_rate": 0.045714285714285714,
+      "top1": 0.02857142857142857,
+      "top3": 0.9657142857142857
+    }
+  },
+  "checkpoint": {
+    "path": "checkpoints/dagger/iter_1/best.onnx",
+    "sha256": "8610266c5a8dda6ec500e7a97f6f5b0ec63c5f87ff96158a1e120e6cf49014ce"
+  },
+  "config": {
+    "path": "configs/imitation/bc_uniform_scenario.yaml",
+    "sha256": "dc698252e07641a876f3f0c3de2d4943f506f21f05d741be1bece6d6f32f0d23"
+  },
+  "dagger_shards": [
+    {
+      "path": "data/interim/dagger_iter1_temporary_blockage_high_train.h5",
+      "sha256": "982e35927d8667b96948b03a03156caf05b14e7664fce58dfe1106fdfc212868"
+    },
+    {
+      "path": "data/interim/dagger_iter1_crossing_flow_high_train.h5",
+      "sha256": "184700eee82c58945a4440938c6e3d89e4e5a2ac209fc06606b966bad2adaca8"
+    },
+    {
+      "path": "data/interim/dagger_iter1_crossing_flow_s01260_train.h5",
+      "sha256": "c9fa688ddf8bf12d20e724555fc61a756afc6c29e16c4d107dff90155c87e191"
+    },
+    {
+      "path": "data/interim/dagger_iter1_crossing_flow_s01291_train.h5",
+      "sha256": "4fa9cb8f26b51c702ddcde6aac47aae34d3cd400afafc3329d443351e65cf5e9"
+    },
+    {
+      "path": "data/interim/dagger_iter1_crossing_flow_s01318_train.h5",
+      "sha256": "af63cf2c6d3bd6959aa2eed4490ebb7ae6cc49b154581cbb07a4d20fb12405a9"
+    }
+  ],
+  "dataset": {
+    "episode_count": 11,
+    "observation_count": 11706,
+    "path": "data/processed/dagger_iter1_train.h5",
+    "sample_count": 1153,
+    "sha256": "932f437215bd55c8d34a0a040db51de44de4d330cd244895e592116e05c8cefe"
+  },
+  "iteration": 1,
+  "project_commit": "fdd83ba1d37fc2df6571f2f35acc9b39d4af7705",
+  "schema_version": 1,
+  "validation_dataset": {
+    "path": "data/interim/temporary_blockage_validation_expert.h5",
+    "sha256": "02f0253787644552853143081b1e553946396954f378e363748caecf14b94c3f"
+  }
+}

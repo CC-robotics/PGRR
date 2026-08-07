@@ -1,0 +1,273 @@
+{
+  "obstacles": {
+    "dynamic": [
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 1,
+        "max_vel": 0.644,
+        "model": "gazebo_actor",
+        "name": "ped_00",
+        "pos": [
+          12.3828,
+          17.9186,
+          -1.5707963267948966
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            12.3828,
+            17.9186,
+            -1.5707963267948966
+          ],
+          [
+            12.3828,
+            5.9186,
+            -1.5707963267948966
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 2,
+        "max_vel": 0.7023,
+        "model": "gazebo_actor",
+        "name": "ped_01",
+        "pos": [
+          13.8683,
+          5.9316,
+          1.5707963267948966
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            13.8683,
+            5.9316,
+            1.5707963267948966
+          ],
+          [
+            13.8683,
+            17.9316,
+            1.5707963267948966
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 3,
+        "max_vel": 0.5092,
+        "model": "gazebo_actor",
+        "name": "ped_02",
+        "pos": [
+          15.4828,
+          18.0267,
+          -1.5707963267948966
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            15.4828,
+            18.0267,
+            -1.5707963267948966
+          ],
+          [
+            15.4828,
+            6.0267,
+            -1.5707963267948966
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 4,
+        "max_vel": 0.4731,
+        "model": "gazebo_actor",
+        "name": "ped_03",
+        "pos": [
+          16.9837,
+          5.941,
+          1.5707963267948966
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            16.9837,
+            5.941,
+            1.5707963267948966
+          ],
+          [
+            16.9837,
+            17.941,
+            1.5707963267948966
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 5,
+        "max_vel": 0.5806,
+        "model": "gazebo_actor",
+        "name": "ped_04",
+        "pos": [
+          12.2001,
+          18.1195,
+          -1.5707963267948966
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            12.2001,
+            18.1195,
+            -1.5707963267948966
+          ],
+          [
+            12.2001,
+            6.1195,
+            -1.5707963267948966
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "id": 6,
+        "max_vel": 0.735,
+        "model": "gazebo_actor",
+        "name": "ped_05",
+        "pos": [
+          13.7888,
+          6.0162,
+          1.5707963267948966
+        ],
+        "radius": 0.35,
+        "type": "adult",
+        "waypoints": [
+          [
+            13.7888,
+            6.0162,
+            1.5707963267948966
+          ],
+          [
+            13.7888,
+            18.0162,
+            1.5707963267948966
+          ]
+        ]
+      }
+    ],
+    "interactive": [],
+    "static": []
+  },
+  "ramp_metadata": {
+    "density": "high",
+    "family": "crossing_flow",
+    "human_behavior_model": "deterministic cyclic-waypoint kinematic proxy",
+    "human_speed_range_mps": [
+      0.45,
+      0.75
+    ],
+    "map_id": "map_empty",
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
+    "scenario_id": "crossing_flow_high_mining_seed17",
+    "schema_version": 1,
+    "seed": 17,
+    "source_scenario_id": "crossing_flow_high_train_s01220",
+    "split": "train",
+    "variant_rule": "pedestrian route translation <=0.12 m and speed scale <=8%"
+  },
+  "robots": [
+    {
+      "goal": [
+        26.0,
+        12.0,
+        0.0
+      ],
+      "start": [
+        5.0,
+        12.0,
+        0.0
+      ]
+    }
+  ]
+}

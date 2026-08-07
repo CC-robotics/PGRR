@@ -1,0 +1,2 @@
+episode_id,scenario_id,family,density,seed,planner_id,source_policy,outcome,sample_count,sim_duration_s,start_distance_m,end_distance_m,progress_m,min_human_distance_m,min_lidar_m,raw_sha256
+head_on_corridor_high_mining_seed00_strict2_base_dwb,head_on_corridor_high_mining_seed00,head_on_corridor,high,0,dwb,base,PLANNER_FAILURE,269,26.673299999999998,21.0,17.40229606628418,3.5977039337158203,1.3552491822514316,0.9846903681755066,3fa929f9e680974868596eda34546cd13fd39b4973bc94002cc159c2eddd70d4

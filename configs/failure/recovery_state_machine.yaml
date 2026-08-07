@@ -1,0 +1,129 @@
+decision_frequency_hz: 2.0
+control_frequency_hz: 10.0
+arming_grace_s: 1.0
+startup_failure_arm_s: 4.0
+tau_on: 0.65
+tau_off: 0.35
+frames_on: 1
+frames_off: 4
+cooldown_s: 2.0
+minimum_action_hold_s: 0.5
+expert_replan_interval_s: 0.5
+# Retain the historical BC interval as a compatible lower bound. Learned
+# temporary goals use the stricter settle + execution lifecycle below.
+bc_action_interval_s: 0.5
+bc_subgoal_minimum_execution_s: 2.0
+bc_subgoal_maximum_duration_s: 6.0
+expert_wait_budget_decisions: 3
+bc_rejoin_block_threshold: 0.65
+# A TTC warning remains latched until the task-forward LiDAR corridor is clear
+# for consecutive high-level observations.
+# Validation-calibrated narrow-space release: once the deployable collision
+# score is clear, 0.90 m of consecutively observed task-forward clearance is
+# sufficient to rejoin. The independent motion/footprint stop filters remain
+# active at the control rate.
+bc_yield_release_clearance_m: 0.90
+bc_yield_release_frames: 3
+bc_near_field_radius_activation_clearance_m: 1.0
+bc_near_field_max_subgoal_radius_m: 0.6
+# Release checks use a path-centred corridor rather than a wide frontal fan:
+# the 15-degree sector excludes doorway side walls while the independent
+# swept-footprint and motion-stop guards remain omnidirectional.
+bc_yield_forward_half_width_degrees: 15.0
+# While the yield latch is active, every otherwise-valid translation is
+# projected onto the local global-path tangent.  Only lateral/retreat endpoints
+# with at most this numerical forward tolerance remain selectable.  The
+# 0.10 m bound admits near-lateral endpoints after small heading errors while
+# continuing to reject the adjacent 60-degree forward-diagonal candidates.
+bc_yield_maximum_forward_progress_m: 0.10
+# Validation-only observable flow thresholds. Compare the oldest and newest
+# samples of the five-frame policy LiDAR stack in task-path side sectors. A
+# side is occupied only when enough beam ranges close by at least the stated
+# delta while the robot is rotating slowly enough for beam correspondence.
+# Reliable side evidence is retained for the current directional yield; it is
+# released by the existing three-frame task-forward corridor-clear condition,
+# not by a momentary beam-count drop during BACKUP or emergency motion.
+bc_closing_side_sector_min_degrees: 5.0
+bc_closing_side_sector_max_degrees: 60.0
+bc_closing_side_delta_m: 0.20
+bc_closing_side_maximum_range_m: 4.0
+bc_closing_side_minimum_beams: 6
+bc_closing_side_maximum_angular_speed_radps: 0.20
+# Once a learned yield chooses a task-lateral side, keep that side through
+# short re-trigger cycles. Release after 8 m of original-goal progress or a
+# route-tangent change greater than 45 degrees.
+bc_lateral_commitment_progress_m: 8.0
+bc_lateral_commitment_maximum_heading_change_degrees: 45.0
+bc_wait_budget_decisions: 3
+# Four bounded attempts can realize the 1.4 m observable net-retreat cap when
+# individual backups terminate early; the geometric guard remains authoritative.
+bc_backup_budget_decisions: 4
+bc_replan_budget_decisions: 1
+# Preserve the learned WAIT/BACKUP preference on the first safe yield. Require
+# an already-planning-valid lateral escape or REPLAN only after the interaction
+# re-triggers without resolution. The ordinary safety mask remains authoritative.
+bc_recurrent_escape_after_recoveries: 2
+# Robot-frame action angles cease to describe task-lateral motion after a
+# recovery turn. Require this observable endpoint displacement normal to the
+# local global-path tangent before classifying a subgoal as a lateral escape.
+recurrent_escape_minimum_lateral_displacement_m: 0.25
+bc_progress_reset_m: 0.25
+bc_maximum_net_retreat_m: 1.4
+bc_subgoal_retry_budget_decisions: 4
+bc_subgoal_stall_displacement_m: 0.08
+maximum_recovery_duration_s: 8.0
+maximum_extended_recovery_duration_s: 30.0
+maximum_recovery_sequence_duration_s: 45.0
+maximum_rejoin_duration_s: 5.0
+maximum_rejoin_retries_per_sequence: 2
+maximum_consecutive_recoveries: 4
+wait_duration_s: 0.5
+subgoal_settle_s: 1.0
+footprint_stop_clearance_m: 0.48
+collision_latched_stop_clearance_m: 0.85
+collision_latched_action_clearance_m: 0.90
+footprint_backup_forward_angle_degrees: 80.0
+backup_speed_mps: 0.15
+backup_minimum_duration_s: 0.8
+backup_maximum_duration_s: 3.0
+# Reliable unilateral closing-flow evidence calls for frequent replanning: a
+# shorter bounded BACKUP pulse lets the planning/LiDAR mask reconsider the
+# opposite-side escape before the approaching actor reaches the robot. This
+# remains above the minimum hold and below the fully validated 3 s retreat.
+bc_unilateral_backup_maximum_duration_s: 1.0
+backup_clearance_improvement_m: 0.25
+backup_mask_validated_distance_m: 0.45
+robot_clearance_m: 0.25
+# The shortest lateral action is exactly 0.60 m. Keep a 5 cm path-tracking
+# tolerance so centimetre-scale localization/path discretization cannot mask
+# only one of the two symmetric choices. Static-map and observable-LiDAR masks
+# remain authoritative; recurrent recovery still uses the wider envelope.
+maximum_recovery_path_deviation_m: 0.65
+recurrent_escape_maximum_path_deviation_m: 1.5
+braking_acceleration_mps2: 0.8
+control_latency_s: 0.15
+stopping_margin_m: 0.45
+emergency_hold_s: 0.5
+emergency_backup_duration_s: 0.8
+emergency_backup_clearance_m: 0.70
+emergency_release_speed_mps: 0.03
+emergency_release_hysteresis_m: 0.05
+# Do not let a safe static side-wall return sustain an omnidirectional stop;
+# commanded-motion clearance retains the 0.05 m release hysteresis above.
+footprint_release_hysteresis_m: 0.0
+# In-place rotation has no translational braking corridor for the circular
+# 0.36 m evaluation footprint.  Keep a separate 4 cm swept-radius margin so a
+# harmless side wall cannot forbid every bounded turn; translation continues
+# to use the stricter 0.48 m footprint stop threshold above.
+emergency_rotation_clearance_m: 0.40
+emergency_turn_duration_s: 0.8
+# At 0.6 rad/s this caps one persistent hazard at 1.92 rad of commanded turn.
+emergency_maximum_turn_pulses: 4
+emergency_forward_entry_clearance_m: 0.85
+emergency_backup_reset_clear_s: 3.0
+emergency_minimum_retreat_pulses: 3
+emergency_maximum_improving_backups: 8
+emergency_backup_progress_m: 0.05
+emergency_turn_speed_radps: 0.6
+emergency_forward_speed_mps: 0.12
+emergency_translation_clearance_m: 0.36

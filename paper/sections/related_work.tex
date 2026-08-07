@@ -1,0 +1,48 @@
+\subsection{Classical and Social Navigation}
+The dynamic-window approach searches dynamically feasible velocity commands over
+a short horizon~\cite{fox1997dwa}; Nav2 provides a modern ROS2 navigation
+system in which DWB implements this family of local control~\cite{macenski2020marathon2}.
+Reciprocal methods such as ORCA~\cite{vandenberg2011orca} and learned crowd-aware
+policies such as SARL~\cite{chen2019sarl} instead model interaction more directly.
+The broader social-navigation literature emphasizes that collision avoidance,
+comfort, legibility, and task efficiency are distinct objectives
+~\cite{mavrogiannis2023survey}.  PGRR retains DWB as the nominal
+controller and evaluates geometric clearance and discomfort time; it does not
+claim to model all social norms.
+
+\subsection{Hybrid Planning and Recovery}
+All-in-One learns a planner switch that remains active throughout navigation
+~\cite{kastner2021allinone}, whereas DR-MPC learns a residual around model-predictive
+control~\cite{han2024drmpc}.  Closely related waypoint-generator systems insert
+an intermediate planner to guide a DRL obstacle-avoidance controller from a
+conventional global plan~\cite{kastner2021waypoints}.  These works demonstrate
+the value of hybrid model-based and learned navigation.  PGRR differs in
+authority and output: DWB executes both nominal and temporary goals, while
+learning is invoked only to select a bounded recovery option after persistent
+failure evidence.
+
+Navigation recovery itself is not new.  Del Duchetto \emph{et al.} learn local
+failure detection and recovery from human demonstrations
+~\cite{delduchetto2018recovery}; Mohammad \emph{et al.} predict planning failure
+and search for a recovery state using a Gaussian-process model
+~\cite{mohammad2024gprecovery}.  Recent preprints address failure-aware learned
+navigation from different angles: Fare embeds OOD detection and recognition in
+visual imitation policies and pairs them with heuristic recovery
+~\cite{wang2025fare}, while Wang \emph{et al.} use failure experience to shape
+value estimation in offline navigation learning~\cite{wang2026failureaware}.
+Our focus is automatic privileged-planner labels, planning-mask enforcement,
+and aggregation on states induced by the recovery learner.  DAgger supplies the
+standard reduction for this sequential distribution shift~\cite{ross2011dagger}.
+Invalid-action masking has also been analyzed in policy-gradient learning
+~\cite{huang2022invalidmasking}; here it is used as a deterministic planning
+constraint for imitation inference, not as a safety proof.
+
+\subsection{Simulation and Evaluation}
+Arena-Bench provides reproducible dynamic-obstacle evaluation
+~\cite{kastner2022arenabench}, and Arena-Rosnav 2.0 adds unified interfaces for
+planners, simulators, and evaluation~\cite{kastner2023arena2}.  Later Arena
+5.0 expands photorealistic social-navigation support
+~\cite{shcherbyna2025arena5}.
+Our experiments use a pinned Humble/Gazebo backend and a deterministic
+pedestrian protocol; that later release provides platform context rather than
+the experimental backend.

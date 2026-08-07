@@ -1,0 +1,33 @@
+schema_version: 1
+split: validation
+variants:
+- scenario_id: crossing_flow_low_validation_s02201
+  seed: 2201
+  source: scenarios/generated/arena/map_empty/crossing_flow_low_validation_s02200.json
+  path: scenarios/generated/arena/map_empty/crossing_flow_low_validation_s02201.json
+  sha256: b88ca350e602f542e5bd28e9afbc7f0aa73134a4c124f0559d3f7fe2651d0450
+- scenario_id: crossing_flow_low_validation_s02202
+  seed: 2202
+  source: scenarios/generated/arena/map_empty/crossing_flow_low_validation_s02200.json
+  path: scenarios/generated/arena/map_empty/crossing_flow_low_validation_s02202.json
+  sha256: adb5130881f32b380837480c4962f80b4e81f87cbfef7c8a2b46d974b8781c6d
+- scenario_id: crossing_flow_medium_validation_s02201
+  seed: 2201
+  source: scenarios/generated/arena/map_empty/crossing_flow_medium_validation_s02210.json
+  path: scenarios/generated/arena/map_empty/crossing_flow_medium_validation_s02201.json
+  sha256: 033bb40d5dceb5b6d82682c2b5a789121485a758359a9f5469046f9d596cb451
+- scenario_id: crossing_flow_medium_validation_s02202
+  seed: 2202
+  source: scenarios/generated/arena/map_empty/crossing_flow_medium_validation_s02210.json
+  path: scenarios/generated/arena/map_empty/crossing_flow_medium_validation_s02202.json
+  sha256: 2032b56f3840d0ef6e95b38581d1465e6d43fac62c304c92fd3e7756c0a0eb38
+- scenario_id: crossing_flow_high_validation_s02201
+  seed: 2201
+  source: scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json
+  path: scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02201.json
+  sha256: b2953c45f79d21cd511db6e5ddface2101c48b57615f14f76a7553163774803b
+- scenario_id: crossing_flow_high_validation_s02202
+  seed: 2202
+  source: scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02220.json
+  path: scenarios/generated/arena/map_empty/crossing_flow_high_validation_s02202.json
+  sha256: 1a291ceb90aaacc77f0e3c26c52179bc799966762b0b8f962eaa351f99f9bab6

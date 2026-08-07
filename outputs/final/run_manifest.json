@@ -1,0 +1,1355 @@
+{
+  "checkpoint": "checkpoints/dagger/coverage_safety_aligned/best.onnx",
+  "checkpoint_sha256": "78807ce56f575943ca3f965be9b71c0d83c0ca3f2a23f267fe04fd6a00c119d2",
+  "completed_task_count": 64,
+  "created_at": "2026-08-04T09:39:46.328781+00:00",
+  "effective_jobs": 3,
+  "episode_manifest": "outputs/final/episode_manifest.parquet",
+  "expected_task_count": 64,
+  "high_density_methods": [
+    "standard",
+    "heuristic"
+  ],
+  "methods": [
+    "base",
+    "bc"
+  ],
+  "project_commit": "35d7e601cd6f5baf168948a7174cd32fa9c37c5b",
+  "requested_jobs": 3,
+  "results": [
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_low_test_s03000_eval_base_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_low_test_s03000_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/head_on_corridor_low_test_s03000_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "88e3db23f58b41543703ff541b30393b9a1a5c3cced184173d4cc000db373b66",
+          "resumed": true,
+          "sample_count": 274,
+          "stream_path": "data/raw/head_on_corridor_low_test_s03000_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "head_on_corridor_low_test_s03000_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "head_on_corridor_low_test_s03000",
+      "status": "complete",
+      "task_index": 0
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_low_test_s03000_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_low_test_s03000_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/head_on_corridor_low_test_s03000_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "ab8f951287ec2e025807ecddb45fab003b6bd63a3a7e2e450b5878f12938e9d1",
+          "resumed": true,
+          "sample_count": 1800,
+          "stream_path": "data/raw/head_on_corridor_low_test_s03000_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "head_on_corridor_low_test_s03000_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "head_on_corridor_low_test_s03000",
+      "status": "complete",
+      "task_index": 1
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_medium_test_s03010_eval_base_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_medium_test_s03010_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/head_on_corridor_medium_test_s03010_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "893bdc2d3708372dd1d6cf5ac697347426fcd557114f08690e4205831a2f5dd8",
+          "resumed": true,
+          "sample_count": 270,
+          "stream_path": "data/raw/head_on_corridor_medium_test_s03010_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "head_on_corridor_medium_test_s03010_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "head_on_corridor_medium_test_s03010",
+      "status": "complete",
+      "task_index": 2
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_medium_test_s03010_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_medium_test_s03010_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/head_on_corridor_medium_test_s03010_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "f4275cf2a3c14f7c2273343191f924e99addb56234738f491dc011dfe678e1c9",
+          "resumed": true,
+          "sample_count": 1799,
+          "stream_path": "data/raw/head_on_corridor_medium_test_s03010_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "head_on_corridor_medium_test_s03010_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "head_on_corridor_medium_test_s03010",
+      "status": "complete",
+      "task_index": 3
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_high_test_s03020_eval_base_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_high_test_s03020_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/head_on_corridor_high_test_s03020_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "981cd48be8acd506ec52f4fd5d47057f39db0d54d45f1857d37b69f21a17f4cb",
+          "resumed": true,
+          "sample_count": 236,
+          "stream_path": "data/raw/head_on_corridor_high_test_s03020_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "head_on_corridor_high_test_s03020_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "head_on_corridor_high_test_s03020",
+      "status": "complete",
+      "task_index": 4
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_high_test_s03020_eval_bc_a0_dwb",
+          "metadata_path": null,
+          "outcome": "SIMULATOR_FAILURE",
+          "outcome_path": "data/raw/head_on_corridor_high_test_s03020_eval_bc_a0_dwb.outcome.json",
+          "resumed": true,
+          "stream_path": null
+        },
+        {
+          "attempt": 1,
+          "episode_id": "head_on_corridor_high_test_s03020_eval_bc_a1_dwb",
+          "metadata_path": "data/raw/head_on_corridor_high_test_s03020_eval_bc_a1_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/head_on_corridor_high_test_s03020_eval_bc_a1_dwb.outcome.json",
+          "raw_sha256": "342ea3e7480b1f993c64438cd6b8ed222b28e75573bf9241117441099b33a906",
+          "resumed": true,
+          "sample_count": 1801,
+          "stream_path": "data/raw/head_on_corridor_high_test_s03020_eval_bc_a1_dwb.jsonl"
+        }
+      ],
+      "episode_id": "head_on_corridor_high_test_s03020_eval_bc_a1_dwb",
+      "method": "bc",
+      "scenario_id": "head_on_corridor_high_test_s03020",
+      "status": "complete",
+      "task_index": 5
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_high_test_s03020_eval_standard_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_high_test_s03020_eval_standard_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/head_on_corridor_high_test_s03020_eval_standard_a0_dwb.outcome.json",
+          "raw_sha256": "ac2bb4dc16fa14e4f8a9412556b4b3a63f181662aa5f5f8929c6555c7c4fd52d",
+          "resumed": true,
+          "sample_count": 246,
+          "stream_path": "data/raw/head_on_corridor_high_test_s03020_eval_standard_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "head_on_corridor_high_test_s03020_eval_standard_a0_dwb",
+      "method": "standard",
+      "scenario_id": "head_on_corridor_high_test_s03020",
+      "status": "complete",
+      "task_index": 6
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "head_on_corridor_high_test_s03020_eval_heuristic_a0_dwb",
+          "metadata_path": "data/raw/head_on_corridor_high_test_s03020_eval_heuristic_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/head_on_corridor_high_test_s03020_eval_heuristic_a0_dwb.outcome.json",
+          "raw_sha256": "b9657b38a65800dbab5935f9b05e835aa69f19b2738649a2cd17587d993eb44b",
+          "resumed": true,
+          "sample_count": 1801,
+          "stream_path": "data/raw/head_on_corridor_high_test_s03020_eval_heuristic_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "head_on_corridor_high_test_s03020_eval_heuristic_a0_dwb",
+      "method": "heuristic",
+      "scenario_id": "head_on_corridor_high_test_s03020",
+      "status": "complete",
+      "task_index": 7
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_low_test_s03100_eval_base_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_low_test_s03100_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/doorway_bottleneck_low_test_s03100_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "3b5f70c08239c27f7e16c6c7bba39b6d6ccdcfbb66333d9f096fe4c81eb4aa04",
+          "resumed": true,
+          "sample_count": 351,
+          "stream_path": "data/raw/doorway_bottleneck_low_test_s03100_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "doorway_bottleneck_low_test_s03100_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "doorway_bottleneck_low_test_s03100",
+      "status": "complete",
+      "task_index": 8
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_low_test_s03100_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_low_test_s03100_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/doorway_bottleneck_low_test_s03100_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "74024e374896e80fc4cf5671a0a5984ef5d542970fe84353d0b26669e632c8d4",
+          "resumed": true,
+          "sample_count": 1801,
+          "stream_path": "data/raw/doorway_bottleneck_low_test_s03100_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "doorway_bottleneck_low_test_s03100_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "doorway_bottleneck_low_test_s03100",
+      "status": "complete",
+      "task_index": 9
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_medium_test_s03110_eval_base_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_medium_test_s03110_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/doorway_bottleneck_medium_test_s03110_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "b857b04267af802b53238c0b1397a27447a5714665b1b8540d77a6417ec75877",
+          "resumed": true,
+          "sample_count": 326,
+          "stream_path": "data/raw/doorway_bottleneck_medium_test_s03110_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "doorway_bottleneck_medium_test_s03110_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "doorway_bottleneck_medium_test_s03110",
+      "status": "complete",
+      "task_index": 10
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_medium_test_s03110_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_medium_test_s03110_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/doorway_bottleneck_medium_test_s03110_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "c06151c700dc6220928017558c42d10898399f92e016e4508c3d4fd733386500",
+          "resumed": true,
+          "sample_count": 1801,
+          "stream_path": "data/raw/doorway_bottleneck_medium_test_s03110_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "doorway_bottleneck_medium_test_s03110_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "doorway_bottleneck_medium_test_s03110",
+      "status": "complete",
+      "task_index": 11
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_high_test_s03120_eval_base_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "1844fbe256645f2c64957852e8e939b3d5fe3d41ea7d949b0389d3b08cc717ce",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 232,
+          "stream_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "doorway_bottleneck_high_test_s03120_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "doorway_bottleneck_high_test_s03120",
+      "status": "complete",
+      "task_index": 12
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_high_test_s03120_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "bd813e67631e1796af72e0487931ccc8903644fd1341250a0bfb0c7c5cf13332",
+          "resumed": true,
+          "sample_count": 1802,
+          "stream_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "doorway_bottleneck_high_test_s03120_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "doorway_bottleneck_high_test_s03120",
+      "status": "complete",
+      "task_index": 13
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_high_test_s03120_eval_standard_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_standard_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_standard_a0_dwb.outcome.json",
+          "raw_sha256": "fa17c2c58c30ad38c3ca139608ab02fef3bd74409fefbe606947cbb164515e3d",
+          "resumed": true,
+          "sample_count": 331,
+          "stream_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_standard_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "doorway_bottleneck_high_test_s03120_eval_standard_a0_dwb",
+      "method": "standard",
+      "scenario_id": "doorway_bottleneck_high_test_s03120",
+      "status": "complete",
+      "task_index": 14
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "doorway_bottleneck_high_test_s03120_eval_heuristic_a0_dwb",
+          "metadata_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_heuristic_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_heuristic_a0_dwb.outcome.json",
+          "raw_sha256": "159b3ba4bd2978ddb2a693f1ace455b30e765ee6b29d9585c0fd2fdd42382224",
+          "resumed": true,
+          "sample_count": 1801,
+          "stream_path": "data/raw/doorway_bottleneck_high_test_s03120_eval_heuristic_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "doorway_bottleneck_high_test_s03120_eval_heuristic_a0_dwb",
+      "method": "heuristic",
+      "scenario_id": "doorway_bottleneck_high_test_s03120",
+      "status": "complete",
+      "task_index": 15
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_low_test_s03200_eval_base_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_low_test_s03200_eval_base_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_low_test_s03200_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "13ab060a3ed31ef5ecd54d2931bd56cd798ef5e371b6ab190b5b14d35fb3c291",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 955,
+          "stream_path": "data/raw/crossing_flow_low_test_s03200_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "crossing_flow_low_test_s03200_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "crossing_flow_low_test_s03200",
+      "status": "complete",
+      "task_index": 16
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_low_test_s03200_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_low_test_s03200_eval_bc_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_low_test_s03200_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "56793aa94038f318e014871250fa2c3d176587ccf6e31888e91253eaec49def6",
+          "resumed": true,
+          "sample_count": 936,
+          "stream_path": "data/raw/crossing_flow_low_test_s03200_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "crossing_flow_low_test_s03200_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "crossing_flow_low_test_s03200",
+      "status": "complete",
+      "task_index": 17
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_medium_test_s03210_eval_base_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_medium_test_s03210_eval_base_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_medium_test_s03210_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "ad6cb96d7bbd112c31275f7132b10975c04d75780e9a0fe266ccd67e0e449ed4",
+          "resumed": true,
+          "sample_count": 944,
+          "stream_path": "data/raw/crossing_flow_medium_test_s03210_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "crossing_flow_medium_test_s03210_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "crossing_flow_medium_test_s03210",
+      "status": "complete",
+      "task_index": 18
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_medium_test_s03210_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_medium_test_s03210_eval_bc_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_medium_test_s03210_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "3a66f26343ed3905a0f431f0ecda19dc8b527143537b8e92d0fe1d482e4cceae",
+          "resumed": true,
+          "sample_count": 966,
+          "stream_path": "data/raw/crossing_flow_medium_test_s03210_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "crossing_flow_medium_test_s03210_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "crossing_flow_medium_test_s03210",
+      "status": "complete",
+      "task_index": 19
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_high_test_s03220_eval_base_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_high_test_s03220_eval_base_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_high_test_s03220_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "55dbb6001b728dfb91ba8dca8431f70a8bf31a73c2551d6a1c0dec57c3a55496",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 902,
+          "stream_path": "data/raw/crossing_flow_high_test_s03220_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "crossing_flow_high_test_s03220_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "crossing_flow_high_test_s03220",
+      "status": "complete",
+      "task_index": 20
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_high_test_s03220_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_high_test_s03220_eval_bc_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_high_test_s03220_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "50c7a2edcde9cd340f5e55a3951d7840f18ca90b6db70cf5d4b4426629a0f334",
+          "resumed": true,
+          "sample_count": 1417,
+          "stream_path": "data/raw/crossing_flow_high_test_s03220_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "crossing_flow_high_test_s03220_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "crossing_flow_high_test_s03220",
+      "status": "complete",
+      "task_index": 21
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_high_test_s03220_eval_standard_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_high_test_s03220_eval_standard_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/crossing_flow_high_test_s03220_eval_standard_a0_dwb.outcome.json",
+          "raw_sha256": "a7381faad4f160d3a217e126c42e702a389c98d9ffa23fa7c0d08f49b0608468",
+          "resumed": true,
+          "sample_count": 1146,
+          "stream_path": "data/raw/crossing_flow_high_test_s03220_eval_standard_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "crossing_flow_high_test_s03220_eval_standard_a0_dwb",
+      "method": "standard",
+      "scenario_id": "crossing_flow_high_test_s03220",
+      "status": "complete",
+      "task_index": 22
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "crossing_flow_high_test_s03220_eval_heuristic_a0_dwb",
+          "metadata_path": "data/raw/crossing_flow_high_test_s03220_eval_heuristic_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/crossing_flow_high_test_s03220_eval_heuristic_a0_dwb.outcome.json",
+          "raw_sha256": "8b5f3c989f5ea92b065e14cb8162be9b9ae4bd146468f3258091a044924fda82",
+          "resumed": true,
+          "sample_count": 1802,
+          "stream_path": "data/raw/crossing_flow_high_test_s03220_eval_heuristic_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "crossing_flow_high_test_s03220_eval_heuristic_a0_dwb",
+      "method": "heuristic",
+      "scenario_id": "crossing_flow_high_test_s03220",
+      "status": "complete",
+      "task_index": 23
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_low_test_s03300_eval_base_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_low_test_s03300_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/blind_corner_low_test_s03300_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "00a4ae59854ed16cd7063c7687d64980e2bf6a06d54f88effb466dfc4d68ac4d",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 470,
+          "stream_path": "data/raw/blind_corner_low_test_s03300_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "blind_corner_low_test_s03300_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "blind_corner_low_test_s03300",
+      "status": "complete",
+      "task_index": 24
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_low_test_s03300_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_low_test_s03300_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/blind_corner_low_test_s03300_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "b671140480b2b56e0c751b64d4c686725525923414ded3474e349d98fa54ef9b",
+          "resumed": true,
+          "sample_count": 1802,
+          "stream_path": "data/raw/blind_corner_low_test_s03300_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "blind_corner_low_test_s03300_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "blind_corner_low_test_s03300",
+      "status": "complete",
+      "task_index": 25
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_medium_test_s03310_eval_base_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_medium_test_s03310_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/blind_corner_medium_test_s03310_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "6576bfee3f38efa0f5293fa5cac02d4435472556bf32e4be65a0f9ec540258d0",
+          "resumed": true,
+          "sample_count": 507,
+          "stream_path": "data/raw/blind_corner_medium_test_s03310_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "blind_corner_medium_test_s03310_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "blind_corner_medium_test_s03310",
+      "status": "complete",
+      "task_index": 26
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_medium_test_s03310_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_medium_test_s03310_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/blind_corner_medium_test_s03310_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "49faafff6fbea22c3f943c9718e1a706154523c7e28993bab6b4d0f074bf6039",
+          "resumed": true,
+          "sample_count": 1802,
+          "stream_path": "data/raw/blind_corner_medium_test_s03310_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "blind_corner_medium_test_s03310_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "blind_corner_medium_test_s03310",
+      "status": "complete",
+      "task_index": 27
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_high_test_s03320_eval_base_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_high_test_s03320_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/blind_corner_high_test_s03320_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "838c0ed4e085688ac3413b0c7312a75405e9921aad27f4063361ae2a61e0f59f",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 506,
+          "stream_path": "data/raw/blind_corner_high_test_s03320_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "blind_corner_high_test_s03320_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "blind_corner_high_test_s03320",
+      "status": "complete",
+      "task_index": 28
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_high_test_s03320_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_high_test_s03320_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/blind_corner_high_test_s03320_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "6de11d70a77e8fffe76aa4cf3f0b851c5e199c2a797cc3ec48de7a4a86ef5e5e",
+          "resumed": true,
+          "sample_count": 1784,
+          "stream_path": "data/raw/blind_corner_high_test_s03320_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "blind_corner_high_test_s03320_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "blind_corner_high_test_s03320",
+      "status": "complete",
+      "task_index": 29
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_high_test_s03320_eval_standard_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_high_test_s03320_eval_standard_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/blind_corner_high_test_s03320_eval_standard_a0_dwb.outcome.json",
+          "raw_sha256": "0d9107a086e2fa8dd30ac4795993dfcbd9e46535c0bfebf1c9bc678be4468ea2",
+          "resumed": true,
+          "sample_count": 507,
+          "stream_path": "data/raw/blind_corner_high_test_s03320_eval_standard_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "blind_corner_high_test_s03320_eval_standard_a0_dwb",
+      "method": "standard",
+      "scenario_id": "blind_corner_high_test_s03320",
+      "status": "complete",
+      "task_index": 30
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "blind_corner_high_test_s03320_eval_heuristic_a0_dwb",
+          "metadata_path": "data/raw/blind_corner_high_test_s03320_eval_heuristic_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/blind_corner_high_test_s03320_eval_heuristic_a0_dwb.outcome.json",
+          "raw_sha256": "21c1aba5c88dbf6432ec8e4e67be69af0fda193e5b6d02e3c9acb7655f7811e8",
+          "resumed": true,
+          "sample_count": 1800,
+          "stream_path": "data/raw/blind_corner_high_test_s03320_eval_heuristic_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "blind_corner_high_test_s03320_eval_heuristic_a0_dwb",
+      "method": "heuristic",
+      "scenario_id": "blind_corner_high_test_s03320",
+      "status": "complete",
+      "task_index": 31
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_low_test_s03400_eval_base_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_low_test_s03400_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/group_blocking_low_test_s03400_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "19dbe567132629b13043f3fa962c21ecb993c979b0e6c3e7179f90bdadcffbcd",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 431,
+          "stream_path": "data/raw/group_blocking_low_test_s03400_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "group_blocking_low_test_s03400_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "group_blocking_low_test_s03400",
+      "status": "complete",
+      "task_index": 32
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_low_test_s03400_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_low_test_s03400_eval_bc_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_low_test_s03400_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "31dfbcba2fc2d5b5e62f26837303b917f091a89bc624d4ecb27d1a33b398703d",
+          "resumed": true,
+          "sample_count": 1480,
+          "stream_path": "data/raw/group_blocking_low_test_s03400_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "group_blocking_low_test_s03400_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "group_blocking_low_test_s03400",
+      "status": "complete",
+      "task_index": 33
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_medium_test_s03410_eval_base_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_medium_test_s03410_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/group_blocking_medium_test_s03410_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "914a3f225a1ebbeb2ae0e7957802be0b824a6d5fa91701d40a05ee33dea3d2b7",
+          "resumed": true,
+          "sample_count": 426,
+          "stream_path": "data/raw/group_blocking_medium_test_s03410_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "group_blocking_medium_test_s03410_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "group_blocking_medium_test_s03410",
+      "status": "complete",
+      "task_index": 34
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_medium_test_s03410_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_medium_test_s03410_eval_bc_a0_dwb.metadata.json",
+          "outcome": "INVALID_RESET",
+          "outcome_path": "data/raw/group_blocking_medium_test_s03410_eval_bc_a0_dwb.outcome.json",
+          "resumed": true,
+          "stream_path": "data/raw/group_blocking_medium_test_s03410_eval_bc_a0_dwb.jsonl"
+        },
+        {
+          "attempt": 1,
+          "episode_id": "group_blocking_medium_test_s03410_eval_bc_a1_dwb",
+          "metadata_path": "data/raw/group_blocking_medium_test_s03410_eval_bc_a1_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_medium_test_s03410_eval_bc_a1_dwb.outcome.json",
+          "raw_sha256": "e32ba82695a3cb3513465871a768e62892bded406d907e1e5e060656e9e362ae",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 1285,
+          "stream_path": "data/raw/group_blocking_medium_test_s03410_eval_bc_a1_dwb.jsonl"
+        }
+      ],
+      "episode_id": "group_blocking_medium_test_s03410_eval_bc_a1_dwb",
+      "method": "bc",
+      "scenario_id": "group_blocking_medium_test_s03410",
+      "status": "complete",
+      "task_index": 35
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_high_test_s03420_eval_base_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_high_test_s03420_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/group_blocking_high_test_s03420_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "bb89234a3fe2324cd3fd384631b93d9fdd7c4b8237141ed46f5e435f5d66b02b",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 476,
+          "stream_path": "data/raw/group_blocking_high_test_s03420_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "group_blocking_high_test_s03420_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "group_blocking_high_test_s03420",
+      "status": "complete",
+      "task_index": 36
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_high_test_s03420_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_high_test_s03420_eval_bc_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_high_test_s03420_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "af7fc42fa58493b8d669c6193c1689226e6fb9297aa9b874c1ef5ce012b7dfd5",
+          "resumed": true,
+          "sample_count": 1439,
+          "stream_path": "data/raw/group_blocking_high_test_s03420_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "group_blocking_high_test_s03420_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "group_blocking_high_test_s03420",
+      "status": "complete",
+      "task_index": 37
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_high_test_s03420_eval_standard_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_high_test_s03420_eval_standard_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/group_blocking_high_test_s03420_eval_standard_a0_dwb.outcome.json",
+          "raw_sha256": "35d181a6b35a4d3cc8af7e6d6798d69b5bedad58d358943853895d0625150df7",
+          "resumed": true,
+          "sample_count": 502,
+          "stream_path": "data/raw/group_blocking_high_test_s03420_eval_standard_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "group_blocking_high_test_s03420_eval_standard_a0_dwb",
+      "method": "standard",
+      "scenario_id": "group_blocking_high_test_s03420",
+      "status": "complete",
+      "task_index": 38
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "group_blocking_high_test_s03420_eval_heuristic_a0_dwb",
+          "metadata_path": "data/raw/group_blocking_high_test_s03420_eval_heuristic_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/group_blocking_high_test_s03420_eval_heuristic_a0_dwb.outcome.json",
+          "raw_sha256": "bf373d366be4390d4a8a72521e825e1a33c50980877383b59ed9c7a58b82c866",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 1294,
+          "stream_path": "data/raw/group_blocking_high_test_s03420_eval_heuristic_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "group_blocking_high_test_s03420_eval_heuristic_a0_dwb",
+      "method": "heuristic",
+      "scenario_id": "group_blocking_high_test_s03420",
+      "status": "complete",
+      "task_index": 39
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_low_test_s03500_eval_base_a0_dwb",
+          "metadata_path": "data/raw/overtaking_low_test_s03500_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/overtaking_low_test_s03500_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "62921d09511c186ef3fc208e6a32f216311e72780e689ac4f2a77ed8ac25b431",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 421,
+          "stream_path": "data/raw/overtaking_low_test_s03500_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "overtaking_low_test_s03500_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "overtaking_low_test_s03500",
+      "status": "complete",
+      "task_index": 40
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_low_test_s03500_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/overtaking_low_test_s03500_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/overtaking_low_test_s03500_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "bc358e6ae2d75fe35e49da7350c8861a91ad18147f3d2431c17c5be248d228cc",
+          "resumed": true,
+          "sample_count": 1800,
+          "stream_path": "data/raw/overtaking_low_test_s03500_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "overtaking_low_test_s03500_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "overtaking_low_test_s03500",
+      "status": "complete",
+      "task_index": 41
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_medium_test_s03510_eval_base_a0_dwb",
+          "metadata_path": "data/raw/overtaking_medium_test_s03510_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/overtaking_medium_test_s03510_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "001baa02392a2a518ad4bb58d55ef40e15097264718b0b3ccb7697a83b22467b",
+          "resumed": true,
+          "sample_count": 642,
+          "stream_path": "data/raw/overtaking_medium_test_s03510_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "overtaking_medium_test_s03510_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "overtaking_medium_test_s03510",
+      "status": "complete",
+      "task_index": 42
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_medium_test_s03510_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/overtaking_medium_test_s03510_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/overtaking_medium_test_s03510_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "139eb9e73d957174a2034db26cc2a546e73f76330f7726361f7ae57659220d58",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 1800,
+          "stream_path": "data/raw/overtaking_medium_test_s03510_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "overtaking_medium_test_s03510_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "overtaking_medium_test_s03510",
+      "status": "complete",
+      "task_index": 43
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_high_test_s03520_eval_base_a0_dwb",
+          "metadata_path": "data/raw/overtaking_high_test_s03520_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/overtaking_high_test_s03520_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "2e0a3ab6494793716a56f07e7df6e85a0be2624eeca504f8af34ac8fe9cc0f3f",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 606,
+          "stream_path": "data/raw/overtaking_high_test_s03520_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "overtaking_high_test_s03520_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "overtaking_high_test_s03520",
+      "status": "complete",
+      "task_index": 44
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_high_test_s03520_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/overtaking_high_test_s03520_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/overtaking_high_test_s03520_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "7ad70e07cfafd7fd597af370ca9ba1606f0890d8b9663a379bed6b255a3739cc",
+          "resumed": true,
+          "sample_count": 1800,
+          "stream_path": "data/raw/overtaking_high_test_s03520_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "overtaking_high_test_s03520_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "overtaking_high_test_s03520",
+      "status": "complete",
+      "task_index": 45
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_high_test_s03520_eval_standard_a0_dwb",
+          "metadata_path": "data/raw/overtaking_high_test_s03520_eval_standard_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/overtaking_high_test_s03520_eval_standard_a0_dwb.outcome.json",
+          "raw_sha256": "b3ba4bfb6460b89ea18987c6369b913476ad5c4de7291e406ddea6d6f4e1495d",
+          "resumed": true,
+          "sample_count": 206,
+          "stream_path": "data/raw/overtaking_high_test_s03520_eval_standard_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "overtaking_high_test_s03520_eval_standard_a0_dwb",
+      "method": "standard",
+      "scenario_id": "overtaking_high_test_s03520",
+      "status": "complete",
+      "task_index": 46
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "overtaking_high_test_s03520_eval_heuristic_a0_dwb",
+          "metadata_path": "data/raw/overtaking_high_test_s03520_eval_heuristic_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/overtaking_high_test_s03520_eval_heuristic_a0_dwb.outcome.json",
+          "raw_sha256": "b68083e6ed81f8a46cbb247b4dd68cbc2ce93b635871957eb94dfec70ed9ea0f",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 1802,
+          "stream_path": "data/raw/overtaking_high_test_s03520_eval_heuristic_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "overtaking_high_test_s03520_eval_heuristic_a0_dwb",
+      "method": "heuristic",
+      "scenario_id": "overtaking_high_test_s03520",
+      "status": "complete",
+      "task_index": 47
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_low_test_s03600_eval_base_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_low_test_s03600_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/opposite_streams_low_test_s03600_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "4397a19ac445c0aad277238876f3b0842aef1398792f24c188c4bdbdff072962",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 341,
+          "stream_path": "data/raw/opposite_streams_low_test_s03600_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "opposite_streams_low_test_s03600_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "opposite_streams_low_test_s03600",
+      "status": "complete",
+      "task_index": 48
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_low_test_s03600_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_low_test_s03600_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/opposite_streams_low_test_s03600_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "1bb3dcdbacdea9eac3019e506dd8fafdb817719ec1d8a2e24f3680e3e44f17ff",
+          "resumed": true,
+          "sample_count": 1800,
+          "stream_path": "data/raw/opposite_streams_low_test_s03600_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "opposite_streams_low_test_s03600_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "opposite_streams_low_test_s03600",
+      "status": "complete",
+      "task_index": 49
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_medium_test_s03610_eval_base_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_medium_test_s03610_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/opposite_streams_medium_test_s03610_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "b3f81c057d7c9ac8003173a1145b5d29be2b4aa7886d294c1332c771ac8a4039",
+          "resumed": true,
+          "sample_count": 276,
+          "stream_path": "data/raw/opposite_streams_medium_test_s03610_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "opposite_streams_medium_test_s03610_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "opposite_streams_medium_test_s03610",
+      "status": "complete",
+      "task_index": 50
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_medium_test_s03610_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_medium_test_s03610_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/opposite_streams_medium_test_s03610_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "57e52115554365b6bb7b43fc83f10e1950b8be60a7e18af47b6f503172050c12",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 1801,
+          "stream_path": "data/raw/opposite_streams_medium_test_s03610_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "opposite_streams_medium_test_s03610_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "opposite_streams_medium_test_s03610",
+      "status": "complete",
+      "task_index": 51
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_high_test_s03620_eval_base_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_high_test_s03620_eval_base_a0_dwb.metadata.json",
+          "outcome": "INVALID_RESET",
+          "outcome_path": "data/raw/opposite_streams_high_test_s03620_eval_base_a0_dwb.outcome.json",
+          "resumed": false,
+          "returncode": 1,
+          "stream_path": "data/raw/opposite_streams_high_test_s03620_eval_base_a0_dwb.jsonl"
+        },
+        {
+          "attempt": 1,
+          "episode_id": "opposite_streams_high_test_s03620_eval_base_a1_dwb",
+          "metadata_path": "data/raw/opposite_streams_high_test_s03620_eval_base_a1_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/opposite_streams_high_test_s03620_eval_base_a1_dwb.outcome.json",
+          "raw_sha256": "f6f8314e53b2227a1a73f99027ecc8a635350a8fff3c4ea411f3d7d068a435fd",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 271,
+          "stream_path": "data/raw/opposite_streams_high_test_s03620_eval_base_a1_dwb.jsonl"
+        }
+      ],
+      "episode_id": "opposite_streams_high_test_s03620_eval_base_a1_dwb",
+      "method": "base",
+      "scenario_id": "opposite_streams_high_test_s03620",
+      "status": "complete",
+      "task_index": 52
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_high_test_s03620_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_high_test_s03620_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/opposite_streams_high_test_s03620_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "53825d3d32ced5f75304c9ad601847cd34e5b190b592ded8c78a7ce2753d5464",
+          "resumed": true,
+          "sample_count": 1800,
+          "stream_path": "data/raw/opposite_streams_high_test_s03620_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "opposite_streams_high_test_s03620_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "opposite_streams_high_test_s03620",
+      "status": "complete",
+      "task_index": 53
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_high_test_s03620_eval_standard_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_high_test_s03620_eval_standard_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/opposite_streams_high_test_s03620_eval_standard_a0_dwb.outcome.json",
+          "raw_sha256": "209384498948a25393470a7ca8285b45e40271aff6cf9761341573115a0911a0",
+          "resumed": true,
+          "sample_count": 271,
+          "stream_path": "data/raw/opposite_streams_high_test_s03620_eval_standard_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "opposite_streams_high_test_s03620_eval_standard_a0_dwb",
+      "method": "standard",
+      "scenario_id": "opposite_streams_high_test_s03620",
+      "status": "complete",
+      "task_index": 54
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "opposite_streams_high_test_s03620_eval_heuristic_a0_dwb",
+          "metadata_path": "data/raw/opposite_streams_high_test_s03620_eval_heuristic_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/opposite_streams_high_test_s03620_eval_heuristic_a0_dwb.outcome.json",
+          "raw_sha256": "39c04f9058a155f20a83d7a0009362ff91f89955ce1666a335fbcb4e51d20494",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 1801,
+          "stream_path": "data/raw/opposite_streams_high_test_s03620_eval_heuristic_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "opposite_streams_high_test_s03620_eval_heuristic_a0_dwb",
+      "method": "heuristic",
+      "scenario_id": "opposite_streams_high_test_s03620",
+      "status": "complete",
+      "task_index": 55
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_low_test_s03700_eval_base_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_low_test_s03700_eval_base_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/temporary_blockage_low_test_s03700_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "abe248cf8cf5d528b7fbd1ee6af8c409f4af90024cc0c3c6ff93f612f4b227d8",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 728,
+          "stream_path": "data/raw/temporary_blockage_low_test_s03700_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "temporary_blockage_low_test_s03700_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "temporary_blockage_low_test_s03700",
+      "status": "complete",
+      "task_index": 56
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_low_test_s03700_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_low_test_s03700_eval_bc_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/temporary_blockage_low_test_s03700_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "e1d0647b6b27f56addd341f71918cde4c99c70467e57ca2202422c406a2a31c6",
+          "resumed": true,
+          "sample_count": 705,
+          "stream_path": "data/raw/temporary_blockage_low_test_s03700_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "temporary_blockage_low_test_s03700_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "temporary_blockage_low_test_s03700",
+      "status": "complete",
+      "task_index": 57
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_medium_test_s03710_eval_base_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_medium_test_s03710_eval_base_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/temporary_blockage_medium_test_s03710_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "dada9249b5f0bbfbac56c9b834dcd7f2f5169963023eb38f00e31163101fa098",
+          "resumed": true,
+          "sample_count": 756,
+          "stream_path": "data/raw/temporary_blockage_medium_test_s03710_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "temporary_blockage_medium_test_s03710_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "temporary_blockage_medium_test_s03710",
+      "status": "complete",
+      "task_index": 58
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_medium_test_s03710_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_medium_test_s03710_eval_bc_a0_dwb.metadata.json",
+          "outcome": "GOAL_REACHED",
+          "outcome_path": "data/raw/temporary_blockage_medium_test_s03710_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "242ed7eaa12223e4c4c7db00e789f3156d16d9352f31f6ab12e7a5723adf53ad",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 735,
+          "stream_path": "data/raw/temporary_blockage_medium_test_s03710_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "temporary_blockage_medium_test_s03710_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "temporary_blockage_medium_test_s03710",
+      "status": "complete",
+      "task_index": 59
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_high_test_s03720_eval_base_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_high_test_s03720_eval_base_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/temporary_blockage_high_test_s03720_eval_base_a0_dwb.outcome.json",
+          "raw_sha256": "c1359ae64b244c2cd215c047fd8656ca6c5ae3ed6d697839e6af5ac85e4dcf77",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 376,
+          "stream_path": "data/raw/temporary_blockage_high_test_s03720_eval_base_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "temporary_blockage_high_test_s03720_eval_base_a0_dwb",
+      "method": "base",
+      "scenario_id": "temporary_blockage_high_test_s03720",
+      "status": "complete",
+      "task_index": 60
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_high_test_s03720_eval_bc_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_high_test_s03720_eval_bc_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/temporary_blockage_high_test_s03720_eval_bc_a0_dwb.outcome.json",
+          "raw_sha256": "cae953fd228d49e43b58a48a2ad328c20c64bc4645db1d796d1a97c325f21573",
+          "resumed": true,
+          "sample_count": 1801,
+          "stream_path": "data/raw/temporary_blockage_high_test_s03720_eval_bc_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "temporary_blockage_high_test_s03720_eval_bc_a0_dwb",
+      "method": "bc",
+      "scenario_id": "temporary_blockage_high_test_s03720",
+      "status": "complete",
+      "task_index": 61
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_high_test_s03720_eval_standard_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_high_test_s03720_eval_standard_a0_dwb.metadata.json",
+          "outcome": "COLLISION",
+          "outcome_path": "data/raw/temporary_blockage_high_test_s03720_eval_standard_a0_dwb.outcome.json",
+          "raw_sha256": "5f43414ecfb05a0e7f8c6abc36d8f672875f561d3591ca5e4ec048a3d953957f",
+          "resumed": true,
+          "sample_count": 376,
+          "stream_path": "data/raw/temporary_blockage_high_test_s03720_eval_standard_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "temporary_blockage_high_test_s03720_eval_standard_a0_dwb",
+      "method": "standard",
+      "scenario_id": "temporary_blockage_high_test_s03720",
+      "status": "complete",
+      "task_index": 62
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 0,
+          "episode_id": "temporary_blockage_high_test_s03720_eval_heuristic_a0_dwb",
+          "metadata_path": "data/raw/temporary_blockage_high_test_s03720_eval_heuristic_a0_dwb.metadata.json",
+          "outcome": "TIMEOUT",
+          "outcome_path": "data/raw/temporary_blockage_high_test_s03720_eval_heuristic_a0_dwb.outcome.json",
+          "raw_sha256": "e4c8379c99e8b904fd597af17238f131b2919d9643b816336ddefa170463d23d",
+          "resumed": false,
+          "returncode": 0,
+          "sample_count": 1801,
+          "stream_path": "data/raw/temporary_blockage_high_test_s03720_eval_heuristic_a0_dwb.jsonl"
+        }
+      ],
+      "episode_id": "temporary_blockage_high_test_s03720_eval_heuristic_a0_dwb",
+      "method": "heuristic",
+      "scenario_id": "temporary_blockage_high_test_s03720",
+      "status": "complete",
+      "task_index": 63
+    }
+  ],
+  "run_id": "b8fcd1607de0",
+  "schema_version": 1,
+  "split": "test",
+  "timeout_s": 180.0,
+  "worker_errors": []
+}

@@ -1,0 +1,30 @@
+schema_version: 1
+benchmark_id: moderate_social_navigation_v3_head_on_validation_probe
+difficulty: moderate
+manifest_suffix: moderate_v3
+split: validation
+selection_rule: >-
+  Predeclared validation probe containing the two r0 head-on conditions that
+  exercise asymmetric clearance after a two-sided closing-flow observation.
+  This manifest is for recovery regression diagnosis and is not a paper result.
+scenarios:
+  - scenario_id: head_on_corridor_medium_validation_moderate_v3_r00_s71010
+    family: head_on_corridor
+    density: medium
+    map_id: map_empty
+    seed: 71010
+    replicate: 0
+    difficulty: moderate
+    path: moderate_v3/arena/map_empty/head_on_corridor_medium_validation_moderate_v3_r00_s71010.json
+    preview: previews/moderate_v3/head_on_corridor_medium_validation_moderate_v3_r00_s71010.png
+    sha256: 0b831320eea843bda195a010b3ba335d06a47031be157ea542618ff0e8ea0ad5
+  - scenario_id: head_on_corridor_high_validation_moderate_v3_r00_s71020
+    family: head_on_corridor
+    density: high
+    map_id: map_empty
+    seed: 71020
+    replicate: 0
+    difficulty: moderate
+    path: moderate_v3/arena/map_empty/head_on_corridor_high_validation_moderate_v3_r00_s71020.json
+    preview: previews/moderate_v3/head_on_corridor_high_validation_moderate_v3_r00_s71020.png
+    sha256: 27be20cba8d2392090994be251a371a1b0301369994b55dc19bbeec6982713ea

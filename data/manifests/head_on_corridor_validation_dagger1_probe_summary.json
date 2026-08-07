@@ -1,0 +1,22 @@
+{
+  "action_counts": {
+    "0": 1,
+    "1": 10,
+    "2": 2,
+    "21": 188,
+    "23": 17,
+    "3": 6
+  },
+  "collision_latched_action_clearance": 0.65,
+  "finite_selected_cost_count": 224,
+  "illegal_action_count": 0,
+  "margin": {
+    "maximum": 4.759984016418457,
+    "median": 1.824293851852417,
+    "minimum": 0.0
+  },
+  "predicted_success_count": 222,
+  "rejoin_release_threshold": 0.65,
+  "sample_count": 224,
+  "source_jsonl": "data/raw/head_on_corridor_high_validation_s02020_dagger1_v1_retry1_dwb.jsonl"
+}

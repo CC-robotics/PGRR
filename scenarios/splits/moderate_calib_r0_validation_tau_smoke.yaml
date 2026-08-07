@@ -1,0 +1,70 @@
+schema_version: 1
+benchmark_id: moderate_social_navigation_v1_tau_smoke
+difficulty: moderate
+manifest_suffix: moderate_calib_r0
+split: validation
+selection_rule: >-
+  Predeclared trigger-threshold diagnostic: one known false-trigger regression,
+  one false-trigger timing regression, three Base collision cases, and one
+  no-trigger control. This manifest is validation-only and is not a test set.
+scenarios:
+- scenario_id: doorway_bottleneck_medium_validation_moderate_calib_r0_r00_s51110
+  family: doorway_bottleneck
+  density: medium
+  map_id: map_empty
+  seed: 51110
+  replicate: 0
+  difficulty: moderate
+  path: moderate_calib_r0/arena/map_empty/doorway_bottleneck_medium_validation_moderate_calib_r0_r00_s51110.json
+  preview: previews/moderate_calib_r0/doorway_bottleneck_medium_validation_moderate_calib_r0_r00_s51110.png
+  sha256: b648da453a7e6bd0b07f52e05991a6b780e75d2d485ec1a1878735504c0aa4a5
+- scenario_id: head_on_corridor_low_validation_moderate_calib_r0_r00_s51000
+  family: head_on_corridor
+  density: low
+  map_id: map_empty
+  seed: 51000
+  replicate: 0
+  difficulty: moderate
+  path: moderate_calib_r0/arena/map_empty/head_on_corridor_low_validation_moderate_calib_r0_r00_s51000.json
+  preview: previews/moderate_calib_r0/head_on_corridor_low_validation_moderate_calib_r0_r00_s51000.png
+  sha256: dae03ee790990a6b7d9e00c1c56d0b41ea5d24acceff47d6f83e15a78bb68760
+- scenario_id: head_on_corridor_medium_validation_moderate_calib_r0_r00_s51010
+  family: head_on_corridor
+  density: medium
+  map_id: map_empty
+  seed: 51010
+  replicate: 0
+  difficulty: moderate
+  path: moderate_calib_r0/arena/map_empty/head_on_corridor_medium_validation_moderate_calib_r0_r00_s51010.json
+  preview: previews/moderate_calib_r0/head_on_corridor_medium_validation_moderate_calib_r0_r00_s51010.png
+  sha256: 1b72b500d3ab5e9952db43f7c2bfb2bf55f8d05abc3629d57afbf0262bc70651
+- scenario_id: head_on_corridor_high_validation_moderate_calib_r0_r00_s51020
+  family: head_on_corridor
+  density: high
+  map_id: map_empty
+  seed: 51020
+  replicate: 0
+  difficulty: moderate
+  path: moderate_calib_r0/arena/map_empty/head_on_corridor_high_validation_moderate_calib_r0_r00_s51020.json
+  preview: previews/moderate_calib_r0/head_on_corridor_high_validation_moderate_calib_r0_r00_s51020.png
+  sha256: c26e5edfb0de651f269a02662f7fdd2ea1c0ea235c87a90debe8bea1289893ff
+- scenario_id: doorway_bottleneck_high_validation_moderate_calib_r0_r00_s51120
+  family: doorway_bottleneck
+  density: high
+  map_id: map_empty
+  seed: 51120
+  replicate: 0
+  difficulty: moderate
+  path: moderate_calib_r0/arena/map_empty/doorway_bottleneck_high_validation_moderate_calib_r0_r00_s51120.json
+  preview: previews/moderate_calib_r0/doorway_bottleneck_high_validation_moderate_calib_r0_r00_s51120.png
+  sha256: de167ceff1e585db661866f898a0a0838cf345fc67382b30a33c2c63bd72a662
+- scenario_id: crossing_flow_medium_validation_moderate_calib_r0_r00_s51210
+  family: crossing_flow
+  density: medium
+  map_id: map_empty
+  seed: 51210
+  replicate: 0
+  difficulty: moderate
+  path: moderate_calib_r0/arena/map_empty/crossing_flow_medium_validation_moderate_calib_r0_r00_s51210.json
+  preview: previews/moderate_calib_r0/crossing_flow_medium_validation_moderate_calib_r0_r00_s51210.png
+  sha256: 81ee19c22947e6c5fa6a950d2cc449b7aee1b626baec3007813be98c7642d026

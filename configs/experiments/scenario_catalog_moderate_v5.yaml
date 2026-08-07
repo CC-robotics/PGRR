@@ -1,0 +1,115 @@
+schema_version: 1
+benchmark_id: moderate_social_navigation_v5
+map:
+  id: map_empty
+  bounds_m: [0.0, 31.28, 0.0, 24.03]
+  preview_resolution_m: 0.10
+robot:
+  radius_m: 0.36
+  static_path_margin_m: 0.04
+moderation:
+  corridor_footprint_clear_width_m: 2.60
+  doorway_footprint_clear_width_m: 2.30
+  lane_offset_range_m: [0.65, 0.90]
+  pedestrian_longitudinal_stagger_m: 1.50
+  robot_avoidance_distance_m: 0.90
+  robot_soft_yield_distance_m: 0.90
+  robot_hard_guard_distance_m: 0.73
+  actor_update_frequency_hz: 5.0
+  actor_dynamics_version: deterministic_one_shot_swept_guard_v1
+  doorway_single_side_lane_stream: true
+  doorway_lane_offset_m: 0.75
+  head_on_single_side_lane_stream: true
+  head_on_lane_offset_m: 0.75
+  head_on_exit_x_m: 3.00
+  doorway_exit_x_m: 5.00
+  group_clear_channel_width_m: 1.30
+  all_routes_one_shot: true
+
+  # V5 calibration knobs were declared from validation only. Closed-loop V5
+  # traces showed that the original raster-reachable chamfer did not leave
+  # enough control margin for DWB: runs became pinned to either shelf tip.
+  # Shortening both shelves preserves the occluded oncoming interaction while
+  # providing a footprint-clear local-planning channel through the corner.
+  blind_corner_vertical_end_y_m: 8.75
+  blind_corner_horizontal_start_x_m: 16.25
+
+  # Keep the nearest stationary group member comfortably outside the 0.73 m
+  # swept hard guard and leave the lower corridor as a usable recovery lane.
+  group_nearest_actor_offset_m: 1.15
+
+  # V4's 0.65 m lanes were narrower than the 0.71 m combined collision radii.
+  # These family-specific lanes retain close interaction without overlap.
+  overtaking_lane_offset_range_m: [0.96, 1.16]
+  opposite_stream_lane_offset_range_m: [0.96, 1.16]
+
+  # Temporary blockers now remain inside a wider doorway opening. A short
+  # collision-free lead-in phases their arrival instead of spawning actors in
+  # the wall and relying on an invalid long route through static shelves.
+  temporary_doorway_center_half_gap_m: 2.20
+  temporary_crossing_half_span_m: 1.00
+  temporary_crossing_x_spacing_m: 0.80
+  temporary_crossing_lead_in_m: 1.40
+  validate_actor_static_clearance: true
+densities:
+  low: 1
+  medium: 2
+  high: 4
+splits:
+  train:
+    seed_base: 74000
+    repetitions: 3
+    geometry_offsets_m: [-0.10, 0.00, 0.10]
+  validation:
+    seed_base: 75000
+    repetitions: 3
+    geometry_offsets_m: [-0.10, 0.00, 0.10]
+  test:
+    seed_base: 85000
+    repetitions: 5
+    geometry_offsets_m: [-0.12, -0.06, 0.00, 0.06, 0.12]
+output:
+  generated_subdirectory: moderate_v5/arena
+  preview_subdirectory: moderate_v5
+  manifest_suffix: moderate_v5
+families:
+  - id: head_on_corridor
+    layout: horizontal_corridor
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.35, 0.55]
+  - id: doorway_bottleneck
+    layout: doorway
+    robot_start: [7.0, 12.0, 0.0]
+    robot_goal: [24.0, 12.0, 0.0]
+    speed_range_mps: [0.25, 0.45]
+  - id: crossing_flow
+    layout: crossing
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.35, 0.55]
+  - id: blind_corner
+    layout: blind_corner
+    robot_start: [6.0, 7.5, 0.0]
+    robot_goal: [24.0, 16.0, 1.57]
+    speed_range_mps: [0.30, 0.50]
+  - id: group_blocking
+    layout: group_blocking
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.06, 0.14]
+  - id: overtaking
+    layout: overtaking
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.08, 0.18]
+  - id: opposite_streams
+    layout: opposite_streams
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.30, 0.50]
+  - id: temporary_blockage
+    layout: temporary_blockage
+    robot_start: [7.0, 12.0, 0.0]
+    robot_goal: [24.0, 12.0, 0.0]
+    speed_range_mps: [0.07, 0.13]

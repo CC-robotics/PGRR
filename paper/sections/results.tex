@@ -1,0 +1,66 @@
+\subsection{Closed-Loop Navigation Outcomes}
+Table~\ref{tab:moderate-main-results} reports all retained terminal outcomes for
+the complete held-out three-density Gazebo benchmark.  Of \ModerateEpisodeCount{} logical
+method--episodes, \ModerateValidEpisodeCount{} enter algorithm metrics and
+\ModerateExcludedEpisodeCount{} are retained as simulator/reset exclusions.
+Base DWB reaches \ModerateBaseSuccessRate{} of goals, collides in
+\ModerateBaseCollisionRate{}, and times out in \ModerateBaseTimeoutRate{} of
+its valid episodes.  PGRR reaches \ModeratePGRRSuccessRate{}, collides in
+\ModeratePGRRCollisionRate{}, and times out in \ModeratePGRRTimeoutRate{}.
+
+\input{generated/moderate_main_results.tex}
+
+Figure~\ref{fig:moderate-outcomes-density} preserves each terminal category and
+shows goal-reaching uncertainty by density.  Timeout and planner failure
+remain explicit, so a lower contact rate cannot be misinterpreted as successful
+recovery.  Exact family--density counts remain in the generated evaluation
+artifacts and accompanying technical report.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.96\textwidth]{moderate_outcomes_and_density.pdf}
+  \caption{Held-out three-density Gazebo outcomes.  (a) Stacked bars retain goal,
+  collision, timeout, and planner-failure terminations.  (b) Goal-reaching
+  rates by density include Wilson 95\% confidence intervals.  All methods use
+  identical condition keys.}
+  \label{fig:moderate-outcomes-density}
+\end{figure*}
+
+\subsection{Paired Effects Against Four Baselines}
+On the \ModerateBasePGRRValidPairCount{} valid Base--PGRR pairs, the PGRR-minus-DWB
+goal-reaching difference is \ModeratePGRRSuccessDifference{}
+($p_{\mathrm{Holm}}\ModeratePGRRSuccessDifferenceHolmP$), the collision
+difference is \ModeratePGRRCollisionDifference{}
+($p_{\mathrm{Holm}}\ModeratePGRRCollisionDifferenceHolmP$), and the timeout
+difference is \ModeratePGRRTimeoutDifference{}
+($p_{\mathrm{Holm}}\ModeratePGRRTimeoutDifferenceHolmP$).  These endpoints are
+interpreted jointly: goal reaching measures task completion, while collision
+and timeout describe distinct failure modes.
+
+Table~\ref{tab:moderate-pairwise-results} extends the same paired analysis to
+Standard, Heuristic, and Uniform BC and reports raw and globally Holm-adjusted
+tests, confidence intervals, and effect sizes without selecting a favorable
+scenario or seed after evaluation.
+
+\input{generated/moderate_pairwise_statistics.tex}
+
+\subsection{Recovery Behavior}
+Table~\ref{tab:moderate-recovery-results} reports triggers, successful
+REJOIN-to-NORMAL transitions, time under recovery, intervention ratio, and
+emergency-stop entries.  These quantities audit whether completion is obtained
+through bounded recovery rather than persistent waiting; they do not replace
+terminal navigation outcomes.
+
+\input{generated/moderate_recovery_metrics.tex}
+
+\subsection{Offline Imitation and Mask Diagnostics}
+The separate offline ablation in Table~\ref{tab:offline-ablation} compares
+Uniform BC, margin-weighted BC, and the selected DAgger checkpoint on the same
+scenario-disjoint validation states.  Margin weighting is retained as a
+negative result rather than a selected contribution.  The no-mask rows are
+counterfactual mask-dependence diagnostics and are not executed in simulation.
+They test expert agreement and invalid-action exposure, not a controlled
+closed-loop causal effect; the complete five-method closed-loop
+evaluation above remains the evidence for navigation performance.
+
+\input{generated/offline_ablation.tex}

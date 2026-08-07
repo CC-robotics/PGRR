@@ -1,0 +1,60 @@
+schema_version: 1
+benchmark_id: moderate_social_navigation_v5_recovery_probe
+difficulty: moderate
+manifest_suffix: moderate_v5
+split: validation
+selection_rule: >-
+  Validation-only diagnostic containing the four PGRR failures observed in
+  calibration round two plus one previously successful head-on control. It is
+  never used for held-out test reporting.
+scenarios:
+- scenario_id: head_on_corridor_medium_validation_moderate_v5_r00_s75010
+  family: head_on_corridor
+  density: medium
+  map_id: map_empty
+  seed: 75010
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/head_on_corridor_medium_validation_moderate_v5_r00_s75010.json
+  preview: previews/moderate_v5/head_on_corridor_medium_validation_moderate_v5_r00_s75010.png
+  sha256: e1155568d3c9c5820f35530b1c8e7325620aeff5c5ef7bd43f8508aca2ec3979
+- scenario_id: blind_corner_low_validation_moderate_v5_r00_s75300
+  family: blind_corner
+  density: low
+  map_id: map_empty
+  seed: 75300
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/blind_corner_low_validation_moderate_v5_r00_s75300.json
+  preview: previews/moderate_v5/blind_corner_low_validation_moderate_v5_r00_s75300.png
+  sha256: 338cbe89dc91409c8c6cd5ad923fd4f2b402ac574cf899733faad7d6f265a967
+- scenario_id: blind_corner_high_validation_moderate_v5_r00_s75320
+  family: blind_corner
+  density: high
+  map_id: map_empty
+  seed: 75320
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/blind_corner_high_validation_moderate_v5_r00_s75320.json
+  preview: previews/moderate_v5/blind_corner_high_validation_moderate_v5_r00_s75320.png
+  sha256: 80ac934512579e5baf6e63bb094aa95ee59f43476b9a19d5ad403d69e863558e
+- scenario_id: overtaking_medium_validation_moderate_v5_r00_s75510
+  family: overtaking
+  density: medium
+  map_id: map_empty
+  seed: 75510
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/overtaking_medium_validation_moderate_v5_r00_s75510.json
+  preview: previews/moderate_v5/overtaking_medium_validation_moderate_v5_r00_s75510.png
+  sha256: c2c7afa5f8ef0ddfe57418a2b9715b8c4c5437e1ba50a0fb981daf95ff3704ab
+- scenario_id: temporary_blockage_low_validation_moderate_v5_r00_s75700
+  family: temporary_blockage
+  density: low
+  map_id: map_empty
+  seed: 75700
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v5/arena/map_empty/temporary_blockage_low_validation_moderate_v5_r00_s75700.json
+  preview: previews/moderate_v5/temporary_blockage_low_validation_moderate_v5_r00_s75700.png
+  sha256: 394341da1e6806460d0bfc6db0121f4dd2d3ec0af544247c9c0d3dbf322acf6f

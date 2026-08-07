@@ -1,0 +1,33 @@
+horizon_s: 3.0
+dt_s: 0.1
+target_speed_mps: 0.35
+backup_speed_mps: 0.15
+backup_duration_s: 1.0
+lookahead_m: 0.4
+max_angular_speed_radps: 1.0
+robot_radius_m: 0.36
+prediction_inflation_mps: 0.03
+human_prediction_geometry: constant_velocity_swept_tube
+human_yield_distance_m: 1.3
+scan_obstacle_inflation_m: 0.0
+oracle_trigger_horizon_s: 3.0
+oracle_trigger_intervention_horizon_s: 1.5
+oracle_trigger_margin_m: 0.25
+oracle_trigger_prediction_step_s: 0.1
+oracle_yield_passed_margin_m: 0.5
+oracle_yield_maximum_retreat_m: 1.4
+oracle_yield_recurrence_progress_m: 0.75
+oracle_yield_maximum_recurrences_without_progress: 1
+wait_budget_decisions: 3
+cost:
+  collision: 1000000.0
+  progress: 8.0
+  social: 4.0
+  rejoin: 3.0
+  length: 0.4
+  smooth: 0.2
+  time: 0.3
+  switch: 0.5
+  repeat_wait: 1.0
+  minimum_progress_m: 0.20
+  personal_space_m: 1.0

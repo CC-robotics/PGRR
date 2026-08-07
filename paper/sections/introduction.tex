@@ -1,0 +1,43 @@
+Classical navigation stacks remain attractive because mapping, global planning,
+local collision avoidance, and safety checks are explicit and independently
+testable.  Their local planners can nevertheless freeze, oscillate, or enter
+reciprocal deadlock when moving pedestrians block a narrow passage.  End-to-end
+learning can encode interaction patterns, but replacing the nominal controller
+also changes behavior in routine states where the classical stack is already
+competent.
+
+This work asks whether learning can instead be confined to the short interval in
+which a classical planner is at risk of failure.  Planning-Guided Recovery and
+Rejoin (PGRR) operates as a failure-triggered layer and leaves Nav2 DWB in
+control during normal PointGoal navigation.  An observable detector and a
+hysteretic state machine invoke recovery only for collision risk, freeze, oscillation, or
+deadlock.  The policy never commands wheel velocity: it selects one of 21 local
+temporary goals or WAIT, BACKUP, REPLAN, and CONTINUE.  Nav2 executes the
+decision, after which PGRR restores the original task goal.  A planning-derived
+action mask restricts selectable actions, and an independent braking supervisor
+constrains executed motion.
+
+Training exploits simulator state without leaking it to deployment.  A
+short-horizon expert rolls out every legal recovery action using the map and
+privileged pedestrian state.  Behavior cloning initializes a compact policy,
+and DAgger relabels states visited by the learned controller.  At test time, PGRR
+receives only LiDAR history, the local path and goal, robot and planner commands,
+progress history, planner status, and rule-detector scores.
+
+The contributions are:
+\begin{itemize}
+  \item a failure-triggered ROS2 hierarchy that preserves classical planning
+  authority outside explicitly detected recovery intervals;
+  \item a fixed, interpretable recovery action space with planning and sensor
+  masks enforced during expert labeling and online policy execution;
+  \item an automatically labeled BC--DAgger pipeline that aggregates
+  learner-induced recovery states, with scenario-disjoint offline diagnostics
+  of aggregation and mask dependence; and
+  \item a predeclared paired five-method Gazebo benchmark over eight
+  pedestrian-interaction families, three densities, five held-out repetitions
+  per cell, immutable raw streams, and complete-condition statistical analysis.
+\end{itemize}
+The evaluation reports contact, task completion, timeout, planner failure, and
+intervention behavior separately.  Its numerical claims are generated from the
+same five-method result table used for confidence intervals and paired tests;
+the fail-closed paper build accepts no incomplete or exploratory result stream.

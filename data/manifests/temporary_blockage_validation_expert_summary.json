@@ -1,0 +1,17 @@
+{
+  "action_counts": {
+    "21": 175
+  },
+  "collision_latched_action_clearance": 0.65,
+  "finite_selected_cost_count": 175,
+  "illegal_action_count": 0,
+  "margin": {
+    "maximum": 2.5473434925079346,
+    "median": 0.0,
+    "minimum": 0.0
+  },
+  "predicted_success_count": 6,
+  "rejoin_release_threshold": 0.65,
+  "sample_count": 175,
+  "source_jsonl": "data/raw/temporary_blockage_high_validation_s02720_final_heuristic_dwb.jsonl"
+}

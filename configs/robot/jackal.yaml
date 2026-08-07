@@ -1,0 +1,14 @@
+robot_radius_m: 0.25
+maximum_linear_speed_mps: 0.8
+maximum_angular_speed_radps: 1.5
+braking_acceleration_mps2: 0.8
+control_latency_s: 0.15
+stopping_margin_m: 0.20
+# Gazebo GPU-LiDAR rear-body signature: only suppress when broad clusters
+# occur simultaneously at both ends of the 270-degree scan.
+bilateral_edge_self_return_max_m: 0.34
+lidar_static_collision_confirmation_frames: 3
+frames:
+  map: map
+  odom: odom
+  base: base_link

@@ -1,0 +1,11 @@
+--- robot_manager.py
++++ robot_manager.py
+@@ -324,7 +324,7 @@
+                 # 'train_mode': self.node.declare_parameter('train_mode', False).value,
+                 'agent_name': self._robot.agent,
+                 'use_sim_time': 'True',
+-                'amcl': 'true' if self.node.conf.Arena.SIM.value in (Constants.SimSimulator.GAZEBO,) else 'false',
++                'amcl': 'false',
+             }
+ 
+             if self._robot.record_data_dir:

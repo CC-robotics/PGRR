@@ -1,0 +1,62 @@
+schema_version: 1
+map:
+  id: map_empty
+  bounds_m: [0.0, 31.28, 0.0, 24.03]
+  preview_resolution_m: 0.10
+robot:
+  radius_m: 0.36
+densities:
+  low: 2
+  medium: 4
+  high: 6
+splits:
+  train:
+    seed_offset: 1000
+    geometry_offset_m: -0.20
+  validation:
+    seed_offset: 2000
+    geometry_offset_m: 0.00
+  test:
+    seed_offset: 3000
+    geometry_offset_m: 0.20
+families:
+  - id: head_on_corridor
+    layout: horizontal_corridor
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.45, 0.70]
+  - id: doorway_bottleneck
+    layout: doorway
+    robot_start: [7.0, 12.0, 0.0]
+    robot_goal: [24.0, 12.0, 0.0]
+    speed_range_mps: [0.30, 0.55]
+  - id: crossing_flow
+    layout: crossing
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.45, 0.75]
+  - id: blind_corner
+    layout: blind_corner
+    robot_start: [6.0, 6.0, 0.0]
+    robot_goal: [24.0, 18.0, 1.57]
+    speed_range_mps: [0.35, 0.60]
+  - id: group_blocking
+    layout: group_blocking
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.08, 0.18]
+  - id: overtaking
+    layout: overtaking
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.10, 0.22]
+  - id: opposite_streams
+    layout: opposite_streams
+    robot_start: [5.0, 12.0, 0.0]
+    robot_goal: [26.0, 12.0, 0.0]
+    speed_range_mps: [0.35, 0.65]
+  - id: temporary_blockage
+    layout: temporary_blockage
+    robot_start: [7.0, 12.0, 0.0]
+    robot_goal: [24.0, 12.0, 0.0]
+    speed_range_mps: [0.08, 0.30]

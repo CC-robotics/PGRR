@@ -1,0 +1,271 @@
+{
+  "obstacles": {
+    "dynamic": [
+      {
+        "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+        "actor_update_frequency_hz": 5.0,
+        "behavior": {
+          "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+          "actor_update_frequency_hz": 5.0,
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": true,
+          "other_force_factor": 10.0,
+          "robot_hard_guard_distance_m": 0.73,
+          "robot_soft_yield_distance_m": 0.9,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 1,
+        "max_vel": 0.1109,
+        "model": "gazebo_actor",
+        "name": "ped_00",
+        "pos": [
+          14.8,
+          13.15,
+          0.0
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.9,
+        "robot_hard_guard_distance_m": 0.73,
+        "robot_soft_yield_distance_m": 0.9,
+        "type": "adult",
+        "waypoints": [
+          [
+            14.8,
+            13.15,
+            0.0
+          ],
+          [
+            15.15,
+            13.030000000000001,
+            0.0
+          ]
+        ]
+      },
+      {
+        "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+        "actor_update_frequency_hz": 5.0,
+        "behavior": {
+          "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+          "actor_update_frequency_hz": 5.0,
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": true,
+          "other_force_factor": 10.0,
+          "robot_hard_guard_distance_m": 0.73,
+          "robot_soft_yield_distance_m": 0.9,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 2,
+        "max_vel": 0.1095,
+        "model": "gazebo_actor",
+        "name": "ped_01",
+        "pos": [
+          15.950000000000001,
+          13.15,
+          0.0
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.9,
+        "robot_hard_guard_distance_m": 0.73,
+        "robot_soft_yield_distance_m": 0.9,
+        "type": "adult",
+        "waypoints": [
+          [
+            15.950000000000001,
+            13.15,
+            0.0
+          ],
+          [
+            16.3,
+            13.27,
+            0.0
+          ]
+        ]
+      },
+      {
+        "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+        "actor_update_frequency_hz": 5.0,
+        "behavior": {
+          "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+          "actor_update_frequency_hz": 5.0,
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": true,
+          "other_force_factor": 10.0,
+          "robot_hard_guard_distance_m": 0.73,
+          "robot_soft_yield_distance_m": 0.9,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 3,
+        "max_vel": 0.0953,
+        "model": "gazebo_actor",
+        "name": "ped_02",
+        "pos": [
+          14.8,
+          13.6,
+          0.0
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.9,
+        "robot_hard_guard_distance_m": 0.73,
+        "robot_soft_yield_distance_m": 0.9,
+        "type": "adult",
+        "waypoints": [
+          [
+            14.8,
+            13.6,
+            0.0
+          ],
+          [
+            15.15,
+            13.48,
+            0.0
+          ]
+        ]
+      },
+      {
+        "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+        "actor_update_frequency_hz": 5.0,
+        "behavior": {
+          "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+          "actor_update_frequency_hz": 5.0,
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": true,
+          "other_force_factor": 10.0,
+          "robot_hard_guard_distance_m": 0.73,
+          "robot_soft_yield_distance_m": 0.9,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 4,
+        "max_vel": 0.0617,
+        "model": "gazebo_actor",
+        "name": "ped_03",
+        "pos": [
+          15.950000000000001,
+          13.6,
+          0.0
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.9,
+        "robot_hard_guard_distance_m": 0.73,
+        "robot_soft_yield_distance_m": 0.9,
+        "type": "adult",
+        "waypoints": [
+          [
+            15.950000000000001,
+            13.6,
+            0.0
+          ],
+          [
+            16.3,
+            13.719999999999999,
+            0.0
+          ]
+        ]
+      }
+    ],
+    "interactive": [],
+    "static": []
+  },
+  "ramp_metadata": {
+    "actor_behavior_parameters": {
+      "actor_update_frequency_hz": 5.0,
+      "robot_hard_guard_distance_m": 0.73,
+      "robot_soft_yield_distance_m": 0.9
+    },
+    "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+    "benchmark_id": "moderate_social_navigation_v5",
+    "density": "high",
+    "difficulty": "moderate",
+    "family": "group_blocking",
+    "human_behavior_model": "deterministic_one_shot_swept_guard_v1",
+    "human_speed_range_mps": [
+      0.06,
+      0.14
+    ],
+    "map_id": "map_empty",
+    "moderation": {
+      "actor_dynamics_version": "deterministic_one_shot_swept_guard_v1",
+      "actor_update_frequency_hz": 5.0,
+      "blind_corner_horizontal_start_x_m": 16.25,
+      "blind_corner_vertical_end_y_m": 8.75,
+      "corridor_footprint_clear_width_m": 2.6,
+      "doorway_exit_x_m": 5.0,
+      "doorway_footprint_clear_width_m": 2.3,
+      "group_clear_channel_width_m": 1.3,
+      "group_nearest_actor_offset_m": 1.15,
+      "head_on_exit_x_m": 3.0,
+      "lane_offset_range_m": [
+        0.65,
+        0.9
+      ],
+      "opposite_stream_lane_offset_range_m": [
+        0.96,
+        1.16
+      ],
+      "overtaking_lane_offset_range_m": [
+        0.96,
+        1.16
+      ],
+      "pedestrian_longitudinal_stagger_m": 1.5,
+      "robot_avoidance_distance_m": 0.9,
+      "robot_hard_guard_distance_m": 0.73,
+      "robot_soft_yield_distance_m": 0.9,
+      "temporary_crossing_half_span_m": 1.0,
+      "temporary_crossing_lead_in_m": 1.4,
+      "temporary_crossing_x_spacing_m": 0.8,
+      "temporary_doorway_center_half_gap_m": 2.2,
+      "validate_actor_static_clearance": true
+    },
+    "replicate": 2,
+    "requested_hunav_behavior": "regular social-force fields retained for schema compatibility",
+    "scenario_id": "group_blocking_high_test_moderate_v5_r02_s85422",
+    "schema_version": 1,
+    "seed": 85422,
+    "split": "test"
+  },
+  "robots": [
+    {
+      "goal": [
+        26.0,
+        12.0,
+        0.0
+      ],
+      "start": [
+        5.0,
+        12.0,
+        0.0
+      ]
+    }
+  ]
+}

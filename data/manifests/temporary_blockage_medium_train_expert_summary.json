@@ -1,0 +1,19 @@
+{
+  "action_counts": {
+    "1": 1,
+    "2": 2,
+    "21": 172
+  },
+  "collision_latched_action_clearance": 0.65,
+  "finite_selected_cost_count": 175,
+  "illegal_action_count": 0,
+  "margin": {
+    "maximum": 2.6160213947296143,
+    "median": 0.0,
+    "minimum": 0.0
+  },
+  "predicted_success_count": 6,
+  "rejoin_release_threshold": 0.65,
+  "sample_count": 175,
+  "source_jsonl": "data/raw/temporary_blockage_medium_train_s01710_final_heuristic_dwb.jsonl"
+}

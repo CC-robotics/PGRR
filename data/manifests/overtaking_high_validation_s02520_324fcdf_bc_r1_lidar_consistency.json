@@ -1,0 +1,11 @@
+{
+  "episode": "data/raw/overtaking_high_validation_s02520_324fcdf_bc_r1_dwb.jsonl",
+  "maximum_surface_range_error_m": 0.06599957973685455,
+  "minimum_center_distance_m": 1.1556162566903483,
+  "near_distance_m": 1.3,
+  "near_sample_count": 360,
+  "passed": true,
+  "tolerance_m": 0.2,
+  "visible_ratio": 1.0,
+  "visible_sample_count": 360
+}

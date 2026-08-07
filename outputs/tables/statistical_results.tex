@@ -1,0 +1,39 @@
+% Generated only from outputs/final/results.parquet and outputs/final/summary.csv; project_commit=35d7e601cd6f5baf168948a7174cd32fa9c37c5b
+\begin{table*}[t]
+\caption{Paired PGRR--DWB comparisons on the locked manifest.}
+\label{tab:statistical-results}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4.0pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+Metric & Test & $\Delta$ [95\% CI] & $p_{\mathrm{raw}}$ & $p_{\mathrm{Holm}}$
+& Effect size & $n_{\mathrm{pairs}}$ \\
+\midrule
+Goal reached & McNemar & $+12.5\;[+0.0,\,+29.2]\,\mathrm{pp}$ & 0.250 & 0.750 & $\mathrm{OR}_H=7$ & 24 \\
+Collision & McNemar & $-79.2\;[-91.7,\,-62.5]\,\mathrm{pp}$ & $<0.001$ & $<0.001$ & $\mathrm{OR}_H=0.0256$ & 24 \\
+Timeout & McNemar & $+66.7\;[+45.8,\,+83.3]\,\mathrm{pp}$ & $<0.001$ & $<0.001$ & $\mathrm{OR}_H=33$ & 24 \\
+\addlinespace[2pt]
+Success time & Wilcoxon & $+9.4\;[-2.1,\,+30.8]\,\mathrm{s}$ & 1.000 & 1.000 & $r_{\mathrm{rb}}=+0.067$ & 5 \\
+Success path & Wilcoxon & $+0.63\;[-0.44,\,+2.36]\,\mathrm{m}$ & 1.000 & 1.000 & $r_{\mathrm{rb}}=-0.067$ & 5 \\
+SPL & Wilcoxon & $+0.098\;[-0.004,\,+0.222]$ & 0.173 & 0.692 & $r_{\mathrm{rb}}=+0.619$ & 24 \\
+Min. human distance & Wilcoxon & $-0.051\;[-0.498,\,+0.251]\,\mathrm{m}$ & 0.037 & 0.257 & $r_{\mathrm{rb}}=+0.487$ & 24 \\
+Personal-space violation & Wilcoxon & $+5.1\;[+0.2,\,+10.2]\,\mathrm{pp}$ & 0.058 & 0.349 & $r_{\mathrm{rb}}=+0.509$ & 24 \\
+Discomfort time & Wilcoxon & $-0.69\;[-2.36,\,+1.13]\,\mathrm{s}$ & 0.135 & 0.677 & $r_{\mathrm{rb}}=-0.412$ & 24 \\
+Emergency stops & Wilcoxon & $+14.33\;[+10.79,\,+17.79]\,\mathrm{ep.}^{-1}$ & $<0.001$ & $<0.001$ & $r_{\mathrm{rb}}=+1.000$ & 24 \\
+Recovery triggers & Wilcoxon & $+5.21\;[+3.92,\,+6.58]\,\mathrm{ep.}^{-1}$ & $<0.001$ & $<0.001$ & $r_{\mathrm{rb}}=+1.000$ & 24 \\
+Intervention ratio & Wilcoxon & $+58.0\;[+46.2,\,+68.8]\,\mathrm{pp}$ & $<0.001$ & $<0.001$ & $r_{\mathrm{rb}}=+0.987$ & 24 \\
+Angular jerk & Wilcoxon & $+0.575\;[+0.407,\,+0.748]\,\mathrm{rad}\,\mathrm{s}^{-3}$ & $<0.001$ & $<0.001$ & $r_{\mathrm{rb}}=+0.980$ & 24 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+
+\parbox{0.98\textwidth}{\footnotesize \emph{Note.} All differences are PGRR minus DWB
+and use 95\% percentile-bootstrap intervals; rate differences are in percentage points (pp).
+Binary endpoints use exact McNemar tests and the Haldane-corrected matched odds ratio
+$\mathrm{OR}_H$; continuous endpoints use Wilcoxon signed-rank tests and matched
+rank-biserial correlation $r_{\mathrm{rb}}$. Holm correction covers all endpoints in this
+table. The paired sample size varies for success-conditional metrics. Comparison set:
+DWB vs PGRR.}
+\end{table*}

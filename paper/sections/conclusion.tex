@@ -1,0 +1,13 @@
+We presented Planning-Guided Recovery and Rejoin (PGRR), a failure-triggered
+interface that retains DWB for nominal control
+and restricts learned intervention to interpretable temporary goals and
+recovery modes.  A privileged rollout planner supplies supervision, DAgger
+covers learner-induced states, and planning masks constrain labeling and online
+inference.  On the complete held-out three-density Gazebo benchmark, PGRR reaches
+\ModeratePGRRSuccessRate{} of goals versus \ModerateBaseSuccessRate{} for DWB;
+the paired goal, collision, and timeout differences are
+\ModeratePGRRSuccessDifference{}, \ModeratePGRRCollisionDifference{}, and
+\ModeratePGRRTimeoutDifference{}.  Reporting those endpoints separately keeps
+task completion, contact, and conservative stagnation visible.  Richer
+interaction prediction, additional runtime profiles, and hardware validation
+are the most direct next steps.

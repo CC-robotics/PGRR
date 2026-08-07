@@ -1,0 +1,25 @@
+The study uses planar LiDAR, a known two-dimensional map, and simulation
+localization that is more accurate than a deployed AMCL stack.  Its
+deterministic pedestrians are useful for paired replay but do not capture human
+intent, group norms, perception uncertainty, or the diversity of real crowds.
+Minimum distance and discomfort time are therefore geometric proxies rather
+than validated human-comfort judgments.  Their shared swept-step guard improves
+scenario repeatability but is itself a simplified response model; because it
+does not override robot control or collision labeling, it should not be read as
+a safety mechanism for any compared navigation method.
+
+The detector, planning mask, learned policy, Nav2 controller, and emergency
+supervisor act jointly in the deployed hierarchy.  Closed-loop outcomes do not
+attribute an effect to any one component, and the stopping supervisor provides
+no formal collision-avoidance guarantee.  The privileged expert depends on
+simulator state and short-horizon motion prediction; its finite 25-action set
+cannot express arbitrary reciprocal negotiation.  The expert is consequently
+a training and diagnostic reference, not a certified optimal controller.
+
+All final conditions use one pinned simulator/runtime profile.  We do not claim
+cross-simulator transfer, hardware validation, PPO refinement, or a learned
+failure detector.  Split separation is over seeds and compiled physical
+realizations, not maps or interaction-family templates; five held-out
+repetitions per cell still cover a limited range of pedestrian behavior.
+Responsive human models, additional maps and planners, formal safety analysis,
+and real-robot trials are the most important extensions.

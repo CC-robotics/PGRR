@@ -1,0 +1,15 @@
+builtin_interfaces/Time stamp
+uint8 NORMAL=0
+uint8 PENDING_RECOVERY=1
+uint8 RECOVERY=2
+uint8 REJOIN=3
+uint8 EMERGENCY_STOP=4
+uint8 FAILED=5
+uint8 SUCCEEDED=6
+int16 action_id
+string action_name
+geometry_msgs/PoseStamped temporary_goal
+float32 confidence
+bool has_temporary_goal
+uint8 recovery_state
+string reason

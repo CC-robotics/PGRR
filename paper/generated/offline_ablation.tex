@@ -1,0 +1,30 @@
+% Generated only from outputs/final/offline_policy_ablation.csv; sha256=3ee95443bb269d493ef721ee43adb40e951660c2cc492468e11e1f67cd0ff999
+\begin{table*}[t]
+\caption{Offline policy ablation on 399 scenario-disjoint validation states.}
+\label{tab:offline-ablation}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4.0pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+Model & Planning mask & Top-1 (\%) & Top-3 (\%) & Invalid (\%) & Cost regret
+& Near-opt. (\%) & Catastrophic (\%) \\
+\midrule
+Uniform BC & Enabled & 88.5 & 95.7 & 0.0 & 0.271 & 88.7 & 0.0 \\
+Uniform BC & Disabled$^{\dagger}$ & 0.0 & 91.0 & 93.2 & $9.32\times 10^{5}$ & 0.0 & 93.2 \\
+\addlinespace[2pt]
+Margin-weighted BC & Enabled & 88.5 & 95.7 & 0.0 & 0.271 & 88.7 & 0.0 \\
+Margin-weighted BC & Disabled$^{\dagger}$ & 0.0 & 91.7 & 93.2 & $9.32\times 10^{5}$ & 0.0 & 93.2 \\
+\addlinespace[2pt]
+\textbf{Triggered DAgger} & Enabled & 92.2 & 98.5 & 0.0 & 0.031 & 93.2 & 0.0 \\
+\textbf{Triggered DAgger} & Disabled$^{\dagger}$ & 12.0 & 41.9 & 84.0 & $8.40\times 10^{5}$ & 12.8 & 84.0 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+
+\parbox{0.98\textwidth}{\footnotesize \emph{Note.} Regret is measured in expert-cost
+units; its hard invalid-action penalty dominates mask-disabled rows. $^{\dagger}$ Disabled-mask
+rows are counterfactual offline proposals and were never executed in closed loop. ``Catastrophic''
+denotes selection of a hard-penalty action. Bold identifies the selected policy.}
+\end{table*}

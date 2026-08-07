@@ -1,0 +1,38 @@
+RAMP environment preflight (privacy-safe release summary)
+captured_at=2026-08-04T09:43:00Z
+project_root=${PROJECT_ROOT}
+arena_ws=${ARENA_WS}
+
+[operating system]
+distribution=Ubuntu 22.04.5 LTS
+kernel=Linux 6.8.0-124-generic
+architecture=x86_64
+
+[compute]
+logical_cpu_count=32
+memory_total=62 GiB
+disk_available_at_capture=396 GiB
+gpu=NVIDIA GeForce RTX 5090 D
+nvidia_driver=580.173.02
+gpu_memory=32607 MiB
+
+[toolchain]
+system_python=3.12.7
+conda=24.9.2
+offline_python=3.10
+git=2.34.1
+ros_distribution=Humble
+ros_package_count=197
+docker=available
+arena_workspace=present
+
+[privacy]
+hostname=anonymous
+process_list=omitted
+device_identifiers=omitted
+absolute_user_paths=omitted
+
+[resource checks]
+free_disk_at_least_40_gib=yes
+memory_at_least_16_gib=yes
+status=passed

@@ -1,0 +1,68 @@
+--- install.sh
++++ install.sh
+@@ -125,6 +125,9 @@
+ # vcstool fork
+-python -m pip install git+https://github.com/voshch/vcstool.git
+-alias vcs='$HOME/.pyenv/shims/vcs' # avoid reopening shell
++if ! command -v vcs >/dev/null 2>&1; then
++  python -m pip install git+https://github.com/voshch/vcstool.git
++fi
++VCS_EXECUTABLE="$(command -v vcs)"
++alias vcs="${VCS_EXECUTABLE}" # preserve the Poetry environment executable
+ 
+ # Getting Packages
+ echo "Installing deps...:"
+@@ -177,6 +180,9 @@
+   mkdir -p src/ros2
+   curl "https://raw.githubusercontent.com/ros2/ros2/${ARENA_ROS_DISTRO}/ros2.repos" > ros2.repos
+-  vcs import src/ros2 < ros2.repos
++  if [ ! -f src/ros2/.ramp_import_complete ]; then
++    vcs import --shallow -w 8 src/ros2 < ros2.repos
++    touch src/ros2/.ramp_import_complete
++  fi
+   
+   RTI_NC_LICENSE_ACCEPTED=yes \
+   rosdep install \
+@@ -203,18 +209,24 @@
+ if [ ! -f "$INSTALLED" ] ; then
++  if [ ! -d src/arena/arena-rosnav/.git ]; then
+   mv src/arena/arena-rosnav src/arena/.arena-rosnav
+ 
+   echo "cloning Arena-Rosnav..."
+-  git clone --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" src/arena/arena-rosnav
++  git clone --depth 1 --filter=blob:none --branch "${ARENA_BRANCH}" "https://github.com/${ARENA_ROSNAV_REPO}.git" src/arena/arena-rosnav
+ 
+   mv -n src/arena/.arena-rosnav/* src/arena/.arena-rosnav/.* src/arena/arena-rosnav || true
+   rm -rf src/arena/.arena-rosnav
++  fi
+ 
+ 
+   ln -fs src/arena/arena-rosnav/tools/source.bash ./arena.bash
+   ln -fs src/arena/arena-rosnav/tools/poetry_install .
+   ln -fs src/arena/arena-rosnav/tools/colcon_build .
+ 
+   . poetry_install
+ fi
+ 
+-vcs import src < src/arena/arena-rosnav/.repos/arena.repos
++patch --forward --silent --reject-file=- src/arena/arena-rosnav/installers/1_gazebo.sh /tmp/arena_gazebo_headless.patch 2>/dev/null || \
++  grep -q 'RAMP_INSTALL_GZ_USD' src/arena/arena-rosnav/installers/1_gazebo.sh
++patch --forward --silent --reject-file=- src/arena/arena-rosnav/arena_bringup/scripts/pull /tmp/arena_pull_pinned.patch 2>/dev/null || \
++  grep -q 'Pinned RAMP dependency profile' src/arena/arena-rosnav/arena_bringup/scripts/pull
++bash /tmp/import_arena_dependencies.sh
+ rosdep install -y \
+   --from-paths src \
+@@ -256,8 +268,11 @@
+   if grep -q "$name" "$INSTALLED" ; then
+     echo "$name already installed"
+   else
+-    read -rp "Do you want to install ${name}? [N] " choice
+-    choice="${choice:-N}"
++    choice="N"
++    case ",${RAMP_ARENA_INSTALLERS:-gazebo.sh,planners.sh}," in
++      *",${name},"*) choice="Y" ;;
++    esac
++    echo "Non-interactive feature selection for ${name}: ${choice}"
+     if [[ "$choice" =~ ^[Yy]$ ]]; then
+         . "src/arena/arena-rosnav/installers/$installer"
+         compile

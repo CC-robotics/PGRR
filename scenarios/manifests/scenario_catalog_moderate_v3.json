@@ -1,0 +1,23 @@
+{
+  "benchmark_id": "moderate_social_navigation_v3",
+  "counts_by_split": {
+    "test": 24,
+    "train": 24,
+    "validation": 24
+  },
+  "difficulty": "moderate",
+  "footprint_inflation_m": 0.39999999999999997,
+  "manifest_paths": {
+    "test": "splits/moderate_v3_test.yaml",
+    "train": "splits/moderate_v3_train.yaml",
+    "validation": "splits/moderate_v3_validation.yaml"
+  },
+  "manifest_suffix": "moderate_v3",
+  "scenario_count": 72,
+  "scenario_ids_sha256": "7f29880cc1aa3ce7cdbc9373299f9ad71c80c6787a3b43b04d843aa982251316",
+  "schema_version": 1,
+  "source_config": "configs/experiments/scenario_catalog_moderate_v3.yaml",
+  "test_seed_base": 81000,
+  "train_seed_base": 70000,
+  "validation_seed_base": 71000
+}

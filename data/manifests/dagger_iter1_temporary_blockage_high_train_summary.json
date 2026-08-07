@@ -1,0 +1,17 @@
+{
+  "action_counts": {
+    "21": 37
+  },
+  "collision_latched_action_clearance": 0.65,
+  "finite_selected_cost_count": 37,
+  "illegal_action_count": 0,
+  "margin": {
+    "maximum": 2.8032782077789307,
+    "median": 0.0,
+    "minimum": 0.0
+  },
+  "predicted_success_count": 3,
+  "rejoin_release_threshold": 0.65,
+  "sample_count": 37,
+  "source_jsonl": "data/raw/temporary_blockage_high_train_s01720_dagger1_bc_v2_dwb.jsonl"
+}

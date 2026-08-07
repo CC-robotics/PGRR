@@ -1,0 +1,30 @@
+% Generated only from outputs/final/results.parquet and outputs/final/summary.csv; project_commit=35d7e601cd6f5baf168948a7174cd32fa9c37c5b
+\begin{table}[t]
+\caption{Terminal outcomes by crowd density on the locked manifest.}
+\label{tab:density-results}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Density & Method & $n$ & Succ. $\uparrow$ (\%) & Coll. $\downarrow$ (\%)
+& Timeout $\downarrow$ (\%) \\
+\midrule
+Low & DWB & 8 & 25.0 & 75.0 & 0.0 \\
+Low & \textbf{PGRR} & 8 & 37.5 & 0.0 & 62.5 \\
+\addlinespace[2pt]
+Medium & DWB & 8 & 25.0 & 75.0 & 0.0 \\
+Medium & \textbf{PGRR} & 8 & 37.5 & 0.0 & 62.5 \\
+\addlinespace[2pt]
+High & DWB & 8 & 12.5 & 87.5 & 0.0 \\
+High & Standard & 8 & 12.5 & 87.5 & 0.0 \\
+High & Heuristic & 8 & 12.5 & 0.0 & 87.5 \\
+High & \textbf{PGRR} & 8 & 25.0 & 0.0 & 75.0 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+
+\parbox{0.98\columnwidth}{\footnotesize \emph{Note.} Each rate uses the valid episodes
+shown in $n$. Bold identifies the proposed method.}
+\end{table}

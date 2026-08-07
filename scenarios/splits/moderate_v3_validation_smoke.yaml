@@ -1,0 +1,69 @@
+schema_version: 1
+benchmark_id: moderate_social_navigation_v3_smoke
+difficulty: moderate
+manifest_suffix: moderate_v3
+split: validation
+selection_rule: >-
+  Predeclared r0 validation smoke spanning the three core interaction families.
+  It validates v3 actor dynamics and recovery before full validation tuning.
+scenarios:
+- scenario_id: head_on_corridor_low_validation_moderate_v3_r00_s71000
+  family: head_on_corridor
+  density: low
+  map_id: map_empty
+  seed: 71000
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v3/arena/map_empty/head_on_corridor_low_validation_moderate_v3_r00_s71000.json
+  preview: previews/moderate_v3/head_on_corridor_low_validation_moderate_v3_r00_s71000.png
+  sha256: 6a0d1a33d31b09db0ab1c2f098bf9cf888a5c6fda95196bf4a9745b0d8130ea9
+- scenario_id: head_on_corridor_medium_validation_moderate_v3_r00_s71010
+  family: head_on_corridor
+  density: medium
+  map_id: map_empty
+  seed: 71010
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v3/arena/map_empty/head_on_corridor_medium_validation_moderate_v3_r00_s71010.json
+  preview: previews/moderate_v3/head_on_corridor_medium_validation_moderate_v3_r00_s71010.png
+  sha256: 0b831320eea843bda195a010b3ba335d06a47031be157ea542618ff0e8ea0ad5
+- scenario_id: head_on_corridor_high_validation_moderate_v3_r00_s71020
+  family: head_on_corridor
+  density: high
+  map_id: map_empty
+  seed: 71020
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v3/arena/map_empty/head_on_corridor_high_validation_moderate_v3_r00_s71020.json
+  preview: previews/moderate_v3/head_on_corridor_high_validation_moderate_v3_r00_s71020.png
+  sha256: 27be20cba8d2392090994be251a371a1b0301369994b55dc19bbeec6982713ea
+- scenario_id: doorway_bottleneck_medium_validation_moderate_v3_r00_s71110
+  family: doorway_bottleneck
+  density: medium
+  map_id: map_empty
+  seed: 71110
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v3/arena/map_empty/doorway_bottleneck_medium_validation_moderate_v3_r00_s71110.json
+  preview: previews/moderate_v3/doorway_bottleneck_medium_validation_moderate_v3_r00_s71110.png
+  sha256: b894621c867cd1dc5f4c0be71211d80240eb9386146aac294a4ab3af4b8b4940
+- scenario_id: doorway_bottleneck_high_validation_moderate_v3_r00_s71120
+  family: doorway_bottleneck
+  density: high
+  map_id: map_empty
+  seed: 71120
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v3/arena/map_empty/doorway_bottleneck_high_validation_moderate_v3_r00_s71120.json
+  preview: previews/moderate_v3/doorway_bottleneck_high_validation_moderate_v3_r00_s71120.png
+  sha256: 842ea6548545380eb9d10a9b70693ae9d083369bf055a93c5a205eaa5ba9ba3d
+- scenario_id: crossing_flow_medium_validation_moderate_v3_r00_s71210
+  family: crossing_flow
+  density: medium
+  map_id: map_empty
+  seed: 71210
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v3/arena/map_empty/crossing_flow_medium_validation_moderate_v3_r00_s71210.json
+  preview: previews/moderate_v3/crossing_flow_medium_validation_moderate_v3_r00_s71210.png
+  sha256: 56e87d7d42adf1fe1408586908414f9c46e72d6cba63d63db1ad5ef75566530c

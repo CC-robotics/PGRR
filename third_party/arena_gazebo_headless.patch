@@ -1,0 +1,17 @@
+--- 1_gazebo.sh
++++ 1_gazebo.sh
+@@ -45,6 +45,7 @@
+ echo "Gazebo ${GAZEBO_VERSION}, ros_gz, sdformat_urdf installed successfully!"
+ 
+ 
++if [[ "${RAMP_INSTALL_GZ_USD:-0}" == "1" ]]; then
+ export USD_PATH="$ARENA_WS_DIR/tools/OpenUSD/install"
+ 
+ if [ ! -d tools/OpenUSD ]; then
+@@ -72,3 +73,6 @@
+ 
+   echo "Successfully installed gz-usd"
+ fi
++else
++  echo "Skipping optional OpenUSD/gz-usd toolchain for the headless Gazebo profile"
++fi

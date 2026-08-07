@@ -1,0 +1,40 @@
+braking_acceleration: 1.2
+control_latency_s: 0.20
+safety_margin_m: 0.25
+ttc_threshold_s: 1.5
+collision_front_sector_degrees: 30.0
+collision_trend_sector_degrees: 90.0
+collision_absolute_distance_m: 0.9
+collision_wide_absolute_distance_m: 0.85
+collision_omnidirectional_absolute_distance_m: 0.0
+collision_release_distance_m: 1.2
+collision_hold_s: 2.0
+collision_max_hold_s: 3.0
+collision_stationary_confirmation_s: 0.5
+collision_immediate_forward_speed_mps: 0.05
+# Bearing-consistent temporal closing is required before this range can raise
+# a warning.  Three metres supplies lead time for rotate-then-translate
+# recovery without treating a static corridor wall as a moving obstacle.
+collision_proximity_m: 3.00
+collision_closing_speed_mps: 0.10
+collision_radial_excess_closing_speed_mps: 0.25
+collision_proximity_score: 0.75
+collision_trend_window_s: 0.5
+collision_bearing_consistency_rad: 0.08726646259971647
+collision_max_angular_speed_radps: 0.30
+freeze_window_s: 3.0
+freeze_goal_distance_m: 1.0
+freeze_displacement_m: 0.15
+requested_motion_speed_mps: 0.05
+requested_motion_fraction: 0.50
+oscillation_window_s: 4.0
+oscillation_sign_changes: 6
+oscillation_progress_m: 0.20
+angular_deadband_radps: 0.08
+deadlock_window_s: 4.0
+deadlock_obstacle_distance_m: 1.2
+deadlock_displacement_m: 0.15
+deadlock_speed_mps: 0.08
+offline_collision_lookahead_s: 2.0
+positive_pre_failure_window_s: 3.0
+positive_post_failure_window_s: 1.0

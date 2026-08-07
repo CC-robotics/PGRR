@@ -1,0 +1,35 @@
+{
+  "capture_backend": "PyQt5.QScreen.grabWindow(X11 window)",
+  "capture_context": {
+    "focus_xyz": [
+      15.5,
+      12.0,
+      0.0
+    ],
+    "framing": "scenario_midpoint_oblique",
+    "pose_xyz_xyzw": [
+      7.85,
+      7.0,
+      10.2,
+      -0.11641117040732016,
+      0.39088692978038914,
+      0.2606059258358146,
+      0.8750659397728361
+    ],
+    "transport_service": "/gui/move_to/pose"
+  },
+  "selected_window": {
+    "height": 845,
+    "title": "Gazebo",
+    "width": 1000,
+    "window_id": 2097170
+  },
+  "visual_validation": {
+    "grayscale_stddev": 53.167,
+    "height_px": 845,
+    "scene_viewport_grayscale_stddev": 63.7789,
+    "scene_viewport_unique_colors": 706,
+    "thumbnail_unique_colors": 5658,
+    "width_px": 1000
+  }
+}

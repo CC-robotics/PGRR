@@ -1,0 +1,1118 @@
+"""Deterministic Gazebo actor motion fallback for Arena Humble scenarios."""
+
+from __future__ import annotations
+
+import json
+import math
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import rclpy
+from action_msgs.msg import GoalStatus, GoalStatusArray
+from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Quaternion
+from nav2_msgs.srv import ClearEntireCostmap
+from nav_msgs.msg import Odometry
+from ramp_core.evaluation.navigation import navigation_status_is_active
+from ramp_core.planning.rollout import (
+    CollisionGuardedHumanStep,
+    collision_guarded_human_step,
+    yielding_human_step,
+)
+from rclpy.clock import Clock, ClockType
+from rclpy.executors import ExternalShutdownException
+from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
+from ros_gz_interfaces.msg import Entity
+from ros_gz_interfaces.srv import SetEntityPose, SpawnEntity
+from std_msgs.msg import Bool, Int16
+from std_srvs.srv import Empty
+from tf2_msgs.msg import TFMessage
+
+LEGACY_DYNAMICS_VERSION = "legacy_endpoint_yield_v1"
+SWEPT_GUARD_DYNAMICS_VERSION = "deterministic_one_shot_swept_guard_v1"
+
+
+@dataclass(frozen=True, slots=True)
+class ActorRoute:
+    name: str
+    points: tuple[tuple[float, float], ...]
+    speed: float
+    cyclic: bool = True
+    robot_avoidance_distance_m: float = 1.3
+    dynamics_version: str = LEGACY_DYNAMICS_VERSION
+    soft_yield_distance_m: float = 0.90
+    hard_collision_guard_m: float = 0.73
+    maximum_soft_hold_s: float = 1.0
+    update_frequency_hz: float | None = None
+
+    def __post_init__(self) -> None:
+        if not self.points:
+            raise ValueError("actor route must contain at least one point")
+        if self.speed <= 0.0 or not math.isfinite(self.speed):
+            raise ValueError("actor route speed must be finite and positive")
+        if self.dynamics_version not in {
+            LEGACY_DYNAMICS_VERSION,
+            SWEPT_GUARD_DYNAMICS_VERSION,
+        }:
+            raise ValueError(f"unsupported actor dynamics version: {self.dynamics_version}")
+        if self.robot_avoidance_distance_m <= 0.71:
+            raise ValueError("robot avoidance distance must exceed combined collision radii")
+        if self.dynamics_version == SWEPT_GUARD_DYNAMICS_VERSION:
+            values = (
+                self.soft_yield_distance_m,
+                self.hard_collision_guard_m,
+                self.maximum_soft_hold_s,
+            )
+            if any(not math.isfinite(value) for value in values):
+                raise ValueError("swept-guard actor parameters must be finite")
+            if self.hard_collision_guard_m <= 0.71:
+                raise ValueError("hard collision guard must exceed combined collision radii")
+            if self.soft_yield_distance_m <= self.hard_collision_guard_m:
+                raise ValueError("soft yield distance must exceed hard collision guard")
+            if self.maximum_soft_hold_s < 0.0:
+                raise ValueError("maximum soft hold must be non-negative")
+            if self.update_frequency_hz is None:
+                raise ValueError("swept-guard actors require an update frequency")
+        if self.update_frequency_hz is not None and (
+            not math.isfinite(self.update_frequency_hz) or self.update_frequency_hz <= 0.0
+        ):
+            raise ValueError("actor update frequency must be finite and positive")
+
+    @property
+    def uses_swept_guard(self) -> bool:
+        return self.dynamics_version == SWEPT_GUARD_DYNAMICS_VERSION
+
+    @property
+    def segment_lengths(self) -> tuple[float, ...]:
+        route_points = (*self.points, self.points[0]) if self.cyclic else self.points
+        return tuple(
+            math.dist(route_points[index], route_points[index + 1])
+            for index in range(len(route_points) - 1)
+        )
+
+    def pose_at(self, elapsed: float) -> tuple[float, float, float]:
+        lengths = self.segment_lengths
+        total = sum(lengths)
+        if total <= 1.0e-6:
+            return self.points[0][0], self.points[0][1], 0.0
+        travelled = max(0.0, elapsed) * self.speed
+        distance = travelled % total if self.cyclic else min(travelled, total)
+        route_points = (*self.points, self.points[0]) if self.cyclic else self.points
+        for index, length in enumerate(lengths):
+            if distance <= length or index == len(lengths) - 1:
+                fraction = 0.0 if length <= 1.0e-6 else distance / length
+                x0, y0 = route_points[index]
+                x1, y1 = route_points[index + 1]
+                return (
+                    x0 + fraction * (x1 - x0),
+                    y0 + fraction * (y1 - y0),
+                    math.atan2(y1 - y0, x1 - x0),
+                )
+            distance -= length
+        raise RuntimeError("unreachable route interpolation state")
+
+
+def _quaternion(yaw: float) -> Quaternion:
+    message = Quaternion()
+    message.z = math.sin(yaw / 2.0)
+    message.w = math.cos(yaw / 2.0)
+    return message
+
+
+class ScenarioActorController(Node):
+    def __init__(self) -> None:
+        super().__init__("scenario_actor_controller")
+        self.declare_parameter("scenario_file", "")
+        self.declare_parameter("set_pose_service", "/world/default/set_pose")
+        self.declare_parameter("spawn_service", "/world/default/create")
+        self.declare_parameter("task_reset_service", "/task_generator_node/reset_task")
+        self.declare_parameter("task_reset_topic", "/task_generator_node/task_reset")
+        self.declare_parameter(
+            "local_costmap_clear_service",
+            "/local_costmap/clear_entirely_local_costmap",
+        )
+        self.declare_parameter(
+            "global_costmap_clear_service",
+            "/global_costmap/clear_entirely_global_costmap",
+        )
+        self.declare_parameter("privileged_humans_topic", "/ramp/privileged/humans")
+        self.declare_parameter("privileged_robot_pose_topic", "/ramp/privileged/robot_pose")
+        self.declare_parameter("actual_robot_name", "jackal")
+        self.declare_parameter("actual_pose_topic", "/world/default/dynamic_pose/info")
+        self.declare_parameter("actual_pose_timeout_s", 1.0)
+        self.declare_parameter("health_topic", "/ramp/actors_healthy")
+        self.declare_parameter("episode_start_topic", "/ramp/episode_started")
+        self.declare_parameter("logger_ready_topic", "/ramp/logger_ready")
+        self.declare_parameter("odom_topic", "odom")
+        self.declare_parameter("odometry_is_world_frame", False)
+        self.declare_parameter("nav_status_topic", "navigate_to_pose/_action/status")
+        self.declare_parameter("wait_for_navigation_active", False)
+        self.declare_parameter("update_native_actors", False)
+        self.declare_parameter("robot_start_x", 0.0)
+        self.declare_parameter("robot_start_y", 0.0)
+        self.declare_parameter("robot_start_yaw", 0.0)
+        self.declare_parameter("robot_reset_position_tolerance_m", 0.10)
+        self.declare_parameter("robot_reset_yaw_tolerance_rad", 0.15)
+        self.declare_parameter("robot_reset_retry_interval_s", 1.0)
+        self.declare_parameter("robot_reset_request_timeout_s", 8.0)
+        self.declare_parameter("robot_reset_max_attempts", 3)
+        self.declare_parameter("robot_reset_settle_s", 0.50)
+        self.declare_parameter("startup_odom_timeout_s", 1.0)
+        self.declare_parameter("startup_odom_settle_s", 0.50)
+        self.declare_parameter("startup_max_linear_speed_mps", 0.25)
+        self.declare_parameter("startup_max_angular_speed_radps", 0.50)
+        self.declare_parameter("costmap_clear_timeout_s", 5.0)
+        self.declare_parameter("startup_gate_timeout_s", 45.0)
+        self.declare_parameter("robot_avoidance_distance_m", 1.3)
+        self.declare_parameter("update_frequency_hz", 2.0)
+        self.declare_parameter("pose_update_timeout_s", 2.0)
+        scenario_path = Path(str(self.get_parameter("scenario_file").value))
+        if not scenario_path.is_file():
+            raise ValueError(f"scenario_file is not readable: {scenario_path}")
+        self._routes = self._load_routes(scenario_path)
+        if not self._routes:
+            raise ValueError("scenario contains no dynamic actors")
+        service_name = str(self.get_parameter("set_pose_service").value)
+        self._client = self.create_client(SetEntityPose, service_name)
+        spawn_service = str(self.get_parameter("spawn_service").value)
+        self._spawn_client = self.create_client(SpawnEntity, spawn_service)
+        task_reset_service = str(self.get_parameter("task_reset_service").value)
+        self._task_reset_client = self.create_client(Empty, task_reset_service)
+        local_clear_service = str(self.get_parameter("local_costmap_clear_service").value)
+        global_clear_service = str(self.get_parameter("global_costmap_clear_service").value)
+        self._costmap_clear_clients = {
+            "local": self.create_client(ClearEntireCostmap, local_clear_service),
+            "global": self.create_client(ClearEntireCostmap, global_clear_service),
+        }
+        self._publisher = self.create_publisher(
+            PoseArray, str(self.get_parameter("privileged_humans_topic").value), 10
+        )
+        self._robot_pose_publisher = self.create_publisher(
+            PoseStamped, str(self.get_parameter("privileged_robot_pose_topic").value), 10
+        )
+        self._health_publisher = self.create_publisher(
+            Bool, str(self.get_parameter("health_topic").value), 10
+        )
+        self._start_publisher = self.create_publisher(
+            Bool, str(self.get_parameter("episode_start_topic").value), 10
+        )
+        swept_routes = tuple(route for route in self._routes if route.uses_swept_guard)
+        if swept_routes and len(swept_routes) != len(self._routes):
+            raise ValueError("a scenario must not mix legacy and swept-guard actor dynamics")
+        if swept_routes:
+            route_frequencies = {
+                route.update_frequency_hz for route in swept_routes if route.update_frequency_hz
+            }
+            if len(route_frequencies) != 1:
+                raise ValueError("all swept-guard actors must use one update frequency")
+            frequency = float(next(iter(route_frequencies)))
+        else:
+            frequency = float(self.get_parameter("update_frequency_hz").value)
+        if frequency <= 0.0:
+            raise ValueError("update_frequency_hz must be positive")
+        self._actor_update_frequency_hz = frequency
+        if float(self.get_parameter("robot_avoidance_distance_m").value) <= 0.71:
+            raise ValueError("robot_avoidance_distance_m must exceed combined collision radii")
+        self._robot_start = (
+            float(self.get_parameter("robot_start_x").value),
+            float(self.get_parameter("robot_start_y").value),
+            float(self.get_parameter("robot_start_yaw").value),
+        )
+        if not all(math.isfinite(value) for value in self._robot_start):
+            raise ValueError("robot start pose must be finite")
+        positive_parameters = (
+            "actual_pose_timeout_s",
+            "pose_update_timeout_s",
+            "robot_reset_position_tolerance_m",
+            "robot_reset_yaw_tolerance_rad",
+            "robot_reset_retry_interval_s",
+            "robot_reset_request_timeout_s",
+            "startup_odom_timeout_s",
+            "startup_max_linear_speed_mps",
+            "startup_max_angular_speed_radps",
+            "costmap_clear_timeout_s",
+            "startup_gate_timeout_s",
+        )
+        for parameter_name in positive_parameters:
+            value = float(self.get_parameter(parameter_name).value)
+            if not math.isfinite(value) or value <= 0.0:
+                raise ValueError(f"{parameter_name} must be positive")
+        reset_settle_s = float(self.get_parameter("robot_reset_settle_s").value)
+        if not math.isfinite(reset_settle_s) or reset_settle_s < 0.0:
+            raise ValueError("robot_reset_settle_s must be finite and non-negative")
+        odom_settle_s = float(self.get_parameter("startup_odom_settle_s").value)
+        if not math.isfinite(odom_settle_s) or odom_settle_s < 0.0:
+            raise ValueError("startup_odom_settle_s must be finite and non-negative")
+        yaw_tolerance = float(self.get_parameter("robot_reset_yaw_tolerance_rad").value)
+        if not math.isfinite(yaw_tolerance) or yaw_tolerance > math.pi:
+            raise ValueError("robot_reset_yaw_tolerance_rad must be finite and at most pi")
+        if int(self.get_parameter("robot_reset_max_attempts").value) < 1:
+            raise ValueError("robot_reset_max_attempts must be positive")
+        for parameter_name, service in (
+            ("set_pose_service", service_name),
+            ("spawn_service", spawn_service),
+            ("task_reset_service", task_reset_service),
+            ("task_reset_topic", str(self.get_parameter("task_reset_topic").value)),
+            ("local_costmap_clear_service", local_clear_service),
+            ("global_costmap_clear_service", global_clear_service),
+        ):
+            if not service.strip():
+                raise ValueError(f"{parameter_name} must not be empty")
+        self._robot_position: tuple[float, float] | None = None
+        self._last_update_s: float | None = None
+        self._wait_for_navigation_active = bool(
+            self.get_parameter("wait_for_navigation_active").value
+        )
+        self._navigation_active = not self._wait_for_navigation_active
+        self._experiment_started = not self._wait_for_navigation_active
+        self._logger_ready = not self._wait_for_navigation_active
+        self._startup_gate_ready = not self._wait_for_navigation_active
+        self._startup_gate_failed = False
+        self._startup_gate_started_wall_s = time.monotonic()
+        self._task_reset_observed = not self._wait_for_navigation_active
+        self._task_reset_generation = 0
+        self._robot_at_start_since_wall_s: float | None = None
+        self._latest_odometry: Odometry | None = None
+        self._latest_odometry_received_s: float | None = None
+        self._odom_stable_since_wall_s: float | None = None
+        self._robot_reset_pending: Any | None = None
+        self._robot_reset_pending_since_wall_s: float | None = None
+        self._robot_reset_last_attempt_wall_s: float | None = None
+        self._robot_reset_attempts = 0
+        self._costmap_clear_pending: dict[str, Any] = {}
+        self._costmap_clear_started_wall_s: float | None = None
+        self._route_elapsed = {route.name: 0.0 for route in self._routes}
+        self._soft_hold_elapsed = {route.name: 0.0 for route in self._routes}
+        self._pending: dict[str, Any] = {}
+        self._pending_since_s: dict[str, float] = {}
+        self._pending_target_elapsed: dict[str, float] = {}
+        self._pending_soft_hold_elapsed: dict[str, float] = {}
+        self._last_dynamics_event: dict[str, str] = {}
+        self._dynamics_event_counts: dict[str, int] = {}
+        self._spawn_pending: dict[str, Any] = {}
+        self._spawn_attempted: set[str] = set()
+        self._spawn_validated: set[str] = set()
+        self._actual_proxy_poses: dict[str, Pose] = {}
+        self._actual_proxy_pose_received_s: dict[str, float] = {}
+        self._actual_robot_pose: Pose | None = None
+        self._actual_robot_pose_received_s: float | None = None
+        self._actual_pose_wait_since_s: float | None = None
+        self._healthy = True
+        self._odom_subscription = self.create_subscription(
+            Odometry,
+            str(self.get_parameter("odom_topic").value),
+            self._on_odom,
+            qos_profile_sensor_data,
+        )
+        self._status_subscription = self.create_subscription(
+            GoalStatusArray,
+            str(self.get_parameter("nav_status_topic").value),
+            self._on_status,
+            10,
+        )
+        self._task_reset_subscription = self.create_subscription(
+            Int16,
+            str(self.get_parameter("task_reset_topic").value),
+            self._on_task_reset,
+            10,
+        )
+        self._logger_ready_subscription = self.create_subscription(
+            Bool,
+            str(self.get_parameter("logger_ready_topic").value),
+            self._on_logger_ready,
+            10,
+        )
+        self._actual_pose_subscription = self.create_subscription(
+            TFMessage,
+            str(self.get_parameter("actual_pose_topic").value),
+            self._on_actual_poses,
+            qos_profile_sensor_data,
+        )
+        self._update_timer = self.create_timer(1.0 / frequency, self._update)
+        # Gazebo/TaskGenerator startup can jump or briefly stall /clock.  A
+        # steady-clock gate keeps reset validation alive without advancing
+        # actor routes, whose elapsed time remains derived from simulation time.
+        self._startup_clock = Clock(clock_type=ClockType.STEADY_TIME)
+        self._startup_timer = self.create_timer(
+            0.20,
+            self._update_startup_gate,
+            clock=self._startup_clock,
+        )
+        self.get_logger().info(
+            f"loaded {len(self._routes)} deterministic actor routes; service={service_name}; "
+            f"dynamics={self._routes[0].dynamics_version}; update_hz={frequency:.3f}; "
+            f"task_reset=({task_reset_service}, "
+            f"{self.get_parameter('task_reset_topic').value}); "
+            f"startup_costmaps=({local_clear_service}, {global_clear_service})"
+        )
+
+    @staticmethod
+    def _proxy_sdf(name: str) -> str:
+        return f"""<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="{name}">
+    <static>false</static>
+    <link name="body">
+      <pose>0 0 0.85 0 0 0</pose>
+      <gravity>false</gravity>
+      <kinematic>false</kinematic>
+      <inertial>
+        <mass>1.0</mass>
+        <inertia>
+          <ixx>0.25</ixx><iyy>0.25</iyy><izz>0.06</izz>
+          <ixy>0.0</ixy><ixz>0.0</ixz><iyz>0.0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry><cylinder><radius>0.35</radius><length>1.70</length></cylinder></geometry>
+        <material><ambient>0.85 0.25 0.12 1</ambient><diffuse>0.85 0.25 0.12 1</diffuse></material>
+      </visual>
+    </link>
+  </model>
+</sdf>"""
+
+    @staticmethod
+    def _proxy_name(actor_name: str) -> str:
+        return f"ramp_lidar_proxy_{actor_name}"
+
+    @staticmethod
+    def _yaw(pose: Pose) -> float:
+        q = pose.orientation
+        return math.atan2(
+            2.0 * (q.w * q.z + q.x * q.y),
+            1.0 - 2.0 * (q.y * q.y + q.z * q.z),
+        )
+
+    def _robot_pose_errors(self) -> tuple[float, float] | None:
+        if self._actual_robot_pose is None:
+            return None
+        start_x, start_y, start_yaw = self._robot_start
+        actual_x = float(self._actual_robot_pose.position.x)
+        actual_y = float(self._actual_robot_pose.position.y)
+        actual_yaw = self._yaw(self._actual_robot_pose)
+        values = (actual_x, actual_y, actual_yaw)
+        if not all(math.isfinite(value) for value in values):
+            return None
+        yaw_error = abs(
+            math.atan2(
+                math.sin(actual_yaw - start_yaw),
+                math.cos(actual_yaw - start_yaw),
+            )
+        )
+        return math.hypot(actual_x - start_x, actual_y - start_y), yaw_error
+
+    def _actual_robot_pose_is_fresh(self, now_s: float) -> bool:
+        return bool(
+            self._actual_robot_pose_received_s is not None
+            and now_s - self._actual_robot_pose_received_s
+            <= float(self.get_parameter("actual_pose_timeout_s").value)
+        )
+
+    def _expected_proxy_names(self) -> tuple[str, ...]:
+        return tuple(self._proxy_name(route.name) for route in self._routes)
+
+    def _actual_pedestrian_poses_are_fresh(self, now_s: float) -> bool:
+        timeout_s = float(self.get_parameter("actual_pose_timeout_s").value)
+        return all(
+            name in self._actual_proxy_poses
+            and name in self._actual_proxy_pose_received_s
+            and now_s - self._actual_proxy_pose_received_s[name] <= timeout_s
+            for name in self._expected_proxy_names()
+        )
+
+    def _robot_pose_is_within_start_tolerance(self) -> bool:
+        errors = self._robot_pose_errors()
+        if errors is None:
+            return False
+        return bool(
+            errors[0] <= float(self.get_parameter("robot_reset_position_tolerance_m").value)
+            and errors[1] <= float(self.get_parameter("robot_reset_yaw_tolerance_rad").value)
+        )
+
+    def _robot_is_at_configured_start(self, now_s: float) -> bool:
+        return bool(
+            self._robot_pose_is_within_start_tolerance() and self._actual_robot_pose_is_fresh(now_s)
+        )
+
+    def _odometry_world_pose(self, message: Odometry) -> tuple[float, float, float]:
+        local_x = float(message.pose.pose.position.x)
+        local_y = float(message.pose.pose.position.y)
+        local_yaw = self._yaw(message.pose.pose)
+        if bool(self.get_parameter("odometry_is_world_frame").value):
+            return local_x, local_y, local_yaw
+        start_x, start_y, start_yaw = self._robot_start
+        return (
+            start_x + math.cos(start_yaw) * local_x - math.sin(start_yaw) * local_y,
+            start_y + math.sin(start_yaw) * local_x + math.cos(start_yaw) * local_y,
+            start_yaw + local_yaw,
+        )
+
+    def _advance_odometry_settle(self, now_s: float, now_wall_s: float) -> bool:
+        message = self._latest_odometry
+        received_s = self._latest_odometry_received_s
+        timeout_s = float(self.get_parameter("startup_odom_timeout_s").value)
+        if message is None or received_s is None or now_s - received_s > timeout_s:
+            self._odom_stable_since_wall_s = None
+            self.get_logger().warning(
+                "startup gate waiting for fresh ground-truth odometry",
+                throttle_duration_sec=5.0,
+            )
+            return False
+
+        world_x, world_y, world_yaw = self._odometry_world_pose(message)
+        start_x, start_y, start_yaw = self._robot_start
+        position_error = math.hypot(world_x - start_x, world_y - start_y)
+        yaw_error = abs(
+            math.atan2(
+                math.sin(world_yaw - start_yaw),
+                math.cos(world_yaw - start_yaw),
+            )
+        )
+        twist = message.twist.twist
+        linear_speed = math.hypot(float(twist.linear.x), float(twist.linear.y))
+        angular_speed = abs(float(twist.angular.z))
+        stable = bool(
+            position_error <= float(self.get_parameter("robot_reset_position_tolerance_m").value)
+            and yaw_error <= float(self.get_parameter("robot_reset_yaw_tolerance_rad").value)
+            and linear_speed <= float(self.get_parameter("startup_max_linear_speed_mps").value)
+            and angular_speed <= float(self.get_parameter("startup_max_angular_speed_radps").value)
+        )
+        if not stable:
+            self._odom_stable_since_wall_s = None
+            self.get_logger().warning(
+                "startup gate rejecting reset-transient odometry "
+                f"pose_error={position_error:.3f}m/{yaw_error:.3f}rad "
+                f"speed={linear_speed:.3f}mps/{angular_speed:.3f}radps",
+                throttle_duration_sec=2.0,
+            )
+            return False
+        if self._odom_stable_since_wall_s is None:
+            self._odom_stable_since_wall_s = now_wall_s
+        return now_wall_s - self._odom_stable_since_wall_s >= float(
+            self.get_parameter("startup_odom_settle_s").value
+        )
+
+    def _fail_startup_gate(self, detail: str) -> None:
+        if self._startup_gate_failed:
+            return
+        self._startup_gate_failed = True
+        self._healthy = False
+        self.get_logger().error(f"startup gate failed; actors_healthy=false: {detail}")
+
+    def _request_robot_reset(self, now_wall_s: float) -> None:
+        # TaskGenerator owns the authoritative reset transaction.  Calling its
+        # service preserves the goal, odometry/TF initialization, and costmap
+        # reset ordering that a bare Gazebo teleport would bypass.
+        if self._experiment_started:
+            self._fail_startup_gate("refused task reset after experiment_started")
+            return
+        maximum_attempts = int(self.get_parameter("robot_reset_max_attempts").value)
+        if self._robot_reset_attempts >= maximum_attempts:
+            self._fail_startup_gate(
+                f"robot remained outside configured start after {maximum_attempts} task resets"
+            )
+            return
+        if not self._task_reset_client.service_is_ready():
+            self.get_logger().warning(
+                "startup gate waiting for TaskGenerator reset service",
+                throttle_duration_sec=5.0,
+            )
+            return
+        self._robot_reset_pending = self._task_reset_client.call_async(Empty.Request())
+        self._robot_reset_pending_since_wall_s = now_wall_s
+        self._robot_reset_last_attempt_wall_s = now_wall_s
+        self._robot_reset_attempts += 1
+        errors = self._robot_pose_errors()
+        error_text = "unknown pose error"
+        if errors is not None:
+            error_text = f"position_error={errors[0]:.3f}m yaw_error={errors[1]:.3f}rad"
+        self.get_logger().warning(
+            "startup gate requested authoritative TaskGenerator reset "
+            f"attempt={self._robot_reset_attempts} {error_text}"
+        )
+
+    def _advance_robot_reset(self, now_s: float, now_wall_s: float) -> bool:
+        pending = self._robot_reset_pending
+        if pending is not None:
+            pending_since = self._robot_reset_pending_since_wall_s
+            assert pending_since is not None
+            if not pending.done():
+                if now_wall_s - pending_since > float(
+                    self.get_parameter("robot_reset_request_timeout_s").value
+                ):
+                    pending.cancel()
+                    self._robot_reset_pending = None
+                    self._robot_reset_pending_since_wall_s = None
+                    self.get_logger().warning(
+                        "startup gate TaskGenerator reset request timed out; retrying",
+                        throttle_duration_sec=2.0,
+                    )
+                return False
+            try:
+                response = pending.result()
+            except Exception as error:  # pragma: no cover - ROS future boundary
+                response = None
+                self.get_logger().warning(f"startup gate TaskGenerator reset failed: {error}")
+            self._robot_reset_pending = None
+            self._robot_reset_pending_since_wall_s = None
+            self._robot_reset_last_attempt_wall_s = now_wall_s
+            if response is None:
+                self.get_logger().warning("startup gate TaskGenerator reset returned no response")
+            else:
+                self.get_logger().info(
+                    "startup gate TaskGenerator reset completed; "
+                    "waiting for Gazebo pose confirmation"
+                )
+            return False
+
+        # A correct geometric pose must never trigger another TaskGenerator
+        # reset merely because the just-reset Gazebo sample has not yet met the
+        # freshness/settling condition.  A redundant reset can invalidate the
+        # freshly initialized odometry/TF chain and leave Nav2 off-grid.
+        if self._robot_pose_is_within_start_tolerance():
+            if not self._actual_robot_pose_is_fresh(now_s):
+                self._robot_at_start_since_wall_s = None
+                self.get_logger().warning(
+                    "startup gate waiting for fresh Gazebo confirmation at configured start",
+                    throttle_duration_sec=5.0,
+                )
+                return False
+            if self._robot_at_start_since_wall_s is None:
+                self._robot_at_start_since_wall_s = now_wall_s
+            settled_s = now_wall_s - self._robot_at_start_since_wall_s
+            if settled_s >= float(self.get_parameter("robot_reset_settle_s").value):
+                return True
+        else:
+            self._robot_at_start_since_wall_s = None
+
+        # Once TaskGenerator has published its authoritative reset event, this
+        # node is a validator only.  Issuing a second reset here tears down and
+        # recreates Nav2 while its first goal is becoming active, which can
+        # leave the local costmap and odometry frame out of sync.  An invalid
+        # Arena reset therefore fails through the startup timeout instead of
+        # being silently retried during the same episode.
+        if self._actual_robot_pose is None or not self._actual_robot_pose_is_fresh(now_s):
+            self.get_logger().warning(
+                "startup gate waiting for fresh Gazebo robot pose",
+                throttle_duration_sec=5.0,
+            )
+        else:
+            errors = self._robot_pose_errors()
+            assert errors is not None
+            self.get_logger().warning(
+                "startup gate waiting for authoritative TaskGenerator pose convergence "
+                f"position_error={errors[0]:.3f}m yaw_error={errors[1]:.3f}rad",
+                throttle_duration_sec=5.0,
+            )
+        return False
+
+    def _advance_costmap_clear(self, now_wall_s: float) -> bool:
+        if not self._costmap_clear_pending:
+            unavailable = [
+                name
+                for name, client in self._costmap_clear_clients.items()
+                if not client.service_is_ready()
+            ]
+            if unavailable:
+                self.get_logger().warning(
+                    "startup gate waiting for Nav2 costmap services: " + ", ".join(unavailable),
+                    throttle_duration_sec=5.0,
+                )
+                return False
+            self._costmap_clear_pending = {
+                name: client.call_async(ClearEntireCostmap.Request())
+                for name, client in self._costmap_clear_clients.items()
+            }
+            self._costmap_clear_started_wall_s = now_wall_s
+            self.get_logger().info("startup gate requested local and global costmap clears")
+            return False
+
+        assert self._costmap_clear_started_wall_s is not None
+        if now_wall_s - self._costmap_clear_started_wall_s > float(
+            self.get_parameter("costmap_clear_timeout_s").value
+        ):
+            self._fail_startup_gate("Nav2 costmap clear responses timed out")
+            return False
+        if not all(future.done() for future in self._costmap_clear_pending.values()):
+            return False
+        for name, future in self._costmap_clear_pending.items():
+            try:
+                response = future.result()
+            except Exception as error:  # pragma: no cover - ROS future boundary
+                self._fail_startup_gate(f"{name} costmap clear failed: {error}")
+                return False
+            if response is None:
+                self._fail_startup_gate(f"{name} costmap clear returned an error response")
+                return False
+        self.get_logger().info("startup gate cleared local and global Nav2 costmaps")
+        return True
+
+    def _advance_startup_gate(self, now_s: float) -> bool:
+        if self._startup_gate_ready:
+            return True
+        if self._startup_gate_failed:
+            return False
+        now_wall_s = time.monotonic()
+        if now_wall_s - self._startup_gate_started_wall_s > float(
+            self.get_parameter("startup_gate_timeout_s").value
+        ):
+            errors = self._robot_pose_errors()
+            detail = "fresh Gazebo robot pose unavailable"
+            if not self._actual_pedestrian_poses_are_fresh(now_s):
+                detail = "Gazebo pedestrian poses remained missing or stale"
+            elif errors is not None:
+                detail = f"robot pose error remained {errors[0]:.3f}m/{errors[1]:.3f}rad"
+            self._fail_startup_gate(f"startup timeout: {detail}")
+            return False
+        if not self._advance_robot_reset(now_s, now_wall_s):
+            return False
+        if not self._advance_odometry_settle(now_s, now_wall_s):
+            return False
+        # A successful create response only means Gazebo accepted the entity.
+        # The dynamic-pose stream can discover a new proxy later, especially
+        # while several worlds start concurrently.  Keep this discovery inside
+        # the existing bounded startup gate instead of applying the much
+        # shorter active-episode staleness threshold before navigation starts.
+        if not self._actual_pedestrian_poses_are_fresh(now_s):
+            self.get_logger().warning(
+                "startup gate waiting for authoritative Gazebo pedestrian poses",
+                throttle_duration_sec=5.0,
+            )
+            return False
+        if not self._advance_costmap_clear(now_wall_s):
+            return False
+        # Re-check after both asynchronous clear responses. No reset can be
+        # outstanding when the episode start signal is released.
+        if not self._robot_is_at_configured_start(now_s):
+            self._fail_startup_gate("robot left configured start before startup release")
+            return False
+        self._startup_gate_ready = True
+        self.get_logger().info("startup gate ready: robot reset confirmed and costmaps cleared")
+        return True
+
+    def _on_odom(self, message: Odometry) -> None:
+        self._latest_odometry = message
+        self._latest_odometry_received_s = self.get_clock().now().nanoseconds * 1.0e-9
+        if self._actual_robot_pose is not None:
+            self._robot_position = (
+                float(self._actual_robot_pose.position.x),
+                float(self._actual_robot_pose.position.y),
+            )
+            return
+        local_x = float(message.pose.pose.position.x)
+        local_y = float(message.pose.pose.position.y)
+        start_x, start_y, start_yaw = self._robot_start
+        self._robot_position = (
+            start_x + math.cos(start_yaw) * local_x - math.sin(start_yaw) * local_y,
+            start_y + math.sin(start_yaw) * local_x + math.cos(start_yaw) * local_y,
+        )
+
+    def _on_status(self, message: GoalStatusArray) -> None:
+        if self._navigation_active:
+            return
+        if not navigation_status_is_active(
+            tuple(int(item.status) for item in message.status_list),
+            accepted=int(GoalStatus.STATUS_ACCEPTED),
+            executing=int(GoalStatus.STATUS_EXECUTING),
+            canceling=int(GoalStatus.STATUS_CANCELING),
+        ):
+            return
+        self._navigation_active = True
+        self._route_elapsed = {route.name: 0.0 for route in self._routes}
+        self._soft_hold_elapsed = {route.name: 0.0 for route in self._routes}
+        self._last_update_s = self.get_clock().now().nanoseconds * 1.0e-9
+        self.get_logger().info("navigation activated; waiting for episode logger handshake")
+
+    def _on_task_reset(self, message: Int16) -> None:
+        if self._experiment_started:
+            self._healthy = False
+            self.get_logger().error("TaskGenerator reset observed after experiment_started")
+            return
+        self._task_reset_observed = True
+        self._task_reset_generation += 1
+        self._startup_gate_started_wall_s = time.monotonic()
+        self._robot_at_start_since_wall_s = None
+        self._latest_odometry = None
+        self._latest_odometry_received_s = None
+        self._odom_stable_since_wall_s = None
+        self._soft_hold_elapsed = {route.name: 0.0 for route in self._routes}
+        for future in self._costmap_clear_pending.values():
+            if not future.done():
+                future.cancel()
+        self._costmap_clear_pending = {}
+        self._costmap_clear_started_wall_s = None
+        self.get_logger().info(
+            "observed authoritative TaskGenerator reset "
+            f"generation={self._task_reset_generation} value={int(message.data)}"
+        )
+
+    def _on_logger_ready(self, message: Bool) -> None:
+        self._logger_ready |= bool(message.data)
+
+    def _on_actual_poses(self, message: TFMessage) -> None:
+        expected = set(self._expected_proxy_names())
+        robot_name = str(self.get_parameter("actual_robot_name").value)
+        received_s = self.get_clock().now().nanoseconds * 1.0e-9
+        for transform in message.transforms:
+            name = transform.child_frame_id
+            if name not in expected and name != robot_name:
+                continue
+            pose = Pose()
+            pose.position.x = transform.transform.translation.x
+            pose.position.y = transform.transform.translation.y
+            pose.position.z = transform.transform.translation.z
+            pose.orientation = transform.transform.rotation
+            if name == robot_name:
+                self._actual_robot_pose = pose
+                self._robot_position = (float(pose.position.x), float(pose.position.y))
+                self._actual_robot_pose_received_s = received_s
+            else:
+                self._actual_proxy_poses[name] = pose
+                self._actual_proxy_pose_received_s[name] = received_s
+
+    def _release_experiment(self, now_s: float) -> None:
+        if self._experiment_started:
+            return
+        self._experiment_started = True
+        self._route_elapsed = {route.name: 0.0 for route in self._routes}
+        self._soft_hold_elapsed = {route.name: 0.0 for route in self._routes}
+        self._last_update_s = now_s
+        self.get_logger().info("episode handshake complete; released actor routes")
+
+    def _publish_startup_state(self) -> None:
+        health = Bool()
+        health.data = self._healthy
+        self._health_publisher.publish(health)
+        started = Bool()
+        started.data = self._experiment_started
+        self._start_publisher.publish(started)
+
+    def _update_startup_gate(self) -> None:
+        # This callback deliberately uses a steady-clock timer.  The checked
+        # pose freshness still uses simulation time, so pausing Gazebo cannot
+        # advance or release the experiment.
+        if self._experiment_started or self._startup_gate_failed:
+            self._publish_startup_state()
+            return
+        if not self._task_reset_observed or not self._navigation_active:
+            self._publish_startup_state()
+            return
+        now_s = self.get_clock().now().nanoseconds * 1.0e-9
+        if not self._advance_startup_gate(now_s):
+            self._publish_startup_state()
+            return
+        if self._logger_ready:
+            self._release_experiment(now_s)
+        self._publish_startup_state()
+
+    def _robot_velocity_world(self) -> tuple[float, float]:
+        """Return observable odometry velocity rotated into the map frame."""
+
+        message = self._latest_odometry
+        if message is None:
+            return 0.0, 0.0
+        linear_x = float(message.twist.twist.linear.x)
+        linear_y = float(message.twist.twist.linear.y)
+        if not math.isfinite(linear_x) or not math.isfinite(linear_y):
+            return 0.0, 0.0
+        pose = self._actual_robot_pose
+        yaw = self._yaw(pose) if pose is not None else self._robot_start[2]
+        return (
+            math.cos(yaw) * linear_x - math.sin(yaw) * linear_y,
+            math.sin(yaw) * linear_x + math.cos(yaw) * linear_y,
+        )
+
+    def _log_dynamics_decision(
+        self,
+        route: ActorRoute,
+        decision: CollisionGuardedHumanStep,
+    ) -> None:
+        event = decision.reason
+        previous = self._last_dynamics_event.get(route.name)
+        noteworthy = decision.guard_intervened or decision.soft_yielded
+        if noteworthy:
+            key = f"{route.name}:{event}"
+            count = self._dynamics_event_counts.get(key, 0) + 1
+            self._dynamics_event_counts[key] = count
+            if event != previous:
+                self.get_logger().info(
+                    "actor_dynamics_event "
+                    f"actor={route.name} version={route.dynamics_version} event={event} "
+                    f"count={count} swept_clearance_m={decision.swept_clearance_m:.3f} "
+                    f"progress_fraction={decision.progress_fraction:.3f} "
+                    f"soft_hold_elapsed_s={decision.soft_hold_elapsed_s:.3f}"
+                )
+        elif previous is not None and previous not in {
+            "guard_safe_motion",
+            "soft_yield_budget_exhausted",
+        }:
+            self.get_logger().info(
+                "actor_dynamics_event "
+                f"actor={route.name} version={route.dynamics_version} event={event} "
+                f"swept_clearance_m={decision.swept_clearance_m:.3f}"
+            )
+        self._last_dynamics_event[route.name] = event
+
+    @staticmethod
+    def _load_routes(path: Path) -> tuple[ActorRoute, ...]:
+        scenario = json.loads(path.read_text(encoding="utf-8"))
+        metadata = scenario.get("ramp_metadata", {})
+        scenario_dynamics = metadata.get("actor_dynamics", {})
+        if not isinstance(scenario_dynamics, dict):
+            raise ValueError("ramp_metadata.actor_dynamics must be a mapping")
+        routes: list[ActorRoute] = []
+        for actor in scenario.get("obstacles", {}).get("dynamic", []):
+            points = tuple((float(point[0]), float(point[1])) for point in actor["waypoints"])
+            if not points:
+                continue
+            actor_dynamics = actor.get("actor_dynamics", {})
+            if not isinstance(actor_dynamics, dict):
+                raise ValueError("actor_dynamics must be a mapping")
+
+            def setting(
+                key: str,
+                default: Any,
+                actor_values: dict[str, Any] = actor,
+                dynamics_values: dict[str, Any] = actor_dynamics,
+            ) -> Any:
+                if key in actor_values:
+                    return actor_values[key]
+                if key in dynamics_values:
+                    return dynamics_values[key]
+                return scenario_dynamics.get(key, default)
+
+            version = str(
+                setting(
+                    "actor_dynamics_version",
+                    metadata.get("actor_dynamics_version", LEGACY_DYNAMICS_VERSION),
+                )
+            )
+            default_frequency = 5.0 if version == SWEPT_GUARD_DYNAMICS_VERSION else None
+            update_frequency = setting("actor_update_frequency_hz", default_frequency)
+            routes.append(
+                ActorRoute(
+                    name=str(actor["name"]),
+                    points=points,
+                    speed=float(actor.get("max_vel", 0.4)),
+                    cyclic=bool(actor.get("cyclic_goals", True)),
+                    robot_avoidance_distance_m=float(actor.get("robot_avoidance_distance_m", 1.3)),
+                    dynamics_version=version,
+                    soft_yield_distance_m=float(setting("robot_soft_yield_distance_m", 0.90)),
+                    hard_collision_guard_m=float(setting("robot_hard_guard_distance_m", 0.73)),
+                    maximum_soft_hold_s=float(setting("maximum_soft_hold_s", 1.0)),
+                    update_frequency_hz=(
+                        None if update_frequency is None else float(update_frequency)
+                    ),
+                )
+            )
+        return tuple(routes)
+
+    def _update(self) -> None:
+        if not self._client.service_is_ready() or not self._spawn_client.service_is_ready():
+            self.get_logger().warning(
+                "Gazebo entity services are not ready", throttle_duration_sec=5.0
+            )
+            return
+        now = self.get_clock().now().nanoseconds * 1.0e-9
+        if (
+            self._navigation_active
+            and not self._experiment_started
+            and self._logger_ready
+            and self._startup_gate_ready
+        ):
+            self._release_experiment(now)
+        if self._last_update_s is None:
+            self._last_update_s = now
+        step_s = max(0.0, now - self._last_update_s) if self._experiment_started else 0.0
+        self._last_update_s = now
+        pose_array = PoseArray()
+        pose_array.header.stamp = self.get_clock().now().to_msg()
+        pose_array.header.frame_id = "map"
+        for route in self._routes:
+            proxy_name = self._proxy_name(route.name)
+            current = route.pose_at(self._route_elapsed[route.name])
+
+            def make_pose(state: tuple[float, float, float]) -> Pose:
+                actor_pose = Pose()
+                actor_pose.position.x = state[0]
+                actor_pose.position.y = state[1]
+                actor_pose.orientation = _quaternion(state[2])
+                return actor_pose
+
+            current_pose = make_pose(current)
+            if proxy_name not in self._spawn_attempted:
+                request = SpawnEntity.Request()
+                request.entity_factory.name = proxy_name
+                request.entity_factory.allow_renaming = False
+                request.entity_factory.sdf = self._proxy_sdf(proxy_name)
+                request.entity_factory.pose = current_pose
+                request.entity_factory.relative_to = "world"
+                self._spawn_pending[proxy_name] = self._spawn_client.call_async(request)
+                self._spawn_attempted.add(proxy_name)
+                pose_array.poses.append(current_pose)
+                continue
+            spawn_pending = self._spawn_pending.get(proxy_name)
+            if spawn_pending is not None and not spawn_pending.done():
+                pose_array.poses.append(current_pose)
+                continue
+            if proxy_name not in self._spawn_validated:
+                response = spawn_pending.result() if spawn_pending is not None else None
+                if response is None or not bool(getattr(response, "success", False)):
+                    detail = getattr(response, "status_message", "no spawn response")
+                    self._healthy = False
+                    self.get_logger().error(f"failed to spawn LiDAR proxy {proxy_name}: {detail}")
+                    pose_array.poses.append(current_pose)
+                    continue
+                self._spawn_validated.add(proxy_name)
+                self.get_logger().info(f"spawned LiDAR-visible proxy {proxy_name}")
+
+            # Commit route time and publish privileged truth only after Gazebo
+            # confirms the corresponding proxy pose. Publishing the requested
+            # pose here would lead LiDAR geometry by one 2 Hz actor step.
+            pending = self._pending.get(proxy_name)
+            if pending is not None and not pending.done():
+                pending_since = self._pending_since_s.get(proxy_name, now)
+                timeout_s = float(self.get_parameter("pose_update_timeout_s").value)
+                if now - pending_since > timeout_s:
+                    self._healthy = False
+                    self.get_logger().error(
+                        f"pose update timed out for {proxy_name}",
+                        throttle_duration_sec=5.0,
+                    )
+                pose_array.poses.append(current_pose)
+                continue
+            if pending is not None:
+                try:
+                    response = pending.result()
+                except Exception as error:  # pragma: no cover - ROS future boundary
+                    self._healthy = False
+                    self.get_logger().error(f"pose update failed for {proxy_name}: {error}")
+                    pose_array.poses.append(current_pose)
+                    continue
+                if response is None or not bool(response.success):
+                    self._healthy = False
+                    self.get_logger().error(f"pose update rejected for {proxy_name}")
+                    pose_array.poses.append(current_pose)
+                    continue
+                self._route_elapsed[route.name] = self._pending_target_elapsed.pop(
+                    proxy_name, self._route_elapsed[route.name]
+                )
+                self._soft_hold_elapsed[route.name] = self._pending_soft_hold_elapsed.pop(
+                    proxy_name,
+                    self._soft_hold_elapsed[route.name],
+                )
+                self._pending.pop(proxy_name, None)
+                self._pending_since_s.pop(proxy_name, None)
+                current = route.pose_at(self._route_elapsed[route.name])
+                current_pose = make_pose(current)
+
+            candidate_elapsed = self._route_elapsed[route.name] + step_s
+            candidate = route.pose_at(candidate_elapsed)
+            target_elapsed = candidate_elapsed
+            target_soft_hold_elapsed = self._soft_hold_elapsed[route.name]
+            if route.uses_swept_guard and self._robot_position is not None and step_s > 1.0e-9:
+                decision = collision_guarded_human_step(
+                    self._robot_position,
+                    self._robot_velocity_world(),
+                    current[:2],
+                    candidate[:2],
+                    step_s,
+                    soft_yield_distance_m=route.soft_yield_distance_m,
+                    hard_collision_guard_m=route.hard_collision_guard_m,
+                    maximum_soft_hold_s=route.maximum_soft_hold_s,
+                    soft_hold_elapsed_s=self._soft_hold_elapsed[route.name],
+                )
+                target_elapsed = self._route_elapsed[route.name] + (
+                    decision.progress_fraction * step_s
+                )
+                target_soft_hold_elapsed = decision.soft_hold_elapsed_s
+                self._log_dynamics_decision(route, decision)
+            elif not route.uses_swept_guard and self._robot_position is not None:
+                permitted = yielding_human_step(
+                    self._robot_position,
+                    current[:2],
+                    candidate[:2],
+                    route.robot_avoidance_distance_m,
+                )
+                if permitted == current[:2]:
+                    target_elapsed = self._route_elapsed[route.name]
+            x, y, yaw = route.pose_at(target_elapsed)
+            target_pose = make_pose((x, y, yaw))
+            pose_array.poses.append(current_pose)
+
+            request = SetEntityPose.Request()
+            request.entity.name = proxy_name
+            request.entity.type = Entity.MODEL
+            request.pose = target_pose
+            self._pending[proxy_name] = self._client.call_async(request)
+            self._pending_since_s[proxy_name] = now
+            self._pending_target_elapsed[proxy_name] = target_elapsed
+            self._pending_soft_hold_elapsed[proxy_name] = target_soft_hold_elapsed
+
+            if bool(self.get_parameter("update_native_actors").value):
+                entity_name = route.name
+                native_pending = self._pending.get(entity_name)
+                if native_pending is not None and not native_pending.done():
+                    continue
+                if native_pending is not None:
+                    try:
+                        response = native_pending.result()
+                    except Exception as error:  # pragma: no cover - ROS future boundary
+                        self._healthy = False
+                        self.get_logger().error(f"pose update failed for {entity_name}: {error}")
+                        continue
+                    if response is None or not bool(response.success):
+                        self._healthy = False
+                        self.get_logger().error(f"pose update rejected for {entity_name}")
+                        continue
+                request = SetEntityPose.Request()
+                request.entity.name = entity_name
+                request.entity.type = Entity.MODEL
+                request.pose = target_pose
+                self._pending[entity_name] = self._client.call_async(request)
+                self._pending_since_s[entity_name] = now
+        expected_proxy_names = self._expected_proxy_names()
+        actual_ready = bool(
+            self._actual_robot_pose_is_fresh(now) and self._actual_pedestrian_poses_are_fresh(now)
+        )
+        if actual_ready:
+            pose_array.poses = [self._actual_proxy_poses[name] for name in expected_proxy_names]
+            self._publisher.publish(pose_array)
+            robot_pose = PoseStamped()
+            robot_pose.header = pose_array.header
+            robot_pose.pose = self._actual_robot_pose
+            self._robot_pose_publisher.publish(robot_pose)
+            self._actual_pose_wait_since_s = None
+        elif self._experiment_started and len(self._spawn_validated) == len(expected_proxy_names):
+            if self._actual_pose_wait_since_s is None:
+                self._actual_pose_wait_since_s = now
+            elif now - self._actual_pose_wait_since_s > float(
+                self.get_parameter("actual_pose_timeout_s").value
+            ):
+                self._healthy = False
+                self.get_logger().error(
+                    "Gazebo actual pedestrian poses are missing or stale",
+                    throttle_duration_sec=5.0,
+                )
+        self._publish_startup_state()
+
+
+def main(args: list[str] | None = None) -> None:
+    rclpy.init(args=args)
+    node: ScenarioActorController | None = None
+    try:
+        node = ScenarioActorController()
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        if node is not None:
+            node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

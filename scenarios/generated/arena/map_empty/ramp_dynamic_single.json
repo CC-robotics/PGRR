@@ -1,0 +1,52 @@
+{
+  "ramp_metadata": {
+    "schema_version": 1,
+    "scenario_id": "ramp_dynamic_single",
+    "family": "dynamic_acceptance",
+    "density": "single",
+    "split": "smoke",
+    "seed": 0,
+    "map_id": "map_empty",
+    "human_speed_range_mps": [0.35, 0.35],
+    "human_behavior_model": "deterministic Gazebo kinematic fallback"
+  },
+  "robots": [
+    {
+      "start": [20.0, 12.0, 0.0],
+      "goal": [22.0, 12.0, 0.0]
+    }
+  ],
+  "obstacles": {
+    "static": [],
+    "interactive": [],
+    "dynamic": [
+      {
+        "name": "ped_acceptance_00",
+        "id": 1,
+        "pos": [24.0, 17.0, -1.5708],
+        "type": "adult",
+        "model": "gazebo_actor",
+        "waypoints": [
+          [24.0, 17.0, -1.5708],
+          [24.0, 14.0, -1.5708]
+        ],
+        "max_vel": 0.35,
+        "radius": 0.35,
+        "cyclic_goals": true,
+        "goal_radius": 0.3,
+        "behavior": {
+          "type": 1,
+          "configuration": 0,
+          "duration": 60.0,
+          "once": false,
+          "vel": 0.35,
+          "dist": 2.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "social_force_factor": 5.0,
+          "other_force_factor": 10.0
+        }
+      }
+    ]
+  }
+}

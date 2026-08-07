@@ -1,0 +1,77 @@
+{
+  "arena_commit": "c2ff4a87e8686013b53f1e9cd8b01b3ab04fbce4",
+  "arena_image_id": "sha256:023efa496a6bb17aecb1f5f70025cb2f6bc6fadb17c19ab24584b03fec661e6d",
+  "artifact_type": "real_arena_gazebo_gui_screenshot",
+  "artifacts": {
+    "capture_log": "outputs/logs/runtime_capture/runtime_capture_gazebo_doorway_bottleneck_medium_20260806T054015Z_3875172_capture.log",
+    "outcome": "data/raw/runtime_capture_gazebo_doorway_bottleneck_medium_20260806T054015Z_3875172.outcome.json",
+    "paper_copy": "paper/figures/runtime_gazebo_doorway_bottleneck_medium.png",
+    "runtime_log": "outputs/logs/runtime_capture/runtime_capture_gazebo_doorway_bottleneck_medium_20260806T054015Z_3875172_runtime.log",
+    "screenshot": "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.png",
+    "screenshot_sha256": "5313957c3032f54f16d6cf6fbce7aff7203a88d15dbfcd255991731822612712",
+    "window_info": "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.window.json"
+  },
+  "camera_framing": {
+    "focus_xyz": [
+      15.5,
+      12.0,
+      0.0
+    ],
+    "framing": "scenario_midpoint_oblique",
+    "pose_xyz_xyzw": [
+      7.85,
+      7.0,
+      10.2,
+      -0.11641117040732016,
+      0.39088692978038914,
+      0.2606059258358146,
+      0.8750659397728361
+    ],
+    "transport_service": "/gui/move_to/pose"
+  },
+  "capture_backend": "PyQt5.QScreen.grabWindow(X11 window)",
+  "capture_target": "Gazebo GUI window",
+  "captured_at_utc": "2026-08-06T05:40:15Z",
+  "dimensions": {
+    "height_px": 845,
+    "width_px": 1000
+  },
+  "episode_id": "runtime_capture_gazebo_doorway_bottleneck_medium_20260806T054015Z_3875172",
+  "episode_outcome": "GOAL_REACHED",
+  "git_commit": "2e6e29aead3bdb0227894113b2342d46c78c08b3",
+  "isolation": {
+    "gazebo_partition": "pgrr_runtime_capture_doorway",
+    "ros_domain_id": 226
+  },
+  "launch_profile": {
+    "headless": 0,
+    "local_planner": "dwb",
+    "robot": "jackal",
+    "simulator": "gazebo",
+    "software_rendering": true
+  },
+  "provenance_note": "Pixels were copied from the mapped Gazebo X11 window while the same Arena/Nav2 episode produced the referenced raw log and outcome.",
+  "reproduce_command": "SCENARIO=scenarios/generated/moderate_v5/arena/map_empty/doorway_bottleneck_medium_validation_moderate_v5_r00_s75110.json scripts/arena/capture_gazebo_snapshot.sh",
+  "scenario": {
+    "density": "medium",
+    "family": "doorway_bottleneck",
+    "path": "scenarios/generated/moderate_v5/arena/map_empty/doorway_bottleneck_medium_validation_moderate_v5_r00_s75110.json",
+    "scenario_id": "doorway_bottleneck_medium_validation_moderate_v5_r00_s75110",
+    "seed": 75110,
+    "split": "validation"
+  },
+  "visual_validation": {
+    "grayscale_stddev": 53.167,
+    "height_px": 845,
+    "scene_viewport_grayscale_stddev": 63.7789,
+    "scene_viewport_unique_colors": 706,
+    "thumbnail_unique_colors": 5658,
+    "width_px": 1000
+  },
+  "window": {
+    "height": 845,
+    "title": "Gazebo",
+    "width": 1000,
+    "window_id": 2097170
+  }
+}

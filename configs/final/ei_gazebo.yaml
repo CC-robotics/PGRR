@@ -1,0 +1,83 @@
+schema_version: 2
+experiment_id: moderate_v5_five_method_gazebo_test_v1
+purpose: locked_ei_conference_test
+
+benchmark:
+  id: moderate_social_navigation_v5
+  catalog: configs/experiments/scenario_catalog_moderate_v5.yaml
+  catalog_sha256: 7e4d25520b67e798271fff220df0c648c31705c1adcab7f412c5f44e4404e096
+  calibration_split: scenarios/splits/moderate_v5_validation.yaml
+  calibration_split_sha256: 9fdf930f5e0e073b6e2ef622c07cf45c2d800194e6f99c943fd5100487a504ae
+  calibration_report: outputs/moderate/v5_validation/calibration_report.json
+  calibration_policy: validation_only_before_test
+
+runtime:
+  arena_profile: arena_humble_docker
+  simulator: gazebo
+  robot: jackal
+  classical_planner: dwb
+  split: test
+  split_manifest: scenarios/splits/moderate_v5_test.yaml
+  split_manifest_sha256: 67de50557b7444abeb3421686b34ec8e43f7584d487f13716c36cd63cd9536f7
+  episode_timeout_s: 240.0
+  parallel_jobs: 6
+  headless: true
+  max_physical_attempts: 3
+  infrastructure_retry_limit: 2
+  retryable_outcomes: [SIMULATOR_FAILURE, INVALID_RESET]
+
+primary_comparison:
+  methods: [base, standard, heuristic, bc_uniform, pgrr]
+  families:
+    - head_on_corridor
+    - doorway_bottleneck
+    - crossing_flow
+    - blind_corner
+    - group_blocking
+    - overtaking
+    - opposite_streams
+    - temporary_blockage
+  densities: [low, medium, high]
+  repetitions_per_family_density_cell: 5
+  expected_conditions_per_method: 120
+  expected_episodes: 600
+
+learned_baseline:
+  deployed_name: Uniform BC
+  source_policy: bc_uniform
+  checkpoint: checkpoints/bc/uniform_scenario/best.onnx
+  checkpoint_sha256: 6e0aaeff9f97ac12a10f56ec298fa3936d24e7600aba81f0917d7111ce85010b
+
+learned_method:
+  deployed_name: PGRR
+  source_policy: pgrr
+  checkpoint: checkpoints/dagger/coverage_safety_aligned/best.onnx
+  checkpoint_sha256: 78807ce56f575943ca3f965be9b71c0d83c0ca3f2a23f267fe04fd6a00c119d2
+  training_workflow: uniform_behavior_cloning_plus_two_round_dagger
+  selected_training_data: dagger_aggregate_plus_train_only_coverage_shard
+  second_round_candidate_selected: false
+  margin_weighting_enabled: false
+  ppo_enabled: false
+
+analysis:
+  bootstrap_samples: 10000
+  bootstrap_seed: 20260804
+  confidence_level: 0.95
+  personal_space_distance_m: 1.2
+  discomfort_distance_m: 1.0
+  multiple_comparison_correction: holm_global
+  pairing: identical_condition_keys_across_all_methods
+  exclusions: [SIMULATOR_FAILURE, INVALID_RESET]
+  retained_algorithm_outcomes:
+    - GOAL_REACHED
+    - COLLISION
+    - TIMEOUT
+    - PLANNER_FAILURE
+
+frozen_inputs:
+  arena_profile_sha256: 5de5609e0e4e1f1487a6707ea5f4cd4c11438e367cd454e84cd3956ba8e83b71
+  planner_profiles_sha256: 57ad1d79039d21e14ee9c4783f281bf29ed70207623b688e597c0d843c04848d
+  failure_rules_sha256: f9b4f4694e8792972500d36ef4919ef60452228fcccb006b28a9567df8e842bd
+  state_machine_sha256: 77cacb1dfae26ce394b46fc3ef63421954c12ef1c5cf8dd0b5a8b9bdb29ac69e
+  recovery_actions_sha256: 3fe9873b0142957c7a1fa918152371ec1b1339e8298d567b92b8b3c8e3c50029
+  project_commit: resolved_and_recorded_by_runner

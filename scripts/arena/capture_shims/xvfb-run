@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Reuse the explicitly managed capture X server for one Arena launch only.
+set -euo pipefail
+
+while (($#)); do
+    case "$1" in
+        -a | --auto-servernum)
+            shift
+            ;;
+        -s | --server-args)
+            (($# >= 2)) || {
+                echo "ERROR: xvfb-run shim received an incomplete server argument" >&2
+                exit 2
+            }
+            shift 2
+            ;;
+        --server-args=*)
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+(($# > 0)) || {
+    echo "ERROR: xvfb-run shim did not receive a command" >&2
+    exit 2
+}
+[[ -n "${DISPLAY:-}" ]] || {
+    echo "ERROR: DISPLAY is required by the capture-only xvfb-run shim" >&2
+    exit 2
+}
+
+command=("$@")
+headless_replaced=0
+for index in "${!command[@]}"; do
+    if [[ "${command[index]}" == "headless:=2" ]]; then
+        command[index]="headless:=${RAMP_CAPTURE_ARENA_HEADLESS:-0}"
+        headless_replaced=1
+    fi
+done
+if ((headless_replaced == 0)); then
+    echo "ERROR: capture shim did not find the expected Arena headless argument" >&2
+    exit 2
+fi
+
+exec "${command[@]}"

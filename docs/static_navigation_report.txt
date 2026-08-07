@@ -1,0 +1,31 @@
+RAMP Gate 1 static navigation report
+Generated: 2026-07-29 (Asia/Shanghai project date)
+
+Profile: arena_humble_docker
+Simulator: Gazebo 8.14.0, headless Xvfb software rendering
+Robot/planner: Jackal, NavFn global planner, DWB local planner
+Scenario: scenarios/generated/arena/map_empty/ramp_static.json
+Start: (20.0, 12.0, 0.0)
+Goal: (22.0, 12.0, 0.0)
+Human backend: dummy (no pedestrians)
+
+Command:
+  env -u CONDA_PREFIX -u VIRTUAL_ENV scripts/arena/static_navigation.sh
+
+Result:
+  Task-generated Nav2 goal terminal state: STATUS_SUCCEEDED / GOAL_REACHED
+  Start odometry x,y: approximately (0.0000, 0.0000)
+  End odometry x,y: approximately (1.8082, -0.0462)
+  Runtime process crashes before cleanup: 0
+  Task tracebacks before cleanup: 0
+  Controlled cleanup markers: 1 start, 1 completion
+
+Ignored raw evidence at the time of this report:
+  outputs/logs/static_navigation_runtime.log
+  SHA256 0d23f4cd91418c0fdfc062746ca2f2a3b973b3659a3325953690b7f9d6f3b80b
+  outputs/logs/static_navigation_goal.log
+  SHA256 a1cfc4d8b8bc7800875c1c8a163eb902b0c6e0f5277698c86113323ea5281f96
+
+The pass is based on the action status published by Arena's scenario manager.
+No second goal is injected by the test, avoiding preemption of the task-generated
+goal stream.

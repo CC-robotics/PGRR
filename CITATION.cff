@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: "PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation"
+message: >-
+  Please cite this software artifact and the associated archival paper record
+  when it becomes available.
+type: software
+version: 0.1.0
+date-released: 2026-08-04
+authors:
+  - family-names: Chen
+    given-names: Charles
+    email: charles.chen@example.invalid
+abstract: >-
+  PGRR is a ROS2 framework for failure-triggered dynamic social-navigation
+  recovery. A classical planner controls nominal navigation, while an
+  imitation-learned policy selects planning-masked temporary subgoals or
+  interpretable recovery modes near collision risk, freezing, oscillation,
+  deadlock, or planner failure. Training uses a privileged short-horizon expert
+  and DAgger; deployment uses observable inputs only.
+keywords:
+  - robot navigation
+  - social navigation
+  - failure recovery
+  - imitation learning
+  - DAgger
+  - ROS2
+license: BSD-3-Clause

@@ -1,0 +1,34 @@
+/**:
+  ros__parameters:
+    auto_reset: false
+    # Keep Arena's task boundary beyond the 120 s algorithm timeout so the
+    # logger receives the terminal sensor sample before the simulator pauses.
+    timeout: 125
+    task:
+      parametrized:
+        file: default.xml
+      random:
+        dynamic:
+          n: [1, 3]
+          models: [gazebo_actor]
+        interactive:
+          n: [0, 0]
+          models: [shelf]
+        static:
+          n: [3, 5]
+          models: [shelf]
+        seed: -1
+      scenario:
+        file: default.json
+      staged:
+        curriculum: default.yaml
+        index: 0
+      environment:
+        file: office.yaml
+    hunavsim:
+      parameters:
+        max_vel: 0.3
+        force_factor_desired: 1.0
+        force_factor_obstacle: 1.0
+        force_factor_social: 5.0
+        force_factor_robot: 0.0

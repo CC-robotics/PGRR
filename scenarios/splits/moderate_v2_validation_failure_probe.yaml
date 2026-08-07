@@ -1,0 +1,39 @@
+schema_version: 1
+benchmark_id: moderate_social_navigation_v2_failure_probe
+difficulty: moderate
+manifest_suffix: moderate_v2
+split: validation
+selection_rule: >-
+  Validation-only regression probe containing the three conditions that did
+  not reach the goal in run ad429e0f851a. It is not used for test reporting.
+scenarios:
+- scenario_id: doorway_bottleneck_medium_validation_moderate_v2_r00_s51110
+  family: doorway_bottleneck
+  density: medium
+  map_id: map_empty
+  seed: 51110
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v2/arena/map_empty/doorway_bottleneck_medium_validation_moderate_v2_r00_s51110.json
+  preview: previews/moderate_v2/doorway_bottleneck_medium_validation_moderate_v2_r00_s51110.png
+  sha256: c67066069a391cb8931bc2d70e1e2b8bcbebb0a012c84325cb2b7d3033d44f09
+- scenario_id: head_on_corridor_high_validation_moderate_v2_r00_s51020
+  family: head_on_corridor
+  density: high
+  map_id: map_empty
+  seed: 51020
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v2/arena/map_empty/head_on_corridor_high_validation_moderate_v2_r00_s51020.json
+  preview: previews/moderate_v2/head_on_corridor_high_validation_moderate_v2_r00_s51020.png
+  sha256: fad69ee4376d181f39a474bd0b0866e8c6929acfc3357250d446456bf6c716e4
+- scenario_id: doorway_bottleneck_high_validation_moderate_v2_r00_s51120
+  family: doorway_bottleneck
+  density: high
+  map_id: map_empty
+  seed: 51120
+  replicate: 0
+  difficulty: moderate
+  path: moderate_v2/arena/map_empty/doorway_bottleneck_high_validation_moderate_v2_r00_s51120.json
+  preview: previews/moderate_v2/doorway_bottleneck_high_validation_moderate_v2_r00_s51120.png
+  sha256: 47d46db8dae369342b70c381817164ea194db334c02a99e3bd49c5e5af6b2e89
