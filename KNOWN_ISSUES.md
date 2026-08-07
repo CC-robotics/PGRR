@@ -10,6 +10,10 @@ must not be used for final claims. Resolution requires a newly named and newly s
 successor benchmark, declared from validation evidence and calibrated before test;
 changing the acceptance threshold or filtering the v5 validation results is forbidden.
 
+Moderate-v6 is the declared resolution candidate. It changes only Crossing Flow
+temporal phasing and uses entirely new seed blocks; it is not considered resolved
+until the complete, unfiltered v6 Base validation passes every unchanged check.
+
 ## KI-083: Emergency clearance chatter could restore a blocked task path indefinitely
 
 The pre-change low-density blind-corner validation episode timed out after repeatedly

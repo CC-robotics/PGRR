@@ -1,5 +1,22 @@
 # Decision log
 
+## D-069: Repair missing Crossing Flow interaction with one preregistered timing change
+
+The v5 Base validation showed that Crossing Flow was the only family without a
+sub-2 m interaction episode: all nine conditions reached the goal and their mean
+minimum human distance was 3.124 m. Robot navigation took about 89 s end to end,
+placing its first-intersection arrival near 29 s, while 0.35--0.55 m/s actors covered
+the 6.2 m approach in roughly 11--18 s and had already cleared the crossing.
+
+Moderate-v6 therefore retains every static-clearance, lane, route, collision-radius,
+and actor-guard parameter from v5, but preregisters Crossing Flow at 0.18--0.28 m/s.
+The resulting 22--34 s actor-arrival band overlaps the observed robot phase. New
+76000/77000/87000 train/validation/test seed blocks prevent reuse of v5 physical
+realizations. The v6 configuration and all 264 compiled scenarios are frozen before
+Base calibration; the 120-condition v6 test remains sealed. No further benchmark
+change is allowed under the v6 identifier, and the unchanged calibration thresholds
+must pass before final wiring or held-out execution.
+
 ## D-068: Reject moderate-v5 before test and require a newly seeded successor
 
 The complete Base validation produced 57 goals and 15 collisions over all 72

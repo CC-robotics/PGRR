@@ -2,6 +2,30 @@
 
 Commands are copied here when a gate is accepted. Raw command output is stored under `outputs/logs/`.
 
+## 2026-08-07 compile and freeze moderate-v6 before simulation
+
+```bash
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH \
+  /home/diy/anaconda3/envs/ramp-offline/bin/python \
+  scripts/data/compile_moderate_benchmark.py \
+  --config configs/experiments/scenario_catalog_moderate_v6.yaml
+
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH \
+  /home/diy/anaconda3/envs/ramp-offline/bin/python -m pytest -q \
+  tests/unit/test_moderate_benchmark.py
+
+sha256sum \
+  configs/experiments/scenario_catalog_moderate_v6.yaml \
+  scenarios/splits/moderate_v6_validation.yaml \
+  scenarios/splits/moderate_v6_test.yaml \
+  scenarios/manifests/scenario_catalog_moderate_v6.json
+```
+
+Result: 264 scenarios compiled (72 train / 72 validation / 120 test), 23 tests
+passed, and no v6 simulation had been run when these artifacts were frozen.
+
 ## 2026-08-07 complete moderate-v5 comparator validation and rejected calibration
 
 ```bash
