@@ -348,5 +348,9 @@ validation candidate using the nominal 0.36 m circular-footprint radius collided
 the shelf and is rejected. The selected 0.60 m turn-entry clearance preserves a drift
 margin and requires additional bounded retreat when it is unavailable. The correction
 converted the target validation timeout and passed the eight-family low-density
-regression, but is not frozen for test until the complete 72-condition PGRR validation
-gate passes. No moderate-v5 test row was inspected while making this decision.
+regression. The complete 72-condition PGRR validation then produced 62 goal reaches,
+one collision, one timeout, and eight planner failures. This is sufficient to stop
+algorithm tuning and fix the candidate for comparator validation, but not to claim
+that every timeout is solved. The held-out test remains blocked until Base calibration
+and all five validation method sets are complete. No moderate-v5 test row was inspected
+while making this decision.

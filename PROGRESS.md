@@ -25,8 +25,20 @@
 - Generated checked-in Parquet/CSV/JSON evidence for both probes. These rows are
   validation-only and are not used as final paper results.
 - Passed Ruff, formatting, strict mypy, all 636 offline tests, and the three-package
-  ROS overlay build. The complete 72-condition PGRR validation gate remains next; the
-  held-out moderate-v5 test has not been run or inspected.
+  ROS overlay build.
+- Completed the full 72-condition PGRR validation manifest at project commit
+  `22da999`: 62 goal reaches, one collision, one timeout, and eight planner failures.
+  Four `SIMULATOR_FAILURE` attempts and three pre-logger launch gaps were preserved;
+  one-worker resume filled only the missing work, and the final manifest reports
+  72/72 complete with `worker_errors=[]`.
+- The remaining failure distribution is explicit: four blind-corner planner failures;
+  three doorway failures plus one doorway human collision; and one high-density
+  temporary-blockage planner failure plus one high-density timeout. All other 62
+  family--density--replicate conditions reached the goal.
+- Generated compact Parquet/CSV/JSON evidence under
+  `outputs/moderate/v5_validation_pgrr_22da999/`. The PGRR runtime candidate is fixed
+  pending complete comparator validation and Base calibration; the held-out test has
+  still not been run or inspected.
 
 ## 2026-08-06 — validation-only blind-corner clearance freeze
 
