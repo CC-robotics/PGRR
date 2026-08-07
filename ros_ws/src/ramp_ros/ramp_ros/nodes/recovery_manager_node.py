@@ -904,7 +904,7 @@ class RecoveryManagerNode(Node):
                 (pose.x, pose.y),
                 target,
                 corridor_path,
-                maximum_deviation_m=self._effective_recovery_path_deviation(),
+                maximum_deviation_m=self._effective_emergency_path_deviation(),
             ):
                 return 0.0
         if not scan_segment_is_free(
@@ -940,6 +940,22 @@ class RecoveryManagerNode(Node):
         """Return the separately configured circular swept-rotation margin."""
 
         return self._float("emergency_rotation_clearance_m")
+
+    def _effective_emergency_path_deviation(self) -> float:
+        """Use the recurrent corridor after observable emergency escalation."""
+
+        deviation = self._effective_recovery_path_deviation()
+        emergency_recurrent = (
+            self._emergency_escape.turn_count > 0
+            or self._emergency_escape.backup_count
+            >= self._integer("emergency_minimum_retreat_pulses")
+        )
+        if emergency_recurrent:
+            deviation = max(
+                deviation,
+                self._float("recurrent_escape_maximum_path_deviation_m"),
+            )
+        return deviation
 
     def _motion_stop_distance(self, linear_velocity: float) -> float:
         """Return the directional stop distance, including a collision latch."""

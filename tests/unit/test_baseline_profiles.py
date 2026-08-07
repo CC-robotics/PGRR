@@ -380,6 +380,8 @@ def test_recovery_safety_has_omnidirectional_footprint_guard() -> None:
     assert '"bc_recurrent_escape_after_recoveries": 2' in manager
     assert '"recurrent_escape_maximum_path_deviation_m": 2.5' in manager
     assert manager.count("self._effective_recovery_path_deviation()") == 2
+    assert "self._effective_emergency_path_deviation()" in manager
+    assert "self._emergency_escape.turn_count > 0" in manager
     assert "self._bc_yield_latch.latched" in manager
     assert '"recurrent_escape_minimum_lateral_displacement_m": 0.25' in manager
     assert '"bc_subgoal_minimum_execution_s": 2.0' in manager
