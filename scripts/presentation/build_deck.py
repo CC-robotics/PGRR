@@ -724,7 +724,7 @@ def build_slide_specs(stage: str, data: dict[str, Any]) -> tuple[SlideSpec, ...]
                 "锁定 episode manifest、run manifest 和 results.parquet",
                 "保存项目 commit、Arena commit、checkpoint 与场景 SHA256",
                 "图表和 TeX 表格全部自动生成",
-                "技术报告 25–35 页；PPTX/PDF 固定 30 页",
+                "发布门禁：test 技术报告固定 32 页；PPTX/PDF 固定 30 页",
                 "发布前执行测试、字体、关系、占位符和隐私审计",
             ),
             "展示一键命令，并说明任何完整性检查失败都会阻止生成“final”文档。",

@@ -17,6 +17,8 @@ required_artifacts=(
     paper/figures/moderate_family_success.pdf
     paper/figures/moderate_paired_effects.pdf
     paper/figures/moderate_safety_efficiency.pdf
+    paper/figures/moderate_matched_base_pgrr_trajectory.pdf
+    paper/figures/moderate_pgrr_recovery_timeline.pdf
 )
 for artifact in "${required_artifacts[@]}"; do
     if [[ ! -s "${PROJECT_ROOT}/${artifact}" ]]; then

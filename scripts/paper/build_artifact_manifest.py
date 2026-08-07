@@ -63,6 +63,8 @@ DEFAULT_MATCHED_TRAJECTORY = Path(
     "outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf"
 )
 DEFAULT_MATCHED_TIMELINE = Path("outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf")
+DEFAULT_PAPER_MATCHED_TRAJECTORY = Path("paper/figures/moderate_matched_base_pgrr_trajectory.pdf")
+DEFAULT_PAPER_MATCHED_TIMELINE = Path("paper/figures/moderate_pgrr_recovery_timeline.pdf")
 DEFAULT_PAPER = Path("paper/main.pdf")
 DEFAULT_REPORT = Path("report/PGRR_technical_report_zh.pdf")
 DEFAULT_REPORT_DATA = Path("report/generated/report_data.json")
@@ -88,6 +90,9 @@ OPTIONAL_RUNTIME_SCREENSHOT_SOURCE = Path(
 )
 OPTIONAL_RUNTIME_CAPTURE_METADATA = Path(
     "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json"
+)
+OPTIONAL_RUNTIME_CAPTURE_WINDOW = Path(
+    "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.window.json"
 )
 
 COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
@@ -669,6 +674,7 @@ def _validate_runtime_capture(
     screenshot: Path,
     source_screenshot: Path,
     metadata_path: Path,
+    window_path: Path,
 ) -> None:
     metadata = _load_json_object(metadata_path, label="runtime screenshot metadata")
     if metadata.get("artifact_type") != "real_arena_gazebo_gui_screenshot":
@@ -702,6 +708,12 @@ def _validate_runtime_capture(
     window = _mapping(metadata.get("window"), label="runtime window")
     if re.search(r"Gazebo|gz sim", str(window.get("title", "")), re.IGNORECASE) is None:
         raise ArtifactError("runtime screenshot metadata does not identify a Gazebo window")
+    window_capture = _load_json_object(window_path, label="runtime window capture")
+    selected_window = _mapping(
+        window_capture.get("selected_window"), label="runtime selected_window"
+    )
+    if selected_window.get("title") != "Gazebo":
+        raise ArtifactError("runtime window capture does not identify the Gazebo window")
     visual = _mapping(metadata.get("visual_validation"), label="runtime visual_validation")
     try:
         viewport_stddev = float(visual["scene_viewport_grayscale_stddev"])
@@ -850,19 +862,6 @@ def _require_pdf_pages(path: Path, *, expected: int, label: str) -> int:
     return observed
 
 
-def _require_pdf_page_range(
-    path: Path,
-    *,
-    minimum: int,
-    maximum: int,
-    label: str,
-) -> int:
-    observed = _pdf_page_count(path, label=label)
-    if not minimum <= observed <= maximum:
-        raise ArtifactError(f"{label} must contain {minimum}--{maximum} pages; found {observed}")
-    return observed
-
-
 def _validate_offline_ablation(
     *,
     project_root: Path,
@@ -992,6 +991,8 @@ def _validate_matched_evidence_bundle(
     results_sha256: str,
     trajectory_path: Path,
     timeline_path: Path,
+    paper_trajectory_path: Path,
+    paper_timeline_path: Path,
 ) -> dict[str, Any]:
     """Bind the published matched sidecar to its fixed test media and results."""
 
@@ -1043,17 +1044,19 @@ def _validate_matched_evidence_bundle(
         "trajectory": (
             "moderate_matched_base_pgrr_trajectory.pdf",
             trajectory_path,
+            paper_trajectory_path,
         ),
         "recovery_timeline": (
             "moderate_pgrr_recovery_timeline.pdf",
             timeline_path,
+            paper_timeline_path,
         ),
     }
     declarations = payload.get("artifacts")
     if not isinstance(declarations, Mapping) or set(declarations) != set(expected_artifacts):
         raise ArtifactError("matched evidence must declare both fixed PDF artifacts")
     evidence_directory = evidence_path.parent.resolve()
-    for field, (filename, expected_path) in expected_artifacts.items():
+    for field, (filename, expected_path, paper_copy) in expected_artifacts.items():
         declaration = _mapping(declarations[field], label=f"matched {field} artifact")
         if declaration.get("filename") != filename:
             raise ArtifactError(f"matched {field} artifact does not use fixed filename {filename}")
@@ -1068,6 +1071,8 @@ def _validate_matched_evidence_bundle(
         declared_sha = str(declaration.get("sha256", ""))
         if not SHA256_PATTERN.fullmatch(declared_sha) or sha256_file(expected_path) != declared_sha:
             raise ArtifactError(f"matched {field} artifact SHA256 disagrees")
+        if sha256_file(paper_copy) != declared_sha:
+            raise ArtifactError(f"paper matched {field} copy SHA256 disagrees")
     return payload
 
 
@@ -1243,6 +1248,8 @@ def build_manifest(
     matched_evidence_path: Path = DEFAULT_MATCHED_EVIDENCE,
     matched_trajectory_path: Path = DEFAULT_MATCHED_TRAJECTORY,
     matched_timeline_path: Path = DEFAULT_MATCHED_TIMELINE,
+    paper_matched_trajectory_path: Path = DEFAULT_PAPER_MATCHED_TRAJECTORY,
+    paper_matched_timeline_path: Path = DEFAULT_PAPER_MATCHED_TIMELINE,
     paper_path: Path = DEFAULT_PAPER,
     report_path: Path = DEFAULT_REPORT,
     report_data_path: Path = DEFAULT_REPORT_DATA,
@@ -1346,6 +1353,16 @@ def build_manifest(
         ("matched_evidence", matched_evidence_path, "matched Base--PGRR evidence"),
         ("matched_runtime", matched_trajectory_path, "matched Base--PGRR trajectory"),
         ("matched_runtime", matched_timeline_path, "matched PGRR recovery timeline"),
+        (
+            "paper_matched_runtime",
+            paper_matched_trajectory_path,
+            "paper matched Base--PGRR trajectory",
+        ),
+        (
+            "paper_matched_runtime",
+            paper_matched_timeline_path,
+            "paper matched PGRR recovery timeline",
+        ),
     )
     artifacts: list[tuple[str, Path]] = []
     for category, path, label in singleton_specs:
@@ -1392,12 +1409,24 @@ def build_manifest(
         matched_timeline_path,
         label="matched PGRR recovery timeline",
     )
+    resolved_paper_matched_trajectory = _require_file(
+        root,
+        paper_matched_trajectory_path,
+        label="paper matched Base--PGRR trajectory",
+    )
+    resolved_paper_matched_timeline = _require_file(
+        root,
+        paper_matched_timeline_path,
+        label="paper matched PGRR recovery timeline",
+    )
     matched_evidence = _validate_matched_evidence_bundle(
         resolved_matched_evidence,
         results_path=resolved_results,
         results_sha256=provenance["results_sha256"],
         trajectory_path=resolved_matched_trajectory,
         timeline_path=resolved_matched_timeline,
+        paper_trajectory_path=resolved_paper_matched_trajectory,
+        paper_timeline_path=resolved_paper_matched_timeline,
     )
     resolved_paper = _require_file(root, paper_path, label="paper PDF")
     resolved_report = _require_file(root, report_path, label="technical-report PDF")
@@ -1428,10 +1457,9 @@ def build_manifest(
         expected_episodes=int(provenance["expected_episodes"]),
     )
     paper_pages = _require_pdf_pages(resolved_paper, expected=8, label="conference paper")
-    report_pages = _require_pdf_page_range(
+    report_pages = _require_pdf_pages(
         resolved_report,
-        minimum=30,
-        maximum=40,
+        expected=32,
         label="technical report",
     )
     presentation_pages = _require_pdf_pages(
@@ -1549,6 +1577,11 @@ def build_manifest(
         OPTIONAL_RUNTIME_CAPTURE_METADATA,
         label="optional runtime screenshot metadata",
     )
+    runtime_window = _inside_root(
+        root,
+        OPTIONAL_RUNTIME_CAPTURE_WINDOW,
+        label="optional runtime window capture",
+    )
     runtime_source = _inside_root(
         root,
         OPTIONAL_RUNTIME_SCREENSHOT_SOURCE,
@@ -1558,6 +1591,7 @@ def build_manifest(
         runtime_screenshot.exists(),
         runtime_source.exists(),
         runtime_metadata.exists(),
+        runtime_window.exists(),
     }
     if len(capture_presence) != 1:
         raise ArtifactError(
@@ -1571,11 +1605,13 @@ def build_manifest(
         runtime_metadata = _require_file(
             root, runtime_metadata, label="runtime screenshot metadata"
         )
+        runtime_window = _require_file(root, runtime_window, label="runtime window capture")
         _validate_runtime_capture(
             root,
             screenshot=runtime_screenshot,
             source_screenshot=runtime_source,
             metadata_path=runtime_metadata,
+            window_path=runtime_window,
         )
         artifacts.append(
             (
@@ -1590,6 +1626,7 @@ def build_manifest(
                 runtime_metadata,
             )
         )
+        artifacts.append(("runtime_capture_window", runtime_window))
 
     timestamp = generated_at or datetime.now(timezone.utc).isoformat()
     records = [_artifact_record(root, category, path) for category, path in artifacts]
@@ -1657,6 +1694,16 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_MATCHED_TIMELINE,
     )
+    parser.add_argument(
+        "--paper-matched-trajectory",
+        type=Path,
+        default=DEFAULT_PAPER_MATCHED_TRAJECTORY,
+    )
+    parser.add_argument(
+        "--paper-matched-recovery-timeline",
+        type=Path,
+        default=DEFAULT_PAPER_MATCHED_TIMELINE,
+    )
     parser.add_argument("--paper", type=Path, default=DEFAULT_PAPER)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--report-data", type=Path, default=DEFAULT_REPORT_DATA)
@@ -1711,6 +1758,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             matched_evidence_path=args.matched_evidence,
             matched_trajectory_path=args.matched_trajectory,
             matched_timeline_path=args.matched_recovery_timeline,
+            paper_matched_trajectory_path=args.paper_matched_trajectory,
+            paper_matched_timeline_path=args.paper_matched_recovery_timeline,
             paper_path=args.paper,
             report_path=args.report,
             report_data_path=args.report_data,

@@ -144,7 +144,7 @@ def _complete_fixture(root: Path) -> None:
         },
     )
     _write_pdf(root / MODULE.DEFAULT_PAPER, 8)
-    _write_pdf(root / MODULE.DEFAULT_REPORT, 31)
+    _write_pdf(root / MODULE.DEFAULT_REPORT, 32)
     _write_pdf(root / MODULE.DEFAULT_PRESENTATION_PDF, 30)
     _write_presentation(root / MODULE.DEFAULT_PRESENTATION_PPTX)
     _write(
@@ -284,6 +284,14 @@ def _complete_fixture(root: Path) -> None:
     results_frame.to_parquet(root / MODULE.DEFAULT_RESULTS, index=False)
     _write_pdf(root / MODULE.DEFAULT_MATCHED_TRAJECTORY, 1)
     _write_pdf(root / MODULE.DEFAULT_MATCHED_TIMELINE, 1)
+    _write(
+        root / MODULE.DEFAULT_PAPER_MATCHED_TRAJECTORY,
+        (root / MODULE.DEFAULT_MATCHED_TRAJECTORY).read_bytes(),
+    )
+    _write(
+        root / MODULE.DEFAULT_PAPER_MATCHED_TIMELINE,
+        (root / MODULE.DEFAULT_MATCHED_TIMELINE).read_bytes(),
+    )
     matched_artifacts = {
         "trajectory": {
             "path": "media/moderate_matched_base_pgrr_trajectory.pdf",
@@ -510,6 +518,10 @@ def _complete_runtime_capture(root: Path) -> None:
             },
         },
     )
+    _write_json(
+        root / MODULE.OPTIONAL_RUNTIME_CAPTURE_WINDOW,
+        {"selected_window": {"title": "Gazebo"}},
+    )
 
 
 def test_manifest_has_only_relative_checksummed_artifacts(tmp_path: Path) -> None:
@@ -541,12 +553,13 @@ def test_manifest_has_only_relative_checksummed_artifacts(tmp_path: Path) -> Non
     assert payload["category_counts"]["runtime_keyframe"] == 2
     assert payload["category_counts"]["matched_evidence"] == 1
     assert payload["category_counts"]["matched_runtime"] == 2
+    assert payload["category_counts"]["paper_matched_runtime"] == 2
     assert payload["category_counts"]["technical_report"] == 1
     assert payload["category_counts"]["presentation"] == 2
     assert payload["category_counts"]["offline_ablation_dataset"] == 1
     assert payload["document_pages"] == {
         MODULE.DEFAULT_PAPER.as_posix(): 8,
-        MODULE.DEFAULT_REPORT.as_posix(): 31,
+        MODULE.DEFAULT_REPORT.as_posix(): 32,
         MODULE.DEFAULT_PRESENTATION_PDF.as_posix(): 30,
         MODULE.DEFAULT_MEDIA_KEYFRAMES_PDF.as_posix(): 1,
     }
@@ -796,6 +809,31 @@ def test_manifest_rejects_tampered_matched_runtime_media(tmp_path: Path) -> None
         )
 
 
+def test_manifest_rejects_missing_paper_matched_runtime_copy(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    (tmp_path / MODULE.DEFAULT_PAPER_MATCHED_TIMELINE).unlink()
+
+    with pytest.raises(MODULE.ArtifactError, match="paper matched PGRR recovery timeline"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+        )
+
+
+def test_manifest_rejects_paper_matched_runtime_hash_mismatch(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    trajectory = tmp_path / MODULE.DEFAULT_PAPER_MATCHED_TRAJECTORY
+    trajectory.write_bytes(trajectory.read_bytes() + b"tampered")
+
+    with pytest.raises(MODULE.ArtifactError, match=r"paper matched trajectory copy SHA256"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+        )
+
+
 def test_manifest_rejects_report_bound_to_different_matched_evidence(tmp_path: Path) -> None:
     _complete_fixture(tmp_path)
     report_data_path = tmp_path / MODULE.DEFAULT_REPORT_DATA
@@ -811,12 +849,12 @@ def test_manifest_rejects_report_bound_to_different_matched_evidence(tmp_path: P
         )
 
 
-@pytest.mark.parametrize("pages", [29, 41])
-def test_manifest_rejects_report_outside_page_range(tmp_path: Path, pages: int) -> None:
+@pytest.mark.parametrize("pages", [31, 33])
+def test_manifest_rejects_report_outside_exact_page_count(tmp_path: Path, pages: int) -> None:
     _complete_fixture(tmp_path)
     _write_pdf(tmp_path / MODULE.DEFAULT_REPORT, pages)
 
-    with pytest.raises(MODULE.ArtifactError, match="30--40 pages"):
+    with pytest.raises(MODULE.ArtifactError, match="exactly 32 pages"):
         MODULE.build_manifest(
             tmp_path,
             project_commit="b" * 40,
@@ -824,17 +862,15 @@ def test_manifest_rejects_report_outside_page_range(tmp_path: Path, pages: int) 
         )
 
 
-@pytest.mark.parametrize("pages", [30, 40])
-def test_manifest_accepts_report_page_range_boundaries(tmp_path: Path, pages: int) -> None:
+def test_manifest_accepts_exact_32_page_report(tmp_path: Path) -> None:
     _complete_fixture(tmp_path)
-    _write_pdf(tmp_path / MODULE.DEFAULT_REPORT, pages)
 
     payload = MODULE.build_manifest(
         tmp_path,
         project_commit="b" * 40,
         git_dirty=False,
     )
-    assert payload["document_pages"][MODULE.DEFAULT_REPORT.as_posix()] == pages
+    assert payload["document_pages"][MODULE.DEFAULT_REPORT.as_posix()] == 32
 
 
 def test_manifest_rejects_incomplete_presentation(tmp_path: Path) -> None:
@@ -1082,6 +1118,38 @@ def test_release_manifest_requires_and_validates_real_runtime_capture(tmp_path: 
     assert payload["category_counts"]["runtime_screenshot"] == 1
     assert payload["category_counts"]["runtime_screenshot_source"] == 1
     assert payload["category_counts"]["runtime_capture_metadata"] == 1
+    assert payload["category_counts"]["runtime_capture_window"] == 1
+
+
+def test_release_manifest_rejects_tampered_runtime_window_capture(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    _complete_runtime_capture(tmp_path)
+    _write_json(
+        tmp_path / MODULE.OPTIONAL_RUNTIME_CAPTURE_WINDOW,
+        {"selected_window": {"title": "Terminal"}},
+    )
+
+    with pytest.raises(MODULE.ArtifactError, match="does not identify the Gazebo window"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+            release=True,
+        )
+
+
+def test_release_manifest_requires_runtime_window_capture(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    _complete_runtime_capture(tmp_path)
+    (tmp_path / MODULE.OPTIONAL_RUNTIME_CAPTURE_WINDOW).unlink()
+
+    with pytest.raises(MODULE.ArtifactError, match="must all exist or all be absent"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+            release=True,
+        )
 
 
 def test_runtime_capture_metadata_rejects_a_test_scenario(tmp_path: Path) -> None:

@@ -30,6 +30,8 @@ FINAL_VIDEO="${FINAL_MEDIA_DIR}/pgrr_representative_telemetry.mp4"
 MATCHED_EVIDENCE="${MODERATE_ANALYSIS_DIR}/matched_base_pgrr_evidence.json"
 MATCHED_TRAJECTORY="${FINAL_MEDIA_DIR}/moderate_matched_base_pgrr_trajectory.pdf"
 MATCHED_TIMELINE="${FINAL_MEDIA_DIR}/moderate_pgrr_recovery_timeline.pdf"
+PAPER_MATCHED_TRAJECTORY="paper/figures/moderate_matched_base_pgrr_trajectory.pdf"
+PAPER_MATCHED_TIMELINE="paper/figures/moderate_pgrr_recovery_timeline.pdf"
 REPORT_DATA="report/generated/report_data.json"
 REPORT_PDF="report/PGRR_technical_report_zh.pdf"
 PRESENTATION_PPTX="presentation/PGRR_report_zh.pptx"
@@ -132,25 +134,6 @@ require_pdf_pages() {
     fi
 }
 
-require_pdf_page_range() {
-    local path="$1"
-    local minimum="$2"
-    local maximum="$3"
-    local label="$4"
-    local observed
-    require_file "${path}" "${label}"
-    if ! command -v pdfinfo >/dev/null 2>&1; then
-        echo "ERROR: pdfinfo is required to validate ${label}" >&2
-        exit 1
-    fi
-    observed="$(pdfinfo "${path}" | awk '/^Pages:/ {print $2}')"
-    if [[ ! "${observed}" =~ ^[0-9]+$ ]] \
-        || ((observed < minimum || observed > maximum)); then
-        echo "ERROR: ${label} must contain ${minimum}--${maximum} pages; found ${observed:-unknown}" >&2
-        exit 1
-    fi
-}
-
 manifest_command=(
     python scripts/paper/build_artifact_manifest.py
     --config "${MODERATE_BENCHMARK_CONFIG}"
@@ -171,6 +154,8 @@ manifest_command=(
     --matched-evidence "${MATCHED_EVIDENCE}"
     --matched-trajectory "${MATCHED_TRAJECTORY}"
     --matched-recovery-timeline "${MATCHED_TIMELINE}"
+    --paper-matched-trajectory "${PAPER_MATCHED_TRAJECTORY}"
+    --paper-matched-recovery-timeline "${PAPER_MATCHED_TIMELINE}"
     --paper paper/main.pdf
     --report "${REPORT_PDF}"
     --report-data "${REPORT_DATA}"
@@ -292,6 +277,24 @@ else
     done
 fi
 
+# The conference paper consumes stable copies under paper/figures, while the
+# evidence sidecar remains authoritative for the final-media paths and hashes.
+# Install from either freshly recollected or already-published inputs, then
+# verify byte identity before any paper build can begin.
+require_file "${MATCHED_TRAJECTORY}" "matched Base--PGRR trajectory"
+require_file "${MATCHED_TIMELINE}" "matched PGRR recovery timeline"
+mkdir -p "$(dirname -- "${PAPER_MATCHED_TRAJECTORY}")"
+install -m 0644 "${MATCHED_TRAJECTORY}" "${PAPER_MATCHED_TRAJECTORY}"
+install -m 0644 "${MATCHED_TIMELINE}" "${PAPER_MATCHED_TIMELINE}"
+if ! cmp -s "${MATCHED_TRAJECTORY}" "${PAPER_MATCHED_TRAJECTORY}"; then
+    echo "ERROR: paper matched trajectory differs from its final-media source" >&2
+    exit 1
+fi
+if ! cmp -s "${MATCHED_TIMELINE}" "${PAPER_MATCHED_TIMELINE}"; then
+    echo "ERROR: paper matched timeline differs from its final-media source" >&2
+    exit 1
+fi
+
 for figure_dir in paper/figures outputs/figures; do
     offline python scripts/paper/make_method_figures.py \
         --output-dir "${figure_dir}"
@@ -327,7 +330,7 @@ clean_env \
     REPORT_EXPECTED_CONDITIONS=120 \
     CONDA_ENV_NAME="${CONDA_ENV_NAME}" \
     bash "${PROJECT_ROOT}/scripts/report/build_report.sh"
-require_pdf_page_range "${REPORT_PDF}" 30 40 "technical report"
+require_pdf_pages "${REPORT_PDF}" 32 "technical report"
 
 echo "[reproduce-paper] building the locked-test 30-slide presentation bundle"
 offline python scripts/presentation/build_deck.py \

@@ -61,8 +61,12 @@ def validate_report(pdf: Path, data_path: Path, log_path: Path | None = None) ->
     if stage not in {"pending", "validation", "test"}:
         raise ReportValidationError(f"unknown report stage: {stage!r}")
     pages = _page_count(pdf)
+    if stage == "test" and pages != 32:
+        raise ReportValidationError(
+            f"stage=test report must contain exactly 32 pages; found {pages}"
+        )
     minimum = 20 if stage == "pending" else 25
-    if not minimum <= pages <= 35:
+    if stage != "test" and not minimum <= pages <= 35:
         raise ReportValidationError(
             f"stage={stage} report must contain {minimum}--35 pages; found {pages}"
         )
