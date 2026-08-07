@@ -7,13 +7,13 @@ Commands are copied here when a gate is accepted. Raw command output is stored u
 ```bash
 env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
   -u CMAKE_PREFIX_PATH \
-  /home/diy/anaconda3/envs/ramp-offline/bin/python \
+  conda run -n ramp-offline python \
   scripts/data/compile_moderate_benchmark.py \
   --config configs/experiments/scenario_catalog_moderate_v6.yaml
 
 env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
   -u CMAKE_PREFIX_PATH \
-  /home/diy/anaconda3/envs/ramp-offline/bin/python -m pytest -q \
+  conda run -n ramp-offline python -m pytest -q \
   tests/unit/test_moderate_benchmark.py
 
 sha256sum \
@@ -51,7 +51,7 @@ env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
 
 env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
   -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION -u ROS_PYTHON_VERSION \
-  /home/diy/anaconda3/envs/ramp-offline/bin/python \
+  conda run -n ramp-offline python \
   scripts/evaluate/collect_results.py \
   --manifest outputs/moderate/v5_validation_comparators_d26d835/episode_manifest.parquet \
   --run-manifest outputs/moderate/v5_validation_comparators_d26d835/run_manifest.json \
@@ -62,7 +62,7 @@ env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
   --reference-policy base --treatment-policy bc_uniform \
   --bootstrap-samples 10000 --bootstrap-seed 20260807
 
-env -u PYTHONPATH /home/diy/anaconda3/envs/ramp-offline/bin/python \
+env -u PYTHONPATH conda run -n ramp-offline python \
   scripts/evaluate/summarize_moderate.py \
   --results outputs/moderate/v5_validation_comparators_d26d835/results.parquet \
   --output-dir outputs/moderate/v5_validation_comparators_d26d835/analysis \

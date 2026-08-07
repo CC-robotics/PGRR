@@ -26,6 +26,7 @@
 - 持续风险、冻结、振荡或死锁证据才触发恢复
 - 策略选择临时子目标或 WAIT / BACKUP / REPLAN / CONTINUE
 - 完成后恢复原始 PointGoal 并重新接回经典导航
+- 历史 v1 64/64（非 v6）：PGRR/Base 碰撞 0/24 vs 19/24、超时 16/24 vs 0/24、到达 8/24 vs 5/24；校正成功差异不显著
 
 ## 03. 为什么经典规划器仍会失败？
 
@@ -215,7 +216,7 @@
 - 环境：Ubuntu 22.04 / ROS2 Humble / Arena Gazebo
 - 机器人与感知：Jackal / Nav2 DWB / 平面 LiDAR
 - 冻结 v5 演示：doorway_bottleneck / medium / validation
-- 截图、窗口、日志、commit 与 SHA256 均有元数据
+- episode ID：runtime_capture_gazebo_doorway_bottleneck_medium_20260806T054015Z_3875172；pixel SHA256：5313957c3032
 - 它不是锁定 v6 统计回合的 camera frame，也不替代定量实验
 
 ## 17. 八类场景 × 三档密度
@@ -352,16 +353,16 @@
 - 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
 - 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
 
-## 27. 训练与消融
+## 27. PGRR 恢复时序（同一 Matched Pair）
 
-核心句：离线准确率不能替代闭环导航证据
+核心句：恢复时序素材与轨迹素材必须来自同一 test pair
 
-把 checkpoint 选择和负面结果讲清楚：未带来验证提升的模块不进入贡献结论。
+核对同一 pair、PGRR episode 和 raw SHA 后再读触发与状态线；这是遥测重建，不是相机画面。
 
 讲述要点：
 
 - 阶段标识：验证执行中，结果尚未锁定
-- 本页计划展示：BC、DAgger、mask 与 checkpoint 选择消融
+- 本页计划展示：固定文件名的 PGRR 目标距离、failure score、恢复状态与触发时间线；遥测重建，不是 camera screenshot
 - 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
 - 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
 
@@ -376,6 +377,7 @@
 - 重点检查长期 WAIT、持续 BACKUP、左右切换和重复恢复
 - 规则触发可能误报或漏报，action mask 可能过于保守
 - 二维 LiDAR、已知地图、离散动作和仿真人群限制外推
+- 历史 v1 64/64（非 v6）显示碰撞下降伴随 timeout 上升；到达 8/24 vs 5/24 的校正比较不显著
 - PPO、学习 detector、第二 planner、Flatland、硬件和形式安全均未完成
 
 ## 29. 复现与工程交付

@@ -15,6 +15,7 @@ import argparse
 import hashlib
 import json
 import math
+import shutil
 import sys
 from collections.abc import Mapping, Sequence
 from itertools import pairwise
@@ -36,6 +37,13 @@ PUBLIC_NAME = (
 )
 BENCHMARK_ID = "moderate_social_navigation_v6"
 MATCHED_EVIDENCE_FILENAME = "matched_base_pgrr_evidence.json"
+MATCHED_TRAJECTORY_FILENAME = "moderate_matched_base_pgrr_trajectory.pdf"
+MATCHED_TIMELINE_FILENAME = "moderate_pgrr_recovery_timeline.pdf"
+MATCHED_TEST_SELECTION_RULE = (
+    "eligible: PGRR trigger + configured static geometry + actor routes; order: "
+    "Base failure/PGRR goal, outcome contrast, PGRR goal, density, trigger count, "
+    "family, seed, pair_id"
+)
 METHODS = ("base", "standard", "heuristic", "bc_uniform", "pgrr")
 METHOD_LABELS = {
     "base": "DWB",
@@ -222,11 +230,45 @@ def validate_runtime_capture(project_root: Path = PROJECT_ROOT) -> dict[str, Any
         raise ReportInputError("runtime screenshot must remain the audited frozen-v5 demo")
     if payload.get("capture_target") != "Gazebo GUI window":
         raise ReportInputError("runtime screenshot metadata does not identify the Gazebo window")
+    for field in ("episode_id", "episode_outcome", "git_commit", "arena_commit"):
+        if not str(payload.get(field, "")).strip():
+            raise ReportInputError(f"runtime screenshot metadata omits {field}")
+    if str(payload["episode_outcome"]) not in OUTCOMES:
+        raise ReportInputError("runtime screenshot metadata contains an unknown episode outcome")
+    if len(str(payload["git_commit"])) != 40 or len(str(payload["arena_commit"])) != 40:
+        raise ReportInputError("runtime screenshot metadata contains an invalid Git revision")
+    note = str(payload.get("provenance_note", ""))
+    if "same Arena/Nav2 episode" not in note:
+        raise ReportInputError("runtime screenshot is not bound to its declared episode record")
     window = json.loads(window_path.read_text(encoding="utf-8"))
     selected_window = window.get("selected_window") if isinstance(window, dict) else None
     if not isinstance(selected_window, Mapping) or str(selected_window.get("title")) != "Gazebo":
         raise ReportInputError("runtime window provenance is invalid")
     return payload
+
+
+def _runtime_capture_summary(payload: Mapping[str, Any], *, project_root: Path) -> dict[str, Any]:
+    metadata_path = (
+        project_root / "outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json"
+    )
+    scenario = payload["scenario"]
+    artifacts = payload["artifacts"]
+    assert isinstance(scenario, Mapping)
+    assert isinstance(artifacts, Mapping)
+    return {
+        "available": True,
+        "artifact_type": str(payload["artifact_type"]),
+        "representation": "real Gazebo GUI screenshot from a frozen validation demo",
+        "not_locked_statistical_episode": True,
+        "episode_id": str(payload["episode_id"]),
+        "episode_outcome": str(payload["episode_outcome"]),
+        "scenario_id": str(scenario["scenario_id"]),
+        "split": str(scenario["split"]),
+        "git_commit": str(payload["git_commit"]),
+        "arena_commit": str(payload["arena_commit"]),
+        "screenshot_sha256": str(artifacts["screenshot_sha256"]),
+        "metadata_sha256": _sha256(metadata_path),
+    }
 
 
 def _tex_escape(value: object) -> str:
@@ -697,14 +739,17 @@ def validate_statistics(
     return records
 
 
-def validate_matched_evidence(
+def _validate_validation_matched_evidence(
     payload: object,
     *,
     results: pd.DataFrame,
     results_sha256: str,
     stage: str,
 ) -> dict[str, Any]:
-    """Cross-check the preregistered matched raw trace against its Parquet rows."""
+    """Cross-check a validation-only matched raw trace against its Parquet rows."""
+
+    if stage != "validation":
+        raise ReportInputError("schema-v1 matched telemetry is validation-only")
 
     if not isinstance(payload, dict):
         raise ReportInputError("matched evidence must be a JSON object")
@@ -807,6 +852,231 @@ def validate_matched_evidence(
         "representation": str(payload["representation"]),
         "runs": run_summary,
     }
+
+
+def _sha256_text(value: object, *, field: str) -> str:
+    digest = str(value).strip().lower()
+    if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
+        raise ReportInputError(f"matched evidence {field} must be a lowercase SHA256 digest")
+    return digest
+
+
+def _resolve_matched_media_artifact(
+    declaration: object,
+    *,
+    evidence_path: Path,
+    field: str,
+    filename: str,
+) -> tuple[Path, dict[str, str]]:
+    """Resolve one fixed final-media PDF without permitting path escape."""
+
+    if not isinstance(declaration, Mapping):
+        raise ReportInputError(f"matched evidence artifact {field} must be an object")
+    if declaration.get("filename") != filename:
+        raise ReportInputError(
+            f"matched evidence artifact {field} must use fixed filename {filename}"
+        )
+    if declaration.get("media_type") != "application/pdf":
+        raise ReportInputError(f"matched evidence artifact {field} must be application/pdf")
+    declared_path = Path(str(declaration.get("path", "")))
+    if not str(declared_path) or declared_path.is_absolute() or declared_path.name != filename:
+        raise ReportInputError(
+            f"matched evidence artifact {field} must use a relative path ending in {filename}"
+        )
+    evidence_directory = evidence_path.parent.resolve()
+    resolved = (evidence_directory / declared_path).resolve()
+    if not _inside(resolved, evidence_directory):
+        raise ReportInputError(f"matched evidence artifact {field} escapes the approved directory")
+    if not resolved.is_file():
+        raise ReportInputError(f"matched evidence artifact {field} is missing: {declared_path}")
+    if resolved.read_bytes()[:4] != b"%PDF":
+        raise ReportInputError(f"matched evidence artifact {field} is not a PDF")
+    declared_sha = _sha256_text(declaration.get("sha256"), field=f"artifacts.{field}.sha256")
+    if _sha256(resolved) != declared_sha:
+        raise ReportInputError(f"matched evidence artifact {field} SHA256 disagrees")
+    return resolved, {
+        "path": declared_path.as_posix(),
+        "filename": filename,
+        "sha256": declared_sha,
+        "media_type": "application/pdf",
+    }
+
+
+def _validate_test_matched_evidence(
+    payload: object,
+    *,
+    results: pd.DataFrame,
+    results_sha256: str,
+    evidence_path: Path,
+) -> dict[str, Any]:
+    """Cross-check locked-test media, provenance, and the selected same-pair rows."""
+
+    if not isinstance(payload, dict):
+        raise ReportInputError("matched evidence must be a JSON object")
+    expected_header = {
+        "schema_version": 2,
+        "artifact_type": "matched_base_pgrr_test_media",
+        "benchmark_id": BENCHMARK_ID,
+        "stage": "test",
+        "selection_rule": MATCHED_TEST_SELECTION_RULE,
+        "representation": "telemetry reconstruction; not a simulator camera screenshot",
+        "results_file": "results.parquet",
+    }
+    for field, expected in expected_header.items():
+        if payload.get(field) != expected:
+            raise ReportInputError(f"matched evidence {field} does not equal {expected!r}")
+    if payload.get("results_sha256") != results_sha256:
+        raise ReportInputError("matched evidence is bound to a different results.parquet")
+
+    pair_id = str(payload.get("pair_id", "")).strip()
+    selected = results.loc[
+        (results["pair_id"].astype(str) == pair_id)
+        & results["source_policy"].isin(("base", "pgrr"))
+    ].copy()
+    if len(selected) != 2 or set(selected["source_policy"].astype(str)) != {"base", "pgrr"}:
+        raise ReportInputError("matched test evidence does not select one complete Base/PGRR pair")
+    if "included_in_algorithm_metrics" in selected and not bool(
+        selected["included_in_algorithm_metrics"].astype(bool).all()
+    ):
+        raise ReportInputError("matched test media must use two algorithm-valid episodes")
+
+    first = selected.iloc[0]
+    scalar_fields = ("scenario_id", "scenario_sha256", "family", "density", "seed")
+    for field in scalar_fields:
+        expected = int(first[field]) if field == "seed" else str(first[field])
+        observed = (
+            _integer(payload.get(field), field=f"matched evidence {field}")
+            if field == "seed"
+            else str(payload.get(field, ""))
+        )
+        if observed != expected:
+            raise ReportInputError(f"matched evidence {field} disagrees with results")
+    for field in scalar_fields:
+        if selected[field].astype(str).nunique(dropna=False) != 1:
+            raise ReportInputError(f"matched test pair differs across methods for {field}")
+
+    if "project_commit" not in selected:
+        raise ReportInputError("locked test results omit project_commit provenance")
+    commits = selected["project_commit"].astype(str)
+    if commits.nunique(dropna=False) != 1:
+        raise ReportInputError("matched test pair differs across methods for project_commit")
+    project_commit = str(payload.get("project_commit", ""))
+    if (
+        project_commit != str(commits.iloc[0])
+        or len(project_commit) != 40
+        or any(character not in "0123456789abcdef" for character in project_commit.lower())
+    ):
+        raise ReportInputError("matched evidence project_commit disagrees with results")
+
+    required_result_hashes = ("raw_sha256", "metadata_sha256", "outcome_sha256")
+    missing_hashes = [field for field in required_result_hashes if field not in selected]
+    if missing_hashes:
+        raise ReportInputError(f"locked test results omit matched provenance: {missing_hashes}")
+    runs = payload.get("runs")
+    if not isinstance(runs, Mapping) or set(runs) != {"base", "pgrr"}:
+        raise ReportInputError("matched evidence must contain exactly Base and PGRR runs")
+    run_summary: dict[str, Any] = {}
+    for method in ("base", "pgrr"):
+        run = runs[method]
+        if not isinstance(run, Mapping):
+            raise ReportInputError(f"matched evidence run {method} must be an object")
+        row = selected.loc[selected["source_policy"] == method].iloc[0]
+        for field in ("episode_id", "outcome"):
+            if str(run.get(field, "")) != str(row[field]):
+                raise ReportInputError(f"matched evidence {method}/{field} disagrees with results")
+        if str(run.get("outcome")) not in OUTCOMES:
+            raise ReportInputError(f"matched evidence {method} uses an excluded outcome")
+        if Path(str(run.get("raw_file", ""))).name != f"{row['episode_id']}.jsonl":
+            raise ReportInputError(f"matched evidence {method} raw filename is not episode-bound")
+        hashes: dict[str, str] = {}
+        for field in required_result_hashes:
+            observed = _sha256_text(run.get(field), field=f"runs.{method}.{field}")
+            expected = _sha256_text(row[field], field=f"results.{method}.{field}")
+            if observed != expected:
+                raise ReportInputError(f"matched evidence {method}/{field} disagrees with results")
+            hashes[field] = observed
+        sample_count = _integer(
+            run.get("sample_count"), field=f"matched evidence {method} sample_count"
+        )
+        if sample_count < 2:
+            raise ReportInputError(f"matched evidence {method} sample count is invalid")
+        if "sample_count" in selected and not pd.isna(row["sample_count"]):
+            if sample_count != _integer(
+                row["sample_count"], field=f"results {method} sample_count"
+            ):
+                raise ReportInputError(
+                    f"matched evidence {method} sample count disagrees with results"
+                )
+        run_summary[method] = {
+            "episode_id": str(run["episode_id"]),
+            "outcome": str(run["outcome"]),
+            "raw_sha256": hashes["raw_sha256"],
+            "metadata_sha256": hashes["metadata_sha256"],
+            "outcome_sha256": hashes["outcome_sha256"],
+            "sample_count": sample_count,
+        }
+
+    declarations = payload.get("artifacts")
+    if not isinstance(declarations, Mapping) or set(declarations) != {
+        "trajectory",
+        "recovery_timeline",
+    }:
+        raise ReportInputError("matched test evidence must contain both fixed media artifacts")
+    _, trajectory = _resolve_matched_media_artifact(
+        declarations["trajectory"],
+        evidence_path=evidence_path,
+        field="trajectory",
+        filename=MATCHED_TRAJECTORY_FILENAME,
+    )
+    _, timeline = _resolve_matched_media_artifact(
+        declarations["recovery_timeline"],
+        evidence_path=evidence_path,
+        field="recovery_timeline",
+        filename=MATCHED_TIMELINE_FILENAME,
+    )
+    return {
+        "artifact_type": "matched_base_pgrr_test_media",
+        "pair_id": pair_id,
+        "scenario_id": str(payload["scenario_id"]),
+        "scenario_sha256": str(payload["scenario_sha256"]),
+        "family": str(payload["family"]),
+        "density": str(payload["density"]),
+        "seed": int(payload["seed"]),
+        "project_commit": project_commit,
+        "selection_rule": str(payload["selection_rule"]),
+        "representation": str(payload["representation"]),
+        "runs": run_summary,
+        "artifacts": {"trajectory": trajectory, "recovery_timeline": timeline},
+    }
+
+
+def validate_matched_evidence(
+    payload: object,
+    *,
+    results: pd.DataFrame,
+    results_sha256: str,
+    stage: str,
+    evidence_path: Path | None = None,
+) -> dict[str, Any]:
+    """Dispatch to the validation trace or the stricter fixed test-media schema."""
+
+    if stage == "validation":
+        return _validate_validation_matched_evidence(
+            payload,
+            results=results,
+            results_sha256=results_sha256,
+            stage=stage,
+        )
+    if stage == "test":
+        if evidence_path is None:
+            raise ReportInputError("test matched evidence validation requires its sidecar path")
+        return _validate_test_matched_evidence(
+            payload,
+            results=results,
+            results_sha256=results_sha256,
+            evidence_path=evidence_path,
+        )
+    raise ReportInputError(f"stage {stage!r} cannot consume matched evidence")
 
 
 def _rate(frame: pd.DataFrame, outcome: str) -> float:
@@ -1001,6 +1271,35 @@ def _matched_run_figure(payload: Mapping[str, Any], output_dir: Path) -> None:
         fontweight="bold",
     )
     _save_figure(figure, output_dir / "result_matched_run_evidence")
+
+
+def _copy_fixed_test_media(
+    summary: Mapping[str, Any], *, evidence_path: Path, output_dir: Path
+) -> None:
+    """Copy only SHA-validated locked-test media into stable report asset names."""
+
+    artifacts = summary["artifacts"]
+    assert isinstance(artifacts, Mapping)
+    targets = {
+        "trajectory": output_dir / "result_matched_trajectory.pdf",
+        "recovery_timeline": output_dir / "result_matched_recovery_timeline.pdf",
+    }
+    fixed_names = {
+        "trajectory": MATCHED_TRAJECTORY_FILENAME,
+        "recovery_timeline": MATCHED_TIMELINE_FILENAME,
+    }
+    for field, destination in targets.items():
+        declaration = artifacts[field]
+        assert isinstance(declaration, Mapping)
+        source, _ = _resolve_matched_media_artifact(
+            declaration,
+            evidence_path=evidence_path,
+            field=field,
+            filename=fixed_names[field],
+        )
+        shutil.copyfile(source, destination)
+        if _sha256(destination) != declaration["sha256"]:
+            raise ReportInputError(f"copied matched evidence artifact {field} changed SHA256")
 
 
 def _outcome_figure(results: pd.DataFrame, output_dir: Path) -> None:
@@ -1231,6 +1530,8 @@ def _pending_macros() -> str:
     return r"""% Generated by scripts/report/build_report_assets.py --stage pending.
 \newif\ifReportResultsAvailable
 \ReportResultsAvailablefalse
+\newif\ifReportFixedTestMediaAvailable
+\ReportFixedTestMediaAvailablefalse
 \newcommand{\ReportStageKey}{pending}
 \newcommand{\ReportStageLabel}{验证执行中：结果尚未锁定}
 \newcommand{\ReportStageNotice}{本报告当前只展示方法、系统和预注册实验协议。%
@@ -1257,11 +1558,18 @@ def _result_macros(data: Mapping[str, Any]) -> str:
         else "数值仅用于验证阶段汇报，不得表述为最终测试结论。"
     )
     goal_difference = 100.0 * float(data["paired_effects"]["goal_difference"])
+    fixed_test_media = (
+        r"\ReportFixedTestMediaAvailabletrue"
+        if data["stage"] == "test"
+        else r"\ReportFixedTestMediaAvailablefalse"
+    )
     return "\n".join(
         (
             "% Generated from a policy-approved results.parquet.",
             r"\newif\ifReportResultsAvailable",
             r"\ReportResultsAvailabletrue",
+            r"\newif\ifReportFixedTestMediaAvailable",
+            fixed_test_media,
             rf"\newcommand{{\ReportStageKey}}{{{_tex_escape(data['stage'])}}}",
             rf"\newcommand{{\ReportStageLabel}}{{{_tex_escape(stage_label)}}}",
             rf"\newcommand{{\ReportStageNotice}}{{{_tex_escape(notice)}}}",
@@ -1293,8 +1601,20 @@ def build_report_assets(
 
     if stage not in {"pending", "validation", "test"}:
         raise ReportInputError("stage must be one of: pending, validation, test")
-    if require_runtime_capture:
+    runtime_payload = (
         validate_runtime_capture(project_root)
+        if require_runtime_capture or stage == "test"
+        else None
+    )
+    runtime_summary = (
+        _runtime_capture_summary(runtime_payload, project_root=project_root)
+        if runtime_payload is not None
+        else {
+            "available": False,
+            "representation": "real Gazebo GUI screenshot from a frozen validation demo",
+            "not_locked_statistical_episode": True,
+        }
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     if stage == "pending":
         if (
@@ -1312,11 +1632,7 @@ def build_report_assets(
             "notice": "Validation is running; no numerical result is approved for reporting.",
             "public_name": PUBLIC_NAME,
             "benchmark_id": BENCHMARK_ID,
-            "runtime_capture": {
-                "available": require_runtime_capture,
-                "representation": "real Gazebo GUI screenshot from a frozen validation demo",
-                "not_locked_statistical_episode": True,
-            },
+            "runtime_capture": runtime_summary,
             "matched_run_evidence": {
                 "available": False,
                 "selection_rule": ("doorway_bottleneck/medium/replicate-0; outcome-independent"),
@@ -1379,6 +1695,7 @@ def build_report_assets(
         results=results,
         results_sha256=results_sha256,
         stage=stage,
+        evidence_path=approved_evidence,
     )
     valid = _valid_rows(results)
     summary = _method_summary(results)
@@ -1395,11 +1712,7 @@ def build_report_assets(
         "matched_evidence_path": approved_evidence.relative_to(project_root).as_posix(),
         "matched_evidence_sha256": _sha256(approved_evidence),
         "matched_run_evidence": {"available": True, **matched_summary},
-        "runtime_capture": {
-            "available": require_runtime_capture,
-            "representation": "real Gazebo GUI screenshot from a frozen validation demo",
-            "not_locked_statistical_episode": True,
-        },
+        "runtime_capture": runtime_summary,
         "condition_count": conditions,
         "episode_count": len(results),
         "valid_episode_count": len(valid),
@@ -1417,7 +1730,14 @@ def build_report_assets(
     _family_figure(results, output_dir)
     _safety_efficiency_figure(results, output_dir)
     _paired_effect_figure(paired_comparisons, output_dir)
-    _matched_run_figure(matched_payload, output_dir)
+    if stage == "test":
+        _copy_fixed_test_media(
+            matched_summary,
+            evidence_path=approved_evidence,
+            output_dir=output_dir,
+        )
+    else:
+        _matched_run_figure(matched_payload, output_dir)
     (output_dir / "result_table.tex").write_text(_result_table(summary), encoding="utf-8")
     (output_dir / "result_paired_statistics.tex").write_text(
         _paired_statistics_table(paired_comparisons), encoding="utf-8"

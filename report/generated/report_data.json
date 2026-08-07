@@ -7,8 +7,17 @@
   "benchmark_id": "moderate_social_navigation_v6",
   "runtime_capture": {
     "available": true,
+    "artifact_type": "real_arena_gazebo_gui_screenshot",
     "representation": "real Gazebo GUI screenshot from a frozen validation demo",
-    "not_locked_statistical_episode": true
+    "not_locked_statistical_episode": true,
+    "episode_id": "runtime_capture_gazebo_doorway_bottleneck_medium_20260806T054015Z_3875172",
+    "episode_outcome": "GOAL_REACHED",
+    "scenario_id": "doorway_bottleneck_medium_validation_moderate_v5_r00_s75110",
+    "split": "validation",
+    "git_commit": "2e6e29aead3bdb0227894113b2342d46c78c08b3",
+    "arena_commit": "c2ff4a87e8686013b53f1e9cd8b01b3ab04fbce4",
+    "screenshot_sha256": "5313957c3032f54f16d6cf6fbce7aff7203a88d15dbfcd255991731822612712",
+    "metadata_sha256": "9abb8b6c14bed9742d13a4f6c7a6fc886bc0c57da3ca9d5cc6e3e634f93d9f0d"
   },
   "matched_run_evidence": {
     "available": false,

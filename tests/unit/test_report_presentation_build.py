@@ -147,6 +147,90 @@ def _write_synthetic_report_inputs(tmp_path: Path) -> tuple[Path, Path, Path]:
     return results_path, statistics_path, evidence_path
 
 
+def _synthetic_locked_test_media(tmp_path: Path) -> tuple[pd.DataFrame, Path, dict[str, object]]:
+    directory = tmp_path / "outputs/moderate/final"
+    media = directory / "media"
+    media.mkdir(parents=True)
+    trajectory = media / REPORT.MATCHED_TRAJECTORY_FILENAME
+    timeline = media / REPORT.MATCHED_TIMELINE_FILENAME
+    trajectory.write_bytes(b"%PDF-1.4\nsynthetic trajectory\n%%EOF\n")
+    timeline.write_bytes(b"%PDF-1.4\nsynthetic recovery timeline\n%%EOF\n")
+    pair_id = "fixture_doorway_bottleneck_high_test_moderate_v6_r00_seed91"
+    scenario_id = "doorway_bottleneck_high_test_moderate_v6_r00_s91"
+    project_commit = "a" * 40
+    rows: list[dict[str, object]] = []
+    for method, outcome, digest in (
+        ("base", "COLLISION", "b"),
+        ("pgrr", "GOAL_REACHED", "c"),
+    ):
+        rows.append(
+            {
+                "episode_id": f"{scenario_id}_{method}",
+                "pair_id": pair_id,
+                "scenario_id": scenario_id,
+                "scenario_sha256": "1" * 64,
+                "family": "doorway_bottleneck",
+                "density": "high",
+                "seed": 91,
+                "source_policy": method,
+                "outcome": outcome,
+                "included_in_algorithm_metrics": True,
+                "project_commit": project_commit,
+                "raw_sha256": digest * 64,
+                "metadata_sha256": "d" * 64,
+                "outcome_sha256": "e" * 64,
+                "sample_count": 3,
+            }
+        )
+    results = pd.DataFrame(rows)
+    payload: dict[str, object] = {
+        "schema_version": 2,
+        "artifact_type": "matched_base_pgrr_test_media",
+        "benchmark_id": REPORT.BENCHMARK_ID,
+        "stage": "test",
+        "representation": "telemetry reconstruction; not a simulator camera screenshot",
+        "selection_rule": REPORT.MATCHED_TEST_SELECTION_RULE,
+        "pair_id": pair_id,
+        "scenario_id": scenario_id,
+        "scenario_sha256": "1" * 64,
+        "family": "doorway_bottleneck",
+        "density": "high",
+        "seed": 91,
+        "project_commit": project_commit,
+        "results_file": "results.parquet",
+        "results_sha256": "f" * 64,
+        "runs": {
+            method: {
+                "episode_id": row["episode_id"],
+                "outcome": row["outcome"],
+                "raw_file": f"{row['episode_id']}.jsonl",
+                "raw_sha256": row["raw_sha256"],
+                "metadata_sha256": row["metadata_sha256"],
+                "outcome_sha256": row["outcome_sha256"],
+                "sample_count": row["sample_count"],
+            }
+            for method, row in ((str(row["source_policy"]), row) for row in rows)
+        },
+        "artifacts": {
+            "trajectory": {
+                "path": f"media/{trajectory.name}",
+                "filename": trajectory.name,
+                "sha256": hashlib.sha256(trajectory.read_bytes()).hexdigest(),
+                "media_type": "application/pdf",
+            },
+            "recovery_timeline": {
+                "path": f"media/{timeline.name}",
+                "filename": timeline.name,
+                "sha256": hashlib.sha256(timeline.read_bytes()).hexdigest(),
+                "media_type": "application/pdf",
+            },
+        },
+    }
+    evidence = directory / REPORT.MATCHED_EVIDENCE_FILENAME
+    evidence.write_text(json.dumps(payload), encoding="utf-8")
+    return results, evidence, payload
+
+
 def test_pending_report_assets_never_read_results(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -222,6 +306,59 @@ def test_report_result_path_policy_rejects_live_and_historical_outputs(tmp_path:
         statistics.write_bytes(b"forbidden")
         with pytest.raises(REPORT.ReportInputError):
             REPORT.validate_statistics_path(statistics, stage="validation", project_root=tmp_path)
+
+
+def test_locked_test_matched_media_requires_both_fixed_sha_bound_pdfs(tmp_path: Path) -> None:
+    results, evidence, payload = _synthetic_locked_test_media(tmp_path)
+    summary = REPORT.validate_matched_evidence(
+        payload,
+        results=results,
+        results_sha256="f" * 64,
+        stage="test",
+        evidence_path=evidence,
+    )
+    assert summary["artifact_type"] == "matched_base_pgrr_test_media"
+    assert set(summary["artifacts"]) == {"trajectory", "recovery_timeline"}
+    assert summary["runs"]["base"]["episode_id"] != summary["runs"]["pgrr"]["episode_id"]
+    output = tmp_path / "report/generated"
+    output.mkdir(parents=True)
+    REPORT._copy_fixed_test_media(summary, evidence_path=evidence, output_dir=output)
+    assert (output / "result_matched_trajectory.pdf").read_bytes().startswith(b"%PDF")
+    assert (output / "result_matched_recovery_timeline.pdf").read_bytes().startswith(b"%PDF")
+
+    escaped = json.loads(json.dumps(payload))
+    escaped["artifacts"]["trajectory"]["path"] = f"../{REPORT.MATCHED_TRAJECTORY_FILENAME}"
+    with pytest.raises(REPORT.ReportInputError, match="escapes the approved directory"):
+        REPORT.validate_matched_evidence(
+            escaped,
+            results=results,
+            results_sha256="f" * 64,
+            stage="test",
+            evidence_path=evidence,
+        )
+
+    timeline = evidence.parent / str(summary["artifacts"]["recovery_timeline"]["path"])
+    timeline.write_bytes(b"%PDF-1.4\ntampered\n%%EOF\n")
+    with pytest.raises(REPORT.ReportInputError, match="recovery_timeline SHA256 disagrees"):
+        REPORT.validate_matched_evidence(
+            payload,
+            results=results,
+            results_sha256="f" * 64,
+            stage="test",
+            evidence_path=evidence,
+        )
+
+
+def test_locked_test_report_requires_real_gazebo_capture_before_results(tmp_path: Path) -> None:
+    with pytest.raises(REPORT.ReportInputError, match="Gazebo runtime evidence is incomplete"):
+        REPORT.build_report_assets(
+            stage="test",
+            results_path=None,
+            statistics_path=None,
+            matched_evidence_path=None,
+            output_dir=tmp_path / "generated",
+            project_root=tmp_path,
+        )
 
 
 def test_result_report_requires_and_cross_checks_all_paired_statistics(tmp_path: Path) -> None:
@@ -393,6 +530,8 @@ def test_report_source_is_detailed_and_stage_conditional() -> None:
     assert r"\ifReportResultsAvailable" in source
     assert "runtime_gazebo_doorway_bottleneck_medium.png" in source
     assert "result_matched_run_evidence.pdf" in source
+    assert "result_matched_trajectory.pdf" in source
+    assert "result_matched_recovery_timeline.pdf" in source
     assert "telemetry reconstruction" in source
     assert "moderate-v6" in source and "moderate-v5" in source
     assert "Planning-Guided Failure-Triggered Recovery and Rejoin" in source
@@ -400,6 +539,27 @@ def test_report_source_is_detailed_and_stage_conditional() -> None:
     assert "result_paired_effects.pdf" in source
     assert "Charles Chen" in source
     assert "/home/" not in source
+
+
+def test_all_summary_layers_preserve_historical_v1_tradeoff_as_non_v6() -> None:
+    paths = (
+        ROOT / "README.md",
+        ROOT / "REPRODUCIBILITY.md",
+        ROOT / "report/technical_report.tex",
+        ROOT / "report/README.md",
+        ROOT / "presentation/README.md",
+    )
+    for path in paths:
+        source = path.read_text(encoding="utf-8")
+        assert all(token in source for token in ("64/64", "0/24", "19/24", "16/24", "8/24", "5/24"))
+        assert "v6" in source
+    slide_two = DECK.build_slide_specs(
+        "pending",
+        {"stage": "pending", "results_available": False, "author_alias": "Charles Chen"},
+    )[1]
+    summary = " ".join(slide_two.bullets)
+    assert all(token in summary for token in ("64/64", "0/24", "19/24", "16/24", "8/24", "5/24"))
+    assert "非 v6" in summary and "不显著" in summary
 
 
 def test_makefile_exposes_report_and_presentation_targets() -> None:

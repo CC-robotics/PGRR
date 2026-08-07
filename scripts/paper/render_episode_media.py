@@ -100,6 +100,7 @@ FORBIDDEN_PUBLICATION_TOKENS = re.compile(r"(?:validation|historical)", re.IGNOR
 
 MATCHED_TRAJECTORY_NAME = "moderate_matched_base_pgrr_trajectory.pdf"
 PGRR_TIMELINE_NAME = "moderate_pgrr_recovery_timeline.pdf"
+MATCHED_EVIDENCE_NAME = "matched_base_pgrr_evidence.json"
 TELEMETRY_NOTICE = "Telemetry reconstruction—not a camera image"
 
 plt.rcParams.update(
@@ -198,6 +199,7 @@ class MatchedMediaArtifacts:
 
     trajectory_pdf: Path
     timeline_pdf: Path
+    evidence_json: Path
 
 
 def _root_path(value: Path) -> Path:
@@ -1372,23 +1374,123 @@ def pgrr_recovery_timeline_figure(evidence: MatchedEpisodeEvidence, output: Path
     _save_publication_pdf(figure, output)
 
 
+def _relative_artifact_path(path: Path, parent: Path) -> str:
+    """Return a host-neutral relative artifact path for the evidence sidecar."""
+
+    try:
+        relative = path.resolve().relative_to(parent.resolve())
+    except ValueError as error:
+        raise MediaError(
+            "matched-final media must live beside or below the evidence sidecar directory"
+        ) from error
+    return relative.as_posix()
+
+
+def write_matched_evidence_sidecar(
+    *,
+    evidence: MatchedEpisodeEvidence,
+    artifacts: MatchedMediaArtifacts,
+    results_path: Path,
+) -> None:
+    """Bind fixed media filenames to complete results and raw episode hashes."""
+
+    destination = artifacts.evidence_json.resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    expected_names = {
+        artifacts.trajectory_pdf.name: MATCHED_TRAJECTORY_NAME,
+        artifacts.timeline_pdf.name: PGRR_TIMELINE_NAME,
+        destination.name: MATCHED_EVIDENCE_NAME,
+    }
+    if any(observed != expected for observed, expected in expected_names.items()):
+        raise MediaError("matched final media do not use the fixed publication filenames")
+    results = _root_path(results_path)
+    scenario = evidence.scenario
+    payload = {
+        "schema_version": 2,
+        "artifact_type": "matched_base_pgrr_test_media",
+        "benchmark_id": "moderate_social_navigation_v6",
+        "stage": "test",
+        "representation": "telemetry reconstruction; not a simulator camera screenshot",
+        "selection_rule": evidence.selection_rule,
+        "pair_id": evidence.pair_id,
+        "scenario_id": scenario.scenario_id,
+        "scenario_sha256": str(evidence.pgrr_row["scenario_sha256"]),
+        "family": scenario.family,
+        "density": scenario.density,
+        "seed": scenario.seed,
+        "project_commit": str(evidence.pgrr_row["project_commit"]),
+        "results_file": results.name,
+        "results_sha256": _sha256(results),
+        "runs": {
+            method: {
+                "episode_id": episode.episode_id,
+                "outcome": episode.outcome,
+                "raw_file": episode.jsonl_path.name,
+                "raw_sha256": str(row["raw_sha256"]),
+                "metadata_sha256": str(row["metadata_sha256"]),
+                "outcome_sha256": str(row["outcome_sha256"]),
+                "sample_count": len(episode.frames),
+            }
+            for method, episode, row in (
+                ("base", evidence.base, evidence.base_row),
+                ("pgrr", evidence.pgrr, evidence.pgrr_row),
+            )
+        },
+        "artifacts": {
+            "trajectory": {
+                "path": _relative_artifact_path(artifacts.trajectory_pdf, destination.parent),
+                "filename": MATCHED_TRAJECTORY_NAME,
+                "sha256": _sha256(artifacts.trajectory_pdf),
+                "media_type": "application/pdf",
+            },
+            "recovery_timeline": {
+                "path": _relative_artifact_path(artifacts.timeline_pdf, destination.parent),
+                "filename": PGRR_TIMELINE_NAME,
+                "sha256": _sha256(artifacts.timeline_pdf),
+                "media_type": "application/pdf",
+            },
+        },
+    }
+    temporary = destination.with_name(f".{destination.name}.tmp")
+    try:
+        temporary.write_text(
+            json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
+            encoding="utf-8",
+        )
+        temporary.replace(destination)
+    except OSError as error:
+        raise MediaError(f"cannot write matched evidence sidecar {destination}: {error}") from error
+
+
 def render_matched_final_figures(
     results_path: Path,
     raw_dir: Path,
     figure_dir: Path,
     scenario_root: Path = ROOT,
+    evidence_output: Path | None = None,
 ) -> tuple[MatchedEpisodeEvidence, MatchedMediaArtifacts]:
     """Validate final test evidence and generate the two fixed publication PDFs."""
 
     results = load_complete_moderate_test_results(results_path)
     evidence = select_matched_test_evidence(results, raw_dir, scenario_root)
     destination = _root_path(figure_dir)
+    evidence_destination = (
+        _root_path(evidence_output)
+        if evidence_output is not None
+        else _root_path(results_path).parent / MATCHED_EVIDENCE_NAME
+    )
     artifacts = MatchedMediaArtifacts(
         trajectory_pdf=destination / MATCHED_TRAJECTORY_NAME,
         timeline_pdf=destination / PGRR_TIMELINE_NAME,
+        evidence_json=evidence_destination,
     )
     matched_trajectory_figure(evidence, artifacts.trajectory_pdf)
     pgrr_recovery_timeline_figure(evidence, artifacts.timeline_pdf)
+    write_matched_evidence_sidecar(
+        evidence=evidence,
+        artifacts=artifacts,
+        results_path=results_path,
+    )
     return evidence, artifacts
 
 
@@ -1874,7 +1976,22 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--method", default="bc", help="policy selected from results.parquet")
     parser.add_argument("--episode-id", help="optional exact episode ID within results.parquet")
-    parser.add_argument("--figure-dir", type=Path, default=Path("outputs/figures"))
+    parser.add_argument(
+        "--figure-dir",
+        type=Path,
+        help=(
+            "figure directory; matched-final defaults to a media/ directory beside results, "
+            "other modes default to outputs/figures"
+        ),
+    )
+    parser.add_argument(
+        "--evidence-output",
+        type=Path,
+        help=(
+            "matched-final JSON sidecar; defaults beside results.parquet as "
+            f"{MATCHED_EVIDENCE_NAME}"
+        ),
+    )
     parser.add_argument("--video-dir", type=Path, default=Path("outputs/videos"))
     parser.add_argument("--keyframes", type=int, default=4)
     parser.add_argument("--fps", type=int, default=10)
@@ -1898,15 +2015,19 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--matched-final requires the complete --results table, not --jsonl")
     if args.matched_final and args.episode_id is not None:
         parser.error("--episode-id cannot override deterministic matched-final selection")
+    if not args.matched_final and args.evidence_output is not None:
+        parser.error("--evidence-output is only valid with --matched-final")
 
     try:
         if args.matched_final:
             results = args.results or Path("outputs/moderate/final/results.parquet")
+            figure_dir = args.figure_dir or (_root_path(results).parent / "media")
             evidence, matched = render_matched_final_figures(
                 results,
                 args.raw_dir,
-                args.figure_dir,
+                figure_dir,
                 args.scenario_root,
+                args.evidence_output,
             )
             print(f"pair_id: {evidence.pair_id}")
             print(f"selection: {evidence.selection_rule}")
@@ -1914,6 +2035,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"PGRR source: {evidence.pgrr.jsonl_path}")
             print(f"trajectory PDF: {matched.trajectory_pdf}")
             print(f"timeline PDF: {matched.timeline_pdf}")
+            print(f"evidence JSON: {matched.evidence_json}")
             return 0
         if args.jsonl is not None:
             jsonl = args.jsonl
@@ -1933,7 +2055,7 @@ def main(argv: list[str] | None = None) -> int:
         episode = load_telemetry(jsonl)
         artifacts = render_media(
             episode,
-            figure_dir=args.figure_dir,
+            figure_dir=args.figure_dir or Path("outputs/figures"),
             video_dir=args.video_dir,
             keyframe_count=args.keyframes,
             fps=args.fps,

@@ -108,6 +108,8 @@ WAIT、BACKUP、REPLAN、CONTINUE 四个离散恢复动作之间选择。地图�
 
 本报告把终止结果、安全、效率、稳定性、恢复行为、排除项和失败案例分开呈现。碰撞减少不会被重新解释为成功；超时和规划失败不会被隐藏。只有 stage-aware 构建器同时验证 episode-level Parquet 与配对统计 JSON 的路径、split、五方法、condition、端点计数和全局 Holm 一致性后，结果页才会出现数值。
 
+作为不可覆盖的历史审计记录，旧版 v1 已完成 64/64 个 logical episodes：Base 与 PGRR 各覆盖 24 个 family--density 条件，Standard 与 Heuristic 各覆盖 8 个 high-density 条件。PGRR 碰撞为 0/24、Base 为 19/24；但 PGRR 超时为 16/24、Base 为 0/24。PGRR 到达 8/24、Base 到达 5/24，且成功率的校正比较不显著。这只说明旧版存在明确的安全--完成权衡，不是 moderate-v6 validation/test 结果，也不得进入 v6 的表格、图或性能结论。
+
 \clearpage
 \tableofcontents
 \clearpage
@@ -247,12 +249,18 @@ Gazebo 中的动态行人由可见的确定性圆柱代理按 seeded route 运�
 
 \clearpage
 \section{Matched Base--PGRR 真实运行证据}
-为避免事后挑选“好看案例”，运行对比固定选择 moderate-v6 的 doorway\_bottleneck / medium / replicate 0，不依赖两个方法的终局。素材生成器从同一 Parquet 解析 Base 与 PGRR 的 episode ID，逐个校验 JSONL 的 SHA256，并导出平面轨迹、原目标距离、失败分数和恢复状态事件线。
+Validation 快照采用预注册的 doorway\_bottleneck / medium / replicate 0，且不依赖两个方法的终局。锁定 test 则使用已冻结的确定性素材规则：先要求 PGRR 实际触发恢复、场景同时包含配置静态几何与行人路线，再按公开顺序选择一个描述性 pair。素材生成器从同一 Parquet 解析 Base 与 PGRR 的 episode ID，逐个校验 raw、metadata、outcome、scenario 与 results 的 SHA256，并导出平面轨迹和 PGRR 恢复时间线。固定文件名与哈希写入 \texttt{matched\_base\_pgrr\_evidence.json}；任何缺失或不一致均阻止 final 构建。
 
 \ifReportResultsAvailable
-  \SafeFigure{generated/result_matched_run_evidence.pdf}{同一 pair 的 Base--PGRR 遥测对比。空间轨迹和时间线来自 SHA256 校验的真实 raw JSONL，并通过与 results.parquet 同目录的审计 sidecar 注入。该图是 telemetry reconstruction，不是 camera screenshot；其终局不能代替总体 outcome 分解。}
+  \ifReportFixedTestMediaAvailable
+    \SafeFigure{generated/result_matched_trajectory.pdf}{锁定 test 中同一 pair 的 Base--PGRR 平面轨迹。场景几何、行人路线与运动轨迹来自 SHA256 绑定的真实配置和 raw JSONL。该图是 telemetry reconstruction，不是 camera screenshot；单个 pair 的终局不能代替总体 outcome 分解。}
+    \SafeFigure{generated/result_matched_recovery_timeline.pdf}{同一 test pair 的 PGRR 恢复时间线，包含记录的目标距离、failure score、恢复状态与触发事件。它是 telemetry reconstruction，不是 camera screenshot。}
+  \else
+    \SafeFigure{generated/result_matched_run_evidence.pdf}{Validation 同一 pair 的 Base--PGRR 遥测对比。空间轨迹和时间线来自 SHA256 校验的真实 raw JSONL，并通过审计 sidecar 注入。该图是 telemetry reconstruction，不是 camera screenshot；其终局不能代替总体 outcome 分解。}
+  \fi
 \else
-  \EvidenceSlot{待生成：moderate-v6 doorway\_bottleneck / medium / r00 的 matched Base--PGRR raw/Parquet 轨迹与事件时间线。}
+  \EvidenceSlot{待生成：固定文件名 \texttt{moderate\_matched\_base\_pgrr\_trajectory.pdf} 的同一 test pair Base--PGRR 真实遥测轨迹。}
+  \EvidenceSlot{待生成：固定文件名 \texttt{moderate\_pgrr\_recovery\_timeline.pdf} 的同一 test pair PGRR 恢复事件时间线。两者均是 telemetry reconstruction，不是 camera screenshot。}
 \fi
 
 \clearpage

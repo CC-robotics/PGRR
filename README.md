@@ -24,6 +24,15 @@ compatibility interfaces, not the public method name.
 > never copied into the paper. Moderate-v5 is retained as a rejected
 > calibration audit and cannot be promoted into a v6 result snapshot.
 
+> **Frozen historical v1 evidence—not a moderate-v6 result.** The completed
+> 64/64 logical-episode audit assigned 24 matched conditions each to Base and
+> PGRR, plus eight high-density conditions each to Standard and Heuristic.
+> PGRR recorded 0/24 collisions versus Base 19/24, but PGRR also timed out in
+> 16/24 episodes versus Base 0/24. Goal reaching was 8/24 for PGRR versus 5/24
+> for Base, and the adjusted success comparison was not significant. This is a
+> safety--completion trade-off, not proof of a v6 advantage; it remains visible
+> in summaries but can never populate moderate-v6 final tables or figures.
+
 The closed-loop evaluation is a five-method suite: four baselines plus the
 PGRR main method. The baselines are DWB, Standard Nav2 recovery, deterministic
 Heuristic recovery, and Uniform BC. PGRR is the validation-selected DAgger
@@ -362,9 +371,11 @@ The verified frozen-scene capture is
 `paper/figures/runtime_gazebo_doorway_bottleneck_medium.png` together with its
 machine-readable provenance in `outputs/figures/runtime/`. It is qualitative
 runtime evidence, not a camera frame from a locked v6 statistical episode.
-Result-bearing report/PPT builds also require an outcome-independent matched
-Base--PGRR telemetry sidecar generated from raw JSONL whose SHA256 agrees with
-the approved Parquet.
+Result-bearing report/PPT builds also require a matched Base--PGRR telemetry
+sidecar generated from raw JSONL whose SHA256 agrees with the approved Parquet.
+The validation selector is outcome-independent and preregistered. The locked
+test uses the frozen deterministic media rule implemented by
+`render_episode_media.py --matched-final` and records that rule verbatim.
 
 ## Paper, technical report, and presentation
 
@@ -405,6 +416,14 @@ make technical-report presentation
 The final test documents accept only the locked moderate-v6 result:
 
 ```bash
+python scripts/paper/render_episode_media.py \
+  --matched-final \
+  --results outputs/moderate/final/results.parquet \
+  --raw-dir data/raw \
+  --scenario-root . \
+  --figure-dir outputs/moderate/final/media \
+  --evidence-output outputs/moderate/final/matched_base_pgrr_evidence.json
+
 REPORT_STAGE=test \
 REPORT_RESULTS=outputs/moderate/final/results.parquet \
 REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
@@ -435,6 +454,8 @@ outputs/moderate/final/results.parquet
 outputs/moderate/final/summary.csv
 outputs/moderate/final/pairwise_statistics.json
 outputs/moderate/final/matched_base_pgrr_evidence.json
+outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf
+outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf
 outputs/moderate/final/failure_analysis.md
 outputs/moderate/final/artifact_manifest.json
 outputs/moderate/final/offline_policy_ablation.csv

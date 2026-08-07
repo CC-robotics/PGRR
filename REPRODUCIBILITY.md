@@ -26,6 +26,18 @@ failure detector are not completed or claimed contributions.
 Smoke, pilot, calibration, and validation runs verify software or select a
 configuration. They are never substituted for held-out test evidence.
 
+## Frozen historical v1 audit (not moderate-v6)
+
+The earlier complete 64/64 logical-episode audit remains part of the release
+record: Base and PGRR each covered 24 matched family--density conditions, while
+Standard and Heuristic each covered eight high-density conditions. PGRR had
+0/24 collisions versus Base 19/24, but 16/24 PGRR episodes timed out versus
+Base 0/24. Goal reaching was 8/24 versus 5/24, respectively, and the adjusted
+success comparison was not significant. These numbers document a
+safety--completion trade-off. They are historical v1 evidence, never
+moderate-v6 validation or test input, and no reproduction command below copies
+them into v6 result artifacts.
+
 ## Documentation layers and evidence stages
 
 PGRR maintains three independently validated documents:
@@ -80,6 +92,14 @@ make technical-report presentation
 The locked test documents are generated only with:
 
 ```bash
+python scripts/paper/render_episode_media.py \
+  --matched-final \
+  --results outputs/moderate/final/results.parquet \
+  --raw-dir data/raw \
+  --scenario-root . \
+  --figure-dir outputs/moderate/final/media \
+  --evidence-output outputs/moderate/final/matched_base_pgrr_evidence.json
+
 REPORT_STAGE=test \
 REPORT_RESULTS=outputs/moderate/final/results.parquet \
 REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
@@ -308,11 +328,13 @@ make statistics MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make figures MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make tables MODERATE_ANALYSIS_DIR=outputs/moderate/final
 make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
-python scripts/report/build_matched_run_evidence.py \
-  --stage test \
+python scripts/paper/render_episode_media.py \
+  --matched-final \
   --results outputs/moderate/final/results.parquet \
   --raw-dir data/raw \
-  --output outputs/moderate/final/matched_base_pgrr_evidence.json
+  --scenario-root . \
+  --figure-dir outputs/moderate/final/media \
+  --evidence-output outputs/moderate/final/matched_base_pgrr_evidence.json
 REPORT_STAGE=test \
   REPORT_RESULTS=outputs/moderate/final/results.parquet \
   REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
@@ -320,11 +342,17 @@ REPORT_STAGE=test \
   make technical-report presentation
 ```
 
-The matched evidence selector is fixed at doorway-bottleneck / medium /
-replicate 0. The extractor verifies each Base/PGRR JSONL SHA against Parquet
-before exporting trajectories and event timelines. These plots are telemetry
-reconstructions, not simulator camera screenshots. Missing raw logs or a hash
-mismatch blocks result-stage report and deck generation.
+The locked-test media rule first requires a PGRR-triggered pair whose configured
+scenario contains both static geometry and actor routes, then applies the fixed
+ordering printed by the renderer. The extractor verifies the complete 600-row
+test table plus results, scenario, raw, metadata, and outcome hashes before
+writing the fixed files
+`moderate_matched_base_pgrr_trajectory.pdf`,
+`moderate_pgrr_recovery_timeline.pdf`, and their
+`matched_base_pgrr_evidence.json` sidecar. These plots are telemetry
+reconstructions, not simulator camera screenshots. Missing inputs, a filename
+change, or any hash mismatch blocks final report and deck generation. This
+descriptive pair never replaces the complete outcome decomposition.
 
 The collector verifies manifest membership, completion, outcome evidence, and
 paired metadata. The moderate summarizer requires exactly the same 120
@@ -398,6 +426,8 @@ reconstructions and must not be described as camera screenshots.
 - `outputs/moderate/final/summary.csv`
 - `outputs/moderate/final/pairwise_statistics.json`
 - `outputs/moderate/final/matched_base_pgrr_evidence.json`
+- `outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf`
+- `outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf`
 - `outputs/moderate/final/failure_analysis.md`
 - `outputs/moderate/final/artifact_manifest.json`
 - `outputs/moderate/final/offline_policy_ablation.csv`
@@ -442,6 +472,8 @@ test -s outputs/moderate/final/results.parquet
 test -s outputs/moderate/final/summary.csv
 test -s outputs/moderate/final/pairwise_statistics.json
 test -s outputs/moderate/final/matched_base_pgrr_evidence.json
+test -s outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf
+test -s outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf
 test -s outputs/moderate/final/failure_analysis.md
 test -s outputs/moderate/final/artifact_manifest.json
 test -s outputs/moderate/final/offline_policy_ablation.csv

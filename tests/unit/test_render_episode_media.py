@@ -418,7 +418,7 @@ def test_complete_test_generates_sha_verified_matched_publication_figures(
     evidence, artifacts = media.render_matched_final_figures(
         results,
         raw_dir,
-        tmp_path / "figures",
+        results.parent / "media",
         scenario_root,
     )
 
@@ -432,8 +432,21 @@ def test_complete_test_generates_sha_verified_matched_publication_figures(
     assert len(evidence.scenario.actor_routes) == 1
     assert artifacts.trajectory_pdf.name == media.MATCHED_TRAJECTORY_NAME
     assert artifacts.timeline_pdf.name == media.PGRR_TIMELINE_NAME
+    assert artifacts.evidence_json.name == media.MATCHED_EVIDENCE_NAME
     assert artifacts.trajectory_pdf.stat().st_size > 2_000
     assert artifacts.timeline_pdf.stat().st_size > 2_000
+    sidecar = json.loads(artifacts.evidence_json.read_text(encoding="utf-8"))
+    assert sidecar["artifact_type"] == "matched_base_pgrr_test_media"
+    assert sidecar["benchmark_id"] == "moderate_social_navigation_v6"
+    assert sidecar["stage"] == "test"
+    assert sidecar["pair_id"] == selected_pair
+    assert sidecar["representation"] == (
+        "telemetry reconstruction; not a simulator camera screenshot"
+    )
+    assert sidecar["artifacts"]["trajectory"]["filename"] == media.MATCHED_TRAJECTORY_NAME
+    assert sidecar["artifacts"]["trajectory"]["sha256"] == _digest(artifacts.trajectory_pdf)
+    assert sidecar["artifacts"]["recovery_timeline"]["filename"] == (media.PGRR_TIMELINE_NAME)
+    assert sidecar["artifacts"]["recovery_timeline"]["sha256"] == _digest(artifacts.timeline_pdf)
 
 
 def test_matched_publication_rejects_partial_or_validation_results(tmp_path: Path) -> None:

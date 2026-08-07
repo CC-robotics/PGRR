@@ -126,6 +126,31 @@ def validate_deck(pptx: Path, notes: Path, pdf: Path | None = None) -> None:
         media_hashes = {hashlib.sha256(archive.read(name)).hexdigest() for name in media}
         if runtime_sha not in media_hashes:
             raise DeckValidationError("PPTX does not embed the SHA-verified Gazebo GUI capture")
+        if "stage=test" in core:
+            required_final_text = (
+                "episode ID",
+                "pixel SHA256",
+                "PGRR 恢复时序",
+                "telemetry reconstruction",
+            )
+            missing_final_text = [
+                token for token in required_final_text if token not in joined_visible_text
+            ]
+            if missing_final_text:
+                raise DeckValidationError(
+                    f"locked-test PPTX omits final evidence provenance: {missing_final_text}"
+                )
+            final_rasters = (
+                PROJECT_ROOT / "presentation/generated/result_matched_trajectory.png",
+                PROJECT_ROOT / "presentation/generated/result_matched_recovery_timeline.png",
+            )
+            for raster in final_rasters:
+                if not raster.is_file() or hashlib.sha256(raster.read_bytes()).hexdigest() not in (
+                    media_hashes
+                ):
+                    raise DeckValidationError(
+                        f"locked-test PPTX does not embed verified matched media: {raster.name}"
+                    )
 
     if not notes.is_file():
         raise DeckValidationError(f"speaker notes are missing: {notes}")
