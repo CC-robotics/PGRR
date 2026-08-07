@@ -1,5 +1,33 @@
 # Progress log
 
+## 2026-08-07 — validation-only timeout remediation
+
+- Replayed the retained low-density blind-corner timeout and traced it to recurrent
+  STOP/BACKUP/Nav2 release without goal progress. The static Gazebo shelf is absent
+  from the `map_empty` Nav2 occupancy map, so the correction remains observable and
+  bounded rather than using privileged shelf coordinates.
+- Evaluated seven incremental candidates on the same validation probe and preserved
+  every terminal outcome. In particular, the 0.36 m rotation-clearance candidate
+  collided with the shelf and was rejected; planner-failure and timeout candidates
+  were also not promoted as successes.
+- Selected `eceeca8`: emergency budgets reset only after stable clearance plus
+  observable original-goal progress; post-retreat release requires a turn; forward
+  and reverse escape directions meet at 80 degrees; emergency escalation activates a
+  bounded 2.5 m recurrent path envelope; and turning requires 0.60 m drift-aware
+  clearance.
+- Converted the fixed blind-corner validation timeout into a physically verified
+  goal reach at 126.51 s and 0.243 m terminal physical error, without collision.
+- Completed an eight-family low-density replicate-zero PGRR regression: 8/8 goal
+  reaches, zero collisions, zero timeouts, and zero planner failures. One initial
+  four-worker overtaking launch returned before the logger created an outcome; the
+  one-worker resume regenerated only that missing task and the final manifest reports
+  8/8 complete with `worker_errors=[]`.
+- Generated checked-in Parquet/CSV/JSON evidence for both probes. These rows are
+  validation-only and are not used as final paper results.
+- Passed Ruff, formatting, strict mypy, all 636 offline tests, and the three-package
+  ROS overlay build. The complete 72-condition PGRR validation gate remains next; the
+  held-out moderate-v5 test has not been run or inspected.
+
 ## 2026-08-06 — validation-only blind-corner clearance freeze
 
 - Completed two bounded blind-corner geometry calibrations using validation only:

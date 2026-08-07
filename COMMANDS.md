@@ -2,6 +2,60 @@
 
 Commands are copied here when a gate is accepted. Raw command output is stored under `outputs/logs/`.
 
+## 2026-08-07 validation-only timeout remediation
+
+The target probe and eight-family low-density regression used only the validation
+split. The held-out test was not invoked:
+
+```bash
+conda run -n ramp-offline python scripts/evaluate/run_experiment.py \
+  --split validation \
+  --split-manifest scenarios/splits/moderate_v5_validation_timeout_probe.yaml \
+  --methods pgrr \
+  --jobs 1 \
+  --timeout 240 \
+  --output-dir outputs/moderate/v5_validation_timeout_fix_eceeca8
+
+conda run -n ramp-offline python scripts/evaluate/run_experiment.py \
+  --split validation \
+  --split-manifest scenarios/splits/ei_pilot_low.yaml \
+  --methods pgrr \
+  --jobs 4 \
+  --timeout 240 \
+  --output-dir outputs/moderate/v5_validation_low_r0_regression_eceeca8
+
+# Resume only the pre-logger task missing from the first pass.
+conda run -n ramp-offline python scripts/evaluate/run_experiment.py \
+  --split validation \
+  --split-manifest scenarios/splits/ei_pilot_low.yaml \
+  --methods pgrr \
+  --jobs 1 \
+  --timeout 240 \
+  --output-dir outputs/moderate/v5_validation_low_r0_regression_eceeca8 \
+  --resume
+```
+
+Both manifests were collected with the same immutable-artifact command shape (shown
+for the eight-family regression):
+
+```bash
+conda run -n ramp-offline python scripts/evaluate/collect_results.py \
+  --manifest outputs/moderate/v5_validation_low_r0_regression_eceeca8/episode_manifest.parquet \
+  --raw-dir data/raw \
+  --run-manifest outputs/moderate/v5_validation_low_r0_regression_eceeca8/run_manifest.json \
+  --results outputs/moderate/v5_validation_low_r0_regression_eceeca8/results.parquet \
+  --summary outputs/moderate/v5_validation_low_r0_regression_eceeca8/summary.csv \
+  --statistics outputs/moderate/v5_validation_low_r0_regression_eceeca8/statistics.json \
+  --reference-policy pgrr \
+  --treatment-policy pgrr \
+  --bootstrap-samples 10000 \
+  --bootstrap-seed 20260807
+
+make test
+env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u VIRTUAL_ENV \
+  CONDA_SHLVL=0 scripts/bootstrap/build_overlay.sh
+```
+
 ```bash
 make preflight
 make conda

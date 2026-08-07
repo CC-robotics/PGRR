@@ -1,5 +1,24 @@
 # Known issues
 
+## KI-083: Emergency clearance chatter could restore a blocked task path indefinitely
+
+The pre-change low-density blind-corner validation episode timed out after repeatedly
+alternating emergency STOP/BACKUP with immediate Nav2 release. A brief clear interval
+reset the escape allowance even though the robot had made no observable progress toward
+the original goal. Because Gazebo shelf geometry is not rasterized into `map_empty`,
+the classical planner then selected the same blocked corridor again. This is a known
+fallback map mismatch and recurrent-control defect, not evidence that waiting solved
+the interaction.
+
+The selected observable correction requires stable clearance plus original-goal
+progress before budget reset, completes a post-retreat turn before release, and gives
+emergency recurrence the bounded 2.5 m detour envelope. Jackal in-place commands were
+observed to translate by centimetres: a 0.36 m clearance candidate collided with the
+shelf, so it was rejected and the turn-entry threshold is 0.60 m. The fixed probe and
+an eight-family low-density regression reached 1/1 and 8/8 validation goals with no
+collision, timeout, or planner failure. This does not prove the timeout problem is
+solved on the complete validation distribution or held-out test; both remain required.
+
 ## KI-082: Upstream Jackal smoke mapping advertised idle odometry
 
 The first post-migration `make smoke` discovered

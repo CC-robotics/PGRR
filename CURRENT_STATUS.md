@@ -1,5 +1,38 @@
 # Current status
 
+## 2026-08-07 — validation-selected recurrent-escape correction (current)
+
+The moderate-v5 held-out test remains unexecuted and uninspected. Algorithm changes
+in this section were selected only from validation trajectories; the 2026-08-06
+freeze still applies to scenario geometry and difficulty. The new controller is not
+yet the final test-frozen release until the complete 72-condition PGRR validation run
+has passed.
+
+The concrete validation failure was a low-density blind-corner live-lock: a short
+clear interval reset the emergency BACKUP/TURN allowance without observable progress
+toward the original goal, after which the safety layer and Nav2 repeatedly returned
+to the same shelf corner. The selected correction keeps emergency ownership until a
+post-retreat turn is completed, resets escape budgets only after stable clearance and
+measurable goal progress, partitions forward versus reverse escape at 80 degrees, and
+uses the already bounded 2.5 m recurrent path envelope when emergency escalation itself
+establishes recurrence. In-place turns require 0.60 m LiDAR clearance to cover observed
+Jackal skid-steer translation. The 0.36 m turn-clearance candidate collided with static
+shelf geometry and was rejected; its outcome remains preserved.
+
+Under commit `eceeca8`, the fixed blind-corner validation probe changed from
+`TIMEOUT` at 180 s under the pre-change controller to a physically verified
+`GOAL_REACHED` at 126.51 s, with 0.243 m terminal physical goal error and no
+collision. A broader eight-family, low-density, replicate-zero validation regression
+then produced 8/8 `GOAL_REACHED`, 0 collisions, 0 timeouts, and 0 planner failures.
+This is a descriptive validation regression, not a held-out result or a significance
+claim. Its compact, hash-linked artifacts are under
+`outputs/moderate/v5_validation_{timeout_fix,low_r0_regression}_eceeca8/`.
+
+Ruff, formatting, strict mypy, all 636 offline tests, and the three-package ROS overlay
+build pass. The next gate is the complete 72-condition PGRR validation run; only after
+that gate will configuration/checkpoint hashes be frozen and the five-method held-out
+test begin.
+
 ## 2026-08-06 — moderate-v5 evaluation protocol (current)
 
 The 64-method-episode evaluation recorded on 2026-08-04 is retained as
