@@ -65,6 +65,16 @@ paired-effect, and recovery tables appear only when the build finds a complete
 v6 result manifest and the generated \texttt{moderate\_*} artifacts.
 \fi
 
+\subsection{Historical v1 Safety--Completion Boundary}
+The superseded v1 frozen test completed 64/64 logical episodes: Base and PGRR
+each covered 24 matched conditions, while Standard and Heuristic each covered
+eight high-density conditions.  On the matched conditions, PGRR recorded 0/24
+collisions versus Base's 19/24, but 16/24 timeouts versus 0/24; goal reaches
+were 8/24 versus 5/24, and the adjusted goal-reaching comparison was not
+significant (Holm $p=0.75$).  Thus v1 documents collision avoidance traded for
+completion, not general superiority.  It is historical context only, is not a
+moderate-v6 result, and is excluded from every v6 estimate and hypothesis test.
+
 \subsection{Matched Execution Evidence}
 Aggregate tables are complemented by one matched Base--PGRR condition selected
 deterministically from the final \texttt{results.parquet}.  The release renderer

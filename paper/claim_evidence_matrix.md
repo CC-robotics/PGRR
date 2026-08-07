@@ -16,6 +16,11 @@ method settings, changes only Crossing Flow speed from 0.35--0.55 to
 0.18--0.28 m/s, and uses new validation/test seed blocks 77000/87000. At the
 v6 protocol freeze, its test split was unexecuted and uninspected.
 
+An older, superseded v1 benchmark is retained as historical evidence, not as a
+moderate-v6 result. Its checked-in 64/64 logical episodes establish a
+safety--completion trade-off and are never pooled with, substituted for, or
+used to make significance claims about moderate-v6.
+
 | Claim or boundary | Direct evidence | Paper location | Statistical requirement | Counterevidence / limit |
 |---|---|---|---|---|
 | The public method is **PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation**. | `paper/main.tex`, release metadata, and the frozen runtime configuration. | Title; Abstract; Conclusion. | Naming claim only. | Historical `ramp_*`/`RAMP_*` interfaces remain compatibility names, not the public method name. |
@@ -23,6 +28,7 @@ v6 protocol freeze, its test split was unexecuted and uninspected.
 | The selected recurrent correction uses a 2.5 m bounded recurrent envelope, 0.60 m drift-aware turn clearance, a 3 s clear plus 0.25 m goal-progress budget reset, an 80-degree forward/reverse partition, and planner-failure handling. | Frozen `recovery_state_machine.yaml`, recovery-manager implementation, unit tests, and validation-only correction evidence. | Failure Trigger; Recovery Actions, Mask, and Supervisor. | Configuration/implementation claim; validation probe outcomes are descriptive only. | These constants were selected on validation and provide neither an isolated causal effect nor a formal safety guarantee. |
 | Moderate-v5 failed calibration and was rejected without test inspection. | Complete Base validation rows and `outputs/moderate/v5_validation_comparators_d26d835/analysis/calibration_report.json`; decision log D-068. | Calibration Audit and v6 Freeze; artifact-gated Results. | 57/72 = 79.17% is compared with the preregistered [55%, 75%] acceptance band. | The threshold must not be widened after observing validation. No v5 test value is reportable. |
 | Moderate-v6 makes exactly one interaction change and uses fresh split seeds. | `configs/experiments/scenario_catalog_moderate_v6.yaml`, compiled catalog manifest, and v6 split hashes. | Calibration Audit and v6 Freeze. | Protocol-integrity claim only. | Crossing Flow speed changes from 0.35--0.55 to 0.18--0.28 m/s; routes, lanes, clearances, radii, actor guard, and method are unchanged. Validation/test start at seeds 77000/87000. |
+| Historical v1 records a safety--completion trade-off, not general navigation superiority: PGRR/Base collisions are 0/24 versus 19/24, timeouts 16/24 versus 0/24, and goal reaches 8/24 versus 5/24. | Checked-in `outputs/final/{run_manifest.json,results.parquet,statistics.json}` at historical project commit `35d7e601cd6f5baf168948a7174cd32fa9c37c5b`; the manifest completed 64/64 logical episodes. | Introduction; Historical v1 Safety--Completion Boundary; Conclusion. | The goal-reaching difference is not significant after global Holm adjustment (`p=0.75`); no completion-improvement claim. | This is a superseded v1 benchmark, not moderate-v5 or moderate-v6. It is never pooled with or substituted for v6 evidence. |
 | A final comparison covers the complete test-frozen, held-out v6 benchmark. | Final `episode_manifest.parquet`, `run_manifest.json`, and completeness checks in `summarize_moderate.py` and `moderate_artifacts.py` must require 120 identical condition keys for each of `base`, `standard`, `heuristic`, `bc_uniform`, and `pgrr`. | Scenarios, Splits, and Comparators; generated main-results table. | Integrity claim; no hypothesis test. | This claim is absent when v6 artifacts are missing. Infrastructure attempts remain recorded and separate. |
 | PGRR changes goal-reaching, collision, timeout, or planner-failure rates relative to Base DWB. | Complete v6 `results.parquet`; generated macros; Base comparison in `pairwise_statistics.json`. | Abstract; Results; Conclusion. | Report paired estimates, intervals, exact McNemar tests, and globally Holm-adjusted values. Use significance language only when the generated adjusted value supports it. | A collision change is not a completion improvement; every terminal category remains separate. |
 | PGRR is compared with four complete paired baselines. | All comparator blocks in final `pairwise_statistics.json`; paired-effects figure/table. | Paired Effects Against Four Baselines. | One global Holm family covers every registered comparator--endpoint test. | Do not select a favorable family, density, seed, or outcome after evaluation. |
@@ -41,6 +47,8 @@ v6 protocol freeze, its test split was unexecuted and uninspected.
 
 - Rejected v5 calibration audit (validation only):
   `outputs/moderate/v5_validation_comparators_d26d835/analysis/calibration_report.json`.
+- Historical v1 frozen-test evidence (superseded; never a moderate-v6 input):
+  `outputs/final/{run_manifest.json,results.parquet,statistics.json}`.
 - Frozen v6 protocol: `configs/experiments/scenario_catalog_moderate_v6.yaml`,
   `scenarios/manifests/scenario_catalog_moderate_v6.json`, and
   `scenarios/splits/moderate_v6_{validation,test}.yaml`.
