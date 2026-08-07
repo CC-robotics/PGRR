@@ -16,8 +16,16 @@ emergency recurrence the bounded 2.5 m detour envelope. Jackal in-place commands
 observed to translate by centimetres: a 0.36 m clearance candidate collided with the
 shelf, so it was rejected and the turn-entry threshold is 0.60 m. The fixed probe and
 an eight-family low-density regression reached 1/1 and 8/8 validation goals with no
-collision, timeout, or planner failure. This does not prove the timeout problem is
-solved on the complete validation distribution or held-out test; both remain required.
+collision, timeout, or planner failure.
+
+The complete 72-condition PGRR validation is less optimistic: 62 goal reaches, one
+collision, one timeout, and eight planner failures. Four planner failures occur at
+blind corners, three terminal failures plus the collision occur at doorways, and high-
+density temporary blockage contributes the remaining planner failure and timeout. The
+same blind-corner seed reached the goal in the target probe but ended in planner failure
+in the full batch, consistent with known Gazebo scheduling sensitivity. The correction
+substantially reduces long stagnation but does not eliminate every completion or safety
+failure; the held-out test remains unseen.
 
 ## KI-082: Upstream Jackal smoke mapping advertised idle odometry
 

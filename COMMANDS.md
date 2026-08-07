@@ -56,6 +56,46 @@ env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u VIRTUAL_ENV \
   CONDA_SHLVL=0 scripts/bootstrap/build_overlay.sh
 ```
 
+The complete PGRR validation used three workers, then a one-worker resume for three
+pre-logger tasks. Existing terminal artifacts were hash-checked and reused:
+
+```bash
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION \
+  -u ROS_PYTHON_VERSION \
+  conda run -n ramp-offline python scripts/evaluate/run_experiment.py \
+    --split validation \
+    --split-manifest scenarios/splits/moderate_v5_validation.yaml \
+    --methods pgrr \
+    --jobs 3 \
+    --timeout 240 \
+    --output-dir outputs/moderate/v5_validation_pgrr_22da999
+
+env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH -u ROS_DISTRO -u ROS_VERSION \
+  -u ROS_PYTHON_VERSION \
+  conda run -n ramp-offline python scripts/evaluate/run_experiment.py \
+    --split validation \
+    --split-manifest scenarios/splits/moderate_v5_validation.yaml \
+    --methods pgrr \
+    --jobs 1 \
+    --timeout 240 \
+    --output-dir outputs/moderate/v5_validation_pgrr_22da999 \
+    --resume
+
+conda run -n ramp-offline python scripts/evaluate/collect_results.py \
+  --manifest outputs/moderate/v5_validation_pgrr_22da999/episode_manifest.parquet \
+  --raw-dir data/raw \
+  --run-manifest outputs/moderate/v5_validation_pgrr_22da999/run_manifest.json \
+  --results outputs/moderate/v5_validation_pgrr_22da999/results.parquet \
+  --summary outputs/moderate/v5_validation_pgrr_22da999/summary.csv \
+  --statistics outputs/moderate/v5_validation_pgrr_22da999/statistics.json \
+  --reference-policy pgrr \
+  --treatment-policy pgrr \
+  --bootstrap-samples 10000 \
+  --bootstrap-seed 20260807
+```
+
 ```bash
 make preflight
 make conda

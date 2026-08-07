@@ -4,9 +4,10 @@
 
 The moderate-v5 held-out test remains unexecuted and uninspected. Algorithm changes
 in this section were selected only from validation trajectories; the 2026-08-06
-freeze still applies to scenario geometry and difficulty. The new controller is not
-yet the final test-frozen release until the complete 72-condition PGRR validation run
-has passed.
+freeze still applies to scenario geometry and difficulty. The complete 72-condition
+PGRR validation run has passed its manifest-completeness gate. Base calibration and
+the other three comparator validation runs remain required before the five-method
+configuration is frozen for test.
 
 The concrete validation failure was a low-density blind-corner live-lock: a short
 clear interval reset the emergency BACKUP/TURN allowance without observable progress
@@ -28,10 +29,20 @@ This is a descriptive validation regression, not a held-out result or a signific
 claim. Its compact, hash-linked artifacts are under
 `outputs/moderate/v5_validation_{timeout_fix,low_r0_regression}_eceeca8/`.
 
+The complete PGRR validation run at project commit `22da999` retained all 72 logical
+episodes and four technical `SIMULATOR_FAILURE` attempts. Its algorithm outcomes are
+62 `GOAL_REACHED` (86.11%), one collision (1.39%), one timeout (1.39%), and eight
+planner failures (11.11%). The single timeout is high-density temporary blockage; all
+eight planner failures are confined to doorway, blind-corner, and high-density
+temporary-blockage conditions. A same-seed blind-corner result also changed between
+the targeted probe and the full batch, so no deterministic single-replay claim is
+made. The correction has materially improved completion on validation but has not
+eliminated every timeout or recovery failure.
+
 Ruff, formatting, strict mypy, all 636 offline tests, and the three-package ROS overlay
-build pass. The next gate is the complete 72-condition PGRR validation run; only after
-that gate will configuration/checkpoint hashes be frozen and the five-method held-out
-test begin.
+build pass. The PGRR runtime candidate is now fixed while the remaining four methods
+run on the same 72-condition validation manifest. Only an accepted Base calibration
+report and complete five-method validation will unlock the held-out test.
 
 ## 2026-08-06 — moderate-v5 evaluation protocol (current)
 
