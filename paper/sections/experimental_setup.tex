@@ -1,11 +1,13 @@
 \subsection{Platform and Robot}
-Experiments use a pinned Arena ROS2 Humble/Gazebo runtime with Nav2 NavFn/DWB
-and Jackal.  The map is $31.28\times24.03$ m; robot and pedestrian radii are
-0.36 and 0.35 m.  Planar LiDAR is resampled to 180 bins, and localized and
-physical goal tolerances are 0.25 and 0.30 m.  Deployment receives only LiDAR,
-path, velocity, command, progress, planner-status, and rule histories.
-Simulator poses remain isolated for actor execution, expert labels, and
-evaluation.
+Experiments execute in a pinned Ubuntu 22.04 Arena runtime with ROS2 Humble and
+Gazebo.  Arena instantiates the world and Jackal skid-steer model; Nav2 NavFn
+plans the global path and DWB produces the nominal and temporary-goal velocity
+commands.  All project nodes use simulation time.  The map is
+$31.28\times24.03$ m; robot and pedestrian radii are 0.36 and 0.35 m.  Jackal's
+planar LiDAR is resampled to 180 bins, and localized and physical goal
+tolerances are 0.25 and 0.30 m.  Deployment receives only LiDAR, path, velocity,
+command, progress, planner-status, and rule histories.  Simulator poses remain
+isolated for actor execution, expert labels, and evaluation.
 
 LiDAR-visible cylindrical pedestrians follow deterministic one-shot routes at
 5 Hz and 0.06--0.55 m/s.  Swept-step guards hold motions inside a 0.90-m
@@ -20,9 +22,11 @@ entering the physical collision radius is still counted as a collision.
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{runtime_gazebo_doorway_bottleneck_medium.png}
-  \caption{Recorded Arena/Gazebo validation execution of the doorway
-  interaction.  This is qualitative runtime evidence; numerical results come
-  only from paired episode logs.}
+  \caption{Pixel capture from the mapped Gazebo GUI during execution of a
+  frozen Arena doorway scene.  The viewport shows the Jackal model, static
+  doorway geometry, and LiDAR-visible cylindrical pedestrian proxies.  This is
+  a qualitative environment demonstration, not an onboard camera image or a
+  numerical outcome; all comparisons come from paired raw logs and Parquet.}
   \label{fig:runtime-gazebo}
 \end{figure}
 }{}
@@ -43,6 +47,25 @@ unexecuted until code, hashes, and checkpoints are frozen.  Every method then
 receives identical starts, goals, pedestrian routes, seeds, planner profile,
 and 240-s limit.  Artifact generation rejects missing conditions or mismatched
 pair metadata.
+
+\subsection{Calibration Audit and v6 Freeze}
+The first complete moderate-v5 Base validation retained 57 goal reaches and 15
+collisions over all 72 declared conditions: 79.17\% success exceeded the
+predeclared 75\% maximum.  The benchmark was therefore rejected without
+widening its threshold, and its test split was neither executed nor inspected.
+The validation diagnosis also found that Base reached all nine Crossing Flow
+conditions because the one-shot actors cleared the intersection before the
+robot arrived.
+
+Moderate-v6 retains every v5 route, lane, static-clearance, collision-radius,
+actor-guard, and method parameter.  Its only interaction change slows Crossing
+Flow from 0.35--0.55 to 0.18--0.28 m/s, aligning actor arrival with the
+validation-observed robot phase.  New validation and test seed blocks begin at
+77000 and 87000, respectively.  Both splits were compiled and frozen before
+v6 simulation; at protocol freeze, the 120-condition test was still
+unexecuted and uninspected.  No v6 test value enters this manuscript until the
+unchanged calibration gate passes and the complete artifact pipeline verifies
+all five methods on identical condition keys.
 
 We compare four baselines with PGRR.  \emph{Base DWB} is NavFn/DWB with Arena's
 periodic-replanning behavior tree and no PGRR node.  \emph{Standard} changes

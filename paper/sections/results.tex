@@ -1,3 +1,4 @@
+\ifmoderateresults
 \subsection{Closed-Loop Navigation Outcomes}
 Table~\ref{tab:moderate-main-results} reports all retained terminal outcomes for
 the complete held-out three-density Gazebo benchmark.  Of \ModerateEpisodeCount{} logical
@@ -52,6 +53,45 @@ through bounded recovery rather than persistent waiting; they do not replace
 terminal navigation outcomes.
 
 \input{generated/moderate_recovery_metrics.tex}
+
+\else
+\subsection{Artifact-Gated Outcome Status}
+The complete moderate-v5 Base validation failed its frozen calibration ceiling
+(57/72 goals, 79.17\%); consequently no v5 test episode was eligible for
+analysis.  Moderate-v6 was then preregistered from validation evidence with the
+single Crossing Flow timing change and new seed blocks described above.  This
+source revision intentionally contains no v6 test number.  Final outcome,
+paired-effect, and recovery tables appear only when the build finds a complete
+v6 result manifest and the generated \texttt{moderate\_*} artifacts.
+\fi
+
+\subsection{Matched Execution Evidence}
+Aggregate tables are complemented by one matched Base--PGRR condition selected
+deterministically from the final \texttt{results.parquet}.  The release renderer
+must join both method rows to their raw JSONL, metadata, and outcome sidecars,
+verify the scenario and commit hashes, and print each terminal outcome verbatim.
+This panel is illustrative ($n=1$) and is never used to estimate an effect.
+The top-down trajectory and timeline are telemetry reconstructions, not camera
+screenshots; Figure~\ref{fig:runtime-gazebo} separately provides an actual
+Gazebo GUI pixel capture of the frozen environment.
+
+\IfFileExists{figures/moderate_matched_base_pgrr_trajectory.pdf}{%
+\IfFileExists{figures/moderate_pgrr_recovery_timeline.pdf}{%
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.57\textwidth]{moderate_matched_base_pgrr_trajectory.pdf}\hfill
+  \includegraphics[width=0.39\textwidth]{moderate_pgrr_recovery_timeline.pdf}
+  \caption{Matched measured execution generated from final Parquet and raw
+  episode streams.  Left: Base and PGRR trajectories for the same condition,
+  with the recorded terminal outcome printed for each method.  Right: PGRR
+  failure score, goal distance, recovery state, and action over simulation
+  time.  These are telemetry reconstructions, not simulator or onboard camera
+  screenshots; the actual Gazebo scene is shown separately in
+  Figure~\ref{fig:runtime-gazebo}.}
+  \label{fig:matched-runtime}
+\end{figure*}
+}{}% timeline
+}{}% trajectory
 
 \subsection{Offline Imitation and Mask Diagnostics}
 The separate offline ablation in Table~\ref{tab:offline-ablation} compares

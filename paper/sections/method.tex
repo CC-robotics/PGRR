@@ -8,7 +8,8 @@ histories, planner status, and four rule scores.  Pedestrian truth is isolated
 for expert labeling and evaluation, as shown in Figure~\ref{fig:architecture}.
 
 \subsection{Failure Trigger and Recovery State Machine}
-Observable rules score collision risk, freeze, oscillation, and deadlock.
+Observable rules score collision risk, freeze, oscillation, and deadlock;
+Nav2 planner failure is an explicit status-triggered branch.
 Their aggregate is deliberately transparent:
 \begin{equation}
  s_t=\max\{s_t^{\mathrm{col}},s_t^{\mathrm{frz}},
@@ -19,8 +20,11 @@ value from TTC or a bearing-consistent closing trend.
 Collision risk combines braking clearance, 1.5-s time to collision, near-field
 range, and a 0.5-s ego-compensated closing trend.  Freeze requires more than
 1 m remaining, less than 0.15 m displacement over 3 s, and a planner motion
-request.  Oscillation requires six angular-velocity sign changes beyond a
-0.08 rad/s deadband and less than 0.20 m progress over 4 s.  Deadlock combines
+request.  A Nav2 \textsc{aborted}/no-valid-control status supplies that request
+for the planner-failure branch; after the temporal gate confirms no motion, the
+recovery selector prioritizes a legal path subgoal and then REPLAN.  Oscillation
+requires six angular-velocity sign changes beyond a 0.08 rad/s deadband and less
+than 0.20 m progress over 4 s.  Deadlock combines
 low speed, an obstacle within 1.2 m, and less than 0.15 m displacement and goal
 progress over 4 s.  Motion-history rules begin after a 4-s startup guard;
 collision evidence remains active.
@@ -50,13 +54,13 @@ unavailable replanning.  Specifically, the map segment must have 0.25-m
 clearance and its endpoint must be connected to the robot within a 10,000-cell
 search.  The deployable LiDAR mask requires a 0.48-m swept capsule and endpoint
 clearance $r+0.25$ m; BACKUP requires an observed 0.45-m rear segment plus
-0.25 m clearance.  The ordinary path envelope is 0.65 m; only recurrent learned
-directional yielding widens that regularizer to 1.5 m, without relaxing the
-other mask intersections.  Collision latching raises motion clearance to
-0.90 m.  Pedestrian identity is absent online: dynamic occupancy enters
-through LiDAR, while privileged human positions may only further intersect the
-training mask.  WAIT is the fail-closed fallback; mask-invalid logits are
-suppressed before softmax.
+0.25 m clearance.  The ordinary path envelope is 0.65 m; repeated learned
+recovery or observable emergency escalation widens that bounded regularizer to
+2.5 m, without relaxing the other mask intersections.  Collision latching
+raises motion clearance to 0.90 m.  Pedestrian identity is absent online:
+dynamic occupancy enters through LiDAR, while privileged human positions may
+only further intersect the training mask.  WAIT is the fail-closed fallback;
+mask-invalid logits are suppressed before softmax.
 
 Path-frame scan differencing identifies persistent unilateral closing flow.  A
 hysteretic yield latch and route-consistent side commitment then remove only
@@ -65,6 +69,15 @@ activation escalates to legal lateral subgoals or REPLAN, with a bounded BACKUP
 pulse when no lateral escape remains.  These validation-selected filters only
 intersect the planning mask: they never re-enable motion and carry no isolated
 causal or formal-safety claim.
+
+Emergency escape retains control through bounded retreat and turn pulses.  The
+forward and reverse sectors meet at $80^{\circ}$, closing the directional gap
+without authorizing a translation that fails the swept-footprint mask.  A turn
+requires 0.60 m of drift-aware LiDAR clearance; otherwise the controller keeps
+the rear-gated retreat option.  Escape budgets reset only after at least 3 s of
+continuous clearance together with 0.25 m net progress toward the stored
+original goal.  Thus a short release followed by motion into the same local
+minimum cannot renew the complete BACKUP/TURN budget.
 
 An independent supervisor may override every action using
 \begin{equation}
