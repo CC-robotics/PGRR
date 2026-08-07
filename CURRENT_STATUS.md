@@ -1,6 +1,83 @@
 # Current status
 
-## 2026-08-07 — moderate-v6 validation accepted; held-out test remains sealed (current)
+## 2026-08-08 — moderate-v6 held-out test and publication bundle complete (current)
+
+The frozen moderate-v6 held-out test is complete. Run `95ec74c511bb` contains
+600/600 logical method--episodes at evaluation commit `6916e7c`, with 120
+identical test conditions per method (eight families by three densities by five
+replicates) for `base`, `standard`, `heuristic`, `bc_uniform`, and `pgrr`. The
+runner used the preregistered 240 s horizon and six parallel jobs. Its final
+manifest has `worker_errors=[]` and one valid algorithm outcome for every task
+index from 0 through 599.
+
+| Method | Goal reached | Collision | Timeout | Planner failure |
+|---|---:|---:|---:|---:|
+| Base | 85 | 35 | 0 | 0 |
+| Standard | 81 | 39 | 0 | 0 |
+| Heuristic | 100 | 1 | 6 | 13 |
+| Uniform BC | 104 | 1 | 5 | 10 |
+| PGRR | 109 | 0 | 2 | 9 |
+
+On the 120 paired Base--PGRR conditions, PGRR raises goal reaching by 20.00
+percentage points (109/120 versus 85/120; global Holm-adjusted McNemar
+`p=1.031e-4`) and reduces collision by 29.17 points (0/120 versus 35/120;
+global Holm `p=2.561e-9`). The 1.67-point timeout increase has global Holm
+`p=1`, while the 7.50-point planner-failure increase is reported descriptively
+because planner failure was not a preregistered binary endpoint. Relative to
+Heuristic and Uniform BC, PGRR's observed goal, collision, and timeout
+differences all have global Holm `p=1`; they do not support a superiority
+claim over either recovery comparator.
+
+Completion remains slower and longer. Among the 83 conditions where Base and
+PGRR both reach the goal, PGRR adds 15.88 s (95% paired-bootstrap CI
+11.43--20.83 s; global Holm `p=3.318e-9`) and 1.89 m (CI 1.20--2.69 m;
+global Holm `p=7.420e-7`). Its mean personal-space violation ratio is
+descriptively 4.13 points higher than Base (`p=1` after global Holm), and mean
+absolute angular jerk is 0.185 rad/s^3 higher (global Holm `p=4.585e-10`). The
+defensible result is therefore a strong safety and completion gain over the
+classical Base planner with measurable time, path-length, personal-space, and
+smoothness costs—not unqualified social-navigation superiority.
+
+All execution failures remain auditable. The final manifest preserves 614
+physical attempts with outcome files: 600 algorithm outcomes plus eight
+`SIMULATOR_FAILURE` and six `INVALID_RESET` attempts excluded under the frozen
+technical-failure rule. The first pass left 39 task commands without an outcome
+file; the first resume left three such commands, all on tasks from that original
+set. Thus the attempt snapshots retain 42 no-outcome command failures affecting
+39 unique tasks. Resuming only incomplete work recovered every task without
+replacing an algorithm outcome.
+
+The only authoritative calibration evidence is the accepted validation report
+`outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json`, SHA-256
+`0fbf8a159a1e1b96e940bec0efb31e5952ba5b0333439992f370a9a9fb41e15f`.
+`outputs/moderate/final/calibration_report.json` is an empty-test, rejected
+pipeline byproduct and must never be cited as the benchmark calibration.
+
+The publication rebuild now produces an exact eight-page anonymous paper at
+`paper/main.pdf`, a 32-page Chinese technical report at
+`report/PGRR_technical_report_zh.pdf`, and a 30-slide PPTX/PDF bundle under
+`presentation/`. `outputs/moderate/final/artifact_manifest.json` binds 76 files
+to their hashes and records evaluation commit `6916e7c`. The environment image
+at `outputs/figures/runtime/gazebo_doorway_bottleneck_medium.png` is a real
+Gazebo GUI capture from a labeled moderate-v5 validation demonstration; it is
+not a v6 test camera frame. The v6 matched Base--PGRR trajectory and recovery
+timeline under `outputs/moderate/final/media/` are telemetry reconstructions
+from one identical test condition, not simulator screenshots. Both evidence
+types remain clearly labeled in the paper, report, and slides.
+
+The historical v1 64/64 audit remains part of the record: in its 24 Base--PGRR
+pairs PGRR had 0/24 collisions versus Base 19/24, but 16/24 PGRR timeouts versus
+Base 0/24 and only 8/24 versus 5/24 goals, with a non-significant adjusted
+success comparison. It is historical evidence and is not mixed into the
+moderate-v6 test.
+
+The simulation, statistics, paper, report, presentation, and development-mode
+artifact build are complete. Remaining release work is limited to final QA,
+committing the generated bundle and these status records, running validate-only
+release/privacy checks from a clean tree, and pushing the same release state to
+both `home` and `main`.
+
+## 2026-08-07 — moderate-v6 validation accepted (selection record; superseded by held-out test)
 
 The complete moderate-v6 validation gate now contains 360/360 logical
 method--episodes: 72 conditions for each of `base`, `standard`, `heuristic`,
@@ -153,7 +230,7 @@ build pass. The PGRR runtime candidate remains fixed. Comparator validation late
 completed, but the Base calibration rejected the benchmark, so the held-out test
 was not unlocked.
 
-## 2026-08-06 — moderate-v5 evaluation protocol (current)
+## 2026-08-06 — moderate-v5 evaluation protocol (historical; superseded)
 
 The 64-method-episode evaluation recorded on 2026-08-04 is retained as
 historical development evidence only. It is not the current moderate-v5 final

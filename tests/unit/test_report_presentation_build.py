@@ -527,6 +527,7 @@ def test_result_validation_requires_one_of_each_method_per_pair() -> None:
                 "scenario_sha256": "1" * 64,
                 "episode_duration_s": 1.0,
                 "navigation_time_s": 1.0,
+                "path_length_m": 1.0,
                 "min_human_distance_m": 1.0,
                 "recovery_trigger_count": 0,
                 "recovery_success_count": 0,

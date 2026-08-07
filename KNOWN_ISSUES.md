@@ -1,5 +1,72 @@
 # Known issues
 
+## KI-088: Clean-tree release validation and synchronized branch pushes remain
+
+The development-mode publication pipeline has completed and generated an
+eight-page paper, 32-page report, 30-slide PPTX/PDF, and a 76-file artifact
+manifest. The manifest correctly records that it was generated from a dirty
+development worktree. This is not a clean release-validation pass.
+
+Resolution is procedural and does not require another simulation: finish QA,
+commit the generated bundle and status records, require an empty
+`git status --porcelain --untracked-files=all`, run
+`PGRR_RELEASE_MODE=1 PGRR_RECOLLECT_RAW=0 scripts/reproduce_paper.sh`, and then
+push the same release state to `home` and `main`. Release mode is validate-only
+and must not be used to generate files in an otherwise clean archive.
+
+## KI-087: Final calibration and visual evidence have easy-to-confuse byproducts
+
+The authoritative accepted calibration is the validation artifact
+`outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json` with
+SHA-256
+`0fbf8a159a1e1b96e940bec0efb31e5952ba5b0333439992f370a9a9fb41e15f`.
+The file `outputs/moderate/final/calibration_report.json` was emitted from an
+empty test-stage calibration call and is rejected; citing it would incorrectly
+state that moderate-v6 failed calibration.
+
+The real Gazebo GUI image is a moderate-v5 validation environment
+demonstration, not a v6 test camera frame. Conversely, the matched v6
+Base--PGRR trajectory and recovery timeline come from a real identical-condition
+test pair but are telemetry reconstructions, not screenshots. Captions and
+summaries must preserve both distinctions. The automated paper/report/deck
+text gates now enforce this provenance, but manual excerpts can still reintroduce
+the error.
+
+## KI-086: Six-worker Gazebo startup still required auditable resumes
+
+The held-out first pass left 39 task commands without outcome artifacts, and
+the first resume left three such commands on tasks from the same original set.
+The two preserved snapshots therefore contain 42 no-outcome command failures
+over 39 unique task indices. They cannot be assigned an algorithm terminal
+class because they have no trajectory-backed outcome.
+
+The final resume recovered all missing tasks and run `95ec74c511bb` now has
+600/600 logical outcomes with `worker_errors=[]`. Separately, the final manifest
+retains 614 outcome-bearing physical attempts: 600 algorithm episodes and 14
+technical exclusions (eight `SIMULATOR_FAILURE`, six `INVALID_RESET`). The
+operational completeness issue is resolved, but the launch pressure and every
+retry remain provenance limitations rather than evidence for or against a
+method.
+
+## KI-085: PGRR's v6 gains retain efficiency, social-space, and smoothness costs
+
+On the 120 held-out Base--PGRR pairs, PGRR improves goal reaching by 20.00
+percentage points and eliminates the 35 Base collisions; both differences are
+significant after the global Holm correction. PGRR nevertheless records two
+timeouts and nine planner failures, versus none for Base. On 83 joint successes
+it takes 15.88 s longer and travels 1.89 m farther, with both increases
+significant. Its mean personal-space violation ratio is descriptively 4.13
+points higher (`p=1` after Holm), and mean absolute angular jerk is 0.185
+rad/s^3 higher with a significant corrected value.
+
+The observed goal/collision/timeout differences versus Heuristic and Uniform BC
+are all non-significant after global correction. These results support a strong
+safety and completion improvement over the classical Base planner under the
+frozen test, but not general superiority, better comfort, or a statistically
+established advantage over the two recovery comparators. Reducing recovery time,
+path overhead, planner failures, social-space exposure, and angular jerk remains
+future work and cannot be tuned on the locked test.
+
 ## KI-084: moderate-v5 is rejected as too easy for the classical Base planner
 
 The complete validation-only Base run reaches the goal in 57/72 conditions
@@ -40,7 +107,9 @@ density temporary blockage contributes the remaining planner failure and timeout
 same blind-corner seed reached the goal in the target probe but ended in planner failure
 in the full batch, consistent with known Gazebo scheduling sensitivity. The correction
 substantially reduces long stagnation but does not eliminate every completion or safety
-failure; the held-out test remains unseen.
+failure. At that validation gate the held-out test remained unseen; the now-complete
+moderate-v6 test likewise retains two PGRR timeouts and nine planner failures, despite
+zero PGRR collisions.
 
 ## KI-082: Upstream Jackal smoke mapping advertised idle odometry
 
@@ -56,7 +125,7 @@ graph discovery alone. A regression test covers both requirements. The fresh
 run received clock, TF, LaserScan, Odometry, and goal acceptance, then completed
 controlled cleanup with exit status zero.
 
-## KI-078: The final collision reduction is primarily a collision--timeout trade-off
+## KI-078: The historical v1 collision reduction is primarily a collision--timeout trade-off
 
 Across the 24 locked Base/PGRR pairs, Base produced five goals and 19 collisions,
 whereas PGRR produced eight goals, zero collisions, and 16 timeouts. Collision reduction
@@ -66,7 +135,7 @@ stop count, and angular jerk. The result supports collision avoidance in this fi
 sample, not a claim of generally better completion, efficiency, comfort, or social
 navigation. Five families have no PGRR goal reach at any density.
 
-## KI-079: The first parallel final pass had two pre-logger missing outcomes
+## KI-079: The historical v1 first parallel pass had two pre-logger missing outcomes
 
 In the initial four-worker pass, the high-density doorway Base launcher (task 12) and
 the medium-density group-blocking PGRR retry launcher (task 35 attempt 1) returned
@@ -94,7 +163,7 @@ being deleted. Do not run a host colcon build into the root-owned container tree
 blindly `chown` historical artifacts; use the Docker build profile or archive the trees
 before a clean rebuild.
 
-## KI-081: The locked EI test is smaller than the original publication protocol
+## KI-081: The historical v1 EI test is smaller than the original publication protocol
 
 The final manifest has one deterministic seed per family-density condition: 24 paired
 Base/PGRR conditions and eight high-density Standard/Heuristic conditions. This is far

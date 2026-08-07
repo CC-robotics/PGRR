@@ -1,6 +1,6 @@
 # PGRR 汇报逐页讲稿
 
-阶段：`pending`。讲稿与 PPT 由同一 30 页 slide specification 生成。
+阶段：`test`。讲稿与 PPT 由同一 30 页 slide specification 生成。
 
 ## 01. PGRR：规划引导、失败触发的动态社会导航恢复与重接
 
@@ -11,7 +11,7 @@
 讲述要点：
 
 - EI 会议项目汇报
-- 验证执行中｜数值待锁定
+- 锁定 Test 结果
 - Charles Chen
 
 ## 02. 一句话结论
@@ -273,98 +273,105 @@
 - 效率：SPL、路径长度、导航时间
 - 安全：最小人距、个人空间侵入、不舒适时间、紧急停止
 - 恢复：触发、重接成功、持续时间、介入比例
-- 配对 McNemar / Wilcoxon + bootstrap 95% CI + 全局 Holm
+- 到达/碰撞/超时：McNemar；连续端点：Wilcoxon + 全局 Holm
+- 规划失败仅做描述性率与差值，不补做事后显著性检验
 
 ## 21. 主结果：完整终止类别
 
-核心句：只接受完整终止类别，不用安全替代完成
+核心句：锁定 test：终止结果按四类完整报告
 
 先确认阶段标签，再报告所有终止类别。禁止只展示成功率或只展示碰撞率。
 
 讲述要点：
 
-- 阶段标识：验证执行中，结果尚未锁定
-- 本页计划展示：五种方法的到达、碰撞、超时与规划失败
-- 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
-- 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
+- 配对条件：120；方法 episode：600
+- DWB 到达 / 碰撞 / 超时：70.8% / 29.2% / 0.0%
+- PGRR 到达 / 碰撞 / 超时：90.8% / 0.0% / 1.7%
+- 规划失败（描述性、非预注册推断端点）：DWB 0.0%；PGRR 7.5%；差 +7.5 个百分点
+- 基础设施排除：0，未并入算法分母
 
 ## 22. 密度分层
 
-核心句：密度效应必须展示全部 low / medium / high 单元
+核心句：三档密度全部展示，不做事后子集选择
 
 按 low、medium、high 顺序解释趋势；不要把描述性差异说成显著交互效应。
 
 讲述要点：
 
-- 阶段标识：验证执行中，结果尚未锁定
-- 本页计划展示：三档密度的目标到达率与样本数
-- 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
-- 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
+- Low：DWB 72.5%；PGRR 92.5%
+- Medium：DWB 72.5%；PGRR 90.0%
+- High：DWB 67.5%；PGRR 90.0%
+- 柱状图来自同一 approved results.parquet
+- 阶段：锁定 test
 
 ## 23. 八类交互族结果
 
-核心句：八类场景全部公开，不能只挑有利案例
+核心句：聚合结果必须回到八类交互几何检查
 
 完整矩阵用于定位方法在哪些几何交互中受益或退化，不能只截取表现好的三类。
 
 讲述要点：
 
-- 阶段标识：验证执行中，结果尚未锁定
-- 本页计划展示：八个 family × 五种方法的完整目标到达矩阵
-- 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
-- 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
+- 每个单元显示目标到达率，覆盖全部预声明 family
+- 矩阵用于识别收益集中、退化和不可恢复结构
+- 场景差异为描述性分析，不自动构成显著性结论
+- 阶段：锁定 test
 
 ## 24. PGRR 对 Baseline 的配对效应
 
-核心句：配对效应与显著性必须来自锁定统计 JSON
+核心句：四个 baseline × 三个终止端点均给出配对差、区间、校正 p 与效应量
 
 正的目标差有利；碰撞和超时则负值有利。逐项读取区间、全局 Holm pH 与 ORH。
 
 讲述要点：
 
-- 阶段标识：验证执行中，结果尚未锁定
-- 本页计划展示：PGRR 相对四个 baseline 的配对差、区间与 Holm 校正
-- 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
-- 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
+- DWB：到达 +20.0 个百分点；碰撞 -29.2 个百分点；超时 +1.7 个百分点
+- Standard：到达 +23.3 个百分点；碰撞 -32.5 个百分点；超时 +1.7 个百分点
+- Heuristic：到达 +7.5 个百分点；碰撞 -0.8 个百分点；超时 -3.3 个百分点
+- Uniform BC：到达 +4.2 个百分点；碰撞 -0.8 个百分点；超时 -2.5 个百分点
+- 右图逐端点标注 95% CI、全局 Holm p_H 与 matched OR_H
 
-## 25. 安全—效率视图
+## 25. 共同成功条件下的配对效率
 
-核心句：安全、效率与完成率必须联合解释
+核心句：只在两者都到达的同一 pair 内比较效率，并保留全部失败终局
 
-先讲坐标含义，再强调它不能把失败 episode 从完成率中删除。
+逐项读取 PGRR-DWB 配对差、95% CI 与全局 Holm p；强调只纳入共同到达 pair，不能把失败 episode 从完成率中删除。
 
 讲述要点：
 
-- 阶段标识：验证执行中，结果尚未锁定
-- 本页计划展示：最小人距与成功 episode 导航时间
-- 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
-- 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
+- 共同到达 pair：83；Base 与 PGRR 必须同时 GOAL_REACHED
+- 时长差 PGRR-DWB：+15.877 [+11.427, +20.834] s；Holm p=<0.001
+- 路径差 PGRR-DWB：+1.886 [+1.205, +2.691] m；Holm p=<0.001
+- 条件于 joint success；不能删除或替代碰撞、超时和规划失败
+- 阶段：锁定 test
 
 ## 26. Matched Base--PGRR 真实运行对比
 
-核心句：matched 运行页等待 hash-linked raw/Parquet sidecar
+核心句：固定 matched pair 公开 Base--PGRR 空间轨迹与真实终局
 
 先核对 pair 与 raw SHA，再读轨迹和事件线；这是遥测重建，不是相机截图。
 
 讲述要点：
 
-- 阶段标识：验证执行中，结果尚未锁定
-- 本页计划展示：预注册 doorway/medium/r00 的 Base--PGRR 空间轨迹与事件时间线；遥测重建，不是 camera screenshot
-- 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
-- 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
+- 选择规则：eligible: PGRR trigger + configured static geometry + actor routes; order: Base failure/PGRR goal, outcome contrast, PGRR goal, density, trigger count, family, seed, pair_id
+- DWB 终局：COLLISION；raw SHA 3b2969e6d15e
+- PGRR 终局：GOAL_REACHED；raw SHA 7c81c150788a
+- pair：blind_corner_high_test_moderate_v6_r00_s87320_seed87320；scenario：blind_corner_high_test_moderate_v6_r00_s87320
+- 轨迹是 JSONL/Parquet 遥测重建，不是 camera screenshot
 
 ## 27. PGRR 恢复时序（同一 Matched Pair）
 
-核心句：恢复时序素材与轨迹素材必须来自同一 test pair
+核心句：恢复触发、状态切换和目标进展来自同一 PGRR raw stream
 
 核对同一 pair、PGRR episode 和 raw SHA 后再读触发与状态线；这是遥测重建，不是相机画面。
 
 讲述要点：
 
-- 阶段标识：验证执行中，结果尚未锁定
-- 本页计划展示：固定文件名的 PGRR 目标距离、failure score、恢复状态与触发时间线；遥测重建，不是 camera screenshot
-- 未读取历史 64-episode、pilot、calibration 或运行中的验证目录
-- 批准结果通过 split、pair、完整性与 SHA256 检查后自动覆盖本页
+- pair：blind_corner_high_test_moderate_v6_r00_s87320_seed87320；PGRR episode：blind_corner_high_test_moderate_v6_r00_s87320_eval_pgrr_r95ec74c511bb_a0_dwb
+- PGRR 终局：GOAL_REACHED；raw SHA 7c81c150788a
+- 时间线包含记录的目标距离、failure score、恢复状态与触发事件
+- 时间线是 telemetry reconstruction，不是 camera screenshot
+- n=1 描述性运行证据；总体结论仍来自完整 outcome 分解
 
 ## 28. 失败案例与局限
 
@@ -398,7 +405,7 @@
 
 核心句：PGRR 的核心不是替代经典规划，而是让失败恢复可学习、可约束、可解释
 
-最后再次说明阶段：如果还是 pending，只总结已验证系统和协议，不口头补入未经锁定的数字。
+最后说明这是锁定 test 结果；同时保留失败类别、校正显著性、joint-success 条件和局限声明。
 
 讲述要点：
 
@@ -406,4 +413,4 @@
 - 特权规划专家降低人工恢复标注成本
 - DAgger 覆盖策略诱导的困难恢复状态
 - 规划 mask 与有界状态机限制学习策略作用域
-- 当前汇报阶段：验证执行中｜数值待锁定
+- 当前汇报阶段：锁定 Test 结果

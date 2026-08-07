@@ -1318,18 +1318,27 @@ def pgrr_recovery_timeline_figure(evidence: MatchedEpisodeEvidence, output: Path
         trigger_time = float(time[index])
         for axis in axes:
             axis.axvline(trigger_time, color=INK, linestyle="--", linewidth=0.75, alpha=0.7)
-        reason = episode.frames[index].recovery_reason
-        annotation = f"trigger {trigger_number}"
-        if reason:
-            annotation += f": {reason}"
-        axes[0].annotate(
-            annotation,
-            xy=(trigger_time, float(distance[index])),
-            xytext=(4, 7),
-            textcoords="offset points",
+        # Dense recovery sequences can contain many adjacent triggers.  Use
+        # compact, vertically staggered IDs instead of printing the full
+        # reason at every timestamp; the SHA-bound JSONL remains the source
+        # for exact reason strings.  Rotation keeps nearby IDs legible.
+        label_height = 0.96 - 0.12 * ((trigger_number - 1) % 3)
+        axes[0].text(
+            trigger_time,
+            label_height,
+            f"T{trigger_number}",
+            transform=axes[0].get_xaxis_transform(),
+            ha="center",
+            va="top",
+            rotation=90,
             fontsize=6.3,
             color=INK,
-            arrowprops={"arrowstyle": "-", "color": INK, "linewidth": 0.55},
+            bbox={
+                "boxstyle": "square,pad=0.08",
+                "facecolor": "white",
+                "edgecolor": "none",
+                "alpha": 0.78,
+            },
         )
     for axis in axes:
         axis.grid(axis="y", color=LIGHT_GREY, linewidth=0.5)
@@ -1363,7 +1372,8 @@ def pgrr_recovery_timeline_figure(evidence: MatchedEpisodeEvidence, output: Path
     figure.text(
         0.5,
         0.018,
-        f"{TELEMETRY_NOTICE}. Every trace and trigger is reconstructed from the "
+        f"{TELEMETRY_NOTICE}. Dashed lines and T1--T{len(trigger_indices)} mark recorded triggers; "
+        "exact reasons remain in the "
         f"SHA-256-verified test JSONL ({str(evidence.pgrr_row['raw_sha256'])[:12]}…).\n"
         "No values come from validation summaries; this is separate from a Gazebo camera frame.",
         ha="center",

@@ -1,0 +1,38 @@
+% Generated exclusively from outputs/moderate/final/results.parquet, outputs/moderate/final/summary.csv, and outputs/moderate/final/pairwise_statistics.json; project_commit=6916e7cd586acfbe200045e49b093039e2a6980e
+\begin{table*}[t]
+\caption{Terminal outcomes by crowd density on the held-out Gazebo benchmark.}
+\label{tab:moderate-density-results}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4.2pt}
+\renewcommand{\arraystretch}{1.06}
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+Density & Method & $n$ & Success $\uparrow$ (\%) & Collision $\downarrow$ (\%)
+& Timeout $\downarrow$ (\%) & Planner fail. $\downarrow$ (\%) \\
+\midrule
+Low & DWB & 40 & 72.5 & 27.5 & 0.0 & 0.0 \\
+Low & Standard & 40 & 70.0 & 30.0 & 0.0 & 0.0 \\
+Low & Heuristic & 40 & 90.0 & 0.0 & 2.5 & 7.5 \\
+Low & Uniform BC & 40 & 95.0 & 0.0 & 2.5 & 2.5 \\
+Low & \textbf{PGRR} & 40 & 92.5 & 0.0 & 2.5 & 5.0 \\
+\addlinespace[2pt]
+Medium & DWB & 40 & 72.5 & 27.5 & 0.0 & 0.0 \\
+Medium & Standard & 40 & 70.0 & 30.0 & 0.0 & 0.0 \\
+Medium & Heuristic & 40 & 85.0 & 2.5 & 2.5 & 10.0 \\
+Medium & Uniform BC & 40 & 82.5 & 0.0 & 2.5 & 15.0 \\
+Medium & \textbf{PGRR} & 40 & 90.0 & 0.0 & 2.5 & 7.5 \\
+\addlinespace[2pt]
+High & DWB & 40 & 67.5 & 32.5 & 0.0 & 0.0 \\
+High & Standard & 40 & 62.5 & 37.5 & 0.0 & 0.0 \\
+High & Heuristic & 40 & 75.0 & 0.0 & 10.0 & 15.0 \\
+High & Uniform BC & 40 & 82.5 & 2.5 & 7.5 & 7.5 \\
+High & \textbf{PGRR} & 40 & 90.0 & 0.0 & 0.0 & 10.0 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+
+\parbox{0.98\textwidth}{\footnotesize \emph{Note.} Each percentage uses the valid
+episode count shown in $n$. The four terminal-outcome columns sum to 100\% within rounding.
+Bold identifies the proposed method.}
+\end{table*}

@@ -1,1 +1,16 @@
-% Results are intentionally unavailable in pending mode.
+\begin{table}[htbp]
+\centering
+\small
+\caption{五种方法的完整终止结果。所有百分比以有效 episode 为分母。}
+\begin{tabular}{lrrrrr}
+\toprule
+方法 & 有效数 & 到达 & 碰撞 & 超时 & 规划失败 \\
+\midrule
+DWB & 120 & 70.8\% & 29.2\% & 0.0\% & 0.0\% \\
+Standard & 120 & 67.5\% & 32.5\% & 0.0\% & 0.0\% \\
+Heuristic & 120 & 83.3\% & 0.8\% & 5.0\% & 10.8\% \\
+Uniform BC & 120 & 86.7\% & 0.8\% & 4.2\% & 8.3\% \\
+PGRR & 120 & 90.8\% & 0.0\% & 1.7\% & 7.5\% \\
+\bottomrule
+\end{tabular}
+\end{table}

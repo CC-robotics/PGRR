@@ -124,7 +124,6 @@ WAIT、BACKUP、REPLAN、CONTINUE 四个离散恢复动作之间选择。地图�
 
 系统的最低目标不是承诺无碰撞，而是形成一个有界、可审计、可回退的恢复层，并使用相同 episode manifest 对五种方法进行配对评价。
 
-\clearpage
 \section{典型失败模式}
 系统统一处理四类高层失败证据：碰撞风险、冻结、左右振荡和动态死锁。它们既可能由动态参与者引起，也可能由局部路径、几何角点和控制历史共同造成。
 
@@ -421,7 +420,6 @@ ID 范围 & 半径（m） & 相对角（度） & 类型 \\
 \bottomrule
 \end{longtable}
 
-\clearpage
 \section{结果构建的 fail-closed 规则}
 结果构建器执行以下硬检查：
 \begin{enumerate}
@@ -441,7 +439,6 @@ ID 范围 & 半径（m） & 相对角（度） & 类型 \\
   \item 报告 JSON、TeX 宏和图表同时保存结果、统计与 matched evidence 的 SHA256。
 \end{enumerate}
 
-\clearpage
 \section{汇报材料检查清单}
 最终交付同时检查 PDF 页数、PPTX slide 数、字体嵌入、图片关系、禁止占位符、个人信息、真实截图 SHA、结果阶段标签和 speaker notes。若任何一项失败，构建命令返回非零状态，不发布半成品。
 

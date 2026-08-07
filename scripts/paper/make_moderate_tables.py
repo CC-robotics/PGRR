@@ -154,7 +154,7 @@ def main_results_table(
         )
     payload = provenance + (
         """\\begin{table*}[t]
-\\caption{Closed-loop results on the held-out three-density Gazebo benchmark.}
+\\caption{Held-out three-density Gazebo outcomes.}
 \\label{tab:moderate-main-results}
 \\centering
 \\footnotesize

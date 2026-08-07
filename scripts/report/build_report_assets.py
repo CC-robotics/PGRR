@@ -1601,6 +1601,10 @@ def _family_figure(results: pd.DataFrame, output_dir: Path) -> None:
 def _safety_efficiency_figure(results: pd.DataFrame, output_dir: Path) -> None:
     valid = _valid_rows(results)
     figure, axis = plt.subplots(figsize=(7.4, 3.9), constrained_layout=True)
+    label_layout = {
+        "base": {"xytext": (-8, 8), "ha": "right", "va": "bottom"},
+        "standard": {"xytext": (8, -10), "ha": "left", "va": "top"},
+    }
     for method in METHODS:
         group = valid.loc[valid["source_policy"] == method]
         successful = group.loc[group["outcome"] == "GOAL_REACHED"]
@@ -1608,7 +1612,18 @@ def _safety_efficiency_figure(results: pd.DataFrame, output_dir: Path) -> None:
         y = float(group["min_human_distance_m"].median())
         if math.isfinite(x) and math.isfinite(y):
             axis.scatter(x, y, s=72, color=METHOD_COLORS[method], label=METHOD_LABELS[method])
-            axis.annotate(METHOD_LABELS[method], (x, y), xytext=(5, 5), textcoords="offset points")
+            layout = label_layout.get(
+                method,
+                {"xytext": (5, 5), "ha": "left", "va": "bottom"},
+            )
+            axis.annotate(
+                METHOD_LABELS[method],
+                (x, y),
+                xytext=layout["xytext"],
+                textcoords="offset points",
+                ha=layout["ha"],
+                va=layout["va"],
+            )
     axis.set_xlabel("成功 episode 的中位导航时间（s）")
     axis.set_ylabel("全部有效 episode 的中位最小人距（m）")
     axis.grid(color="#D7DDE1", linewidth=0.6, alpha=0.8)
