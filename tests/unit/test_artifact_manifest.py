@@ -117,7 +117,7 @@ def _complete_fixture(root: Path) -> None:
         MODULE.DEFAULT_STATE_MACHINE_CONFIG,
         MODULE.DEFAULT_ACTION_CONFIG,
         Path("configs/platform/arena_profile.yaml"),
-        Path("scenarios/splits/moderate_v5_validation.yaml"),
+        MODULE.DEFAULT_CALIBRATION_SPLIT,
     ):
         _write(root / relative)
     dataset_path = root / MODULE.DEFAULT_OFFLINE_ABLATION_DATASET
@@ -159,10 +159,16 @@ def _complete_fixture(root: Path) -> None:
     contact = Image.new("RGB", (1200, 600), color="white")
     contact.paste((30, 100, 180), (0, 0, 600, 600))
     contact.save(contact_sheet)
-    (root / "scenarios/splits/moderate_v5_validation.yaml").write_text(
-        "split: validation\nscenarios: []\n", encoding="utf-8"
+    (root / MODULE.DEFAULT_CONFIG).write_text(
+        "schema_version: 1\nbenchmark_id: moderate_social_navigation_v6\n",
+        encoding="utf-8",
+    )
+    (root / MODULE.DEFAULT_CALIBRATION_SPLIT).write_text(
+        "benchmark_id: moderate_social_navigation_v6\nsplit: validation\nscenarios: []\n",
+        encoding="utf-8",
     )
     (root / MODULE.DEFAULT_TEST_SPLIT).write_text(
+        "benchmark_id: moderate_social_navigation_v6\n"
         "split: test\nscenarios:\n"
         "  - scenario_id: fixture\n"
         "    family: doorway_bottleneck\n"
@@ -186,15 +192,17 @@ def _complete_fixture(root: Path) -> None:
             _sha(root / MODULE.DEFAULT_CHECKPOINT),
         ),
     }
-    validation_split = root / "scenarios/splits/moderate_v5_validation.yaml"
+    validation_split = root / MODULE.DEFAULT_CALIBRATION_SPLIT
     evaluation_config = {
         "schema_version": 2,
         "benchmark": {
+            "id": "moderate_social_navigation_v6",
             "catalog": MODULE.DEFAULT_CONFIG.as_posix(),
             "catalog_sha256": _sha(root / MODULE.DEFAULT_CONFIG),
-            "calibration_split": "scenarios/splits/moderate_v5_validation.yaml",
+            "calibration_split": MODULE.DEFAULT_CALIBRATION_SPLIT.as_posix(),
             "calibration_split_sha256": _sha(validation_split),
             "calibration_report": MODULE.DEFAULT_CALIBRATION_REPORT.as_posix(),
+            "calibration_report_sha256": _sha(root / MODULE.DEFAULT_CALIBRATION_REPORT),
         },
         "runtime": {
             "split": "test",
@@ -430,6 +438,11 @@ def _complete_runtime_capture(root: Path) -> None:
 
 
 def test_manifest_has_only_relative_checksummed_artifacts(tmp_path: Path) -> None:
+    assert MODULE.DEFAULT_CONFIG == Path("configs/experiments/scenario_catalog_moderate_v6.yaml")
+    assert MODULE.DEFAULT_TEST_SPLIT == Path("scenarios/splits/moderate_v6_test.yaml")
+    assert MODULE.DEFAULT_CALIBRATION_REPORT == Path(
+        "outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json"
+    )
     _complete_fixture(tmp_path)
 
     payload = MODULE.build_manifest(
@@ -827,8 +840,42 @@ def test_manifest_rejects_test_split_calibration_report(tmp_path: Path) -> None:
         tmp_path / MODULE.DEFAULT_CALIBRATION_REPORT,
         (json.dumps({"split": "test", "status": "rejected", "passed": False}) + "\n").encode(),
     )
+    evaluation_path = tmp_path / MODULE.DEFAULT_EVALUATION_CONFIG
+    evaluation = yaml.safe_load(evaluation_path.read_text(encoding="utf-8"))
+    evaluation["benchmark"]["calibration_report_sha256"] = _sha(
+        tmp_path / MODULE.DEFAULT_CALIBRATION_REPORT
+    )
+    evaluation_path.write_text(yaml.safe_dump(evaluation), encoding="utf-8")
 
     with pytest.raises(MODULE.ArtifactError, match="validation-only"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="e" * 40,
+            git_dirty=True,
+        )
+
+
+def test_manifest_rejects_calibration_report_hash_mismatch(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    report = tmp_path / MODULE.DEFAULT_CALIBRATION_REPORT
+    report.write_bytes(report.read_bytes() + b" ")
+
+    with pytest.raises(MODULE.ArtifactError, match="hash mismatch"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="e" * 40,
+            git_dirty=True,
+        )
+
+
+def test_manifest_rejects_non_v6_evaluation_identity(tmp_path: Path) -> None:
+    _complete_fixture(tmp_path)
+    evaluation_path = tmp_path / MODULE.DEFAULT_EVALUATION_CONFIG
+    evaluation = yaml.safe_load(evaluation_path.read_text(encoding="utf-8"))
+    evaluation["benchmark"]["id"] = "moderate_social_navigation_v5"
+    evaluation_path.write_text(yaml.safe_dump(evaluation), encoding="utf-8")
+
+    with pytest.raises(MODULE.ArtifactError, match="moderate_social_navigation_v6"):
         MODULE.build_manifest(
             tmp_path,
             project_commit="e" * 40,

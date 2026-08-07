@@ -82,9 +82,10 @@ def test_paper_development_rebuild_uses_published_inputs_by_default() -> None:
     assert "outputs/moderate/final" in source
     assert "MODERATE_EXPECTED_CONDITIONS:-120" in source
     assert "configs/final/ei_gazebo.yaml" in source
-    assert "scenario_catalog_moderate_v5.yaml" in source
-    assert "moderate_v5_test.yaml" in source
-    assert "outputs/moderate/v5_validation/calibration_report.json" in source
+    assert "scenario_catalog_moderate_v6.yaml" in source
+    assert "moderate_v6_test.yaml" in source
+    assert "outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json" in source
+    assert "moderate_v5" not in source
     assert "METHODS=(base standard heuristic bc_uniform pgrr)" in source
     assert "--main-method pgrr" in source
     assert "--bootstrap-seed 20260804" in source

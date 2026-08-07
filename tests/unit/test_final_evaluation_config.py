@@ -23,7 +23,8 @@ def test_final_evaluation_covers_full_test_split_and_locked_checkpoint() -> None
     densities = {row["density"] for row in scenarios}
 
     assert split["split"] == "test"
-    assert split["benchmark_id"] == "moderate_social_navigation_v5"
+    assert config["benchmark"]["id"] == "moderate_social_navigation_v6"
+    assert split["benchmark_id"] == "moderate_social_navigation_v6"
     assert len(scenarios) == 120
     assert set(primary["families"]) == families
     assert set(primary["densities"]) == densities == {"low", "medium", "high"}
@@ -35,6 +36,7 @@ def test_final_evaluation_covers_full_test_split_and_locked_checkpoint() -> None
     assert _sha256(split_path) == config["runtime"]["split_manifest_sha256"]
 
     assert config["runtime"]["episode_timeout_s"] == 240.0
+    assert config["runtime"]["parallel_jobs"] == 8
     assert config["learned_method"]["source_policy"] == "pgrr"
     assert config["learned_baseline"]["source_policy"] == "bc_uniform"
     for model in ("learned_baseline", "learned_method"):
@@ -48,6 +50,12 @@ def test_final_evaluation_covers_full_test_split_and_locked_checkpoint() -> None
     assert _sha256(catalog) == config["benchmark"]["catalog_sha256"]
     calibration_split = ROOT / config["benchmark"]["calibration_split"]
     assert _sha256(calibration_split) == config["benchmark"]["calibration_split_sha256"]
+    assert config["benchmark"]["calibration_report"] == (
+        "outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json"
+    )
+    assert config["benchmark"]["calibration_report_sha256"] == (
+        "0fbf8a159a1e1b96e940bec0efb31e5952ba5b0333439992f370a9a9fb41e15f"
+    )
     assert config["benchmark"]["calibration_policy"] == "validation_only_before_test"
 
     frozen_paths = {

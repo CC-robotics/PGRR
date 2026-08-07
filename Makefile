@@ -23,13 +23,16 @@ MODERATE_SUMMARY ?= $(MODERATE_ANALYSIS_DIR)/summary.csv
 MODERATE_STATISTICS ?= $(MODERATE_ANALYSIS_DIR)/pairwise_statistics.json
 MODERATE_OFFLINE_ABLATION ?= $(MODERATE_ANALYSIS_DIR)/offline_policy_ablation.csv
 MODERATE_EXPECTED_CONDITIONS ?= 120
-MODERATE_BENCHMARK_CONFIG ?= configs/experiments/scenario_catalog_moderate_v5.yaml
-MODERATE_SPLIT_MANIFEST ?= scenarios/splits/moderate_v5_test.yaml
-MODERATE_CALIBRATION_REPORT ?= outputs/moderate/v5_validation/calibration_report.json
+MODERATE_BENCHMARK_CONFIG ?= configs/experiments/scenario_catalog_moderate_v6.yaml
+MODERATE_SPLIT_MANIFEST ?= scenarios/splits/moderate_v6_test.yaml
+MODERATE_CALIBRATION_SPLIT ?= scenarios/splits/moderate_v6_validation.yaml
+MODERATE_CALIBRATION_DIR ?= outputs/moderate/v6_validation_base_d5fa66b
+MODERATE_CALIBRATION_RESULTS ?= $(MODERATE_CALIBRATION_DIR)/results.parquet
+MODERATE_CALIBRATION_REPORT ?= $(MODERATE_CALIBRATION_DIR)/calibration_report.json
 MODERATE_METHODS ?= base standard heuristic bc_uniform pgrr
 MODERATE_MAIN_METHOD ?= pgrr
 MODERATE_REFERENCE_METHOD ?= base
-EVALUATION_JOBS ?= 6
+EVALUATION_JOBS ?= 8
 EVALUATION_TIMEOUT_S ?= 240
 REPORT_STAGE ?= pending
 REPORT_RESULTS ?= outputs/moderate/final/results.parquet
@@ -43,7 +46,7 @@ OFFLINE_RUN := env -u PYTHONPATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH -u C
 
 .DEFAULT_GOAL := help
 
-.PHONY: help preflight conda arena build test smoke baseline scenarios mine-failures label-expert train-bc train-dagger train-ppo-smoke train-ppo train-detector pilot evaluate-flatland evaluate-gazebo statistics method-figures figures tables moderate-figures moderate-tables paper report-assets technical-report presentation-check presentation reproduce-small reproduce-paper privacy-check student-branch
+.PHONY: help preflight conda arena build test smoke baseline scenarios mine-failures label-expert train-bc train-dagger train-ppo-smoke train-ppo train-detector pilot evaluate-calibration calibration-report verify-calibration evaluate-final evaluate-flatland evaluate-gazebo statistics method-figures figures tables moderate-figures moderate-tables paper report-assets technical-report presentation-check presentation reproduce-small reproduce-paper privacy-check student-branch
 
 help: ## Show available targets.
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z0-9_-]+:.*## / {printf "%-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -99,12 +102,47 @@ train-detector: ## Train the optional learned failure detector.
 	@$(OFFLINE_RUN) python scripts/train/train_detector.py --seed "$(SEED)"
 pilot: ## Run validation-only pilot evaluation.
 	@scripts/evaluate/run_experiment.sh --tier pilot --seed "$(SEED)"
-evaluate-flatland: ## Run the locked five-method moderate-v5 test manifest (legacy target name).
+evaluate-calibration: ## Run and score the complete Base-only moderate-v6 validation calibration.
+	@$(OFFLINE_RUN) python scripts/evaluate/run_experiment.py \
+		--split validation --split-manifest "$(MODERATE_CALIBRATION_SPLIT)" \
+		--methods base --jobs "$(EVALUATION_JOBS)" \
+		--timeout "$(EVALUATION_TIMEOUT_S)" \
+		--output-dir "$(MODERATE_CALIBRATION_DIR)"
+	@$(OFFLINE_RUN) python scripts/evaluate/collect_results.py \
+		--manifest "$(MODERATE_CALIBRATION_DIR)/episode_manifest.parquet" \
+		--run-manifest "$(MODERATE_CALIBRATION_DIR)/run_manifest.json" \
+		--raw-dir data/raw \
+		--results "$(MODERATE_CALIBRATION_RESULTS)" \
+		--summary "$(MODERATE_CALIBRATION_DIR)/collector_summary.csv" \
+		--statistics "$(MODERATE_CALIBRATION_DIR)/collector_statistics.json" \
+		--reference-policy base --treatment-policy calibration_unused \
+		--bootstrap-samples 10000 --bootstrap-seed "$(BOOTSTRAP_SEED)"
+	@$(OFFLINE_RUN) python scripts/evaluate/calibrate_moderate.py \
+		--results "$(MODERATE_CALIBRATION_RESULTS)" \
+		--split-manifest "$(MODERATE_CALIBRATION_SPLIT)" \
+		--output "$(MODERATE_CALIBRATION_REPORT)" \
+		--expected-conditions 72
+
+calibration-report: ## Rebuild the Base-only v6 calibration report from collected validation results.
+	@$(OFFLINE_RUN) python scripts/evaluate/calibrate_moderate.py \
+		--results "$(MODERATE_CALIBRATION_RESULTS)" \
+		--split-manifest "$(MODERATE_CALIBRATION_SPLIT)" \
+		--output "$(MODERATE_CALIBRATION_REPORT)" \
+		--expected-conditions 72
+
+verify-calibration: ## Verify the accepted calibration report against the frozen v6 config and SHA256.
+	@$(OFFLINE_RUN) python scripts/evaluate/calibrate_moderate.py \
+		--verify-report "$(MODERATE_CALIBRATION_REPORT)" \
+		--evaluation-config configs/final/ei_gazebo.yaml
+
+evaluate-final: verify-calibration ## Run the locked five-method moderate-v6 Gazebo test manifest.
 	@$(OFFLINE_RUN) python scripts/evaluate/run_experiment.py \
 		--split test --split-manifest "$(MODERATE_SPLIT_MANIFEST)" \
 		--methods $(MODERATE_METHODS) --jobs "$(EVALUATION_JOBS)" \
 		--timeout "$(EVALUATION_TIMEOUT_S)" \
 		--output-dir "$(MODERATE_ANALYSIS_DIR)"
+
+evaluate-flatland: evaluate-final ## Compatibility alias for the locked Gazebo final evaluation.
 evaluate-gazebo: ## Run the optional Gazebo transfer validation.
 	@scripts/evaluate/run_experiment.sh --tier gazebo --simulator gazebo
 statistics: ## Collect and summarize the complete five-method moderate benchmark.

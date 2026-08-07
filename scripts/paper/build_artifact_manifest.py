@@ -29,7 +29,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 
-DEFAULT_CONFIG = Path("configs/experiments/scenario_catalog_moderate_v5.yaml")
+DEFAULT_CONFIG = Path("configs/experiments/scenario_catalog_moderate_v6.yaml")
 DEFAULT_EVALUATION_CONFIG = Path("configs/final/ei_gazebo.yaml")
 DEFAULT_BASELINE_CONFIG = Path("configs/planner/baselines.yaml")
 DEFAULT_UNIFORM_CHECKPOINT = Path("checkpoints/bc/uniform_scenario/best.onnx")
@@ -37,7 +37,10 @@ DEFAULT_CHECKPOINT = Path("checkpoints/dagger/coverage_safety_aligned/best.onnx"
 DEFAULT_RESULTS = Path("outputs/moderate/final/results.parquet")
 DEFAULT_SUMMARY = Path("outputs/moderate/final/summary.csv")
 DEFAULT_STATISTICS = Path("outputs/moderate/final/pairwise_statistics.json")
-DEFAULT_CALIBRATION_REPORT = Path("outputs/moderate/v5_validation/calibration_report.json")
+DEFAULT_CALIBRATION_SPLIT = Path("scenarios/splits/moderate_v6_validation.yaml")
+DEFAULT_CALIBRATION_REPORT = Path(
+    "outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json"
+)
 DEFAULT_FAILURE_ANALYSIS = Path("outputs/moderate/final/failure_analysis.md")
 DEFAULT_EPISODE_MANIFEST = Path("outputs/moderate/final/episode_manifest.parquet")
 DEFAULT_RUN_MANIFEST = Path("outputs/moderate/final/run_manifest.json")
@@ -69,7 +72,7 @@ DEFAULT_ENVIRONMENT_LOCK = Path("environment.lock.yml")
 DEFAULT_REQUIREMENTS_LOCK = Path("requirements-offline.lock.txt")
 DEFAULT_ARENA_LOCK = Path("third_party/arena_commits.lock")
 DEFAULT_DEPENDENCY_MANIFEST = Path("third_party/dependency_manifest.md")
-DEFAULT_TEST_SPLIT = Path("scenarios/splits/moderate_v5_test.yaml")
+DEFAULT_TEST_SPLIT = Path("scenarios/splits/moderate_v6_test.yaml")
 DEFAULT_FAILURE_CONFIG = Path("configs/failure/rules.yaml")
 DEFAULT_STATE_MACHINE_CONFIG = Path("configs/failure/recovery_state_machine.yaml")
 DEFAULT_ACTION_CONFIG = Path("configs/planner/recovery_actions.yaml")
@@ -90,6 +93,7 @@ ALGORITHM_OUTCOMES = {
     "TIMEOUT",
     "PLANNER_FAILURE",
 }
+EXPECTED_BENCHMARK_ID = "moderate_social_navigation_v6"
 
 EXPECTED_FIGURES = (
     "system_architecture.pdf",
@@ -308,7 +312,7 @@ def _validate_evaluation_provenance(
     comparison = _mapping(evaluation_config.get("primary_comparison"), label="primary_comparison")
     frozen_inputs = _mapping(evaluation_config.get("frozen_inputs"), label="frozen_inputs")
 
-    _validate_declared_file(
+    catalog = _validate_declared_file(
         project_root,
         benchmark,
         path_key="catalog",
@@ -316,6 +320,11 @@ def _validate_evaluation_provenance(
         expected_path=config_path,
         label="benchmark catalog",
     )
+    if benchmark.get("id") != EXPECTED_BENCHMARK_ID:
+        raise ArtifactError(f"final evaluation benchmark must be {EXPECTED_BENCHMARK_ID}")
+    catalog_document = _load_yaml_object(catalog, label="benchmark catalog")
+    if catalog_document.get("benchmark_id") != EXPECTED_BENCHMARK_ID:
+        raise ArtifactError("benchmark catalog identity disagrees with moderate-v6")
     validation_split = _validate_declared_file(
         project_root,
         benchmark,
@@ -325,14 +334,19 @@ def _validate_evaluation_provenance(
         label="validation split",
     )
     validation_document = _load_yaml_object(validation_split, label="validation split")
-    if validation_document.get("split") != "validation":
+    if (
+        validation_document.get("split") != "validation"
+        or validation_document.get("benchmark_id") != EXPECTED_BENCHMARK_ID
+    ):
         raise ArtifactError("configured calibration split is not a validation split")
-    configured_report = str(benchmark.get("calibration_report", ""))
-    report = _inside_root(
-        project_root, calibration_report_path, label="moderate calibration report"
+    _validate_declared_file(
+        project_root,
+        benchmark,
+        path_key="calibration_report",
+        hash_key="calibration_report_sha256",
+        expected_path=calibration_report_path,
+        label="moderate calibration report",
     )
-    if configured_report != _relative(project_root, report):
-        raise ArtifactError("calibration report path disagrees with final configuration")
 
     if runtime.get("split") != "test":
         raise ArtifactError("final evaluation runtime split must be test")
@@ -345,7 +359,10 @@ def _validate_evaluation_provenance(
         label="test split",
     )
     test_document = _load_yaml_object(test_split, label="test split")
-    if test_document.get("split") != "test":
+    if (
+        test_document.get("split") != "test"
+        or test_document.get("benchmark_id") != EXPECTED_BENCHMARK_ID
+    ):
         raise ArtifactError("configured test split is not a test split")
 
     frozen_specs = (

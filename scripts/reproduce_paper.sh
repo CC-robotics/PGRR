@@ -7,9 +7,9 @@ CONDA_ENV_NAME="${CONDA_ENV_NAME:-ramp-offline}"
 MODERATE_ANALYSIS_DIR="${MODERATE_ANALYSIS_DIR:-outputs/moderate/final}"
 MODERATE_EXPECTED_CONDITIONS="${MODERATE_EXPECTED_CONDITIONS:-120}"
 FINAL_EVALUATION_CONFIG="${FINAL_EVALUATION_CONFIG:-configs/final/ei_gazebo.yaml}"
-MODERATE_BENCHMARK_CONFIG="${MODERATE_BENCHMARK_CONFIG:-configs/experiments/scenario_catalog_moderate_v5.yaml}"
-MODERATE_TEST_SPLIT="${MODERATE_TEST_SPLIT:-scenarios/splits/moderate_v5_test.yaml}"
-MODERATE_CALIBRATION_REPORT="${MODERATE_CALIBRATION_REPORT:-outputs/moderate/v5_validation/calibration_report.json}"
+MODERATE_BENCHMARK_CONFIG="${MODERATE_BENCHMARK_CONFIG:-configs/experiments/scenario_catalog_moderate_v6.yaml}"
+MODERATE_TEST_SPLIT="${MODERATE_TEST_SPLIT:-scenarios/splits/moderate_v6_test.yaml}"
+MODERATE_CALIBRATION_REPORT="${MODERATE_CALIBRATION_REPORT:-outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json}"
 PGRR_RELEASE_MODE="${PGRR_RELEASE_MODE:-0}"
 PGRR_RECOLLECT_RAW="${PGRR_RECOLLECT_RAW:-0}"
 
@@ -70,10 +70,10 @@ if [[ "${MODERATE_EXPECTED_CONDITIONS}" != "120" ]]; then
     exit 2
 fi
 if [[ "${FINAL_EVALUATION_CONFIG}" != "configs/final/ei_gazebo.yaml" ]] \
-    || [[ "${MODERATE_BENCHMARK_CONFIG}" != "configs/experiments/scenario_catalog_moderate_v5.yaml" ]] \
-    || [[ "${MODERATE_TEST_SPLIT}" != "scenarios/splits/moderate_v5_test.yaml" ]] \
-    || [[ "${MODERATE_CALIBRATION_REPORT}" != "outputs/moderate/v5_validation/calibration_report.json" ]]; then
-    echo "ERROR: final reproduction inputs must match the frozen moderate-v5 test protocol" >&2
+    || [[ "${MODERATE_BENCHMARK_CONFIG}" != "configs/experiments/scenario_catalog_moderate_v6.yaml" ]] \
+    || [[ "${MODERATE_TEST_SPLIT}" != "scenarios/splits/moderate_v6_test.yaml" ]] \
+    || [[ "${MODERATE_CALIBRATION_REPORT}" != "outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json" ]]; then
+    echo "ERROR: final reproduction inputs must match the frozen moderate-v6 test protocol" >&2
     exit 2
 fi
 

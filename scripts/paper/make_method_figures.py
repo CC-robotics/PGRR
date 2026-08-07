@@ -27,7 +27,8 @@ if str(PAPER_SCRIPT_DIR) not in sys.path:
 from make_state_machine_figure import build_figure as build_state_machine_figure  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_SCENARIO_CONFIG = ROOT / "configs/experiments/scenario_catalog_moderate_v5.yaml"
+DEFAULT_SCENARIO_CONFIG = ROOT / "configs/experiments/scenario_catalog_moderate_v6.yaml"
+EXPECTED_BENCHMARK_ID = "moderate_social_navigation_v6"
 
 INK = "#1B1F23"
 EDGE = "#53616A"
@@ -586,6 +587,11 @@ def _load_scenario_inventory(config_path: Path) -> tuple[list[tuple[str, str]], 
         raise ValueError(f"cannot read scenario catalog {config_path}: {error}") from error
     if not isinstance(payload, dict):
         raise ValueError("scenario catalog must be a mapping")
+    if payload.get("benchmark_id") != EXPECTED_BENCHMARK_ID:
+        raise ValueError(
+            "scenario catalog benchmark drift: "
+            f"expected {EXPECTED_BENCHMARK_ID!r}, got {payload.get('benchmark_id')!r}"
+        )
     raw_families = payload.get("families")
     raw_densities = payload.get("densities")
     if not isinstance(raw_families, list) or not isinstance(raw_densities, dict):
