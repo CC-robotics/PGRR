@@ -1,6 +1,6 @@
 {
-  "artifact_count": 76,
-  "artifact_generation_commit": "bad3a4e994de6b3ff3d05f255b7ffd8ed3c53d69",
+  "artifact_count": 96,
+  "artifact_generation_commit": "149c10afdefc726da33c873826593a2c9aebaf21",
   "artifacts": [
     {
       "category": "final_config",
@@ -161,14 +161,14 @@
     {
       "category": "paper",
       "path": "paper/main.pdf",
-      "sha256": "1d3be0a17c72d80cca04a7e6dc7ed4ea96bfca671a97de3b6d1ace25f1b43129",
-      "size_bytes": 409766
+      "sha256": "edac1954b86b248709655d20f71ba22d172253461911f4cb25dcc150c946a29a",
+      "size_bytes": 409767
     },
     {
       "category": "technical_report",
       "path": "report/PGRR_technical_report_zh.pdf",
-      "sha256": "da3cb989bf873263d8dfaaec3c31bfd8c089d5e0bea407bc94ef01a21bdd16d6",
-      "size_bytes": 711658
+      "sha256": "b888435c77199b0e3b2176574ce9e32a7c78de06cc751fc943fb48e836d16595",
+      "size_bytes": 711660
     },
     {
       "category": "report_data",
@@ -179,26 +179,26 @@
     {
       "category": "presentation",
       "path": "presentation/PGRR_report_zh.pptx",
-      "sha256": "2ea5999850cc4912b11865845353fcf2d276a77f29bafb70522798957805ceaa",
-      "size_bytes": 1292411
+      "sha256": "eff5cd775f4a943778b446b4a49a1695e056177780d8eacfa29086963c562cb5",
+      "size_bytes": 2049973
     },
     {
       "category": "presentation",
       "path": "presentation/PGRR_report_zh.pdf",
-      "sha256": "cbb2a6880fd02b3584057f73803aac60b1315e44001a67ef04caa129ad6d3c53",
-      "size_bytes": 1583589
+      "sha256": "e3b70a04255fd6c99a3cdb901fea9063e1881aa8751e774cf957e6b880b7ca08",
+      "size_bytes": 2253257
     },
     {
       "category": "presentation_notes",
       "path": "presentation/speaker_notes_zh.md",
-      "sha256": "8e3a848552cb8b0e9bdd2e5ae9a9a0d907e510b1e613c1ccb613d3ac2857c47d",
-      "size_bytes": 15758
+      "sha256": "4380dab197fe6ded09a4090c2dbabe01ccc71ed1ab52eb25e3ae401f9c00ad1f",
+      "size_bytes": 24434
     },
     {
       "category": "presentation_contact_sheet",
       "path": "presentation/contact_sheet.png",
-      "sha256": "0443fe059155d571336b5a0b137c6e5c5f456ec3b041c3dcf3c06234a6ea3aca",
-      "size_bytes": 753589
+      "sha256": "c4b02717ff4506edb1d6b0777f1779498185c11c7182d766c7fd2a92dba9362d",
+      "size_bytes": 837273
     },
     {
       "category": "matched_evidence",
@@ -238,9 +238,69 @@
     },
     {
       "category": "figure",
+      "path": "paper/figures/recovery_state_machine.pdf",
+      "sha256": "1be04202e39fc39ccd4ebbc8f133297355768d9af0147cee6fcaf8f6f855a284",
+      "size_bytes": 40482
+    },
+    {
+      "category": "figure",
       "path": "paper/figures/action_space_expert.pdf",
       "sha256": "2b604d2e43bee3e93f5d01e7fd260e0541f25479a9e3b73827dd6e023afe66e6",
       "size_bytes": 37808
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/scenario_overview.pdf",
+      "sha256": "c69c44e8296c8d160aa41109a4970f39b1a6c12f615288f24cf7f73851dfa4a4",
+      "size_bytes": 22665
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/dwb_nav2_role.pdf",
+      "sha256": "4d31c80cf0a0412fcbf7353e2e220b0a12c47d1376b279171c36e51336f5230c",
+      "size_bytes": 24965
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/dwb_dynamic_window.pdf",
+      "sha256": "7ff4de6bb4ccb08364b8325324f01a965338aeb053651079e60f8a32c538fba7",
+      "size_bytes": 32314
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/dwb_critic_scoring.pdf",
+      "sha256": "31ce061655269b58d5a32f9657d6960263f6faaaca5a24794458ea2d858bd0ba",
+      "size_bytes": 37729
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/dwb_social_failure.pdf",
+      "sha256": "e3a8d906ceb6886e3b915456c7efafce67caa7526e86e98f97487063322cb73b",
+      "size_bytes": 26979
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/bc_distribution_shift.pdf",
+      "sha256": "8542c76fe41dea0f084a99b5ba1efefa8af553557f01c4affc46e061bf54733a",
+      "size_bytes": 37151
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/dagger_loop.pdf",
+      "sha256": "12fe8a9c054215f1a9eec89ed9580307ea1ca55a66260d446929c4c1f519d24f",
+      "size_bytes": 34624
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/pgrr_dagger_rounds.pdf",
+      "sha256": "f9920ccec558ae59fe2f8225ca3cd9b9d233ea66c9a42877efbfeaa8ac6a8f0b",
+      "size_bytes": 24391
+    },
+    {
+      "category": "figure",
+      "path": "paper/figures/evaluation_evidence_chain.pdf",
+      "sha256": "07cad0a6d657bc9bcaf73839fe75e37aa680be2ff9fd0307489fbcf8731290c8",
+      "size_bytes": 27459
     },
     {
       "category": "figure",
@@ -352,9 +412,69 @@
     },
     {
       "category": "published_figure",
+      "path": "outputs/figures/recovery_state_machine.pdf",
+      "sha256": "a2ffdec654ae15e4d6d8337ebca7b1532796d79c52493eda1c3de31f57c5277c",
+      "size_bytes": 40482
+    },
+    {
+      "category": "published_figure",
       "path": "outputs/figures/action_space_expert.pdf",
       "sha256": "2b604d2e43bee3e93f5d01e7fd260e0541f25479a9e3b73827dd6e023afe66e6",
       "size_bytes": 37808
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/scenario_overview.pdf",
+      "sha256": "c69c44e8296c8d160aa41109a4970f39b1a6c12f615288f24cf7f73851dfa4a4",
+      "size_bytes": 22665
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/dwb_nav2_role.pdf",
+      "sha256": "4d31c80cf0a0412fcbf7353e2e220b0a12c47d1376b279171c36e51336f5230c",
+      "size_bytes": 24965
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/dwb_dynamic_window.pdf",
+      "sha256": "7ff4de6bb4ccb08364b8325324f01a965338aeb053651079e60f8a32c538fba7",
+      "size_bytes": 32314
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/dwb_critic_scoring.pdf",
+      "sha256": "31ce061655269b58d5a32f9657d6960263f6faaaca5a24794458ea2d858bd0ba",
+      "size_bytes": 37729
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/dwb_social_failure.pdf",
+      "sha256": "e3a8d906ceb6886e3b915456c7efafce67caa7526e86e98f97487063322cb73b",
+      "size_bytes": 26979
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/bc_distribution_shift.pdf",
+      "sha256": "8542c76fe41dea0f084a99b5ba1efefa8af553557f01c4affc46e061bf54733a",
+      "size_bytes": 37151
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/dagger_loop.pdf",
+      "sha256": "12fe8a9c054215f1a9eec89ed9580307ea1ca55a66260d446929c4c1f519d24f",
+      "size_bytes": 34624
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/pgrr_dagger_rounds.pdf",
+      "sha256": "f9920ccec558ae59fe2f8225ca3cd9b9d233ea66c9a42877efbfeaa8ac6a8f0b",
+      "size_bytes": 24391
+    },
+    {
+      "category": "published_figure",
+      "path": "outputs/figures/evaluation_evidence_chain.pdf",
+      "sha256": "07cad0a6d657bc9bcaf73839fe75e37aa680be2ff9fd0307489fbcf8731290c8",
+      "size_bytes": 27459
     },
     {
       "category": "published_figure",
@@ -466,7 +586,7 @@
     "environment_lock": 2,
     "episode_manifest": 1,
     "failure_analysis": 1,
-    "figure": 6,
+    "figure": 16,
     "final_config": 3,
     "frozen_input": 4,
     "matched_evidence": 1,
@@ -479,7 +599,7 @@
     "presentation": 2,
     "presentation_contact_sheet": 1,
     "presentation_notes": 1,
-    "published_figure": 6,
+    "published_figure": 16,
     "published_table": 6,
     "report_data": 1,
     "results": 1,
@@ -532,7 +652,7 @@
     "split_manifest": "scenarios/splits/moderate_v6_test.yaml",
     "split_manifest_sha256": "3f70dd3472c0447d6a5695051f0b16d7eecf166133b604a7011cdf7fc45b04f6"
   },
-  "generated_at": "2026-08-07T20:49:39.440931+00:00",
+  "generated_at": "2026-08-08T12:52:14.907897+00:00",
   "generation_command": "scripts/reproduce_paper.sh",
   "git_worktree_dirty": true,
   "release": false,

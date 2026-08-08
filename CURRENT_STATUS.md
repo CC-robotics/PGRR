@@ -80,7 +80,7 @@ smoothness costs, not unqualified superiority over all recovery systems.
   `outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf`, explicitly
   labeled as telemetry reconstructions rather than screenshots.
 
-Development QA passed Ruff, formatting, mypy, 703 tests, exact document page
+Development QA passed Ruff, formatting, mypy, 706 tests, exact document page
 counts, PDF text/font checks, and document validators. The clean-checkout
 release gate separately passed the privacy audit and byte-level verification of
 all 96 manifest artifacts without modifying the checkout.

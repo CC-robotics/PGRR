@@ -59,7 +59,7 @@ algorithm failure count.
 Some host shells export ROS paths that expose an older `launch_testing` pytest
 hook to the newer offline pytest/pluggy stack, causing collection to fail before
 project tests run. Use `make test`, the offline activation helper, or the
-sanitized environment command in `COMMANDS.md`. This does not affect the 703
+sanitized environment command in `COMMANDS.md`. This does not affect the 706
 project tests that passed in the clean release environment.
 
 ## KI-F07: The real screenshot and matched telemetry prove different things

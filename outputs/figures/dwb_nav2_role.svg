@@ -229,8 +229,7 @@ z
 " clip-path="url(#pa8b9ab98d3)" style="fill: #eaf2f8; stroke: #356e9f; stroke-linejoin: miter"/>
    </g>
    <g id="text_2">
-    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; fill: #1b1f23" transform="translate(262.216956 166.5442)">PGRR changes the temporary goal or recovery mode;</text>
-    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; fill: #1b1f23" transform="translate(289.251456 173.4378)">DWB remains the motion executor.</text>
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="293.16073" y="139.751" transform="rotate(-0 293.16073 139.751)">PGRR may change the temporary goal; DWB remains the motion executor.</text>
    </g>
    <g id="text_3">
     <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="54.124416" y="68.039" transform="rotate(-0 54.124416 68.039)">Goal + map</text>

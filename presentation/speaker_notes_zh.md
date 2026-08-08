@@ -28,119 +28,119 @@
 - 完成后恢复原始 PointGoal 并重新接回经典导航
 - 历史 v1 64/64（非 v6）：PGRR/Base 碰撞 0/24 vs 19/24、超时 16/24 vs 0/24、到达 8/24 vs 5/24；校正成功差异不显著
 
-## 03. 为什么经典规划器仍会失败？
+## 03. 动态社会导航：局部可行不等于交互可恢复
 
-核心句：局部可行不等于动态交互可恢复
+核心句：八类场景把几何约束、相互让行与突发遮挡分开检验
 
-强调这些不是把 DWB 参数调坏制造的失败，而是动态社会交互下的局部决策问题。
-
-讲述要点：
-
-- 对向会车：双方持续占据彼此最优局部轨迹
-- 门口竞争：短时最优控制造成冻结或相互抢占
-- 盲角突现：有限视野下接近速度快速变化
-- 临时封堵：局部规划器反复输出无效控制或振荡
-
-## 04. 失败不是单一碰撞标签
-
-核心句：系统区分碰撞风险、冻结、振荡和动态死锁
-
-这页要区分触发类型与 episode 终止类型，两者不能混为一个安全分数。
+先按图说明八类交互几何，再强调实验没有靠调坏 DWB 制造失败；问题来自动态主体之间的短时耦合。资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。 原始算法来源：Fox、Burgard 与 Thrun，The Dynamic Window Approach to Collision Avoidance，IEEE Robotics & Automation Magazine 4(1), 1997，https://doi.org/10.1109/100.580977。
 
 讲述要点：
 
-- 碰撞风险：前向硬防护或持续闭合趋势
-- 冻结：离目标仍远、位移不足且规划器请求运动
-- 振荡：角速度多次换向但目标进展不足
-- 死锁：持续阻塞且短窗口无法恢复有效进展
-- 最终结局仍独立记录为到达、碰撞、超时或规划失败
+- 对向会车与双向流：双方局部最优轨迹互相占据
+- 门口与群体封堵：几何瓶颈要求显式退让或绕行
+- 交叉流与盲角：有限视野下风险快速进入控制窗口
+- 超车与临时封堵：短时最优可能演化为冻结或振荡
 
-## 05. 研究问题
+## 04. DWB 在 Nav2 中负责什么？
 
-核心句：能否提高困难动态交互的恢复能力，同时不破坏正常规划稳定性？
+核心句：全局规划给路径，DWB 在局部代价地图上持续选择速度命令
 
-把研究问题落到四个可验证要求：稀疏介入、合法动作、信息隔离和配对评价。
-
-讲述要点：
-
-- 介入应稀疏、可解释、可取消
-- 学习动作必须经过规划可行性约束
-- 训练可用特权监督，测试只能用机器人可观测信息
-- 效果必须在相同 episode manifest 上配对比较
-
-## 06. 贡献与边界
-
-核心句：贡献集中在失败触发、规划专家、恢复分布学习和受限重接
-
-最后一条很重要：主动说明当前版本不依赖 PPO 或学习检测器来成立。
+沿箭头讲清全局路径、局部代价地图、DWB 与底盘的闭环。特别指出：PGRR输出高层恢复目标，不输出底盘速度。资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。 原始算法来源：Fox、Burgard 与 Thrun，The Dynamic Window Approach to Collision Avoidance，IEEE Robotics & Automation Magazine 4(1), 1997，https://doi.org/10.1109/100.580977。
 
 讲述要点：
 
-- 失败前触发的经典规划器恢复层
-- 特权短时域规划自动生成恢复示范
-- Behavior Cloning + 两轮 DAgger 覆盖策略诱导状态
-- 规划 action mask + 独立安全监督 + 有界状态机
-- PPO、学习 detector、第二 planner、Flatland、硬件与形式安全均非完成声明
+- Planner Server 产生通往 PointGoal 的全局路径
+- Controller Server 调用 DWB 处理局部障碍与轨迹跟踪
+- DWB 输出 cmd_vel；机器人执行后再以新观测滚动重算
+- PGRR 不替换这条控制链，只在失败时临时改变局部目标
 
-## 07. 总体架构
+## 05. Dynamic Window：只搜索当前可达的速度
 
-核心句：训练侧可用特权规划监督，部署侧严格闭合在 LiDAR 与 Nav2 状态上
+核心句：Dynamic Window 是 DWA 的思想来源；DWB 通过可插拔 generator 产生候选轨迹
 
-沿着图从左到右讲一遍，并指出虚线特权区域只在训练出现。
-
-讲述要点：
-
-- 观测构造 → 失败检测 → 滞回状态机
-- 候选动作 → action mask → 恢复策略
-- Goal Mux 保存原目标并发送临时子目标
-- DWB 执行动作，重接后恢复常态控制
-
-## 08. 正式观测与触发证据
-
-核心句：部署不使用行人真值、ID 或未来轨迹
-
-这里主动回答公平性问题：测试输入均可由机器人传感和导航栈产生。
+用图从 DWA 速度窗口讲到 DWB 候选轨迹。明确 generator 可插拔，不能据图推断冻结项目一定采用 LimitedAccelGenerator 或任何特定经典 DWA generator。原始算法来源：Fox、Burgard 与 Thrun，The Dynamic Window Approach to Collision Avoidance，IEEE Robotics & Automation Magazine 4(1), 1997，https://doi.org/10.1109/100.580977。 资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。
 
 讲述要点：
 
-- 最近 5 帧 × 180 beams LiDAR
-- 目标极坐标与前方 8 个局部路径点
-- 机器人速度与 DWB 当前输出
-- 10 步目标进展和角速度历史
-- 规划器状态与规则失败分数
+- DWA 用当前速度、加速度和制动约束构造短时可达窗口
+- DWB 的 trajectory generator 是可插拔接口，具体插件由配置决定
+- generator 对候选控制向前 rollout，形成多条局部轨迹
+- 原始 DWA 要求足够制动距离；DWB 合法性由 generator 与 critics 决定
+- 本图解释 DWA 思想，不断言冻结项目采用特定 generator
 
-## 09. 25 个可解释恢复动作
+## 06. DWB 如何选出一条轨迹？
 
-核心句：策略做高层选择，不直接输出底盘速度
+核心句：多个 critic 对候选轨迹逐项评分，加权总成本最低者成为速度命令
 
-用图说明一个恢复动作最终仍经过经典局部规划，而不是绕过它。
+先解释各 critic 的职责，再读加权求和。不要把示意 critic 权重说成项目实测参数，也不要把 DWB 说成学习算法。资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。 原始算法来源：Fox、Burgard 与 Thrun，The Dynamic Window Approach to Collision Avoidance，IEEE Robotics & Automation Magazine 4(1), 1997，https://doi.org/10.1109/100.580977。
+
+讲述要点：
+
+- 障碍相关 critic：检查碰撞与足迹净空
+- 路径相关 critic：约束路径对齐与偏离距离
+- 目标相关 critic：鼓励朝局部目标推进并正确收尾
+- 振荡等 critic：抑制不稳定或反复切换的局部动作
+- 图中是官方 DWB 机制说明，不宣称本项目新增 critic
+
+## 07. 为什么 DWB 在社会交互中仍可能失败？
+
+核心句：局部轨迹最优不包含对方意图，也不保证跨多个滚动窗口主动解套
+
+对照三幅小图区分正常避障、冻结和振荡。这里讲的是局部方法的适用边界，不是声称 DWB 在所有动态环境都会失败。原始算法来源：Fox、Burgard 与 Thrun，The Dynamic Window Approach to Collision Avoidance，IEEE Robotics & Automation Magazine 4(1), 1997，https://doi.org/10.1109/100.580977。 资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。
+
+讲述要点：
+
+- 门口会车：两侧都选择前进，安全轨迹集合逐步收缩
+- 对向僵持：短窗口内后退代价高，却可能是长期可恢复动作
+- 滚动重规划：相邻周期的局部最优可能左右反复切换
+- 参数调优能改变偏好，但不能提供失败后的显式恢复记忆
+
+## 08. PGRR 放在哪里：失败时接管目标，不接管速度
+
+核心句：正常导航始终由 DWB 控制，恢复层只短时选择临时子目标或离散行为
+
+沿总体架构从左到右讲一遍，并指出虚线特权区域只在训练出现。部署侧仍通过官方 Nav2 控制接口让 DWB 执行。资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。
+
+讲述要点：
+
+- 可观测历史 → 规则失败证据 → 滞回状态机
+- 候选恢复动作 → planning mask → 选定策略
+- Goal Mux 保存原始 PointGoal，再发送临时子目标
+- DWB 执行临时目标；确认恢复进展后重接原目标
+
+## 09. 何时触发：多帧失败证据，而不是一次噪声尖峰
+
+核心句：碰撞风险、冻结、振荡和死锁使用不同证据，并由滞回与 cooldown 合并
+
+结合 DWB 社会交互失效图说明为什么要看时间历史；触发类型与最终的到达、碰撞、超时、规划失败必须分开。资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。 原始算法来源：Fox、Burgard 与 Thrun，The Dynamic Window Approach to Collision Avoidance，IEEE Robotics & Automation Magazine 4(1), 1997，https://doi.org/10.1109/100.580977。
+
+讲述要点：
+
+- 碰撞风险：硬防护或持续闭合趋势
+- 冻结：请求运动但目标进展与位移持续不足
+- 振荡：角速度多次换向且没有有效推进
+- 死锁：长期阻塞，经典局部控制无法自行恢复
+- episode 终局仍独立保留，不用 failure score 替代
+
+## 10. 25 个恢复动作 + Action Mask
+
+核心句：学习策略只在规划可行的高层动作中选择，临时目标仍由 DWB 跟踪
+
+先读左侧动作格点，再读 rollout 排名。强调 mask 是可行性约束，不是碰撞安全证明；合法临时目标最终仍交给 DWB。资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。
 
 讲述要点：
 
 - 21 个临时子目标：3 个半径 × 7 个相对方向
-- 4 个行为：WAIT、BACKUP、REPLAN、CONTINUE
-- 临时目标仍由 DWB 跟踪
-- 动作 ID 固定，训练、导出和 ROS 推理一致
-
-## 10. Action Mask：先排除不可执行动作
-
-核心句：策略只能在物理和规划上可行的候选集合内选择
-
-强调 mask 是可行性约束，不是碰撞安全证明。
-
-讲述要点：
-
+- WAIT、BACKUP、REPLAN、CONTINUE 四个离散行为
 - 障碍内、地图外、局部不可达或不连通子目标被屏蔽
-- 明显进入动态占据区的子目标被屏蔽
 - 后方净空不足时禁止 BACKUP
-- 规划接口不可用时禁止 REPLAN
 - masked invalid action rate 在部署中必须为 0
 
 ## 11. 独立安全监督器
 
 核心句：学习决策永远不能覆盖紧急停止优先级
 
-解释为什么要区分原地旋转与平移净空：安全侧墙不应永久锁死转向。
+借 dynamic-window 图解释停止距离与可制动轨迹；再说明监督器优先级高于学习决策。原地旋转与平移净空必须分开。原始算法来源：Fox、Burgard 与 Thrun，The Dynamic Window Approach to Collision Avoidance，IEEE Robotics & Automation Magazine 4(1), 1997，https://doi.org/10.1109/100.580977。 资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。
 
 讲述要点：
 
@@ -154,7 +154,7 @@
 
 核心句：滞回、cooldown、动作保持、重接和最大尝试共同抑制抖动
 
-按正常路径讲状态转换，再补充红色安全抢占和失败出口。
+按正常路径讲状态转换，再补充红色安全抢占和失败出口。DWB 在 NORMAL、临时目标执行和 REJOIN 中仍是底层控制器。资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。
 
 讲述要点：
 
@@ -168,7 +168,7 @@
 
 核心句：用未来短窗口比较所有合法恢复动作，而不是人工逐帧标注
 
-要明确 privileged 不等于测试作弊，因为专家输出的是训练标签。
+要明确 privileged 不等于测试作弊，因为专家只产生训练标签；rollout 使用差速运动学，但部署动作仍交给 DWB。原始算法来源：Fox、Burgard 与 Thrun，The Dynamic Window Approach to Collision Avoidance，IEEE Robotics & Automation Magazine 4(1), 1997，https://doi.org/10.1109/100.580977。 资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。
 
 讲述要点：
 
@@ -178,102 +178,103 @@
 - 输出最优动作、25 维代价、mask 和 margin
 - 专家只用于训练与 Oracle 分析
 
-## 14. Behavior Cloning 与两轮 DAgger
+## 14. Behavior Cloning：先学习专家映射
 
-核心句：DAgger 专门补充当前策略会访问、原始示范不足的恢复状态
+核心句：BC 在专家数据分布上拟合 25 类动作，但不会主动看见自身错误后的状态
 
-不要只讲 top-1 accuracy；核心是策略访问分布和真实闭环选择。
+先讲普通监督学习，再用右图说明训练分布与部署分布分叉。协变量偏移是DAgger 原论文解决的核心问题之一。DAgger 来源：Ross、Gordon 与 Bagnell，A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning，AISTATS 2011，PMLR 15:627–635，https://proceedings.mlr.press/v15/ross11a.html。
 
 讲述要点：
 
 - LiDAR 1D CNN + 导航状态 MLP → 25 logits
-- 训练先完成 Uniform BC
-- 每轮在 train split 闭环运行并由专家重新标注
-- 聚合数据后只在固定 validation 上选择 checkpoint
-- 未选中的第二轮候选和 margin 负面结果继续保留
+- 监督目标来自特权专家在合法动作集合中的选择
+- Uniform BC 是相同观测、动作和 mask 下的直接对照
+- 一次小错误会改变后续观测，产生训练时稀少的恢复状态
+- 因此离线 top-1 accuracy 不能替代闭环评估
 
-## 15. 训练—部署信息隔离
+## 15. BC 的误差为什么会在闭环累积？
 
-核心句：强监督可以来自仿真真值，但部署接口必须保持可观测
+核心句：策略一旦偏离专家轨迹，后续输入不再服从原始示范分布
 
-这页回答审稿人常见问题：专家使用真值是否导致部署不可实现。
-
-讲述要点：
-
-- privileged humans / future outcomes 只存在数据与专家侧
-- 导出模型不包含真值行人张量
-- ROS 推理节点只接收标准化正式观测和 mask
-- schema、checkpoint manifest 与接口测试共同检查泄漏
-
-## 16. 真实 Arena/Gazebo 运行证据
-
-核心句：不是概念图：Jackal、动态行人、静态瓶颈和 Nav2 在同一 episode 实际运行
-
-指出 Jackal、LiDAR 可见行人代理和门口几何；明确这是冻结场景运行证明，不能把遥测重建或该演示图冒充锁定 test 截图。
+沿图中的 expert distribution、learner drift 和 compounding error 讲解。不要把它包装成项目新理论，这是 DAgger 的标准动机。DAgger 来源：Ross、Gordon 与 Bagnell，A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning，AISTATS 2011，PMLR 15:627–635，https://proceedings.mlr.press/v15/ross11a.html。
 
 讲述要点：
 
-- 环境：Ubuntu 22.04 / ROS2 Humble / Arena Gazebo
-- 机器人与感知：Jackal / Nav2 DWB / 平面 LiDAR
-- 冻结 v5 演示：doorway_bottleneck / medium / validation
-- episode ID：runtime_capture_gazebo_doorway_bottleneck_medium_20260806T054015Z_3875172；pixel SHA256：5313957c3032
-- 它不是锁定 v6 统计回合的 camera frame，也不替代定量实验
+- 专家数据主要覆盖理想恢复路径附近的状态
+- 学习器的早期误差会把机器人带入未覆盖区域
+- 未覆盖区域上预测更差，继续放大轨迹偏差
+- 恢复任务尤其容易出现 WAIT、BACKUP 或左右切换循环
+- 需要在学习器真正访问的状态上重新询问专家
 
-## 17. 八类场景 × 三档密度
+## 16. DAgger：在学习器访问的状态上询问专家
 
-核心句：从正面对向到临时封堵，覆盖不同动态交互结构
+核心句：闭环采样、专家重标、数据聚合与重新训练构成迭代分布覆盖
 
-快速扫过八个小图，不逐个展开细节；强调固定模板和 seeded physical realization。
-
-讲述要点：
-
-- head-on、doorway、crossing、blind corner
-- group blocking、overtaking、opposite streams、temporary blockage
-- 每类 low / medium / high
-- 地图、起终点、行人路线和 seed 写入 manifest
-
-## 18. Split、规模与锁定规则
-
-核心句：validation 用于选择，test 只在代码、配置和 checkpoint 冻结后打开
-
-明确 360 和 600 是总 method-episodes，不是每个方法的数量。
+按圆环逐步讲 rollout、query、aggregate 和 retrain。PGRR 使用有限两轮实现，不是无限在线学习，也不在 test 上继续更新。DAgger 来源：Ross、Gordon 与 Bagnell，A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning，AISTATS 2011，PMLR 15:627–635，https://proceedings.mlr.press/v15/ross11a.html。
 
 讲述要点：
 
-- moderate-v6：Train / validation / test 使用不相交 seed 和 scenario ID
-- v5 Base validation 57/72，超过 75% ceiling，故 rejected 且 test 未打开
-- Validation：72 条件 × 5 方法 = 360 method-episodes
-- 锁定 Test：120 条件 × 5 方法 = 600 method-episodes
+- 以当前策略在 train split 闭环运行，收集实际访问状态
+- 特权专家为这些状态给出合法恢复动作标签
+- 把新样本并入聚合数据集，再训练下一候选策略
+- 只用固定 validation 选择是否接受候选 checkpoint
+- test 在模型和协议冻结前保持关闭
+
+## 17. PGRR 的两轮 DAgger 与模型选择
+
+核心句：工作流完整执行两轮，但 validation 没有提升的第二候选不会进入最终模型
+
+沿时间轴强调执行轮数与最终选中轮次不是一回事。第二候选被拒绝和 margin负结果必须保留；PPO 不是本发布贡献。DAgger 来源：Ross、Gordon 与 Bagnell，A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning，AISTATS 2011，PMLR 15:627–635，https://proceedings.mlr.press/v15/ross11a.html。
+
+讲述要点：
+
+- 起点：Uniform BC checkpoint 与固定训练数据
+- Round 1：闭环收集策略诱导状态，专家重标并聚合
+- Round 2：流程完成，但候选在 validation 上被拒绝
+- 最终导出 validation 选择的 Triggered-DAgger best.onnx
+- margin weighting 未改善冻结离线消融，作为负面结果保留
+
+## 18. 训练—部署隔离与锁定规则
+
+核心句：专家可使用仿真特权信息；部署模型只接受机器人可观测量和 planning mask
+
+对照图中 privileged 与 deployable 两条数据路径回答信息泄漏问题，并强调DAgger 只在 train 闭环查询专家。DAgger 来源：Ross、Gordon 与 Bagnell，A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning，AISTATS 2011，PMLR 15:627–635，https://proceedings.mlr.press/v15/ross11a.html。 资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。
+
+讲述要点：
+
+- 训练侧：行人真值与短时未来只用于专家 rollout 标签
+- 部署侧：LiDAR、目标、局部路径、速度、进展与 planner 状态
+- Train / validation / test 按 scenario 与 map 分离，不按 frame
 - 同一 pair 的场景、地图、seed 和行人配置跨方法一致
-- test 结果不能反向调参
+- checkpoint、代码与协议冻结后才打开 120 条件 test
 
-## 19. 五种闭环对比方法
+## 19. 真实 Arena/Gazebo 运行环境
 
-核心句：从纯经典基线到训练分布聚合，逐级增加恢复能力
+核心句：不是示意图：Jackal、动态行人、静态瓶颈与 Nav2 DWB 在同一 episode 运行
 
-强调所有方法复用同一 DWB 和同一物理条件，避免基础规划器差异干扰比较。
-
-讲述要点：
-
-- DWB：无 PGRR 恢复层
-- Standard：导航栈标准恢复
-- Heuristic：规则触发 + 手工动作
-- Uniform BC：相同观测、动作和 mask 的行为克隆
-- PGRR：选定 DAgger checkpoint + 有界恢复闭环
-
-## 20. 指标与统计协议
-
-核心句：一个方法不能靠永远 WAIT 获得虚假安全优势
-
-这页为后面的结果解释定规则：显著性、效果量和失败类别都要一起看。
+指出机器人、LiDAR 可见代理、门口几何和 Gazebo 窗口。明确它不是锁定 test回合的 camera frame，也不能与遥测重建混称截图。资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。
 
 讲述要点：
 
-- 终止：到达、碰撞、超时、规划失败
-- 效率：SPL、路径长度、导航时间
-- 安全：最小人距、个人空间侵入、不舒适时间、紧急停止
-- 恢复：触发、重接成功、持续时间、介入比例
-- 到达/碰撞/超时：McNemar；连续端点：Wilcoxon + 全局 Holm
+- Ubuntu 22.04 / ROS2 Humble / Arena Gazebo
+- Jackal / Nav2 DWB / 平面 LiDAR / 动态代理
+- 历史 moderate-v5 validation 环境演示（不是另一当前版本）
+- episode ID：runtime_capture_gazebo_doorway_bottleneck_medium_20260806T054015Z_3875172；pixel SHA256：5313957c3032
+- 截图仅证明真实运行环境，不替代锁定 test 的总体统计
+
+## 20. 五方法、同条件、完整证据链
+
+核心句：从 Base DWB 到 PGRR，五种方法共享 120 个锁定条件并保留全部终局
+
+沿证据链从 manifest、raw、Parquet、统计 JSON 讲到图表。所有方法复用同一DWB；Uniform BC 与 PGRR 只在数据聚合上不同。资料来源：Nav2 官方 DWB Controller 文档 https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html；Navigation2 官方 DWB README https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md。 DAgger 来源：Ross、Gordon 与 Bagnell，A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning，AISTATS 2011，PMLR 15:627–635，https://proceedings.mlr.press/v15/ross11a.html。
+
+讲述要点：
+
+- Base、Standard、Heuristic、Uniform BC、PGRR 各 120 回合
+- 八个 family × 三档 density × 五次重复，共 600 logical episodes
+- 终局：到达、碰撞、超时、规划失败；基础设施失败另列
+- 到达/碰撞/超时做配对 McNemar，并进行全局 Holm 校正
+- 共同成功效率只在双方都到达的 pair 内比较
 - 规划失败仅做描述性率与差值，不补做事后显著性检验
 
 ## 21. 主结果：完整终止类别
@@ -391,7 +392,7 @@
 
 核心句：代码、结果、图表、论文和汇报共享同一证据链
 
-展示一键命令，并说明任何完整性检查失败都会阻止生成“final”文档。
+沿图展示 manifest → raw → Parquet/JSON → figures/tables → paper/report/deck 的单向证据链，并说明任何完整性检查失败都会阻止生成“final”文档。
 
 讲述要点：
 

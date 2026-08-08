@@ -65,32 +65,32 @@ z
 " clip-path="url(#pa8b9ab98d3)" style="fill: #53616a; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
    </g>
    <g id="patch_5">
-    <path d="M 342.66539 76.752
-Q 345.371176 76.752 347.070731 76.752
+    <path d="M 342.669015 76.752
+Q 351.067406 76.752 358.459566 76.752
 " clip-path="url(#pa8b9ab98d3)" style="fill: none; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
-    <path d="M 343.670731 75.052
-L 347.070731 76.752
-L 343.670731 78.452
+    <path d="M 355.059566 75.052
+L 358.459566 76.752
+L 355.059566 78.452
 z
 " clip-path="url(#pa8b9ab98d3)" style="fill: #53616a; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
    </g>
    <g id="patch_6">
-    <path d="M 413.42776 76.598859
-Q 416.143521 76.319965 417.858316 76.143865
+    <path d="M 421.843221 76.621641
+Q 425.296571 76.320196 427.747501 76.106253
 " clip-path="url(#pa8b9ab98d3)" style="fill: none; stroke: #d55e00; stroke-width: 0.9; stroke-linecap: round"/>
-    <path d="M 414.302436 74.800094
-L 417.858316 76.143865
-L 414.649771 78.182306
+    <path d="M 424.212549 74.708356
+L 427.747501 76.106253
+L 424.508213 78.095477
 z
 " clip-path="url(#pa8b9ab98d3)" style="fill: #d55e00; stroke: #d55e00; stroke-width: 0.9; stroke-linecap: round"/>
    </g>
    <g id="patch_7">
-    <path d="M 381.647462 88.843549
-Q 386.944569 96.019798 391.644098 102.386478
+    <path d="M 391.530343 88.341328
+Q 396.842839 95.761015 401.569546 102.362562
 " clip-path="url(#pa8b9ab98d3)" style="fill: none; stroke: #00866f; stroke-width: 0.9; stroke-linecap: round"/>
-    <path d="M 390.992657 98.641398
-L 391.644098 102.386478
-L 388.25717 100.660583
+    <path d="M 400.972425 98.608438
+L 401.569546 102.362562
+L 398.207974 100.587785
 z
 " clip-path="url(#pa8b9ab98d3)" style="fill: #00866f; stroke: #00866f; stroke-width: 0.9; stroke-linecap: round"/>
    </g>
@@ -234,23 +234,23 @@ z
     </g>
    </g>
    <g id="patch_15">
-    <path d="M 380.757888 65.952
-L 411.689088 76.752
-L 380.757888 87.552
-L 349.826688 76.752
+    <path d="M 390.655872 66.384
+L 420.349824 76.752
+L 390.655872 87.12
+L 360.96192 76.752
 z
 " clip-path="url(#pa8b9ab98d3)" style="fill: #fff4e6; stroke: #d55e00; stroke-width: 1.05; stroke-linejoin: miter"/>
    </g>
    <g id="patch_16">
-    <path d="M 424.803917 84.3552
-L 470.334643 84.3552
-Q 479.242829 84.3552 479.242829 81.2448
-L 479.242829 70.5312
-Q 479.242829 67.4208 470.334643 67.4208
-L 424.803917 67.4208
-Q 415.895731 67.4208 415.895731 70.5312
-L 415.895731 81.2448
-Q 415.895731 84.3552 424.803917 84.3552
+    <path d="M 434.701901 84.3552
+L 475.283635 84.3552
+Q 484.191821 84.3552 484.191821 81.2448
+L 484.191821 70.5312
+Q 484.191821 67.4208 475.283635 67.4208
+L 434.701901 67.4208
+Q 425.793715 67.4208 425.793715 70.5312
+L 425.793715 81.2448
+Q 425.793715 84.3552 434.701901 84.3552
 z
 " clip-path="url(#pa8b9ab98d3)" style="fill: #fff4e6; stroke: #d55e00; stroke-linejoin: miter"/>
    </g>
@@ -318,10 +318,10 @@ z
     <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="295.387776" y="118.583" transform="rotate(-0 295.387776 118.583)">Oscillation</text>
    </g>
    <g id="text_11">
-    <text style="font-size: 7px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="380.757888" y="78.562156" transform="rotate(-0 380.757888 78.562156)">valid?</text>
+    <text style="font-size: 7px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="390.655872" y="78.562156" transform="rotate(-0 390.655872 78.562156)">valid?</text>
    </g>
    <g id="text_12">
-    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="447.56928" y="77.543" transform="rotate(-0 447.56928 77.543)">reject</text>
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="454.992768" y="77.543" transform="rotate(-0 454.992768 77.543)">reject</text>
    </g>
    <g id="text_13">
     <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="393.130368" y="115.127" transform="rotate(-0 393.130368 115.127)">minimum total score</text>
