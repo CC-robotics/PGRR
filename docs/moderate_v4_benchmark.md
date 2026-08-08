@@ -1,3 +1,9 @@
+# Archived benchmark audit — not the current release
+
+This point-in-time validation design is retained only for protocol provenance.
+It is not a supported benchmark, final result source, or alternative PGRR
+version. See [`README.md`](README.md) for the current documentation index.
+
 # Moderate v4 benchmark
 
 Moderate v4 is a predeclared, split-safe revision of the moderate social-navigation

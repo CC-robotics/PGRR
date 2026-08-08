@@ -103,7 +103,7 @@ train-detector: ## Train the optional learned failure detector.
 	@$(OFFLINE_RUN) python scripts/train/train_detector.py --seed "$(SEED)"
 pilot: ## Run validation-only pilot evaluation.
 	@scripts/evaluate/run_experiment.sh --tier pilot --seed "$(SEED)"
-evaluate-calibration: ## Run and score the complete Base-only moderate-v6 validation calibration.
+evaluate-calibration: ## Run and score the frozen release benchmark's Base-only calibration.
 	@$(OFFLINE_RUN) python scripts/evaluate/run_experiment.py \
 		--split validation --split-manifest "$(MODERATE_CALIBRATION_SPLIT)" \
 		--methods base --jobs "$(EVALUATION_JOBS)" \
@@ -124,19 +124,19 @@ evaluate-calibration: ## Run and score the complete Base-only moderate-v6 valida
 		--output "$(MODERATE_CALIBRATION_REPORT)" \
 		--expected-conditions 72
 
-calibration-report: ## Rebuild the Base-only v6 calibration report from collected validation results.
+calibration-report: ## Rebuild the frozen release Base-only calibration report.
 	@$(OFFLINE_RUN) python scripts/evaluate/calibrate_moderate.py \
 		--results "$(MODERATE_CALIBRATION_RESULTS)" \
 		--split-manifest "$(MODERATE_CALIBRATION_SPLIT)" \
 		--output "$(MODERATE_CALIBRATION_REPORT)" \
 		--expected-conditions 72
 
-verify-calibration: ## Verify the accepted calibration report against the frozen v6 config and SHA256.
+verify-calibration: ## Verify the accepted calibration against the frozen release config and SHA256.
 	@$(OFFLINE_RUN) python scripts/evaluate/calibrate_moderate.py \
 		--verify-report "$(MODERATE_CALIBRATION_REPORT)" \
 		--evaluation-config configs/final/ei_gazebo.yaml
 
-evaluate-final: verify-calibration ## Run the locked five-method moderate-v6 Gazebo test manifest.
+evaluate-final: verify-calibration ## Run the locked five-method final Gazebo evaluation.
 	@$(OFFLINE_RUN) python scripts/evaluate/run_experiment.py \
 		--split test --split-manifest "$(MODERATE_SPLIT_MANIFEST)" \
 		--methods $(MODERATE_METHODS) --jobs "$(EVALUATION_JOBS)" \
