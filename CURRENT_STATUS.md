@@ -58,7 +58,7 @@ smoothness costs, not unqualified superiority over all recovery systems.
   `0fbf8a159a1e1b96e940bec0efb31e5952ba5b0333439992f370a9a9fb41e15f`.
   The similarly named file under `outputs/moderate/final/` is an untracked,
   rejected empty-test byproduct and is not release evidence.
-- `outputs/moderate/final/artifact_manifest.json` binds 76 release files to
+- `outputs/moderate/final/artifact_manifest.json` binds 96 release files to
   their hashes and records the evaluation commit independently from the
   document-generation commit.
 
@@ -83,7 +83,7 @@ smoothness costs, not unqualified superiority over all recovery systems.
 Development QA passed Ruff, formatting, mypy, 703 tests, exact document page
 counts, PDF text/font checks, and document validators. The clean-checkout
 release gate separately passed the privacy audit and byte-level verification of
-all 76 manifest artifacts without modifying the checkout.
+all 96 manifest artifacts without modifying the checkout.
 
 ## Historical boundary retained for scientific honesty
 

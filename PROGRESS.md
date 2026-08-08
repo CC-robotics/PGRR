@@ -25,7 +25,7 @@ All planned release gates are complete:
    figures, tables, real-environment evidence, and matched-run telemetry were
    generated from checked-in artifacts.
 8. The 8-page paper, 32-page technical report, 30-slide presentation, and
-   76-file release manifest passed clean-checkout validation and privacy QA.
+   96-file release manifest passed clean-checkout validation and privacy QA.
 
 ## Final result
 

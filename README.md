@@ -26,10 +26,11 @@ interfaces only; the public method name is PGRR.
   exactly 32 pages.
 - Presentation:
   [`presentation/PGRR_report_zh.pptx`](presentation/PGRR_report_zh.pptx) and
-  [PDF](presentation/PGRR_report_zh.pdf), exactly 30 slides/pages.
+  [PDF](presentation/PGRR_report_zh.pdf), exactly 30 illustrated slides/pages,
+  including sourced DWB, BC, and DAgger explanations plus real run evidence.
 - Checksummed release bundle:
   [`outputs/moderate/final/artifact_manifest.json`](outputs/moderate/final/artifact_manifest.json),
-  76 bound artifacts.
+  96 bound artifacts, including the reproducible algorithm-figure sources.
 
 | Method | Goal reached | Collision | Timeout | Planner failure |
 |---|---:|---:|---:|---:|
@@ -233,7 +234,7 @@ PGRR_RELEASE_MODE=1 PGRR_RECOLLECT_RAW=0 \
 scripts/reproduce_paper.sh
 ```
 
-Release mode regenerates nothing. It checks scientific provenance, all 76
+Release mode regenerates nothing. It checks scientific provenance, all 96
 artifact paths/sizes/SHA256 values, canonical media hashes, page counts, final
 paper text, report/PPT data structure, and privacy, then must leave the
 checkout unchanged. Font embedding is checked during the development document

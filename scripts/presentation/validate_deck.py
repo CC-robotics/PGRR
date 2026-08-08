@@ -102,6 +102,9 @@ def validate_deck(pptx: Path, notes: Path, pdf: Path | None = None) -> None:
         required_visible = (
             "Planning-Guided Failure-Triggered Recovery and Rejoin",
             "Ubuntu 22.04 / ROS2 Humble",
+            "Dynamic Window Approach",
+            "轨迹生成器 + Critics",
+            "DAgger",
             "遥测重建",
             "不是 camera screenshot",
         )
@@ -125,9 +128,13 @@ def validate_deck(pptx: Path, notes: Path, pdf: Path | None = None) -> None:
         )
         runtime_sha = str(runtime_metadata.get("artifacts", {}).get("screenshot_sha256", ""))
         media_hashes = {hashlib.sha256(archive.read(name)).hexdigest() for name in media}
+        locked_test = "stage=test" in core
+        if locked_test and len(media_hashes) < 18:
+            raise DeckValidationError(
+                "locked-test PPTX must embed at least 18 distinct visual assets"
+            )
         if runtime_sha not in media_hashes:
             raise DeckValidationError("PPTX does not embed the SHA-verified Gazebo GUI capture")
-        locked_test = "stage=test" in core
         if locked_test:
             required_final_text = (
                 "episode ID",
@@ -166,6 +173,17 @@ def validate_deck(pptx: Path, notes: Path, pdf: Path | None = None) -> None:
         )
     if "/home/" in notes_text or "file:///" in notes_text:
         raise DeckValidationError("speaker notes leak a local path")
+    required_sources = (
+        "https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html",
+        "https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md",
+        "https://doi.org/10.1109/100.580977",
+        "https://proceedings.mlr.press/v15/ross11a.html",
+    )
+    missing_sources = [source for source in required_sources if source not in notes_text]
+    if missing_sources:
+        raise DeckValidationError(
+            f"speaker notes omit authoritative DWB/DAgger sources: {missing_sources}"
+        )
     if locked_test and "如果还是 pending" in notes_text:
         raise DeckValidationError("locked-test speaker notes still contain pending-stage guidance")
 

@@ -46,7 +46,7 @@ pedestrian proxies are simulator actors, not a validated human-intent model.
 
 The public product has one release. Its internal benchmark ID is
 `moderate_social_navigation_v6`, retained because it is embedded in scenario
-IDs, split hashes, results, and the 76-file artifact manifest. Renaming that ID
+IDs, split hashes, results, and the 96-file artifact manifest. Renaming that ID
 after evaluation would break provenance; the suffix is therefore an immutable
 dataset identifier rather than a user-facing version choice.
 
@@ -103,7 +103,7 @@ hardware readiness.
 
 Every paper number is generated from the final Parquet/JSON/CSV bundle. The
 anonymous paper must be exactly 8 pages, the Chinese report exactly 32 pages,
-and the presentation exactly 30 slides/pages. The release manifest binds 76
+and the presentation exactly 30 slides/pages. The release manifest binds 96
 artifacts, document page counts, the evaluation commit, the generation commit,
 and media hashes. Release mode runs only from a clean worktree and validates
 without regenerating files.

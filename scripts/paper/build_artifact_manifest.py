@@ -125,7 +125,17 @@ MATCHED_REPRESENTATION = "telemetry reconstruction; not a simulator camera scree
 
 EXPECTED_FIGURES = (
     "system_architecture.pdf",
+    "recovery_state_machine.pdf",
     "action_space_expert.pdf",
+    "scenario_overview.pdf",
+    "dwb_nav2_role.pdf",
+    "dwb_dynamic_window.pdf",
+    "dwb_critic_scoring.pdf",
+    "dwb_social_failure.pdf",
+    "bc_distribution_shift.pdf",
+    "dagger_loop.pdf",
+    "pgrr_dagger_rounds.pdf",
+    "evaluation_evidence_chain.pdf",
     "moderate_outcomes_and_density.pdf",
     "moderate_family_success.pdf",
     "moderate_paired_effects.pdf",
@@ -1338,6 +1348,17 @@ def _validate_presentation(pptx: Path, notes: Path, contact_sheet: Path) -> None
         raise ArtifactError("presentation speaker notes are not bound to the locked test stage")
     if "如果还是 pending" in notes_text:
         raise ArtifactError("locked-test speaker notes still contain pending-stage guidance")
+    required_algorithm_sources = (
+        "https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html",
+        "https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md",
+        "https://doi.org/10.1109/100.580977",
+        "https://proceedings.mlr.press/v15/ross11a.html",
+    )
+    missing_sources = [source for source in required_algorithm_sources if source not in notes_text]
+    if missing_sources:
+        raise ArtifactError(
+            f"presentation notes omit authoritative DWB/DAgger sources: {missing_sources}"
+        )
     _validate_png(contact_sheet, label="presentation contact sheet", require_contrast=True)
     with Image.open(contact_sheet) as image:
         width, height = image.size

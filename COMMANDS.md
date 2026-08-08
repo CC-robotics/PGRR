@@ -122,7 +122,7 @@ test -z "$(git status --porcelain --untracked-files=all)"
 ```
 
 Release mode is validate-only. It reconstructs scientific provenance, compares
-the 76 declared artifact hashes and document page counts, runs the privacy
+the 96 declared artifact hashes and document page counts, runs the privacy
 audit, and must leave the checkout unchanged.
 
 ## 7. Full held-out evaluation — intentional rerun only

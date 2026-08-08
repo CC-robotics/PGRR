@@ -561,10 +561,50 @@ def test_pending_deck_has_30_substantive_chinese_slides() -> None:
     assert DECK.PUBLIC_NAME in specs[0].takeaway
     assert "raw/Parquet" in specs[25].takeaway
 
+    titles = {spec.title for spec in specs}
+    required_title_fragments = (
+        "DWB 在 Nav2 中负责什么",
+        "Dynamic Window",
+        "DWB 如何选出一条轨迹",
+        "Behavior Cloning",
+        "DAgger",
+        "PGRR 的两轮 DAgger",
+    )
+    assert all(any(fragment in title for title in titles) for fragment in required_title_fragments)
+    algorithm_notes = " ".join(spec.notes for spec in specs[3:20])
+    assert "Nav2 官方 DWB Controller 文档" in algorithm_notes
+    assert "generator 可插拔" in algorithm_notes
+    assert "LimitedAccelGenerator" in algorithm_notes
+    assert "https://proceedings.mlr.press/v15/ross11a.html" in algorithm_notes
+    source_markers = (
+        "https://docs.nav2.org/",
+        "https://doi.org/10.1109/100.580977",
+        "https://proceedings.mlr.press/v15/ross11a.html",
+    )
+    assert all(any(marker in spec.notes for marker in source_markers) for spec in specs[2:20])
+
     notes = DECK.render_notes(specs, stage="pending")
     assert notes.count("\n## ") == 30
     assert "如果还是 pending" in notes
     assert "/home/" not in notes
+    required_algorithm_urls = (
+        "https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html",
+        "https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md",
+        "https://doi.org/10.1109/100.580977",
+        "https://proceedings.mlr.press/v15/ross11a.html",
+    )
+    assert all(notes.count(url) >= 1 for url in required_algorithm_urls)
+
+
+def test_locked_deck_is_figure_led_with_distinct_algorithm_assets() -> None:
+    data = json.loads((ROOT / "report/generated/report_data.json").read_text(encoding="utf-8"))
+    assert data["stage"] == "test"
+    specs = DECK.build_slide_specs("test", data)
+
+    illustrated = [spec for spec in specs if spec.asset is not None]
+    unique_assets = {spec.asset for spec in illustrated}
+    assert len(illustrated) >= 26
+    assert len(unique_assets) >= 18
 
 
 def test_report_source_is_detailed_and_stage_conditional() -> None:

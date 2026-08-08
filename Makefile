@@ -211,12 +211,12 @@ technical-report: ## Build the stage-aware Chinese report; locked test must be e
 	REPORT_EXPECTED_CONDITIONS="$(REPORT_EXPECTED_CONDITIONS)" CONDA_ENV_NAME="$(CONDA_ENV_NAME)" \
 	scripts/report/build_report.sh
 
-presentation-check: report-assets ## Validate the 30-slide Chinese deck specification without python-pptx.
+presentation-check: report-assets method-figures ## Validate the illustrated 30-slide Chinese deck specification without python-pptx.
 	@$(OFFLINE_RUN) python scripts/presentation/build_deck.py \
 		--stage "$(REPORT_STAGE)" --report-data "$(REPORT_GENERATED_DIR)/report_data.json" \
 		--check-only
 
-presentation: report-assets ## Build the 30-slide PPTX, speaker notes, and exported PDF.
+presentation: report-assets method-figures ## Build the illustrated 30-slide PPTX, speaker notes, and exported PDF.
 	@$(OFFLINE_RUN) python scripts/presentation/build_deck.py \
 		--stage "$(REPORT_STAGE)" --report-data "$(REPORT_GENERATED_DIR)/report_data.json" \
 		--output "$(PRESENTATION_OUTPUT)" --notes "$(PRESENTATION_NOTES)"

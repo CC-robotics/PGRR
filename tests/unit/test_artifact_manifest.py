@@ -158,6 +158,11 @@ def _complete_fixture(root: Path) -> None:
         root / MODULE.DEFAULT_PRESENTATION_NOTES,
         (
             "阶段\uff1a`test`。\n\n"
+            "DWB/DAgger sources:\n"
+            "https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html\n"
+            "https://github.com/ros-navigation/navigation2/blob/humble/nav2_dwb_controller/README.md\n"
+            "https://doi.org/10.1109/100.580977\n"
+            "https://proceedings.mlr.press/v15/ross11a.html\n\n"
             + "".join(f"## {number:02d}. Slide\n\nNotes.\n" for number in range(1, 31))
         ).encode(),
     )
@@ -952,6 +957,26 @@ def test_manifest_rejects_pending_guidance_in_locked_test_notes(tmp_path: Path) 
     )
 
     with pytest.raises(MODULE.ArtifactError, match="pending-stage guidance"):
+        MODULE.build_manifest(
+            tmp_path,
+            project_commit="b" * 40,
+            git_dirty=False,
+        )
+
+
+def test_manifest_rejects_presentation_without_authoritative_algorithm_sources(
+    tmp_path: Path,
+) -> None:
+    _complete_fixture(tmp_path)
+    notes = tmp_path / MODULE.DEFAULT_PRESENTATION_NOTES
+    notes.write_text(
+        notes.read_text(encoding="utf-8").replace(
+            "https://proceedings.mlr.press/v15/ross11a.html", "missing-dagger-source"
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(MODULE.ArtifactError, match="authoritative DWB/DAgger sources"):
         MODULE.build_manifest(
             tmp_path,
             project_commit="b" * 40,

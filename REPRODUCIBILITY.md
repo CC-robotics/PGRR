@@ -189,7 +189,7 @@ test -z "$(git status --porcelain --untracked-files=all)"
 Release mode is validate-only. It independently reconstructs the manifest and
 compares:
 
-- all 76 required paths, sizes, and SHA-256 values;
+- all 96 required paths, sizes, and SHA-256 values;
 - evaluation and generation provenance;
 - the accepted calibration and frozen test split;
 - result, statistics, raw-sidecar, screenshot, window, and telemetry bindings;

@@ -14,6 +14,17 @@ MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
+NEW_ALGORITHM_STEMS = {
+    "dwb_nav2_role",
+    "dwb_dynamic_window",
+    "dwb_critic_scoring",
+    "dwb_social_failure",
+    "bc_distribution_shift",
+    "dagger_loop",
+    "pgrr_dagger_rounds",
+    "evaluation_evidence_chain",
+}
+
 
 def _minimal_catalog() -> dict[str, object]:
     layouts = {
@@ -85,6 +96,7 @@ def test_generate_method_figures_writes_pdf_and_svg_without_raster_images(
         "recovery_state_machine",
         "action_space_expert",
         "scenario_overview",
+        *NEW_ALGORITHM_STEMS,
     }
     assert {path.stem for path in outputs} == expected_stems
     assert {path.suffix for path in outputs} == {".pdf", ".svg"}
@@ -105,6 +117,48 @@ def test_generate_method_figures_writes_pdf_and_svg_without_raster_images(
             assert "<image" not in text
             assert "#ffffff" in text.lower()
             assert "/definitely/not/read" not in text
+
+
+def test_new_algorithm_figures_are_original_sourced_vectors(tmp_path: Path) -> None:
+    catalog = _write_catalog(tmp_path / "catalog.yaml")
+    outputs = MODULE.generate_method_figures(tmp_path / "figures", catalog)
+    svg_by_stem = {
+        path.stem: path.read_text(encoding="utf-8")
+        for path in outputs
+        if path.suffix == ".svg" and path.stem in NEW_ALGORITHM_STEMS
+    }
+    assert set(svg_by_stem) == NEW_ALGORITHM_STEMS
+
+    for stem, svg in svg_by_stem.items():
+        assert "Original" in svg
+        assert "not a runtime result" in svg
+        assert "<image" not in svg
+        if stem.startswith("dwb_"):
+            assert "Nav2 DWB" in svg or "Fox, Burgard" in svg
+        else:
+            assert "Ross, Gordon" in svg
+
+    dynamic_window = svg_by_stem["dwb_dynamic_window"]
+    assert "DWA ancestry" in dynamic_window
+    assert "TrajectoryGenerator plugin" in dynamic_window
+    assert "StandardTrajectoryGenerator" in dynamic_window
+    assert "LimitedAccelGenerator" in dynamic_window
+    assert "not identical" in dynamic_window
+
+    critic_scoring = svg_by_stem["dwb_critic_scoring"]
+    assert "Critic plugins" in critic_scoring
+    assert "minimum total score" in critic_scoring
+    assert "cmd_vel" in critic_scoring
+
+    rounds = svg_by_stem["pgrr_dagger_rounds"]
+    assert "round-2 candidate retained" in rounds
+    assert "rejected on validation" in rounds
+    assert "not a third DAgger round" in rounds
+    assert "PPO is not part" in rounds
+
+    evidence = svg_by_stem["evaluation_evidence_chain"]
+    assert "Checked-in ledger" in evidence
+    assert "global Holm correction" in evidence
 
 
 def test_scenario_inventory_reads_only_family_and_density_metadata(tmp_path: Path) -> None:

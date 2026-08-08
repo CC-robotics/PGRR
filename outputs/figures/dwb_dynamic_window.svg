@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="537.846pt" height="222.5088pt" viewBox="0 0 537.846 222.5088" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>PGRR method figure generator</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 222.5088
+L 537.846 222.5088
+L 537.846 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 56.116344 154.512
+L 268.923 154.512
+L 268.923 50.832
+L 56.116344 50.832
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #eaf2f8; stroke: #356e9f; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 63.539832 53.424
+L 147.672696 53.424
+L 95.70828 92.304
+L 63.539832 97.488
+z
+" clip-path="url(#pf779c7cd58)" style="fill: url(#he10b0c9d42); stroke: #d55e00; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 140.249208 119.088
+L 231.80556 119.088
+L 231.80556 81.936
+L 140.249208 81.936
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #e8f6f3; stroke: #00866f; stroke-width: 1.15; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 57.617859 154.512
+Q 168.707505 154.512 278.790921 154.512
+" clip-path="url(#pf779c7cd58)" style="fill: none; stroke: #1b1f23; stroke-width: 0.9; stroke-linecap: round"/>
+    <path d="M 275.390921 152.812
+L 278.790921 154.512
+L 275.390921 156.212
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #1b1f23; stroke: #1b1f23; stroke-width: 0.9; stroke-linecap: round"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 56.116344 153.013658
+Q 56.116344 100.079518 56.116344 48.151609
+" clip-path="url(#pf779c7cd58)" style="fill: none; stroke: #1b1f23; stroke-width: 0.9; stroke-linecap: round"/>
+    <path d="M 54.416344 51.551609
+L 56.116344 48.151609
+L 57.816344 51.551609
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #1b1f23; stroke: #1b1f23; stroke-width: 0.9; stroke-linecap: round"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 349.661527 78.802945
+Q 344.888622 84.961813 340.732088 90.325327
+" clip-path="url(#pf779c7cd58)" style="fill: none; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
+    <path d="M 344.158501 88.679212
+L 340.732088 90.325327
+L 341.471044 86.596527
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #53616a; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 428.186541 78.824461
+Q 432.734894 84.96035 436.684036 90.28788
+" clip-path="url(#pf779c7cd58)" style="fill: none; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
+    <path d="M 436.025029 86.544124
+L 436.684036 90.28788
+L 433.293627 88.568832
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #53616a; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 340.449588 113.004352
+Q 353.55121 121.680296 365.813874 129.800679
+" clip-path="url(#pf779c7cd58)" style="fill: none; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
+    <path d="M 363.917684 126.506067
+L 365.813874 129.800679
+L 362.040471 129.340864
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #53616a; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 436.935418 113.013633
+Q 424.072843 121.680712 412.044736 129.785508
+" clip-path="url(#pf779c7cd58)" style="fill: none; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
+    <path d="M 415.814324 129.295396
+L 412.044736 129.785508
+L 413.9144 126.475771
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #53616a; stroke: #53616a; stroke-width: 0.9; stroke-linecap: round"/>
+   </g>
+   <g id="text_1">
+    <!-- $v_x$ -->
+    <g style="fill: #1b1f23" transform="translate(272.164984 165.198)">
+     <text>
+      <tspan x="0" y="-0.71875" style="font-style: oblique; font-size: 6.4px; font-family: 'DejaVu Sans'; fill: #1b1f23">v</tspan>
+      <tspan x="3.772705" y="0.265625" style="font-style: oblique; font-size: 4.48px; font-family: 'DejaVu Sans'; fill: #1b1f23">x</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_2">
+    <!-- $\omega$ -->
+    <g style="fill: #1b1f23" transform="translate(36.883166 52.014)">
+     <text>
+      <tspan x="0" y="-0.71875" style="font-style: oblique; font-size: 6.4px; font-family: 'DejaVu Sans'; fill: #1b1f23">ω</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_3">
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #356e9f" x="61.065336" y="148" transform="rotate(-0 61.065336 148)">configured velocity bounds</text>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; fill: #00866f" transform="translate(156.964934 98.6338)">reachable / sampled</text>
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; fill: #00866f" transform="translate(158.742434 105.5274)">conceptual window</text>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #d55e00" x="88.284792" y="65.447" transform="rotate(-0 88.284792 65.447)">inadmissible</text>
+   </g>
+   <g id="text_6">
+    <text style="font-weight: 600; font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #53616a" x="296.142456" y="50.745" transform="rotate(-0 296.142456 50.745)">DWB trajectory generation boundary</text>
+   </g>
+   <g id="patch_11">
+    <path d="M 300.596549 79.1712
+L 477.275563 79.1712
+Q 486.183749 79.1712 486.183749 76.0608
+L 486.183749 61.0272
+Q 486.183749 57.9168 477.275563 57.9168
+L 300.596549 57.9168
+Q 291.688363 57.9168 291.688363 61.0272
+L 291.688363 76.0608
+Q 291.688363 79.1712 300.596549 79.1712
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #e8f6f3; stroke: #00866f; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 300.596549 113.7312
+L 378.295723 113.7312
+Q 387.203909 113.7312 387.203909 110.6208
+L 387.203909 93.8592
+Q 387.203909 90.7488 378.295723 90.7488
+L 300.596549 90.7488
+Q 291.688363 90.7488 291.688363 93.8592
+L 291.688363 110.6208
+Q 291.688363 113.7312 300.596549 113.7312
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #eaf2f8; stroke: #356e9f; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 399.576389 113.7312
+L 477.275563 113.7312
+Q 486.183749 113.7312 486.183749 110.6208
+L 486.183749 93.8592
+Q 486.183749 90.7488 477.275563 90.7488
+L 399.576389 90.7488
+Q 390.668203 90.7488 390.668203 93.8592
+L 390.668203 110.6208
+Q 390.668203 113.7312 399.576389 113.7312
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #fff4e6; stroke: #d55e00; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 335.239493 150.8832
+L 442.632619 150.8832
+Q 451.540805 150.8832 451.540805 147.7728
+L 451.540805 132.7392
+Q 451.540805 129.6288 442.632619 129.6288
+L 335.239493 129.6288
+Q 326.331307 129.6288 326.331307 132.7392
+L 326.331307 147.7728
+Q 326.331307 150.8832 335.239493 150.8832
+z
+" clip-path="url(#pf779c7cd58)" style="fill: #e8f6f3; stroke: #00866f; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_7">
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="388.688606" y="161.351" transform="rotate(-0 388.688606 161.351)">DWB uses DWA ideas, but is not identical to the 1997 algorithm.</text>
+   </g>
+   <g id="PathCollection_1">
+    <defs>
+     <path id="m14c386b5a0" d="M 0 1.414214
+C 0.375054 1.414214 0.734797 1.265203 1 1
+C 1.265203 0.734797 1.414214 0.375054 1.414214 0
+C 1.414214 -0.375054 1.265203 -0.734797 1 -1
+C 0.734797 -1.265203 0.375054 -1.414214 0 -1.414214
+C -0.375054 -1.414214 -0.734797 -1.265203 -1 -1
+C -1.265203 -0.734797 -1.414214 -0.375054 -1.414214 0
+C -1.414214 0.375054 -1.265203 0.734797 -1 1
+C -0.734797 1.265203 -0.375054 1.414214 0 1.414214
+z
+" style="stroke: #356e9f"/>
+    </defs>
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="152.621688" y="113.904" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_2">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="152.621688" y="105.264" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_3">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="152.621688" y="94.896" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_4">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="152.621688" y="86.256" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_5">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="177.366648" y="113.904" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_6">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="177.366648" y="105.264" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_7">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="177.366648" y="94.896" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_8">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="177.366648" y="86.256" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_9">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="202.111608" y="113.904" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_10">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="202.111608" y="105.264" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_11">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="202.111608" y="94.896" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_12">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="202.111608" y="86.256" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_13">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="221.907576" y="113.904" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_14">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="221.907576" y="105.264" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_15">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="221.907576" y="94.896" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="PathCollection_16">
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#m14c386b5a0" x="221.907576" y="86.256" style="fill: #356e9f; stroke: #356e9f"/>
+    </g>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="388.936056" y="70.199" transform="rotate(-0 388.936056 70.199)">TrajectoryGenerator plugin</text>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; fill: #1b1f23" transform="translate(297.949136 100.79605)">StandardTrajectoryGenerator</text>
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; fill: #1b1f23" transform="translate(301.739636 106.99395)">project does not override it</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; fill: #1b1f23" transform="translate(405.879476 100.79605)">LimitedAccelGenerator</text>
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; fill: #1b1f23" transform="translate(402.443476 106.99395)">closer to DWA windowing</text>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1b1f23" x="388.936056" y="141.911" transform="rotate(-0 388.936056 141.911)">trajectory critics select cmd_vel</text>
+   </g>
+   <g id="PathCollection_17">
+    <defs>
+     <path id="mc75acbadec" d="M 0 -3.708099
+L -0.83252 -1.145866
+L -3.526612 -1.145866
+L -1.347046 0.437682
+L -2.179566 2.999915
+L -0 1.416368
+L 2.179566 2.999915
+L 1.347046 0.437682
+L 3.526612 -1.145866
+L 0.83252 -1.145866
+z
+" style="stroke: #ffffff; stroke-width: 0.5"/>
+    </defs>
+    <g clip-path="url(#pf779c7cd58)">
+     <use xlink:href="#mc75acbadec" x="221.907576" y="94.896" style="fill: #00866f; stroke: #ffffff; stroke-width: 0.5"/>
+    </g>
+   </g>
+  </g>
+  <g id="text_12">
+   <text style="font-weight: 600; font-size: 8.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #1b1f23" x="24.051" y="8.247375" transform="rotate(-0 24.051 8.247375)">DWA ancestry: conceptual velocity space; DWB generators are pluggable</text>
+  </g>
+  <g id="text_13">
+   <text style="font-size: 6.4px; font-family: 'Arial', 'Liberation Sans', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #53616a" x="268.923" y="219.0208" transform="rotate(-0 268.923 219.0208)">Original conceptual redraw; not a runtime result. Basis: Fox, Burgard &amp; Thrun (1997), doi:10.1109/100.580977; Nav2 DWB Controller docs + navigation2/nav2_dwb_controller/README.md.</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pf779c7cd58">
+   <rect x="21.4734" y="17.136" width="494.8992" height="172.8"/>
+  </clipPath>
+ </defs>
+ <defs>
+  <pattern id="he10b0c9d42" patternUnits="userSpaceOnUse" x="0" y="0" width="72" height="72">
+   <rect x="0" y="0" width="73" height="73" fill="#fff4e6"/>
+   <path d="M -36 36
+L 36 -36
+M -33 39
+L 39 -33
+M -30 42
+L 42 -30
+M -27 45
+L 45 -27
+M -24 48
+L 48 -24
+M -21 51
+L 51 -21
+M -18 54
+L 54 -18
+M -15 57
+L 57 -15
+M -12 60
+L 60 -12
+M -9 63
+L 63 -9
+M -6 66
+L 66 -6
+M -3 69
+L 69 -3
+M 0 72
+L 72 0
+M 3 75
+L 75 3
+M 6 78
+L 78 6
+M 9 81
+L 81 9
+M 12 84
+L 84 12
+M 15 87
+L 87 15
+M 18 90
+L 90 18
+M 21 93
+L 93 21
+M 24 96
+L 96 24
+M 27 99
+L 99 27
+M 30 102
+L 102 30
+M 33 105
+L 105 33
+M 36 108
+L 108 36
+" style="fill: #d55e00; stroke: #d55e00; stroke-width: 1.0; stroke-linecap: butt; stroke-linejoin: miter"/>
+  </pattern>
+ </defs>
+</svg>
