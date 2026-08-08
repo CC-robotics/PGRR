@@ -102,8 +102,9 @@ def validate_deck(pptx: Path, notes: Path, pdf: Path | None = None) -> None:
         required_visible = (
             "Planning-Guided Failure-Triggered Recovery and Rejoin",
             "Ubuntu 22.04 / ROS2 Humble",
-            "Dynamic Window Approach",
-            "轨迹生成器 + Critics",
+            "Dynamic Window",
+            "trajectory generator",
+            "critic",
             "DAgger",
             "遥测重建",
             "不是 camera screenshot",
