@@ -1,3 +1,10 @@
+# Rejected benchmark audit — not the current release
+
+This candidate failed its preregistered Base calibration and its test was never
+opened. It is retained only to document the no-test-tuning boundary; it is not
+a supported benchmark, final result source, or alternative PGRR version. See
+[`README.md`](README.md) for the current documentation index.
+
 # Moderate v5 benchmark
 
 Moderate v5 is a predeclared, split-safe calibration of the social-navigation

@@ -1,558 +1,332 @@
-# Reproducing PGRR
+# Reproducing the PGRR final release
 
-This document describes the moderate-v6 release of **PGRR: Planning-Guided
-Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation**.
-Commands resolve the Git root at runtime and remain valid after the repository
-is moved or renamed. Historical `ramp_*`/`RAMP_*` identifiers remain compatibility
-interfaces only.
+This document describes the single supported release of **PGRR:
+Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social
+Navigation**. Internal strings such as `moderate_social_navigation_v6` are
+immutable benchmark/provenance identifiers, not separate product versions.
+Historical `ramp_*` and `RAMP_*` names remain compatibility interfaces.
 
-The paper evaluates the imitation-learning method: a privileged short-horizon
-planning reference, Uniform BC, a completed two-round DAgger workflow, an
-observable failure trigger, planning/action masks, recovery rejoin, and an
-independent safety supervisor. The validation-selected deployment checkpoint
-extends the accepted DAgger aggregate with a train-only coverage shard; the
-second-round candidate was evaluated but not selected. PPO and a learned
-failure detector are not completed or claimed contributions.
+The published imitation-learning method consists of a privileged short-horizon
+planning reference used only for labels, Uniform BC, two completed DAgger
+rounds, an observable failure trigger, planning/action masks, bounded recovery
+and rejoin, and an independent safety supervisor. The validation-selected
+checkpoint is `checkpoints/final/best.onnx`. PPO and a learned failure detector
+are not completed claims.
 
 ## Reproduction levels
 
-| Level | Command | Purpose | Paper evidence? |
-|---|---|---|---:|
-| Tests | `make test` | Lint, formatting, types, and automated tests | no |
-| Small reproduction | `make reproduce-small` | Exercise bounded data/model/statistics contracts | no |
-| Paper rebuild | `make reproduce-paper` | Rebuild all documents from published final evidence; raw recollection is opt-in | yes |
-| Full evaluation | complete command below | Re-run 600 held-out method--episodes | yes |
+| Level | Command | Starts simulation? | Paper evidence? |
+|---|---|---:|---:|
+| Tests | `make test` | no | no |
+| Small contract check | `make reproduce-small` | no | no |
+| Publication rebuild | `PGRR_RELEASE_MODE=0 PGRR_RECOLLECT_RAW=0 scripts/reproduce_paper.sh` | no | yes |
+| Clean release validation | `PGRR_RELEASE_MODE=1 PGRR_RECOLLECT_RAW=0 scripts/reproduce_paper.sh` | no | yes |
+| Independent full rerun | `make evaluate-final` after calibration verification | yes | new evidence |
 
-Smoke, pilot, calibration, and validation runs verify software or select a
-configuration. They are never substituted for held-out test evidence.
+The existing final simulation is already complete. Most users should run the
+publication rebuild or release validator, not the 600-episode evaluation.
 
-## Frozen historical v1 audit (not moderate-v6)
-
-The earlier complete 64/64 logical-episode audit remains part of the release
-record: Base and PGRR each covered 24 matched family--density conditions, while
-Standard and Heuristic each covered eight high-density conditions. PGRR had
-0/24 collisions versus Base 19/24, but 16/24 PGRR episodes timed out versus
-Base 0/24. Goal reaching was 8/24 versus 5/24, respectively, and the adjusted
-success comparison was not significant. These numbers document a
-safety--completion trade-off. They are historical v1 evidence, never
-moderate-v6 validation or test input, and no reproduction command below copies
-them into v6 result artifacts.
-
-## Documentation layers and evidence stages
-
-PGRR maintains three independently validated documents:
-
-1. `paper/main.pdf`: concise anonymous IEEE conference manuscript;
-2. `report/PGRR_technical_report_zh.pdf`: detailed Chinese technical report;
-3. `presentation/PGRR_report_zh.pptx` and its PDF export: thirty-slide Chinese
-   briefing, with `presentation/speaker_notes_zh.md` and a contact sheet.
-
-The report and presentation use the same stage contract:
-
-| Stage | Approved input | Meaning |
-|---|---|---|
-| `pending` | no results or statistics file | Method, runtime, and protocol only; numerical pages visibly pending |
-| `validation` | immutable results, statistics, and matched-run sidecar under `outputs/report_inputs/validation/` | Selection evidence, always marked non-final |
-| `test` | the same three sibling artifacts under `outputs/moderate/final/` | Locked held-out evidence after the complete test protocol |
-
-Build the current data-free documents without opening any result Parquet:
-
-```bash
-REPORT_STAGE=pending make technical-report presentation
-```
-
-After the validation writer has exited and the complete result has passed its
-collector checks, create a separate read-only reporting snapshot. Never point
-the report builder at the live validation output directory:
-
-```bash
-mkdir -p outputs/report_inputs/validation
-install -m 0444 \
-  outputs/moderate/v6_validation/results.parquet \
-  outputs/report_inputs/validation/results.parquet
-install -m 0444 \
-  outputs/moderate/v6_validation/pairwise_statistics.json \
-  outputs/report_inputs/validation/pairwise_statistics.json
-python scripts/report/build_matched_run_evidence.py \
-  --stage validation \
-  --results outputs/moderate/v6_validation/results.parquet \
-  --raw-dir data/raw \
-  --output outputs/moderate/v6_validation/matched_base_pgrr_evidence.json
-install -m 0444 \
-  outputs/moderate/v6_validation/matched_base_pgrr_evidence.json \
-  outputs/report_inputs/validation/matched_base_pgrr_evidence.json
-
-REPORT_STAGE=validation \
-REPORT_RESULTS=outputs/report_inputs/validation/results.parquet \
-REPORT_STATISTICS=outputs/report_inputs/validation/pairwise_statistics.json \
-REPORT_MATCHED_EVIDENCE=outputs/report_inputs/validation/matched_base_pgrr_evidence.json \
-make technical-report presentation
-```
-
-The locked test documents are generated only with:
-
-```bash
-python scripts/paper/render_episode_media.py \
-  --matched-final \
-  --results outputs/moderate/final/results.parquet \
-  --raw-dir data/raw \
-  --scenario-root . \
-  --figure-dir outputs/moderate/final/media \
-  --evidence-output outputs/moderate/final/matched_base_pgrr_evidence.json
-
-REPORT_STAGE=test \
-REPORT_RESULTS=outputs/moderate/final/results.parquet \
-REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
-REPORT_MATCHED_EVIDENCE=outputs/moderate/final/matched_base_pgrr_evidence.json \
-make technical-report presentation
-```
-
-The input guard rejects the historical 64-episode result, pilot, calibration,
-smoke, rejected v5, `outputs/moderate/v6_validation`, and every
-`outputs/moderate/v6_validation_*` path before reading them. No old result can be used
-as a fallback for a test report, presentation, paper table, or conclusion.
-
-## 1. Establish the repository root
+## 1. Repository and environment boundary
 
 ```bash
 PROJECT_ROOT="$(git rev-parse --show-toplevel)"
 cd "$PROJECT_ROOT"
-```
-
-Before a locked evaluation, record the revision and ensure algorithm,
-configuration, scenario, and checkpoint inputs are committed:
-
-```bash
 git rev-parse HEAD
-git status --short
-git diff --exit-code
-git diff --cached --exit-code
+git status --short --branch
 ```
 
-The runner fingerprints the Git commit, split manifest, every compiled
-scenario, and each selected learned checkpoint.
+PGRR separates the online and offline environments:
 
-## 2. Environment boundary
-
-PGRR deliberately separates online ROS execution from offline analysis.
-
-### Offline environment
-
-The `ramp-offline` Python 3.10 Conda environment is used for HDF5/Parquet data,
-expert labels, BC/DAgger, tests, statistics, vector figures, LaTeX tables, and
-paper compilation. It must not source ROS setup files.
+- Online: Ubuntu 22.04, ROS2 Humble, pinned Arena Gazebo, Jackal, Nav2 DWB,
+  planar LiDAR, Xvfb, and software rendering. Conda must be inactive.
+- Offline: Python 3.10 Conda environment `ramp-offline` for data, labels,
+  learning, statistics, figures, tests, and LaTeX. ROS must not be sourced.
 
 ```bash
 make preflight
 make conda
-```
-
-The declarations and locks are
-[`environment.yml`](environment.yml),
-[`environment.lock.yml`](environment.lock.yml), and
-[`requirements-offline.lock.txt`](requirements-offline.lock.txt).
-
-### ROS2/Arena runtime
-
-The verified online profile is Ubuntu 22.04 with the isolated Arena ROS2
-Humble/Gazebo container, Jackal, Nav2 DWB, and planar LiDAR. Seeded cylindrical
-pedestrian proxies are deterministic simulator actors, not validated human
-intent. It is not Conda, Flatland, Arena 5, a second planner, hardware, or a
-formal-safety platform.
-
-```bash
-conda deactivate 2>/dev/null || true
-unset CONDA_PREFIX CONDA_DEFAULT_ENV VIRTUAL_ENV
 make arena
 make build
 ```
 
-Exact runtime provenance is recorded in
-[`third_party/arena_commits.lock`](third_party/arena_commits.lock) and
-[`third_party/dependency_manifest.md`](third_party/dependency_manifest.md).
-Runtime scripts remove foreign ROS variables before sourcing Humble.
+Runtime provenance is pinned in `third_party/arena_commits.lock` and
+`third_party/dependency_manifest.md`. Environment declarations are
+`environment.yml`, `environment.lock.yml`, and
+`requirements-offline.lock.txt`.
 
-## 3. Tests and runtime smoke check
+When directly invoking offline Python from a shell that may expose ROS, remove
+foreign variables so the ROS `launch_testing` plugin cannot contaminate
+pytest:
+
+```bash
+env \
+  -u PYTHONPATH \
+  -u AMENT_PREFIX_PATH \
+  -u COLCON_PREFIX_PATH \
+  -u CMAKE_PREFIX_PATH \
+  -u ROS_DISTRO \
+  -u ROS_VERSION \
+  -u ROS_PYTHON_VERSION \
+  conda run --no-capture-output -n ramp-offline \
+  python -m pytest -q
+```
+
+## 2. Tests and bounded runtime checks
 
 ```bash
 make test
 make smoke SEED=0 HEADLESS=1
-```
-
-The smoke test checks Gazebo startup, Jackal spawning, `/clock`, TF, LiDAR,
-odometry, goal submission, and bounded cleanup. Goal acceptance is not an
-algorithm-success result.
-
-## 4. Small reproduction
-
-```bash
 make reproduce-small SEED=0
 ```
 
-This path exercises schema, mask, state-machine, expert, policy, and statistics
-contracts on small non-paper artifacts. It neither retrains the submitted model
-nor launches the 600-episode test.
+The smoke check verifies startup, cleanup, `/clock`, TF, LaserScan, odometry,
+robot spawn, and Nav2 goal submission. Goal acceptance is not an algorithm
+success. The small reproduction exercises schemas, masks, state machines,
+expert labels, policy inference, and statistics on non-paper fixtures.
 
-## 5. Preregistered moderate-v6 inputs
+## 3. Frozen final inputs
 
-The normative declaration is
-[`configs/final/ei_gazebo.yaml`](configs/final/ei_gazebo.yaml). Verify its
-inputs before the first held-out test episode:
-
-```bash
-sha256sum \
-  configs/final/ei_gazebo.yaml \
-  configs/experiments/scenario_catalog_moderate_v6.yaml \
-  scenarios/splits/moderate_v6_validation.yaml \
-  scenarios/splits/moderate_v6_test.yaml \
-  checkpoints/bc/uniform_scenario/best.onnx \
-  checkpoints/dagger/coverage_safety_aligned/best.onnx \
-  configs/planner/baselines.yaml \
-  configs/failure/rules.yaml \
-  configs/failure/recovery_state_machine.yaml \
-  configs/planner/recovery_actions.yaml
-```
-
-Moderate-v6 contains eight interaction families, three densities, and five
-held-out repetitions per family--density cell:
+The normative configuration is `configs/final/ei_gazebo.yaml`. Its release
+dependencies are:
 
 ```text
-8 families x 3 densities x 5 repetitions = 120 conditions per method
-120 x 5 methods = 600 logical method--episodes
+configs/experiments/scenario_catalog_moderate_v6.yaml
+scenarios/splits/moderate_v6_validation.yaml
+scenarios/splits/moderate_v6_test.yaml
+configs/planner/baselines.yaml
+configs/failure/rules.yaml
+configs/failure/recovery_state_machine.yaml
+configs/planner/recovery_actions.yaml
+checkpoints/bc/uniform_scenario/best.onnx
+checkpoints/dagger/coverage_safety_aligned/best.onnx
+outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json
 ```
 
-The five methods are `base`, `standard`, `heuristic`, `bc_uniform`, and
-`pgrr`. Every method uses the identical 120 condition keys.
+The accepted calibration report has SHA-256
+`0fbf8a159a1e1b96e940bec0efb31e5952ba5b0333439992f370a9a9fb41e15f`.
+The final configuration binds that value. Do not substitute
+`outputs/moderate/final/calibration_report.json`; that possible untracked file
+is an empty, rejected test-stage byproduct.
 
-Moderate-v5 is preserved as a rejected audit: its complete Base validation
-reached 57/72 goals (79.17%), exceeding the preregistered 75% ceiling, so no v5
-test was opened. V6 retains its static geometry, changes only the predeclared
-Crossing Flow timing band based on v5 validation phasing evidence, and uses new
-seed blocks. See [`CURRENT_STATUS.md`](CURRENT_STATUS.md) and
-[`DECISIONS.md`](DECISIONS.md); never copy v5 rows into a v6 reporting snapshot.
+The held-out design is:
 
-The selected PGRR artifact is
-`checkpoints/dagger/coverage_safety_aligned/best.onnx`. Its training set is the
-accepted DAgger aggregate plus a head-on coverage shard collected exclusively
-from the train split. The separately retained second-round candidate did not
-pass validation selection and is not substituted into the test protocol.
-
-## 6. Validation-only calibration and lock
-
-Benchmark construction and method selection use only train/validation data.
-The accepted calibration report must be generated from the complete v6
-validation manifest before test execution:
-
-```bash
-env \
-  -u PYTHONPATH \
-  -u AMENT_PREFIX_PATH \
-  -u COLCON_PREFIX_PATH \
-  -u CMAKE_PREFIX_PATH \
-  -u ROS_DISTRO \
-  -u ROS_VERSION \
-  -u ROS_PYTHON_VERSION \
-  conda run --no-capture-output -n ramp-offline \
-  python scripts/evaluate/run_experiment.py \
-    --split validation \
-    --split-manifest scenarios/splits/moderate_v6_validation.yaml \
-    --methods base standard heuristic bc_uniform pgrr \
-    --jobs 6 \
-    --timeout 240 \
-    --output-dir outputs/moderate/v6_validation
-
-make statistics \
-  MODERATE_ANALYSIS_DIR=outputs/moderate/v6_validation
+```text
+8 families x 3 densities x 5 repeats = 120 conditions per method
+120 conditions x 5 methods = 600 logical method--episodes
 ```
 
-The authoritative calibration evidence is
-`outputs/moderate/v6_validation/calibration_report.json`. The artifact builder
-requires `split=validation`, `status=accepted`, and `passed=true`; a report
-computed from test rows is rejected. After validation selection, freeze the
-tree before opening the test split:
+The methods are `base`, `standard`, `heuristic`, `bc_uniform`, and `pgrr`.
+Every method uses the same 120 condition keys. Train, validation, and test are
+split by scenario and seed, never by frame.
+
+## 4. Published final result
+
+The authoritative directory is `outputs/moderate/final/`. Run
+`95ec74c511bb` records 600/600 logical outcomes at evaluation commit
+`6916e7cd586acfbe200045e49b093039e2a6980e`:
+
+| Method | Goal | Collision | Timeout | Planner failure |
+|---|---:|---:|---:|---:|
+| Base DWB | 85 | 35 | 0 | 0 |
+| Standard | 81 | 39 | 0 | 0 |
+| Heuristic | 100 | 1 | 6 | 13 |
+| Uniform BC | 104 | 1 | 5 | 10 |
+| PGRR | 109 | 0 | 2 | 9 |
+
+The collector retains every algorithm outcome and all technical provenance.
+The run has 614 outcome-bearing physical attempts: 600 algorithm outcomes,
+eight excluded `SIMULATOR_FAILURE` attempts, and six excluded `INVALID_RESET`
+attempts. Two attempt snapshots also preserve 42 no-outcome launch commands
+over 39 unique tasks. Resumes ran only incomplete tasks and did not replace an
+algorithm failure.
+
+## 5. Rebuild documents from published evidence
 
 ```bash
-git tag -a pre-final-eval-v6 -m "Frozen moderate-v6 evaluation inputs"
-```
-
-## 7. Complete held-out evaluation
-
-Run the test once after the validation-selected tree is frozen:
-
-```bash
-make evaluate-flatland \
-  MODERATE_SPLIT_MANIFEST=scenarios/splits/moderate_v6_test.yaml \
-  MODERATE_ANALYSIS_DIR=outputs/moderate/final \
-  EVALUATION_JOBS=6 \
-  EVALUATION_TIMEOUT_S=240
-```
-
-`evaluate-flatland` is a retained compatibility target name; the locked runtime
-is Gazebo. The runner refuses to overwrite an existing manifest. If execution
-is interrupted, use the same commit, split, method set, checkpoints, timeout,
-and output directory, adding only `--resume` to the equivalent direct command:
-
-```bash
-env \
-  -u PYTHONPATH \
-  -u AMENT_PREFIX_PATH \
-  -u COLCON_PREFIX_PATH \
-  -u CMAKE_PREFIX_PATH \
-  -u ROS_DISTRO \
-  -u ROS_VERSION \
-  -u ROS_PYTHON_VERSION \
-  conda run --no-capture-output -n ramp-offline \
-  python scripts/evaluate/run_experiment.py \
-    --split test \
-    --split-manifest scenarios/splits/moderate_v6_test.yaml \
-    --methods base standard heuristic bc_uniform pgrr \
-    --jobs 6 \
-    --timeout 240 \
-    --output-dir outputs/moderate/final \
-    --resume
-```
-
-A logical task receives at most three physical attempts: one initial attempt
-and up to two retries, each permitted only after an explicitly classified
-`SIMULATOR_FAILURE` or `INVALID_RESET`. Every physical attempt remains in the
-artifacts. `GOAL_REACHED`, `COLLISION`, `TIMEOUT`, and `PLANNER_FAILURE` are
-retained algorithm outcomes and are never rerun because the result is
-unfavorable.
-
-## 8. Statistics, figures, tables, and paper
-
-After all 600 logical tasks are complete:
-
-```bash
-make statistics MODERATE_ANALYSIS_DIR=outputs/moderate/final
-make figures MODERATE_ANALYSIS_DIR=outputs/moderate/final
-make tables MODERATE_ANALYSIS_DIR=outputs/moderate/final
-make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
-python scripts/paper/render_episode_media.py \
-  --matched-final \
-  --results outputs/moderate/final/results.parquet \
-  --raw-dir data/raw \
-  --scenario-root . \
-  --figure-dir outputs/moderate/final/media \
-  --evidence-output outputs/moderate/final/matched_base_pgrr_evidence.json
-REPORT_STAGE=test \
-  REPORT_RESULTS=outputs/moderate/final/results.parquet \
-  REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
-  REPORT_MATCHED_EVIDENCE=outputs/moderate/final/matched_base_pgrr_evidence.json \
-  make technical-report presentation
-```
-
-The locked-test media rule first requires a PGRR-triggered pair whose configured
-scenario contains both static geometry and actor routes, then applies the fixed
-ordering printed by the renderer. The extractor verifies the complete 600-row
-test table plus results, scenario, raw, metadata, and outcome hashes before
-writing the fixed files
-`moderate_matched_base_pgrr_trajectory.pdf`,
-`moderate_pgrr_recovery_timeline.pdf`, and their
-`matched_base_pgrr_evidence.json` sidecar. These plots are telemetry
-reconstructions, not simulator camera screenshots. Missing inputs, a filename
-change, or any hash mismatch blocks final report and deck generation. This
-descriptive pair never replaces the complete outcome decomposition.
-
-The collector verifies manifest membership, completion, outcome evidence, and
-paired metadata. The moderate summarizer requires exactly the same 120
-conditions for all five methods. It produces paired bootstrap intervals, exact
-McNemar tests for binary outcomes, Wilcoxon signed-rank tests for continuous
-metrics, effect sizes, and one global Holm correction family.
-
-For a complete document rebuild from the published, privacy-safe evidence:
-
-```bash
-MODERATE_ANALYSIS_DIR=outputs/moderate/final \
-MODERATE_CALIBRATION_REPORT=outputs/moderate/v6_validation/calibration_report.json \
-PGRR_RELEASE_MODE=0 \
-PGRR_RECOLLECT_RAW=0 \
+PGRR_RELEASE_MODE=0 PGRR_RECOLLECT_RAW=0 \
 scripts/reproduce_paper.sh
 ```
 
-This command never launches simulation and rejects every result source except
-the locked `outputs/moderate/final` test run with 120 paired conditions per
-method. With the default `PGRR_RECOLLECT_RAW=0`, it does not access `data/raw`:
-it consumes the published results, statistics, failure analysis, telemetry
-media, the hash-linked matched-run sidecar, offline-ablation CSV/JSON, and
-tracked validation HDF5. It regenerates
-figures and tables, verifies the anonymous IEEEtran paper at exactly 8 pages,
-builds a 30--40-page test-stage Chinese technical report, and builds the
-30-slide PPTX/PDF, speaker notes, and contact sheet. It records the actual report
-page count and writes a checksummed candidate manifest.
+This is the normal reproduction path. It does not launch Arena and does not
+read `data/raw`. It verifies the published result, statistics, failure
+analysis, matched evidence, telemetry media, and offline ablation; regenerates
+result-dependent assets; builds all documents; and writes a candidate manifest.
 
-Maintainers with the unpublished raw streams may explicitly recollect and
-rerender the result-dependent artifacts:
+Required final document outputs are:
 
-```bash
-PGRR_RELEASE_MODE=0 PGRR_RECOLLECT_RAW=1 scripts/reproduce_paper.sh
-```
+- `paper/main.pdf`: exactly 8 pages;
+- `report/PGRR_technical_report_zh.pdf`: exactly 32 pages;
+- `presentation/PGRR_report_zh.pptx` and PDF: exactly 30 slides/pages.
 
-Commit the resulting candidate bundle before the release gate. From that clean
-checkout, run:
+Maintainers with the unpublished raw JSONL streams may explicitly recollect the
+already completed episodes before rebuilding:
 
 ```bash
-PGRR_RELEASE_MODE=1 scripts/reproduce_paper.sh
+PGRR_RELEASE_MODE=0 PGRR_RECOLLECT_RAW=1 \
+scripts/reproduce_paper.sh
 ```
 
-Release mode is validate-only: before any generation command it recomputes the
-manifest, compares scientific provenance plus every artifact path/category/
-size/SHA256/page/media field with the published manifest, runs the
-tracked/nonignored privacy audit, and exits. It intentionally ignores only the
-candidate timestamp and assembly-commit bookkeeping so the development-build,
-commit, clean-validation sequence is closed rather than self-invalidating.
+Raw recollection does not run simulation. It reconstructs final Parquet/JSON
+artifacts from episode streams and fails unless all task, scenario, commit,
+terminal, and hash checks pass.
 
-## 9. Runtime screenshot policy
+The builders refuse validation, pilot, smoke, calibration, live output, and
+historical directories as final inputs. They require 600 rows, five methods,
+120 complete paired conditions per method, the exact frozen split identity,
+and a single evaluation commit.
 
-Publication charts and diagrams are generated as vector PDFs. The repository's
-simulator screenshot is a real, audited frozen-v5 validation demonstration and
-is never synthesized.
-The validated capture command and provenance rules are documented in
-[`docs/runtime_screenshots.md`](docs/runtime_screenshots.md). When present, the
-paper-facing image is
-`paper/figures/runtime_gazebo_doorway_bottleneck_medium.png`, paired with
-`outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json`.
-The artifact builder rejects an unpaired screenshot or metadata file. It is not
-a camera frame from a locked v6 statistical episode. Spatial paths, keyframes,
-and event plots produced from JSONL/Parquet are explicitly labelled telemetry
-reconstructions and must not be described as camera screenshots.
+## 6. Clean-checkout release validation
 
-## 10. Authoritative outputs
-
-- `outputs/moderate/v6_validation/calibration_report.json`
-- `outputs/moderate/final/episode_manifest.parquet`
-- `outputs/moderate/final/run_manifest.json`
-- `outputs/moderate/final/results.parquet`
-- `outputs/moderate/final/summary.csv`
-- `outputs/moderate/final/pairwise_statistics.json`
-- `outputs/moderate/final/matched_base_pgrr_evidence.json`
-- `outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf`
-- `outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf`
-- `outputs/moderate/final/failure_analysis.md`
-- `outputs/moderate/final/artifact_manifest.json`
-- `outputs/moderate/final/offline_policy_ablation.csv`
-- `outputs/moderate/final/offline_policy_ablation.json`
-- `outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.pdf`
-- `outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.png`
-- `outputs/moderate/final/media/pgrr_representative_telemetry.mp4`
-- `paper/generated/moderate_*.tex`
-- `paper/figures/moderate_*.pdf`
-- `outputs/figures/moderate_*.pdf`
-- `outputs/tables/moderate_*.tex`
-- `paper/main.pdf`
-- `report/PGRR_technical_report_zh.pdf`
-- `presentation/PGRR_report_zh.pptx`
-- `presentation/PGRR_report_zh.pdf`
-- `presentation/speaker_notes_zh.md`
-- `presentation/contact_sheet.png`
-- `data/interim/multiscenario_safety_aligned_validation.h5`
-
-If any complete-run artifact is absent, do not substitute pilot values or
-manually edit a result table.
-
-## 11. Required release checks
-
-```bash
-make test
-make reproduce-small SEED=0
-make figures MODERATE_ANALYSIS_DIR=outputs/moderate/final
-make tables MODERATE_ANALYSIS_DIR=outputs/moderate/final
-make paper MODERATE_ANALYSIS_DIR=outputs/moderate/final
-REPORT_STAGE=test \
-  REPORT_RESULTS=outputs/moderate/final/results.parquet \
-  REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
-  REPORT_MATCHED_EVIDENCE=outputs/moderate/final/matched_base_pgrr_evidence.json \
-  make technical-report presentation
-make privacy-check
-
-test -s outputs/moderate/v6_validation/calibration_report.json
-test -s outputs/moderate/final/episode_manifest.parquet
-test -s outputs/moderate/final/run_manifest.json
-test -s outputs/moderate/final/results.parquet
-test -s outputs/moderate/final/summary.csv
-test -s outputs/moderate/final/pairwise_statistics.json
-test -s outputs/moderate/final/matched_base_pgrr_evidence.json
-test -s outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf
-test -s outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf
-test -s outputs/moderate/final/failure_analysis.md
-test -s outputs/moderate/final/artifact_manifest.json
-test -s outputs/moderate/final/offline_policy_ablation.csv
-test -s outputs/moderate/final/offline_policy_ablation.json
-test -s data/interim/multiscenario_safety_aligned_validation.h5
-test -s paper/main.pdf
-test -s report/PGRR_technical_report_zh.pdf
-test -s presentation/PGRR_report_zh.pptx
-test -s presentation/PGRR_report_zh.pdf
-test -s presentation/speaker_notes_zh.md
-test -s presentation/contact_sheet.png
-```
-
-After those generated files and the candidate manifest are committed, create a
-clean checkout and run the non-mutating release gate:
+Commit the complete candidate bundle, then validate from a clean checkout:
 
 ```bash
 test -z "$(git status --porcelain --untracked-files=all)"
-PGRR_RELEASE_MODE=1 scripts/reproduce_paper.sh
+PGRR_RELEASE_MODE=1 PGRR_RECOLLECT_RAW=0 \
+scripts/reproduce_paper.sh
+test -z "$(git status --porcelain --untracked-files=all)"
 ```
 
-The final PDF must have no unresolved references/citations, overfull boxes,
-Type 3 fonts, or unembedded fonts. Run the privacy audit from the exact release
-checkout; do not weaken its allowlist to admit stale paths or metadata.
+Release mode is validate-only. It independently reconstructs the manifest and
+compares:
 
-## 12. No test-set tuning
+- all 76 required paths, sizes, and SHA-256 values;
+- evaluation and generation provenance;
+- the accepted calibration and frozen test split;
+- result, statistics, raw-sidecar, screenshot, window, and telemetry bindings;
+- 8/32/30 document page counts, final paper text, report/PPT data structure,
+  and canonical media hashes;
+- tracked and non-ignored privacy-sensitive content.
 
-1. Preserve the selected checkpoint's recorded train-only provenance; v6
-   validation and test rows may not be used for retraining.
-2. Select thresholds, masks, checkpoints, and stopping rules only with train and
-   validation evidence.
-3. Freeze and tag code, configuration, scenarios, and checkpoints before the
-   first test launch.
-4. Execute every method on the same test manifest.
-5. Retain collisions, timeouts, planner failures, and infrastructure attempts.
-6. Exclude only `SIMULATOR_FAILURE` and `INVALID_RESET` according to the stated
-   protocol, while reporting their counts and reasons.
-7. Never change parameters after inspecting test outcomes. A genuine code bug
-   requires a documented fix and complete rerun of every affected method under
-   a new version.
+It must not modify the checkout. Font embedding and full document visual gates
+run during the development build; release mode then verifies the hashes of
+those accepted PDFs rather than rerunning the document generators.
 
-## 13. Known reproducibility limits
+## 7. Intentional full evaluation rerun
 
-- The pinned Humble/Gazebo fallback differs from Arena 5, Flatland, real
-  pedestrians, and hardware.
-- Software rendering and Gazebo scheduling can change wall-clock duration;
-  simulator time and terminal evidence are used for metrics.
-- Deterministic LiDAR-visible actors are not a validated human-intent model.
-- Simulation localization is more accurate than a deployed localization stack.
-- The expert uses privileged simulator state during label generation only.
-- The finite action set and empirical safety margins provide no formal
-  completeness or collision-avoidance guarantee.
-- PPO, a learned failure detector, a second planner, Flatland evaluation,
-  hardware experiments, and formal safety are not completed claims.
+Do this only to create a new independent reproduction of the simulation, not to
+rebuild the existing paper. Start from a clean worktree at the frozen
+evaluation commit, verify the pinned runtime, confirm no Arena containers are
+running, and choose a new output directory:
 
-Current retained negative results and limitations are tracked in
-[`CURRENT_STATUS.md`](CURRENT_STATUS.md),
-[`KNOWN_ISSUES.md`](KNOWN_ISSUES.md), and
-[`DECISIONS.md`](DECISIONS.md).
+```bash
+git worktree add ../PGRR-evaluation-reproduction \
+  6916e7cd586acfbe200045e49b093039e2a6980e
+cd ../PGRR-evaluation-reproduction
+make verify-calibration
+test ! -e outputs/moderate/independent_reproduction
+make evaluate-final \
+  MODERATE_ANALYSIS_DIR=outputs/moderate/independent_reproduction
+```
 
-## 14. GitHub maintenance
+The target runs all five methods with the committed held-out split, 240 s
+horizon, and six parallel workers. The runner refuses to overwrite an existing
+manifest. If infrastructure interruption leaves tasks incomplete, resume with
+the same commit, inputs, and concurrency.
 
-After the sanitized initial publication, use pull requests for ordinary
-changes and preserve every published evidence tag. A corrected evaluation must
-use a new experiment ID and release tag; never replace a tagged result in place
-or tune a method from its held-out outcome.
+Terminal policy is fail-closed:
 
-Before pushing a release:
+- `GOAL_REACHED`, `COLLISION`, `TIMEOUT`, and `PLANNER_FAILURE` are algorithm
+  outcomes and are never retried;
+- only `SIMULATOR_FAILURE` and `INVALID_RESET` are retryable, at most twice;
+- every physical attempt remains in provenance;
+- collection fails until every logical task has exactly one accepted algorithm
+  outcome.
 
-1. rebuild all three documentation layers from the same approved stage;
-2. run tests, artifact validation, and the privacy audit from a clean checkout;
-3. confirm that document metadata contains no local account, hostname,
-   absolute path, token, or real identity;
-4. use anonymous paper authorship and only the Charles Chen alias where a
-   report or presentation author is required;
-5. review `presentation/contact_sheet.png` and the technical-report PDF;
-6. publish large raw evidence separately with checksums rather than adding
-   transient simulator logs to the default branch.
+## 8. Statistical policy
 
-Generated numerical tables and slide values are outputs, not editing surfaces.
-Change the authoritative Parquet/JSON input, preserve its hash and provenance,
-and regenerate every dependent artifact.
+The 120 conditions are paired across methods. Goal, collision, and timeout use
+exact paired comparisons. All preregistered hypotheses across comparators and
+endpoints enter one global Holm family. `PLANNER_FAILURE` remains a separate
+descriptive terminal class with no post-hoc significance test. Duration and
+path-length comparisons use only joint-success pairs and disclose that
+conditioning.
+
+Every number in the paper, report, and slides is generated from checked-in
+Parquet, JSON, or CSV. Manual editing of numerical macros, tables, plots, or
+slide values is forbidden.
+
+## 9. Runtime image and telemetry policy
+
+The real Gazebo GUI image at
+`outputs/figures/runtime/gazebo_doorway_bottleneck_medium.png` is bound to its
+pixel SHA, scenario, terminal record, runtime, project/Arena commits, and window
+metadata. It is a real historical moderate-v5 validation environment capture
+(benchmark provenance, not another current release), not a camera frame from
+the locked statistical run.
+
+The matched trajectory and recovery timeline under
+`outputs/moderate/final/media/` are generated from a real identical-condition
+Base--PGRR held-out pair and bind to raw and result hashes. They are telemetry
+reconstructions, not camera screenshots. Neither form of evidence may be
+relabelled.
+
+## 10. Authoritative outputs
+
+```text
+outputs/moderate/final/episode_manifest.parquet
+outputs/moderate/final/run_manifest.json
+outputs/moderate/final/results.parquet
+outputs/moderate/final/summary.csv
+outputs/moderate/final/pairwise_statistics.json
+outputs/moderate/final/failure_analysis.md
+outputs/moderate/final/matched_base_pgrr_evidence.json
+outputs/moderate/final/offline_policy_ablation.csv
+outputs/moderate/final/offline_policy_ablation.json
+outputs/moderate/final/media/
+outputs/moderate/final/artifact_manifest.json
+outputs/figures/moderate_*.pdf
+outputs/tables/moderate_*.tex
+paper/generated/moderate_*.tex
+paper/figures/moderate_*.pdf
+paper/main.pdf
+report/PGRR_technical_report_zh.pdf
+presentation/PGRR_report_zh.pptx
+presentation/PGRR_report_zh.pdf
+```
+
+The artifact manifest is the final authority for the exact release set.
+
+## 11. No test-set tuning
+
+The held-out test is open only as a frozen reported dataset. Its outcomes must
+not influence the current algorithm, checkpoint, thresholds, scenarios,
+metrics, representative-pair selector, or retry policy. Any such change needs
+a new preregistered study with new scenario IDs and seed blocks. Failed
+episodes may not be filtered, replaced, or converted into infrastructure
+failures.
+
+## 12. Historical audit boundary
+
+One earlier frozen 64/64 audit is retained to keep the release honest:
+PGRR/Base collisions were 0/24 versus 19/24, timeouts were 16/24 versus 0/24,
+and goal reaches were 8/24 versus 5/24; the adjusted goal-reaching comparison
+was not significant. This is historical v1 evidence, never a moderate-v6 input
+or final result.
+
+A later benchmark candidate was rejected before test because complete Base
+validation reached 57/72 goals (79.17%), above the preregistered 75% ceiling.
+The final benchmark retained its geometry, changed only Crossing Flow timing
+using validation evidence, used fresh split seeds, and passed the unchanged
+calibration before the test was opened. These facts defend against test-driven
+benchmark tuning; they are not separate maintained releases.
+
+## 13. Reproducibility limits
+
+- The pinned Arena Humble fallback uses deterministic cylindrical pedestrian
+  proxies, not validated human-intent dynamics.
+- Evaluation uses one known map family, one planner, simulation localization,
+  and planar LiDAR.
+- Gazebo scheduling and startup can require classified infrastructure retries;
+  all such attempts are retained.
+- Raw JSONL streams are large and not part of the default Git checkout; the
+  published Parquet/JSON artifacts and matched-evidence sidecars bind their
+  relevant hashes.
+- There is no hardware, second-planner, cross-simulator, human-subject, PPO,
+  learned-detector, or formal-safety claim.
+
+## 14. Publishing `main` and `home`
+
+After the clean release gate passes, push the exact release commit to `home`,
+merge that commit into `main` without rewriting history, rerun release mode on
+the merge, and push `main`. Both remote branches must contain the same final
+project release. Never force-push published evidence.

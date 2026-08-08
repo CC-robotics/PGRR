@@ -1,3 +1,10 @@
+# Historical/special-purpose safe publication workflow
+
+This document describes a special sanitized teaching/publication workflow and
+is not the branch model for the current PGRR final release. The supported
+release branches are `main` and `home`; use the root `README.md`,
+`REPRODUCIBILITY.md`, and `COMMANDS.md` for current commands.
+
 # Safe GitHub publication
 
 Publish only from an isolated repository reconstructed from the exact final

@@ -1,168 +1,165 @@
 # PGRR: Planning-Guided Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation
 
-PGRR is a failure-triggered recovery layer for dynamic social navigation. A
-classical ROS2 navigation stack controls routine PointGoal motion. Learning is
-invoked only when observable rules indicate collision risk, freezing,
-oscillation, deadlock, or planner failure. The learned policy selects an
-interpretable temporary subgoal or recovery mode; it does not continuously
-replace the local planner or command base velocity.
+PGRR is a failure-triggered recovery layer for dynamic social navigation. Nav2
+DWB remains in control during normal PointGoal navigation. PGRR activates only
+when observable rules detect collision risk, freezing, oscillation, deadlock,
+or planner failure; it then selects an interpretable temporary subgoal or
+bounded recovery mode and returns control to the original route.
 
-The release and paper name is exactly **PGRR: Planning-Guided
-Failure-Triggered Recovery and Rejoin for Dynamic Social Navigation**.
-Historical `ramp_*`/`RAMP_*` package, environment, and runtime identifiers are
-compatibility interfaces, not the public method name.
+This repository presents **one supported final release**. The string
+`moderate_social_navigation_v6` remains in scenario IDs and manifests because
+it is the immutable identity of the evaluated dataset, not a second software
+or algorithm version. Historical `ramp_*` and `RAMP_*` names are compatibility
+interfaces only; the public method name is PGRR.
 
-> **Evidence status.** The selected release uses a privileged rollout expert,
-> Uniform BC, a completed two-round DAgger workflow, planning/action masking,
-> an observable rule trigger, and an independent safety supervisor. The
-> validation-selected deployment checkpoint retrains the accepted DAgger
-> aggregate with a train-only coverage shard; the second-round candidate was
-> evaluated but not selected. PPO and a learned failure detector are not
-> claimed as completed contributions. Final paper numbers are accepted only
-> from the complete moderate-v6 five-method artifacts under
-> `outputs/moderate/final/`; validation probes and previous evaluations are
-> never copied into the paper. Moderate-v5 is retained as a rejected
-> calibration audit and cannot be promoted into a v6 result snapshot.
+## Final release at a glance
 
-> **Frozen historical v1 evidence—not a moderate-v6 result.** The completed
-> 64/64 logical-episode audit assigned 24 matched conditions each to Base and
-> PGRR, plus eight high-density conditions each to Standard and Heuristic.
-> PGRR recorded 0/24 collisions versus Base 19/24, but PGRR also timed out in
-> 16/24 episodes versus Base 0/24. Goal reaching was 8/24 for PGRR versus 5/24
-> for Base, and the adjusted success comparison was not significant. This is a
-> safety--completion trade-off, not proof of a v6 advantage; it remains visible
-> in summaries but can never populate moderate-v6 final tables or figures.
+- Frozen run: `95ec74c511bb` at evaluation commit
+  `6916e7cd586acfbe200045e49b093039e2a6980e`.
+- Complete evidence: 600/600 logical episodes, five methods, 120 identical
+  held-out conditions per method.
+- Selected model: [`checkpoints/final/best.onnx`](checkpoints/final/best.onnx),
+  the validation-selected DAgger checkpoint.
+- Paper: [`paper/main.pdf`](paper/main.pdf), exactly 8 pages.
+- Technical report:
+  [`report/PGRR_technical_report_zh.pdf`](report/PGRR_technical_report_zh.pdf),
+  exactly 32 pages.
+- Presentation:
+  [`presentation/PGRR_report_zh.pptx`](presentation/PGRR_report_zh.pptx) and
+  [PDF](presentation/PGRR_report_zh.pdf), exactly 30 slides/pages.
+- Checksummed release bundle:
+  [`outputs/moderate/final/artifact_manifest.json`](outputs/moderate/final/artifact_manifest.json),
+  76 bound artifacts.
 
-The closed-loop evaluation is a five-method suite: four baselines plus the
-PGRR main method. The baselines are DWB, Standard Nav2 recovery, deterministic
-Heuristic recovery, and Uniform BC. PGRR is the validation-selected DAgger
-policy with the same observable interface and planning mask. The privileged
-expert is a training reference, not a fifth deployment baseline.
+| Method | Goal reached | Collision | Timeout | Planner failure |
+|---|---:|---:|---:|---:|
+| Base DWB | 85 | 35 | 0 | 0 |
+| Standard Nav2 recovery | 81 | 39 | 0 | 0 |
+| Heuristic recovery | 100 | 1 | 6 | 13 |
+| Uniform BC | 104 | 1 | 5 | 10 |
+| **PGRR** | **109** | **0** | **2** | **9** |
 
-## Method
+On the 120 paired Base--PGRR conditions, PGRR increases goal reaching by 20.00
+percentage points (109/120 versus 85/120; global Holm-adjusted McNemar
+`p=1.031e-4`) and reduces collision by 29.17 points (0/120 versus 35/120;
+global Holm `p=2.561e-9`). The +1.67-point timeout difference has global Holm
+`p=1`; the +7.50-point planner-failure difference is descriptive because that
+terminal class was not a preregistered inferential endpoint.
+
+The improvement has costs. On 83 joint-success pairs, PGRR is 15.88 s slower
+and 1.89 m longer, and it has higher angular jerk. Its observed differences
+from Heuristic and Uniform BC on the three preregistered terminal endpoints
+(goal, collision, and timeout) are not significant after global correction;
+planner failure is descriptive and was not post-hoc tested. The supported
+claim is a safety and completion improvement over Base DWB with efficiency and
+smoothness trade-offs—not universal social-navigation superiority.
+
+## System
 
 The recovery action set contains 21 robot-relative temporary goals from three
 radii and seven bearings, plus `WAIT`, `BACKUP`, `REPLAN`, and `CONTINUE`. A
-planning-derived mask removes occupied, disconnected, occluded, unsafe, or
-unavailable actions before selection. A hysteretic state machine saves the
-original task goal, executes bounded recovery, and rejoins the original Nav2
-route after progress resumes. A stopping-distance supervisor can override both
-learned and classical commands. It is an empirical safety filter, not a formal
-collision-free guarantee.
-
-The collision trigger applies immediate absolute/TTC checks in the narrow
-task-forward sector. Off-axis returns require 0.5 s of bearing-consistent
-closing evidence after accounting for ego motion, avoiding a persistent false
-trigger from a static corner shelf. The independent control-rate supervisor is
-unchanged by that rule: translation uses a 0.48 m footprint stop threshold,
-while bounded in-place turns use a separate 0.40 m swept-radius threshold for
-the 0.36 m circular evaluation footprint.
-
-The selected timing is fully bounded: decisions run at 2 Hz and control at
-10 Hz; minimum hold and cooldown are 0.5 s and 2 s. Ordinary recovery, an
-active directional-yield option, and one unresolved recovery--rejoin sequence
-are capped at 8 s, 30 s, and 45 s, respectively. REJOIN is capped at 5 s with
-at most two retries into RECOVERY, and at most four consecutive recovery
-activations are allowed. The state-machine diagram is
-[`paper/figures/recovery_state_machine.pdf`](paper/figures/recovery_state_machine.pdf).
-
-During an active learned directional-yield latch, the mask also uses observable
-flow in the local task-path frame. It compares the oldest and newest scans in
-the five-frame LiDAR stack: a side is marked as closing only when at least six
-valid returns in the 5--60 degree sector decrease by at least 0.20 m and their
-current ranges are no greater than 4.0 m. Evidence updates pause while the
-robot's angular speed exceeds 0.20 rad/s. The directional-yield latch releases
-only after three distinct scans observe at least 0.90 m of clearance in the
-15-degree half-width sector centred on the local task-path tangent while the
-collision score is clear. Once the policy chooses a subgoal with at least
-0.25 m task-normal displacement, a route-consistent side commitment suppresses
-opposite-side subgoals on later active-yield retriggers. Its progress horizon
-is configuration controlled; a path-tangent change over 45 degrees, newly
-observed flow on the committed side, or loss of every planning-safe escape on
-that side releases the preference.
-
-On the second activation of an unresolved recovery sequence, the mask
-escalates to an already-legal lateral subgoal or `REPLAN` whenever either is
-available. Reliable unilateral closing-flow evidence applies the same rule on
-the first activation. When no such escape is legal and `BACKUP` remains the
-safe selected action, the unilateral-flow backup is a 1 s pulse followed by a
-fresh mask decision; ordinary backup is capped at 3 s. These observable guards
-only remove otherwise legal actions and retain `WAIT` as the fail-closed
-fallback. They do not re-enable motion or provide a formal safety guarantee,
-and no isolated causal claim is made for an individual guard.
-
-During training only, a privileged short-horizon planner rolls out every legal
-candidate using simulator robot/pedestrian state and provides imitation labels.
-Behavior cloning learns those labels, and DAgger adds labels on states visited
-by the learned controller. Deployment uses only LiDAR, path, goal, velocity,
-planner-command, progress, status, and rule-score histories.
+planning-derived mask removes unsafe, occupied, disconnected, occluded, or
+unavailable choices. A hysteretic state machine saves the original task goal,
+executes bounded recovery, and rejoins the Nav2 route after stable clearance
+and task progress. An independent stopping-distance supervisor can override
+both learned and classical commands; it is an empirical filter rather than a
+formal safety guarantee.
 
 ```mermaid
 flowchart LR
-    W[Dynamic world and robot] --> O[LiDAR, path and navigation history]
-    O --> F{Persistent failure trigger?}
-    F -->|No| N[Nav2 DWB nominal control]
+    W[Dynamic world] --> O[LiDAR, path, goal and navigation history]
+    O --> F{Persistent failure?}
+    F -->|No| N[Nav2 DWB]
     F -->|Yes| P[PGRR policy plus planning mask]
-    P --> G[Temporary goal or recovery mode]
+    P --> G[Temporary goal or bounded recovery mode]
     G --> M[Goal and command mux]
     N --> M
     M --> W
     M -->|Progress restored| N
 
-    subgraph Training_only[Training only: privileged]
-        T[Simulator state] --> E[Short-horizon planning reference]
-        E --> D[BC plus DAgger data]
+    subgraph Training_only[Training only]
+        T[Privileged simulator state] --> E[Short-horizon planning reference]
+        E --> D[BC and DAgger labels]
         D --> P
     end
 ```
 
-The vector closed-loop diagram is
-[`paper/figures/system_architecture.pdf`](paper/figures/system_architecture.pdf).
-The expert/action illustration is explicitly schematic and is available at
-[`paper/figures/action_space_expert.pdf`](paper/figures/action_space_expert.pdf).
+At deployment, PGRR uses only LiDAR, path, goal, velocity, planner-command,
+progress, status, and rule-score histories. Privileged robot/pedestrian state
+is confined to the training expert and evaluation fields. PPO and a learned
+failure detector are not completed contributions.
+
+The architecture and recovery-state figures are
+[`paper/figures/system_architecture.pdf`](paper/figures/system_architecture.pdf)
+and
+[`paper/figures/recovery_state_machine.pdf`](paper/figures/recovery_state_machine.pdf).
+
+## Benchmark and comparators
+
+The final held-out benchmark covers eight dynamic-interaction families:
+head-on corridor, doorway bottleneck, crossing flow, blind corner, group
+blocking, overtaking, opposite streams, and temporary blockage. Each appears
+at low, medium, and high density. Five held-out repeats produce 120 shared
+condition keys per method.
+
+| Runner ID | Paper label | Role |
+|---|---|---|
+| `base` | Base DWB | Classical planner without recovery subtree |
+| `standard` | Standard | Standard Nav2 recovery behavior |
+| `heuristic` | Heuristic | Observable rule-triggered recovery |
+| `bc_uniform` | Uniform BC | Planning-masked behavior cloning |
+| `pgrr` | PGRR | Validation-selected DAgger recovery |
+
+Train, validation, and test are split by scenario ID and seed, never by frame.
+The test remained sealed until the configuration, compiled scenarios,
+checkpoint, runtime, horizon, concurrency, and accepted calibration hash were
+committed. The final test is now permanently frozen and cannot be used for
+tuning.
+
+## Real environment and run comparison
+
+The release includes both kinds of evidence requested for a complete project:
+
+- [Real Arena Gazebo GUI capture](paper/figures/runtime_gazebo_doorway_bottleneck_medium.png)
+  with [pixel/runtime metadata](outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json)
+  and [window provenance](outputs/figures/runtime/gazebo_doorway_bottleneck_medium.window.json).
+  It demonstrates Ubuntu 22.04, ROS2 Humble, Arena Gazebo, Jackal, Nav2 DWB,
+  planar LiDAR, and dynamic agents. It is honestly labeled as a historical
+  moderate-v5 validation environment capture (benchmark provenance, not
+  another current release), not a camera frame from the held-out statistical
+  run.
+- [Matched Base--PGRR trajectory](outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf)
+  and [PGRR recovery timeline](outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf)
+  reconstructed from a real identical-condition held-out pair and bound to the
+  raw/result hashes. These are telemetry reconstructions, not screenshots.
+- [Representative telemetry keyframes](outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.pdf)
+  and [video](outputs/moderate/final/media/pgrr_representative_telemetry.mp4),
+  also explicitly labeled as telemetry.
+
+The paper, report, and slides contain actual outcome tables and paired
+comparisons in addition to explanatory diagrams.
 
 ## Environments
-
-The verified online runtime is Ubuntu 22.04 with the pinned Arena ROS2 Humble
-Gazebo fallback, Jackal, Nav2 DWB, planar LiDAR, Xvfb, and software rendering.
-Seeded LiDAR-visible cylindrical pedestrian proxies provide deterministic
-dynamic interactions; they are not a validated model of human intent. The
-release does not claim Flatland, Arena 5, a second planner, cross-simulator
-transfer, hardware validation, or formal safety. Exact
-runtime provenance is in
-[`third_party/arena_commits.lock`](third_party/arena_commits.lock) and
-[`third_party/dependency_manifest.md`](third_party/dependency_manifest.md).
 
 Online and offline environments are deliberately separate:
 
 | Environment | Purpose |
 |---|---|
-| Arena/ROS2 runtime | Gazebo, Nav2, ROS nodes, online inference, and episode execution |
-| `ramp-offline` Conda | Data conversion, expert labeling, BC/DAgger, tests, statistics, figures, and LaTeX |
+| Ubuntu 22.04 / ROS2 Humble / pinned Arena Gazebo | Jackal, Nav2, simulation, online inference, episode execution |
+| Python 3.10 Conda `ramp-offline` | Data, expert labels, BC/DAgger, tests, statistics, figures, LaTeX |
 
-Never install or source Arena from an active Conda environment. Runtime scripts
-remove Conda and foreign ROS variables before starting the pinned Humble stack.
+The Gazebo profile uses deterministic LiDAR-visible cylindrical pedestrian
+proxies. They enable reproducible paired interactions but are not a validated
+model of human intent. Exact third-party provenance is in
+[`third_party/arena_commits.lock`](third_party/arena_commits.lock) and
+[`third_party/dependency_manifest.md`](third_party/dependency_manifest.md).
 
-## Verified Arena/Gazebo evidence
+Never install or source Arena from an active Conda environment. Runtime helpers
+remove Conda and foreign ROS variables; offline helpers do not source ROS.
 
-The repository contains a real Arena/Gazebo GUI capture from an audited frozen
-moderate-v5 validation demonstration with Jackal and Nav2 DWB:
+## Install, build, and test
 
-- [`paper/figures/runtime_gazebo_doorway_bottleneck_medium.png`](paper/figures/runtime_gazebo_doorway_bottleneck_medium.png);
-- [`outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json`](outputs/figures/runtime/gazebo_doorway_bottleneck_medium.metadata.json);
-- [`outputs/figures/runtime/gazebo_doorway_bottleneck_medium.window.json`](outputs/figures/runtime/gazebo_doorway_bottleneck_medium.window.json).
-
-The metadata binds the pixels to the scenario, runtime, terminal record,
-project/Arena revisions, and screenshot checksum. This is qualitative evidence
-that the declared runtime and scenario actually executed. It is not substituted
-for the complete paired benchmark, is not a camera frame from the locked v6
-statistical run, and is not used to infer an aggregate success rate. Generated
-trajectory/keyframe figures are labelled telemetry reconstructions and are
-never described as simulator camera screenshots.
-
-## Installation and build
-
-Run commands from the Git root:
+Run from the Git root:
 
 ```bash
 PROJECT_ROOT="$(git rev-parse --show-toplevel)"
@@ -175,90 +172,33 @@ make build
 make test
 ```
 
-- `make preflight` writes a non-mutating environment report.
-- `make conda` creates or updates `ramp-offline` and dependency locks.
-- `make arena` discovers or builds the isolated online runtime without Conda.
-- `make build` installs the Python packages and builds the ROS2 overlay.
+- `make preflight` records a non-mutating environment report.
+- `make conda` creates or updates the offline environment.
+- `make arena` prepares the isolated pinned online runtime.
+- `make build` installs Python packages and builds the ROS2 overlay.
 - `make test` runs Ruff, formatting, mypy, and pytest.
 
-Use [`scripts/bootstrap/activate_offline.sh`](scripts/bootstrap/activate_offline.sh)
-for offline work and
-[`scripts/bootstrap/source_runtime.sh`](scripts/bootstrap/source_runtime.sh)
-for ROS work. Do not source both in the same shell.
-
-## Smoke test
+For a bounded runtime check:
 
 ```bash
 make smoke SEED=0 HEADLESS=1
 ```
 
-The smoke test checks bounded startup and cleanup, `/clock`, TF, LiDAR,
-odometry, robot spawning, and Nav2 goal submission. Goal acceptance is not an
-algorithm-success result.
-
-## Moderate-v6 benchmark
-
-The preregistered, test-sealed benchmark candidate contains eight interaction families:
-
-1. head-on corridor;
-2. doorway bottleneck;
-3. crossing flow;
-4. blind corner;
-5. group blocking;
-6. overtaking;
-7. opposite streams;
-8. temporary blockage.
-
-Low, medium, and high density contain one, two, and four pedestrians. All three
-splits share the same map and eight family templates; train, validation, and
-test use disjoint v6 seed blocks, scenario IDs, and compiled physical
-realizations. This is held-out-interaction evaluation, not unseen-map or
-unseen-template generalization. The scenario overview is
-[`paper/figures/scenario_overview.pdf`](paper/figures/scenario_overview.pdf).
-
-Validation has three repetitions per family--density cell: 72 conditions per
-method and 360 logical method--episodes across the five compared methods. It is
-the only split used for checkpoint and configuration selection. The planned held-out
-[`moderate_v6_test.yaml`](scenarios/splits/moderate_v6_test.yaml) manifest has
-five repetitions per family--density cell: 120 conditions per method and 600
-logical method--episodes total across five methods.
-
-Moderate-v5 remains an immutable rejected-calibration audit: Base reached
-57/72 validation goals (79.17%), above the preregistered 75% ceiling, so its
-test was never opened. Moderate-v6 retains all v5 static geometry and changes
-only the preregistered Crossing Flow timing band, using new train, validation,
-and test seed blocks. The change was motivated solely by v5 validation evidence
-that actors cleared the intersection before the robot arrived. V6 must pass the
-unchanged Base calibration before its sealed test is eligible. The declaration
-is [`scenario_catalog_moderate_v6.yaml`](configs/experiments/scenario_catalog_moderate_v6.yaml),
-and the audit trail is preserved in [`CURRENT_STATUS.md`](CURRENT_STATUS.md)
-and [`DECISIONS.md`](DECISIONS.md).
-
-The publication comparison uses the same 120 conditions for all five methods:
-
-| Runner ID | Paper label | Role |
-|---|---|---|
-| `base` | DWB | Classical planner without recovery subtree |
-| `standard` | Standard | Standard Nav2 recovery behavior |
-| `heuristic` | Heuristic | Rule-triggered deterministic recovery |
-| `bc_uniform` | Uniform BC | Planning-masked behavior cloning |
-| `pgrr` | PGRR | Validation-selected DAgger policy |
-
-The privileged expert is a training and diagnostic planning reference. It is
-not a deployment baseline and no optimality claim is made.
+Goal acceptance in smoke is an infrastructure check, not an algorithm result.
 
 ## Data and training
 
 ```text
 Arena episode JSONL
-  -> observable / privileged field separation
+  -> observable/privileged field separation
   -> expert-labelled HDF5 shards
-  -> Uniform BC and a two-round DAgger workflow
-  -> selected DAgger aggregate plus a train-only coverage shard
-  -> ONNX / TorchScript deployment
+  -> Uniform BC
+  -> two DAgger rounds and validation selection
+  -> final ONNX checkpoint
+  -> five-method closed-loop evaluation
 ```
 
-Representative commands are:
+Representative training targets are:
 
 ```bash
 make label-expert
@@ -267,285 +207,137 @@ make train-dagger DAGGER_ITERATION=1
 make train-dagger DAGGER_ITERATION=2
 ```
 
-The selected deployment checkpoint is
-[`checkpoints/dagger/coverage_safety_aligned/best.onnx`](checkpoints/dagger/coverage_safety_aligned/best.onnx).
-The second-round DAgger candidate remains a recorded negative selection result;
-it is not the deployed checkpoint. The selected checkpoint instead extends the
-accepted DAgger aggregate with a train-only head-on coverage shard, with model
-selection performed on validation data only.
-Margin weighting is retained as a negative offline ablation, not as a claimed
-gain. PPO is disabled in the selected method.
+The selected checkpoint is
+[`checkpoints/dagger/coverage_safety_aligned/best.onnx`](checkpoints/dagger/coverage_safety_aligned/best.onnx),
+also exposed at `checkpoints/final/best.onnx`. The second DAgger candidate and
+margin weighting are retained as negative validation/offline results, not
+silently promoted.
 
-## Final evaluation
+## Reproduce the release without simulation
 
-Lock all validation-selected code and configuration before the held-out run.
-Then start the complete five-method test:
-
-```bash
-make evaluate-flatland \
-  MODERATE_SPLIT_MANIFEST=scenarios/splits/moderate_v6_test.yaml \
-  EVALUATION_JOBS=6 \
-  EVALUATION_TIMEOUT_S=240 \
-  MODERATE_ANALYSIS_DIR=outputs/moderate/final
-```
-
-The legacy Make target name is retained for compatibility; it calls the actual
-[`run_experiment.py`](scripts/evaluate/run_experiment.py) runner and the pinned
-runtime profile. It does not call a nonexistent shell wrapper or silently
-switch simulators. The runner refuses overwrite; use its explicit `--resume`
-mode directly only after auditing the retained run manifest.
-
-Once all 600 logical method--episodes have an accepted terminal record:
-
-```bash
-make statistics
-make figures
-make tables
-make paper
-```
-
-The chain is fail-closed:
-
-1. `collect_results.py` verifies the episode and run manifests and retains every
-   terminal outcome;
-2. `summarize_moderate.py` requires identical condition sets for
-   `base standard heuristic bc_uniform pgrr`, with `pgrr` as the main method;
-3. the moderate figure/table generators require exactly 120 conditions per
-   method;
-4. the manuscript imports only `moderate_*` macros, tables, and result figures.
-
-`COLLISION`, `TIMEOUT`, and `PLANNER_FAILURE` remain separate algorithm
-outcomes. `SIMULATOR_FAILURE` and `INVALID_RESET` remain counted in the
-artifacts and are excluded only according to the declared protocol. Each
-logical task has at most three physical attempts: the initial attempt and up to
-two infrastructure-only retries after an explicitly classified
-`SIMULATOR_FAILURE` or `INVALID_RESET`. Algorithm outcomes are never retried
-because they are unfavorable.
-
-Recovery success is computed exactly as a logged `REJOIN -> NORMAL`
-transition. The transition already requires the original task goal, low
-failure score, and valid progress; no additional protection window is claimed.
-
-## Reproduce the paper without simulation
-
-After the completed run is present:
+The default publication rebuild uses only the checked-in final result bundle:
 
 ```bash
 PGRR_RELEASE_MODE=0 PGRR_RECOLLECT_RAW=0 \
 scripts/reproduce_paper.sh
 ```
 
-This default development rebuild never launches Arena and never opens
-`data/raw`. It accepts only the published `outputs/moderate/final` test result,
-statistics, failure analysis, telemetry media, and offline-ablation sidecar for
-120 paired conditions per method. It regenerates the figures, tables, anonymous
-8-page paper, exact 32-page locked-test report, and 30-slide PPTX/PDF, then
-writes a checksummed candidate artifact manifest. Historical `outputs/final`,
-pilot, smoke, calibration, and validation results cannot be substituted.
+It never starts Arena and never opens `data/raw`. It verifies the published
+600-row inputs, regenerates result assets, builds the 8/32/30-page documents,
+and creates a candidate artifact manifest.
 
-Raw recollection is a separate, explicit operation for maintainers who possess
-the unpublished episode streams:
+After committing a complete candidate, validate it from a clean checkout:
 
 ```bash
-PGRR_RELEASE_MODE=0 PGRR_RECOLLECT_RAW=1 scripts/reproduce_paper.sh
+PGRR_RELEASE_MODE=1 PGRR_RECOLLECT_RAW=0 \
+scripts/reproduce_paper.sh
 ```
 
-After committing the complete candidate bundle, validate it from a clean
-checkout without generating anything:
+Release mode regenerates nothing. It checks scientific provenance, all 76
+artifact paths/sizes/SHA256 values, canonical media hashes, page counts, final
+paper text, report/PPT data structure, and privacy, then must leave the
+checkout unchanged. Font embedding is checked during the development document
+build whose resulting PDFs are then hash-bound by release mode. See
+[`REPRODUCIBILITY.md`](REPRODUCIBILITY.md) and [`COMMANDS.md`](COMMANDS.md) for
+the complete commands.
+
+The 600-episode simulation is already complete. An intentional independent
+rerun must use a clean worktree at the frozen evaluation commit and a new,
+empty output directory:
 
 ```bash
-PGRR_RELEASE_MODE=1 scripts/reproduce_paper.sh
+git worktree add ../PGRR-evaluation-reproduction \
+  6916e7cd586acfbe200045e49b093039e2a6980e
+cd ../PGRR-evaluation-reproduction
+make verify-calibration
+test ! -e outputs/moderate/independent_reproduction
+make evaluate-final \
+  MODERATE_ANALYSIS_DIR=outputs/moderate/independent_reproduction
 ```
 
-Release mode first reconstructs and compares the manifest's scientific
-provenance and every artifact path, category, size, SHA256, document page count,
-and media property, then runs the tracked/nonignored privacy audit and exits.
-Its PASS is the privacy/release gate; the development PASS is explicitly not.
+Algorithm outcomes (`GOAL_REACHED`, `COLLISION`, `TIMEOUT`, and
+`PLANNER_FAILURE`) are never retried. Only explicitly classified
+`SIMULATOR_FAILURE` and `INVALID_RESET` attempts may be retried, and every
+physical attempt remains in the run provenance.
 
-Publication figures follow a restrained Robot/Embodied closed-loop style:
-white background, 2D vector graphics, three functional color groups at most,
-shape/hatch redundancy, and double-column-readable typography. Telemetry media
-are explicitly labelled reconstructions; simulator screenshots must come from
-an actual captured run and are never synthesized by the paper scripts.
-The verified frozen-scene capture is
-`paper/figures/runtime_gazebo_doorway_bottleneck_medium.png` together with its
-machine-readable provenance in `outputs/figures/runtime/`. It is qualitative
-runtime evidence, not a camera frame from a locked v6 statistical episode.
-The release manifest binds the source pixels, paper copy, capture metadata, and
-the selected Gazebo-window record. The matched final-media PDFs are installed
-as byte-identical paper figure copies and checked against the sidecar SHA256;
-the conference manuscript cannot silently omit them.
-Result-bearing report/PPT builds also require a matched Base--PGRR telemetry
-sidecar generated from raw JSONL whose SHA256 agrees with the approved Parquet.
-The validation selector is outcome-independent and preregistered. The locked
-test uses the frozen deterministic media rule implemented by
-`render_episode_media.py --matched-final` and records that rule verbatim.
-
-## Paper, technical report, and presentation
-
-The repository maintains three evidence layers for different audiences:
-
-| Layer | Artifact | Purpose |
-|---|---|---|
-| Conference paper | [`paper/main.pdf`](paper/main.pdf) | Concise anonymous IEEE manuscript |
-| Technical report | [`report/PGRR_technical_report_zh.pdf`](report/PGRR_technical_report_zh.pdf) | Detailed Chinese method, engineering, protocol, and evidence report |
-| Presentation | [`presentation/PGRR_report_zh.pptx`](presentation/PGRR_report_zh.pptx) and [`presentation/PGRR_report_zh.pdf`](presentation/PGRR_report_zh.pdf) | Thirty-slide Chinese briefing with external speaker notes |
-
-The report and presentation are stage-aware. The current data-free build is:
-
-```bash
-REPORT_STAGE=pending make technical-report presentation
-```
-
-`pending` mode opens no result Parquet and visibly marks every numerical page
-as not yet locked. A completed validation run must first be copied to the
-dedicated immutable snapshot location; it is never read directly while a
-runner may still be writing it:
-
-```bash
-python scripts/report/build_matched_run_evidence.py \
-  --stage validation \
-  --results outputs/moderate/v6_validation/results.parquet \
-  --raw-dir data/raw \
-  --output outputs/moderate/v6_validation/matched_base_pgrr_evidence.json
-
-# Copy results, statistics, and matched evidence into the read-only snapshot.
-REPORT_STAGE=validation \
-REPORT_RESULTS=outputs/report_inputs/validation/results.parquet \
-REPORT_STATISTICS=outputs/report_inputs/validation/pairwise_statistics.json \
-REPORT_MATCHED_EVIDENCE=outputs/report_inputs/validation/matched_base_pgrr_evidence.json \
-make technical-report presentation
-```
-
-The final test documents accept only the locked moderate-v6 result:
-
-```bash
-python scripts/paper/render_episode_media.py \
-  --matched-final \
-  --results outputs/moderate/final/results.parquet \
-  --raw-dir data/raw \
-  --scenario-root . \
-  --figure-dir outputs/moderate/final/media \
-  --evidence-output outputs/moderate/final/matched_base_pgrr_evidence.json
-
-REPORT_STAGE=test \
-REPORT_RESULTS=outputs/moderate/final/results.parquet \
-REPORT_STATISTICS=outputs/moderate/final/pairwise_statistics.json \
-REPORT_MATCHED_EVIDENCE=outputs/moderate/final/matched_base_pgrr_evidence.json \
-make technical-report presentation
-```
-
-The stage-aware builder rejects historical `outputs/final`, pilot,
-calibration, smoke, rejected v5, `outputs/moderate/v6_validation`, and every
-`outputs/moderate/v6_validation_*` path before opening them. Therefore
-the old 64-episode artifact and exploratory runs can never populate a final
-report slide, table, macro, or claim. Validation documents remain explicitly
-labelled as non-test evidence.
-
-## Authoritative artifact layout
+## Authoritative final layout
 
 ```text
 configs/final/ei_gazebo.yaml
 configs/experiments/scenario_catalog_moderate_v6.yaml
-configs/planner/baselines.yaml
 scenarios/splits/moderate_v6_test.yaml
-checkpoints/bc/uniform_scenario/best.onnx
-checkpoints/dagger/coverage_safety_aligned/best.onnx
+checkpoints/final/best.onnx
 outputs/moderate/v6_validation_base_d5fa66b/calibration_report.json
-outputs/moderate/final/episode_manifest.parquet
-outputs/moderate/final/run_manifest.json
-outputs/moderate/final/results.parquet
-outputs/moderate/final/summary.csv
-outputs/moderate/final/pairwise_statistics.json
-outputs/moderate/final/matched_base_pgrr_evidence.json
-outputs/moderate/final/media/moderate_matched_base_pgrr_trajectory.pdf
-outputs/moderate/final/media/moderate_pgrr_recovery_timeline.pdf
-outputs/moderate/final/failure_analysis.md
-outputs/moderate/final/artifact_manifest.json
-outputs/moderate/final/offline_policy_ablation.csv
-outputs/moderate/final/offline_policy_ablation.json
-outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.pdf
-outputs/moderate/final/media/pgrr_representative_telemetry_keyframes.png
-outputs/moderate/final/media/pgrr_representative_telemetry.mp4
-outputs/figures/moderate_*.pdf
-outputs/tables/moderate_*.tex
-paper/generated/moderate_*.tex
-paper/figures/moderate_*.pdf
-paper/figures/moderate_matched_base_pgrr_trajectory.pdf
-paper/figures/moderate_pgrr_recovery_timeline.pdf
+outputs/moderate/final/
+  episode_manifest.parquet
+  run_manifest.json
+  results.parquet
+  summary.csv
+  pairwise_statistics.json
+  failure_analysis.md
+  matched_base_pgrr_evidence.json
+  artifact_manifest.json
+  media/
 paper/main.pdf
 report/PGRR_technical_report_zh.pdf
 presentation/PGRR_report_zh.pptx
 presentation/PGRR_report_zh.pdf
-presentation/speaker_notes_zh.md
-presentation/contact_sheet.png
-data/interim/multiscenario_safety_aligned_validation.h5
 ```
 
-If any required moderate artifact is absent or incomplete, `make paper` fails;
-old final tables and pilot CSVs are not a fallback. Manuscript claims are mapped
-to evidence in
-[`paper/claim_evidence_matrix.md`](paper/claim_evidence_matrix.md).
-
-## GitHub maintenance and releases
-
-- Use pull requests for normal maintenance after the sanitized initial
-  publication. Do not rewrite a published evidence tag to replace an
-  unfavorable or incomplete result.
-- A new result set requires a new experiment ID, immutable manifest, artifact
-  hashes, regenerated documents, and a versioned release tag.
-- Keep local account names, hostnames, absolute paths, credentials, tokens,
-  editor state, and raw transient runtime logs out of commits and document
-  metadata. Public authorship is anonymous for the paper and may use only the
-  alias Charles Chen in the report or presentation.
-- Run `make test`, the stage-appropriate document build, and
-  `make privacy-check` before a GitHub release. Inspect the generated report
-  and presentation contact sheet before accepting visual changes.
-- Do not manually edit generated numerical tables, macros, figures, or slide
-  values. Update their authoritative Parquet/JSON input and rerun the builders.
-- Preserve third-party licenses and pinned Arena/ROS provenance. Large raw
-  episodes and infrastructure logs should be published as checksummed release
-  artifacts rather than silently added to the default branch.
-
-## Limitations
-
-- Known 2D maps, planar LiDAR, and simulation localization are assumed.
-- Deterministic actors enable paired replay but do not represent the full
-  dynamics, intent, or social norms of real pedestrians.
-- The finite action set, rule trigger, and empirical supervisor provide no
-  formal collision-avoidance guarantee.
-- Closed-loop outcomes combine the detector, mask, policy, Nav2, and supervisor;
-  they do not identify a causal contribution for one component.
-- PPO, a learned failure detector, a second planner, Flatland,
-  cross-simulator transfer, hardware tests, and formal safety are not completed
-  claims.
+Only `outputs/moderate/final/` is authoritative for final result claims. Pilot,
+smoke, calibration, validation, and historical directories cannot populate a
+final table or figure. The accepted calibration report is named explicitly
+above because an empty rejected test-stage byproduct with a similar basename
+is not evidence.
 
 ## Repository map
 
 ```text
-configs/       platform, planner, failure, training, and experiment definitions
-packages/      ROS-independent ramp_core and ramp_ml Python packages
-ros_ws/src/    ramp_msgs, ramp_ros, and ramp_bringup
-scenarios/     generated scenarios, previews, and split locks
-data/          raw episodes, HDF5 shards, and provenance manifests
-checkpoints/   BC and DAgger models and metadata
-scripts/       bootstrap, Arena, data, training, evaluation, and paper commands
-outputs/       validation/final results, figures, tables, logs, and videos
-paper/         IEEEtran manuscript, verified references, and generated artifacts
-report/        stage-aware detailed Chinese technical report
-presentation/  30-slide PPTX/PDF, speaker notes, and visual contact sheet
+configs/       final runtime, planner, failure, training, and benchmark inputs
+packages/      ROS-independent core and ML Python packages
+ros_ws/src/    ROS messages, nodes, and bringup
+scenarios/     compiled scenarios, previews, manifests, and split locks
+data/          raw/intermediate data and provenance (large raw streams ignored)
+checkpoints/   BC/DAgger models and metadata
+scripts/       bootstrap, Arena, data, training, evaluation, and publication tools
+outputs/       final evidence, figures, tables, logs, and retained audits
+paper/         IEEE manuscript and generated assets
+report/        detailed Chinese technical report
+presentation/  PPTX/PDF, speaker notes, and contact sheet
 tests/         unit, integration, and deterministic regression tests
 ```
 
-The retained `ramp_*` package, environment, and metadata identifiers are stable
-compatibility interfaces. New documentation and paper prose use PGRR.
+## Limitations
 
-## Citation and license
+- The evaluated domain uses one known map family, planar LiDAR, simulation
+  localization, deterministic actor routes, and one classical planner.
+- The 25-action set, observable trigger, and empirical supervisor provide no
+  formal collision-avoidance guarantee.
+- Closed-loop outcomes combine trigger, mask, learned policy, Nav2, simulator,
+  and supervisor; they do not identify a causal contribution for one guard.
+- PPO, a learned detector, Flatland, Arena 5, a second planner, cross-simulator
+  transfer, hardware, human-subject validation, and formal safety are not
+  completed claims.
+- The frozen test cannot be used for further algorithm or threshold selection.
 
-Citation metadata are in [`CITATION.cff`](CITATION.cff). The paper is anonymous
-and contains no fabricated venue or DOI; update the citation only after an
-archival record exists. Verified references are in
-[`paper/references.bib`](paper/references.bib).
+## Historical audit boundary
 
-The software is distributed under the [BSD 3-Clause License](LICENSE). External
-Arena/ROS assets retain their original licenses and pinned provenance.
+Scientific transparency requires one compact earlier boundary. A frozen 64/64
+audit recorded PGRR/Base collisions of 0/24 versus 19/24, timeouts of 16/24
+versus 0/24, and goal reaches of 8/24 versus 5/24; the adjusted goal-reaching
+comparison was not significant. This safety--completion trade-off is not a v6
+result and is never pooled with the final 600-episode evidence. A later
+validation candidate was also rejected before its test was opened because
+Base exceeded the preregistered calibration ceiling. Full details remain in
+Git history and immutable manifests rather than being exposed as multiple
+current project versions.
+
+## Branches, citation, and license
+
+`main` is the canonical release branch and `home` is a synchronized mirror of
+the same final project state. Published evidence is never force-rewritten.
+
+Citation metadata are in [`CITATION.cff`](CITATION.cff); verified references
+are in [`paper/references.bib`](paper/references.bib). The software is released
+under the [BSD 3-Clause License](LICENSE), while third-party Arena/ROS assets
+retain their original licenses.
