@@ -1,0 +1,252 @@
+{
+  "benchmark_id": "pgrr_extension_v1_eight_family_pilot",
+  "claim_boundary": "development_pair_only",
+  "family": "bottleneck_cross_flow_merge",
+  "family_index": 6,
+  "paired_interpretation": {
+    "base_collision_avoided": true,
+    "both_goal_reached": false,
+    "both_same_failure": false,
+    "pgrr_completion_gain": false,
+    "pgrr_recovery_triggered": true,
+    "superiority_claim_supported": false
+  },
+  "runs": {
+    "base": {
+      "artifact_sha256": {
+        "metadata": "97dc98fd6589a99804d9dfb5d222ef754b4c5e40f6ee068e334973a65a677080",
+        "outcome": "86a347f0541cea610f24b4708bf504b36c674732ddd66e3cefa743bd54bf1d9c",
+        "raw_jsonl": "d8ce6adbbd95367c922265186eb426eb68de26bc940c8b5a0d9f25e5fae85eea"
+      },
+      "attempt_history": [
+        {
+          "artifact_sha256": {
+            "metadata": "97dc98fd6589a99804d9dfb5d222ef754b4c5e40f6ee068e334973a65a677080",
+            "outcome": "86a347f0541cea610f24b4708bf504b36c674732ddd66e3cefa743bd54bf1d9c",
+            "raw_jsonl": "d8ce6adbbd95367c922265186eb426eb68de26bc940c8b5a0d9f25e5fae85eea"
+          },
+          "episode_id": "pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_base",
+          "infrastructure_attempt": false,
+          "localized_goal_distance_m": 12.426006317138672,
+          "outcome": "COLLISION",
+          "outcome_detail": "privileged robot-human overlap",
+          "physical_goal_distance_m": 12.437827881518409,
+          "sample_count": 420
+        }
+      ],
+      "episode_id": "pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_base",
+      "infrastructure_attempt": false,
+      "localized_goal_distance_m": 12.426006317138672,
+      "outcome": "COLLISION",
+      "outcome_detail": "privileged robot-human overlap",
+      "physical_goal_distance_m": 12.437827881518409,
+      "planned_episode_id": "pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_base",
+      "sample_count": 420,
+      "selected_attempt_id": "pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_base"
+    },
+    "pgrr": {
+      "artifact_sha256": {
+        "metadata": "61c59c40c08550966521fb8067e253c1b1dffc7130f31251142938f2093021ba",
+        "outcome": "f2a172fff0f554f5373e8505d767c2075bc7178da7cd93ee22da74a57207cfbe",
+        "raw_jsonl": "7fa809b0d8aaa8a23a48570f7e94a23b966568b2934acd530b5b4128d27b02c8"
+      },
+      "attempt_history": [
+        {
+          "artifact_sha256": {
+            "metadata": "61c59c40c08550966521fb8067e253c1b1dffc7130f31251142938f2093021ba",
+            "outcome": "f2a172fff0f554f5373e8505d767c2075bc7178da7cd93ee22da74a57207cfbe",
+            "raw_jsonl": "7fa809b0d8aaa8a23a48570f7e94a23b966568b2934acd530b5b4128d27b02c8"
+          },
+          "episode_id": "pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_pgrr",
+          "infrastructure_attempt": false,
+          "localized_goal_distance_m": 13.69490909576416,
+          "outcome": "TIMEOUT",
+          "outcome_detail": "configured episode timeout",
+          "physical_goal_distance_m": 13.683896390997827,
+          "sample_count": 898
+        }
+      ],
+      "episode_id": "pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_pgrr",
+      "infrastructure_attempt": false,
+      "localized_goal_distance_m": 13.69490909576416,
+      "outcome": "TIMEOUT",
+      "outcome_detail": "configured episode timeout",
+      "physical_goal_distance_m": 13.683896390997827,
+      "planned_episode_id": "pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_pgrr",
+      "recovery_trace": {
+        "decision_action_counts": {
+          "BACKUP": 9,
+          "CONTINUE": 13,
+          "SUBGOAL_0": 1,
+          "SUBGOAL_2": 1,
+          "WAIT": 14
+        },
+        "decision_event_count": 38,
+        "decision_reason_counts": {
+          "bc_onnx_decision": 9,
+          "emergency_backup": 5,
+          "emergency_clear_continue_goal": 5,
+          "emergency_stop": 9,
+          "emergency_turn_right": 2,
+          "not_triggered": 1,
+          "original_goal_restored": 3,
+          "recovery_action_complete": 3,
+          "recovery_timeout": 1
+        },
+        "original_goal_restored_event_count": 3,
+        "state_transitions": [
+          {
+            "recovery_state": 0,
+            "sample_index": 0,
+            "state_name": "NORMAL",
+            "timestamp_s": 0.0
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 392,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 39.3273
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 412,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 41.3253
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 419,
+            "state_name": "RECOVERY",
+            "timestamp_s": 41.9913
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 442,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 44.3556
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 463,
+            "state_name": "RECOVERY",
+            "timestamp_s": 46.4535
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 517,
+            "state_name": "REJOIN",
+            "timestamp_s": 51.8481
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 522,
+            "state_name": "NORMAL",
+            "timestamp_s": 52.3476
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 542,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 54.3456
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 577,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 57.8421
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 583,
+            "state_name": "RECOVERY",
+            "timestamp_s": 58.4415
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 617,
+            "state_name": "REJOIN",
+            "timestamp_s": 61.8714
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 622,
+            "state_name": "NORMAL",
+            "timestamp_s": 62.3709
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 637,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 63.8694
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 647,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 64.8684
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 652,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 65.3679
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 662,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 66.4002
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 667,
+            "state_name": "RECOVERY",
+            "timestamp_s": 66.8997
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 716,
+            "state_name": "REJOIN",
+            "timestamp_s": 71.8281
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 721,
+            "state_name": "NORMAL",
+            "timestamp_s": 72.3276
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 746,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 74.8584
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 797,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 79.92
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 802,
+            "state_name": "RECOVERY",
+            "timestamp_s": 80.4195
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 886,
+            "state_name": "REJOIN",
+            "timestamp_s": 88.8444
+          }
+        ],
+        "temporary_subgoal_decision_count": 2
+      },
+      "sample_count": 898,
+      "selected_attempt_id": "pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_pgrr"
+    }
+  },
+  "scenario_id": "bottleneck_cross_flow_merge_medium_train_r00_s91610",
+  "scenario_sha256": "29db6ce4dc2535a747b49b85b41622f6b01f51b2c29e343c5d4a7919bee2d691",
+  "seed": 91610
+}

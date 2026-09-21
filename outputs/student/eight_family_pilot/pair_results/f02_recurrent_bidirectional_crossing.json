@@ -1,0 +1,330 @@
+{
+  "benchmark_id": "pgrr_extension_v1_eight_family_pilot",
+  "claim_boundary": "development_pair_only",
+  "family": "recurrent_bidirectional_crossing",
+  "family_index": 2,
+  "paired_interpretation": {
+    "base_collision_avoided": false,
+    "both_goal_reached": false,
+    "both_same_failure": true,
+    "pgrr_completion_gain": false,
+    "pgrr_recovery_triggered": true,
+    "superiority_claim_supported": false
+  },
+  "runs": {
+    "base": {
+      "artifact_sha256": {
+        "metadata": "adb1a4d6f1fe3eeda89346942a61c7f9fc02af3a228ce49acbda5f66494e34e7",
+        "outcome": "deae790fcfaa0306e75b3ce92bc356e609bdb46f7b31609ee22571a0c9be56d1",
+        "raw_jsonl": "9c97201b01d6fc87ac67eaf8636ef76faf0d770f1017851432a56298396b2411"
+      },
+      "attempt_history": [
+        {
+          "artifact_sha256": {
+            "outcome": "f49be66a85dcb5d4e1fc0b643a61473bfb9d9d672ec4ce84bc338fe2fa43b37c"
+          },
+          "episode_id": "pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_base",
+          "infrastructure_attempt": true,
+          "outcome": "SIMULATOR_FAILURE",
+          "outcome_detail": "timed out waiting for required baseline topics",
+          "sample_count": 0
+        },
+        {
+          "artifact_sha256": {
+            "metadata": "adb1a4d6f1fe3eeda89346942a61c7f9fc02af3a228ce49acbda5f66494e34e7",
+            "outcome": "deae790fcfaa0306e75b3ce92bc356e609bdb46f7b31609ee22571a0c9be56d1",
+            "raw_jsonl": "9c97201b01d6fc87ac67eaf8636ef76faf0d770f1017851432a56298396b2411"
+          },
+          "episode_id": "pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_base_retry01",
+          "infrastructure_attempt": false,
+          "localized_goal_distance_m": 1.2896727323532104,
+          "outcome": "TIMEOUT",
+          "outcome_detail": "configured episode timeout",
+          "physical_goal_distance_m": 1.3186816051368715,
+          "sample_count": 922
+        }
+      ],
+      "episode_id": "pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_base_retry01",
+      "infrastructure_attempt": false,
+      "localized_goal_distance_m": 1.2896727323532104,
+      "outcome": "TIMEOUT",
+      "outcome_detail": "configured episode timeout",
+      "physical_goal_distance_m": 1.3186816051368715,
+      "planned_episode_id": "pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_base",
+      "sample_count": 922,
+      "selected_attempt_id": "pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_base_retry01"
+    },
+    "pgrr": {
+      "artifact_sha256": {
+        "metadata": "f799a3868cda3e7e0b5e8d0390a256d662dcca4083e351b82fe6d3018094180e",
+        "outcome": "3c6fb17b97049ac502c6d1591885956da887063c1f38163fa502de6995c167dd",
+        "raw_jsonl": "44bfe4445bd80d2210670f33bc7337307f3920375046ed4a65385c646ea14ff0"
+      },
+      "attempt_history": [
+        {
+          "artifact_sha256": {
+            "metadata": "f799a3868cda3e7e0b5e8d0390a256d662dcca4083e351b82fe6d3018094180e",
+            "outcome": "3c6fb17b97049ac502c6d1591885956da887063c1f38163fa502de6995c167dd",
+            "raw_jsonl": "44bfe4445bd80d2210670f33bc7337307f3920375046ed4a65385c646ea14ff0"
+          },
+          "episode_id": "pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_pgrr",
+          "infrastructure_attempt": false,
+          "localized_goal_distance_m": 13.917654991149902,
+          "outcome": "TIMEOUT",
+          "outcome_detail": "configured episode timeout",
+          "physical_goal_distance_m": 13.907769178548286,
+          "sample_count": 918
+        }
+      ],
+      "episode_id": "pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_pgrr",
+      "infrastructure_attempt": false,
+      "localized_goal_distance_m": 13.917654991149902,
+      "outcome": "TIMEOUT",
+      "outcome_detail": "configured episode timeout",
+      "physical_goal_distance_m": 13.907769178548286,
+      "planned_episode_id": "pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_pgrr",
+      "recovery_trace": {
+        "decision_action_counts": {
+          "BACKUP": 12,
+          "CONTINUE": 20,
+          "REPLAN": 1,
+          "SUBGOAL_0": 1,
+          "WAIT": 22
+        },
+        "decision_event_count": 56,
+        "decision_reason_counts": {
+          "bc_onnx_decision": 11,
+          "emergency_backup": 7,
+          "emergency_clear_continue_goal": 5,
+          "emergency_stop": 17,
+          "emergency_turn_right": 2,
+          "failure_pending": 1,
+          "not_triggered": 1,
+          "original_goal_restored": 4,
+          "recovery_action_complete": 2,
+          "recovery_timeout": 1,
+          "safety_clear_resume_rejoin": 5
+        },
+        "original_goal_restored_event_count": 4,
+        "state_transitions": [
+          {
+            "recovery_state": 0,
+            "sample_index": 0,
+            "state_name": "NORMAL",
+            "timestamp_s": 0.0
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 335,
+            "state_name": "RECOVERY",
+            "timestamp_s": 32.8005
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 431,
+            "state_name": "REJOIN",
+            "timestamp_s": 42.2244
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 436,
+            "state_name": "NORMAL",
+            "timestamp_s": 42.7239
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 457,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 44.7885
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 467,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 45.7875
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 472,
+            "state_name": "RECOVERY",
+            "timestamp_s": 46.2537
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 513,
+            "state_name": "REJOIN",
+            "timestamp_s": 50.283
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 518,
+            "state_name": "NORMAL",
+            "timestamp_s": 50.7492
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 523,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 51.2487
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 544,
+            "state_name": "RECOVERY",
+            "timestamp_s": 53.3466
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 610,
+            "state_name": "REJOIN",
+            "timestamp_s": 59.7402
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 646,
+            "state_name": "NORMAL",
+            "timestamp_s": 63.27
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 671,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 65.7342
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 676,
+            "state_name": "NORMAL",
+            "timestamp_s": 66.2337
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 681,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 66.7332
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 701,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 68.7645
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 707,
+            "state_name": "RECOVERY",
+            "timestamp_s": 69.3306
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 711,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 69.6969
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 717,
+            "state_name": "REJOIN",
+            "timestamp_s": 70.263
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 722,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 70.7292
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 748,
+            "state_name": "REJOIN",
+            "timestamp_s": 73.26
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 753,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 73.7595
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 798,
+            "state_name": "REJOIN",
+            "timestamp_s": 78.2883
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 803,
+            "state_name": "NORMAL",
+            "timestamp_s": 78.7545
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 808,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 79.2207
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 814,
+            "state_name": "NORMAL",
+            "timestamp_s": 79.7868
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 819,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 80.2863
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 863,
+            "state_name": "NORMAL",
+            "timestamp_s": 84.7485
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 869,
+            "state_name": "RECOVERY",
+            "timestamp_s": 85.3146
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 873,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 85.7142
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 879,
+            "state_name": "REJOIN",
+            "timestamp_s": 86.2803
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 884,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 86.7465
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 889,
+            "state_name": "REJOIN",
+            "timestamp_s": 87.2127
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 895,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 87.7788
+          }
+        ],
+        "temporary_subgoal_decision_count": 1
+      },
+      "sample_count": 918,
+      "selected_attempt_id": "pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_pgrr"
+    }
+  },
+  "scenario_id": "recurrent_bidirectional_crossing_medium_train_r00_s91210",
+  "scenario_sha256": "d5b48e7339c98e95d2c81e2c20520457d7b81623cf0636b4ace325a12cf51986",
+  "seed": 91210
+}

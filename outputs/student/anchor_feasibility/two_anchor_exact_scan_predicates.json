@@ -1,0 +1,453 @@
+{
+  "aggregate": {
+    "action_predicate_counts": {
+      "both_failed": 3161,
+      "capsule_only_failed": 556,
+      "passed_both": 315
+    },
+    "all_equivalent": true,
+    "empty_after_count": 122,
+    "event_count": 192,
+    "exact_equivalence_count": 192,
+    "per_action_counts": {
+      "r0.6_a+0": {
+        "capsule_pass": 35,
+        "combined_pass": 35,
+        "considered": 192,
+        "directional_pass": 78
+      },
+      "r0.6_a+30": {
+        "capsule_pass": 20,
+        "combined_pass": 20,
+        "considered": 192,
+        "directional_pass": 149
+      },
+      "r0.6_a+60": {
+        "capsule_pass": 20,
+        "combined_pass": 20,
+        "considered": 192,
+        "directional_pass": 35
+      },
+      "r0.6_a+90": {
+        "capsule_pass": 20,
+        "combined_pass": 20,
+        "considered": 192,
+        "directional_pass": 24
+      },
+      "r0.6_a-30": {
+        "capsule_pass": 55,
+        "combined_pass": 55,
+        "considered": 192,
+        "directional_pass": 63
+      },
+      "r0.6_a-60": {
+        "capsule_pass": 55,
+        "combined_pass": 55,
+        "considered": 192,
+        "directional_pass": 154
+      },
+      "r0.6_a-90": {
+        "capsule_pass": 55,
+        "combined_pass": 55,
+        "considered": 192,
+        "directional_pass": 55
+      },
+      "r1.0_a+0": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 58
+      },
+      "r1.0_a+30": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 30
+      },
+      "r1.0_a+60": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 20
+      },
+      "r1.0_a+90": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 24
+      },
+      "r1.0_a-30": {
+        "capsule_pass": 55,
+        "combined_pass": 55,
+        "considered": 192,
+        "directional_pass": 59
+      },
+      "r1.0_a-60": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 20
+      },
+      "r1.0_a-90": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 20
+      },
+      "r1.4_a+0": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 43
+      },
+      "r1.4_a+30": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 15
+      },
+      "r1.4_a+60": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 0
+      },
+      "r1.4_a+90": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 4
+      },
+      "r1.4_a-30": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 20
+      },
+      "r1.4_a-60": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 0
+      },
+      "r1.4_a-90": {
+        "capsule_pass": 0,
+        "combined_pass": 0,
+        "considered": 192,
+        "directional_pass": 0
+      }
+    },
+    "row_cause_counts": {
+      "capsule_has_no_entering_action": 122,
+      "nonempty_intersection": 70
+    },
+    "threshold_counts": {
+      "target=0.250,swept=0.480": 39,
+      "target=0.900,swept=0.900": 153
+    }
+  },
+  "algorithm_change_authorized": false,
+  "claim_boundary": "exact original-scan predicate telemetry; two train-only anchors",
+  "diagnostic_only": true,
+  "episodes": [
+    {
+      "source": "data\\raw\\pgrr_anchor_predicates_goalapproach_train_r00_20260915.jsonl",
+      "summary": {
+        "action_predicate_counts": {
+          "both_failed": 1489,
+          "capsule_only_failed": 240,
+          "passed_both": 140
+        },
+        "all_equivalent": true,
+        "empty_after_count": 54,
+        "event_count": 89,
+        "exact_equivalence_count": 89,
+        "per_action_counts": {
+          "r0.6_a+0": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 39
+          },
+          "r0.6_a+30": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 50
+          },
+          "r0.6_a+60": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 15
+          },
+          "r0.6_a+90": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          },
+          "r0.6_a-30": {
+            "capsule_pass": 35,
+            "combined_pass": 35,
+            "considered": 89,
+            "directional_pass": 39
+          },
+          "r0.6_a-60": {
+            "capsule_pass": 35,
+            "combined_pass": 35,
+            "considered": 89,
+            "directional_pass": 70
+          },
+          "r0.6_a-90": {
+            "capsule_pass": 35,
+            "combined_pass": 35,
+            "considered": 89,
+            "directional_pass": 35
+          },
+          "r1.0_a+0": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 39
+          },
+          "r1.0_a+30": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 15
+          },
+          "r1.0_a+60": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          },
+          "r1.0_a+90": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          },
+          "r1.0_a-30": {
+            "capsule_pass": 35,
+            "combined_pass": 35,
+            "considered": 89,
+            "directional_pass": 39
+          },
+          "r1.0_a-60": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          },
+          "r1.0_a-90": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          },
+          "r1.4_a+0": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 39
+          },
+          "r1.4_a+30": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          },
+          "r1.4_a+60": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          },
+          "r1.4_a+90": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          },
+          "r1.4_a-30": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          },
+          "r1.4_a-60": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          },
+          "r1.4_a-90": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 89,
+            "directional_pass": 0
+          }
+        },
+        "row_cause_counts": {
+          "capsule_has_no_entering_action": 54,
+          "nonempty_intersection": 35
+        },
+        "threshold_counts": {
+          "target=0.900,swept=0.900": 89
+        }
+      }
+    },
+    {
+      "source": "data\\raw\\pgrr_anchor_predicates_leadstop_train_r00_20260915.jsonl",
+      "summary": {
+        "action_predicate_counts": {
+          "both_failed": 1672,
+          "capsule_only_failed": 316,
+          "passed_both": 175
+        },
+        "all_equivalent": true,
+        "empty_after_count": 68,
+        "event_count": 103,
+        "exact_equivalence_count": 103,
+        "per_action_counts": {
+          "r0.6_a+0": {
+            "capsule_pass": 35,
+            "combined_pass": 35,
+            "considered": 103,
+            "directional_pass": 39
+          },
+          "r0.6_a+30": {
+            "capsule_pass": 20,
+            "combined_pass": 20,
+            "considered": 103,
+            "directional_pass": 99
+          },
+          "r0.6_a+60": {
+            "capsule_pass": 20,
+            "combined_pass": 20,
+            "considered": 103,
+            "directional_pass": 20
+          },
+          "r0.6_a+90": {
+            "capsule_pass": 20,
+            "combined_pass": 20,
+            "considered": 103,
+            "directional_pass": 24
+          },
+          "r0.6_a-30": {
+            "capsule_pass": 20,
+            "combined_pass": 20,
+            "considered": 103,
+            "directional_pass": 24
+          },
+          "r0.6_a-60": {
+            "capsule_pass": 20,
+            "combined_pass": 20,
+            "considered": 103,
+            "directional_pass": 84
+          },
+          "r0.6_a-90": {
+            "capsule_pass": 20,
+            "combined_pass": 20,
+            "considered": 103,
+            "directional_pass": 20
+          },
+          "r1.0_a+0": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 19
+          },
+          "r1.0_a+30": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 15
+          },
+          "r1.0_a+60": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 20
+          },
+          "r1.0_a+90": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 24
+          },
+          "r1.0_a-30": {
+            "capsule_pass": 20,
+            "combined_pass": 20,
+            "considered": 103,
+            "directional_pass": 20
+          },
+          "r1.0_a-60": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 20
+          },
+          "r1.0_a-90": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 20
+          },
+          "r1.4_a+0": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 4
+          },
+          "r1.4_a+30": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 15
+          },
+          "r1.4_a+60": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 0
+          },
+          "r1.4_a+90": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 4
+          },
+          "r1.4_a-30": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 20
+          },
+          "r1.4_a-60": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 0
+          },
+          "r1.4_a-90": {
+            "capsule_pass": 0,
+            "combined_pass": 0,
+            "considered": 103,
+            "directional_pass": 0
+          }
+        },
+        "row_cause_counts": {
+          "capsule_has_no_entering_action": 68,
+          "nonempty_intersection": 35
+        },
+        "threshold_counts": {
+          "target=0.250,swept=0.480": 39,
+          "target=0.900,swept=0.900": 64
+        }
+      }
+    }
+  ]
+}

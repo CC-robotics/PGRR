@@ -126,6 +126,7 @@ def scan_segment_is_free(
     target: tuple[float, float],
     clearance_m: float,
     allow_initial_overlap_when_separating: bool = False,
+    diagnostics: dict[str, float | int | str | bool] | None = None,
 ) -> bool:
     """Check a robot-frame segment against the swept circular footprint.
 
@@ -147,6 +148,17 @@ def scan_segment_is_free(
         raise ValueError("ranges must be one-dimensional")
     valid = np.isfinite(values) & (values >= 0.0)
     if not bool(valid.any()):
+        if diagnostics is not None:
+            diagnostics.clear()
+            diagnostics.update(
+                {
+                    "result": True,
+                    "category": "clear_no_finite_returns",
+                    "minimum_segment_clearance_m": math.inf,
+                    "closest_fraction": 0.0,
+                    "initial_overlap_count": 0,
+                }
+            )
         return True
     angles = angle_min + np.flatnonzero(valid) * angle_increment
     distances = values[valid]
@@ -155,6 +167,17 @@ def scan_segment_is_free(
     initially_overlapping = initial_distances < clearance_m
     if bool(initially_overlapping.any()):
         if not allow_initial_overlap_when_separating:
+            if diagnostics is not None:
+                diagnostics.clear()
+                diagnostics.update(
+                    {
+                        "result": False,
+                        "category": "initial_overlap_not_exempted",
+                        "minimum_segment_clearance_m": float(np.min(initial_distances)),
+                        "closest_fraction": 0.0,
+                        "initial_overlap_count": int(np.count_nonzero(initially_overlapping)),
+                    }
+                )
             return False
         # For p relative to the robot and translation e, p.e <= 0 means that
         # ||p - t e|| is non-decreasing for t >= 0.  Equality is a tangential
@@ -162,6 +185,17 @@ def scan_segment_is_free(
         # Positive projection would approach at least one close return and is
         # therefore never exempted.
         if bool(np.any(points[initially_overlapping] @ endpoint > 1.0e-9)):
+            if diagnostics is not None:
+                diagnostics.clear()
+                diagnostics.update(
+                    {
+                        "result": False,
+                        "category": "initial_overlap_approaching",
+                        "minimum_segment_clearance_m": float(np.min(initial_distances)),
+                        "closest_fraction": 0.0,
+                        "initial_overlap_count": int(np.count_nonzero(initially_overlapping)),
+                    }
+                )
             return False
     length_squared = float(endpoint @ endpoint)
     if length_squared <= 1.0e-12:
@@ -172,7 +206,28 @@ def scan_segment_is_free(
     distances_to_segment = np.linalg.norm(points - closest, axis=1)
     if allow_initial_overlap_when_separating:
         distances_to_segment[initially_overlapping] = clearance_m
-    return bool(np.all(distances_to_segment >= clearance_m))
+    closest_index = int(np.argmin(distances_to_segment))
+    minimum_clearance = float(distances_to_segment[closest_index])
+    closest_fraction = float(fractions[closest_index]) if length_squared > 1.0e-12 else 0.0
+    result = bool(minimum_clearance >= clearance_m)
+    if closest_fraction <= 1.0e-6:
+        location = "start"
+    elif closest_fraction >= 1.0 - 1.0e-6:
+        location = "endpoint"
+    else:
+        location = "interior"
+    if diagnostics is not None:
+        diagnostics.clear()
+        diagnostics.update(
+            {
+                "result": result,
+                "category": "clear" if result else f"segment_{location}",
+                "minimum_segment_clearance_m": minimum_clearance,
+                "closest_fraction": closest_fraction,
+                "initial_overlap_count": int(np.count_nonzero(initially_overlapping)),
+            }
+        )
+    return result
 
 
 def privileged_time_to_collision(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -155,6 +156,7 @@ def apply_observable_scan_mask(
     sector_half_width_rad: float = math.radians(12.0),
     allow_unobserved_backup: bool = False,
     allow_initial_overlap_when_separating: bool = False,
+    diagnostics: dict[str, Any] | None = None,
 ) -> npt.NDArray[np.bool_]:
     """Apply the deployable LiDAR capsule and rear-observability constraints.
 
@@ -166,6 +168,11 @@ def apply_observable_scan_mask(
         raise ValueError(f"mask must have shape ({ACTION_COUNT},)")
     if swept_clearance_m < 0.0 or target_clearance_m < 0.0 or backup_distance_m < 0.0:
         raise ValueError("scan-mask clearances and distances must be non-negative")
+    directional_pass_ids: list[int] = []
+    capsule_pass_ids: list[int] = []
+    capsule_failure_categories: dict[str, list[int]] = {}
+    capsule_minimum_clearances: list[float] = []
+    capsule_closest_fractions: list[float] = []
     for action in ACTIONS[:21]:
         assert action.radius is not None and action.angle_degrees is not None
         direction = math.radians(action.angle_degrees)
@@ -176,11 +183,14 @@ def apply_observable_scan_mask(
             direction=direction,
             half_width_rad=sector_half_width_rad,
         )
-        constrained[action.action_id] &= (
+        directional_pass = (
             directional_clearance is not None
             and directional_clearance >= action.radius + target_clearance_m
         )
-        constrained[action.action_id] &= scan_segment_is_free(
+        capsule_details: dict[str, float | int | str | bool] | None = (
+            {} if diagnostics is not None else None
+        )
+        capsule_pass = scan_segment_is_free(
             ranges,
             angle_min=angle_min,
             angle_increment=angle_increment,
@@ -190,7 +200,23 @@ def apply_observable_scan_mask(
             ),
             clearance_m=swept_clearance_m,
             allow_initial_overlap_when_separating=allow_initial_overlap_when_separating,
+            diagnostics=capsule_details,
         )
+        constrained[action.action_id] &= directional_pass
+        constrained[action.action_id] &= capsule_pass
+        if diagnostics is not None:
+            if directional_pass:
+                directional_pass_ids.append(action.action_id)
+            if capsule_pass:
+                capsule_pass_ids.append(action.action_id)
+            assert capsule_details is not None
+            capsule_minimum_clearances.append(
+                float(capsule_details["minimum_segment_clearance_m"])
+            )
+            capsule_closest_fractions.append(float(capsule_details["closest_fraction"]))
+            if not capsule_pass:
+                category = str(capsule_details["category"])
+                capsule_failure_categories.setdefault(category, []).append(action.action_id)
     rear_clearance = directional_scan_clearance(
         ranges,
         angle_min=angle_min,
@@ -202,4 +228,17 @@ def apply_observable_scan_mask(
         constrained[BACKUP_ACTION_ID] &= allow_unobserved_backup
     else:
         constrained[BACKUP_ACTION_ID] &= rear_clearance >= backup_distance_m + target_clearance_m
+    if diagnostics is not None:
+        diagnostics.clear()
+        diagnostics.update(
+            {
+                "directional_pass": tuple(directional_pass_ids),
+                "capsule_pass": tuple(capsule_pass_ids),
+                "capsule_failure_categories": {
+                    key: tuple(value) for key, value in sorted(capsule_failure_categories.items())
+                },
+                "capsule_minimum_clearance_m": tuple(capsule_minimum_clearances),
+                "capsule_closest_fraction": tuple(capsule_closest_fractions),
+            }
+        )
     return constrained

@@ -1,0 +1,162 @@
+{
+  "aggregate": {
+    "category_action_counts": {
+      "segment_endpoint": 1278,
+      "segment_interior": 557
+    },
+    "category_event_presence_counts": {
+      "segment_endpoint": 89,
+      "segment_interior": 89
+    },
+    "clearance_deficit_by_category": {
+      "segment_endpoint": {
+        "maximum_m": 0.883,
+        "median_m": 0.418,
+        "minimum_m": 0.0050000000000000044
+      },
+      "segment_interior": {
+        "maximum_m": 0.893,
+        "median_m": 0.475,
+        "minimum_m": 0.07800000000000007
+      }
+    },
+    "empty_after_count": 55,
+    "empty_event_category_action_counts": {
+      "segment_endpoint": 700,
+      "segment_interior": 455
+    },
+    "event_count": 89,
+    "final_temporary_nonempty_selected_temporary_count": 0,
+    "minimum_clearance_by_category": {
+      "segment_endpoint": {
+        "maximum_m": 0.895,
+        "median_m": 0.4175,
+        "minimum_m": 0.017
+      },
+      "segment_interior": {
+        "maximum_m": 0.822,
+        "median_m": 0.01,
+        "minimum_m": 0.003
+      }
+    },
+    "nonempty_scan_selected_action_counts": {
+      "22": 34
+    },
+    "nonempty_scan_selected_temporary_count": 0,
+    "scan_nonempty_final_temporary_empty_count": 34,
+    "scan_nonempty_final_temporary_nonempty_count": 0,
+    "selected_action_counts": {
+      "21": 20,
+      "22": 69
+    }
+  },
+  "algorithm_change_authorized": false,
+  "claim_boundary": "exact runtime failure categories and original-scan distances rounded to 0.001 m; two train-only anchors",
+  "diagnostic_only": true,
+  "episodes": [
+    {
+      "source": "data\\raw\\pgrr_anchor_capsuleloc_goalapproach_train_r00_20260915.jsonl",
+      "summary": {
+        "category_action_counts": {
+          "segment_endpoint": 1138,
+          "segment_interior": 277
+        },
+        "category_event_presence_counts": {
+          "segment_endpoint": 69,
+          "segment_interior": 69
+        },
+        "clearance_deficit_by_category": {
+          "segment_endpoint": {
+            "maximum_m": 0.883,
+            "median_m": 0.456,
+            "minimum_m": 0.0050000000000000044
+          },
+          "segment_interior": {
+            "maximum_m": 0.893,
+            "median_m": 0.642,
+            "minimum_m": 0.07800000000000007
+          }
+        },
+        "empty_after_count": 35,
+        "empty_event_category_action_counts": {
+          "segment_endpoint": 560,
+          "segment_interior": 175
+        },
+        "event_count": 69,
+        "final_temporary_nonempty_selected_temporary_count": 0,
+        "minimum_clearance_by_category": {
+          "segment_endpoint": {
+            "maximum_m": 0.895,
+            "median_m": 0.444,
+            "minimum_m": 0.017
+          },
+          "segment_interior": {
+            "maximum_m": 0.822,
+            "median_m": 0.258,
+            "minimum_m": 0.007
+          }
+        },
+        "nonempty_scan_selected_action_counts": {
+          "22": 34
+        },
+        "nonempty_scan_selected_temporary_count": 0,
+        "scan_nonempty_final_temporary_empty_count": 34,
+        "scan_nonempty_final_temporary_nonempty_count": 0,
+        "selected_action_counts": {
+          "22": 69
+        }
+      }
+    },
+    {
+      "source": "data\\raw\\pgrr_anchor_capsuleloc_leadstop_train_r00_20260915.jsonl",
+      "summary": {
+        "category_action_counts": {
+          "segment_endpoint": 140,
+          "segment_interior": 280
+        },
+        "category_event_presence_counts": {
+          "segment_endpoint": 20,
+          "segment_interior": 20
+        },
+        "clearance_deficit_by_category": {
+          "segment_endpoint": {
+            "maximum_m": 0.418,
+            "median_m": 0.253,
+            "minimum_m": 0.01699999999999996
+          },
+          "segment_interior": {
+            "maximum_m": 0.477,
+            "median_m": 0.4715,
+            "minimum_m": 0.124
+          }
+        },
+        "empty_after_count": 20,
+        "empty_event_category_action_counts": {
+          "segment_endpoint": 140,
+          "segment_interior": 280
+        },
+        "event_count": 20,
+        "final_temporary_nonempty_selected_temporary_count": 0,
+        "minimum_clearance_by_category": {
+          "segment_endpoint": {
+            "maximum_m": 0.463,
+            "median_m": 0.227,
+            "minimum_m": 0.062
+          },
+          "segment_interior": {
+            "maximum_m": 0.356,
+            "median_m": 0.0085,
+            "minimum_m": 0.003
+          }
+        },
+        "nonempty_scan_selected_action_counts": {},
+        "nonempty_scan_selected_temporary_count": 0,
+        "scan_nonempty_final_temporary_empty_count": 0,
+        "scan_nonempty_final_temporary_nonempty_count": 0,
+        "selected_action_counts": {
+          "21": 20
+        }
+      }
+    }
+  ]
+}

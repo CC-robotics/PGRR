@@ -29,7 +29,7 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, String
 
 
 def _yaw_from_quaternion(x: float, y: float, z: float, w: float) -> float:
@@ -101,6 +101,8 @@ class EpisodeLoggerNode(Node):
         self.declare_parameter("actor_health_topic", "/ramp/actors_healthy")
         self.declare_parameter("episode_start_topic", "/ramp/episode_started")
         self.declare_parameter("logger_ready_topic", "/ramp/logger_ready")
+        self.declare_parameter("scenario_event_topic", "/ramp/scenario_events")
+        self.declare_parameter("maximum_scenario_event_transitions", 32)
         self.declare_parameter("robot_radius_m", 0.36)
         self.declare_parameter("human_radius_m", 0.35)
         self.declare_parameter("lidar_collision_distance_m", 0.12)
@@ -215,6 +217,7 @@ class EpisodeLoggerNode(Node):
         self._privileged_robot_pose: tuple[float, float, float] | None = None
         self._sample_count = 0
         self._readiness_warning_count = 0
+        self._scenario_events: list[dict[str, Any]] = []
         self._subscription_handles: list[Any] = []
         self._subscribe()
         frequency = float(self.get_parameter("sample_frequency_hz").value)
@@ -302,6 +305,12 @@ class EpisodeLoggerNode(Node):
                     Bool,
                     self._string_parameter("episode_start_topic"),
                     self._on_episode_start,
+                    10,
+                ),
+                self.create_subscription(
+                    String,
+                    self._string_parameter("scenario_event_topic"),
+                    self._on_scenario_event,
                     10,
                 ),
             ]
@@ -441,6 +450,41 @@ class EpisodeLoggerNode(Node):
             # first post-handshake truth sample becomes the jump baseline.
             self._privileged_robot_pose = None
         self._episode_started |= bool(message.data)
+
+    def _on_scenario_event(self, message: String) -> None:
+        try:
+            payload = json.loads(message.data)
+        except (TypeError, json.JSONDecodeError):
+            self._set_outcome(
+                EpisodeOutcome.SIMULATOR_FAILURE,
+                "scenario event telemetry is not valid JSON",
+            )
+            return
+        required = {
+            "actor_name",
+            "command",
+            "event_elapsed_s",
+            "event_id",
+            "phase",
+            "sim_time_s",
+            "transition",
+            "trigger_metric",
+            "trigger_value_m",
+        }
+        if not isinstance(payload, dict) or not required.issubset(payload):
+            self._set_outcome(
+                EpisodeOutcome.SIMULATOR_FAILURE,
+                "scenario event telemetry has an invalid schema",
+            )
+            return
+        maximum = int(self.get_parameter("maximum_scenario_event_transitions").value)
+        if maximum < 1 or len(self._scenario_events) >= maximum:
+            self._set_outcome(
+                EpisodeOutcome.SIMULATOR_FAILURE,
+                "scenario event telemetry exceeded its bounded capacity",
+            )
+            return
+        self._scenario_events.append(payload)
 
     def _set_outcome(self, outcome: EpisodeOutcome, detail: str) -> None:
         if self._outcome is None:
@@ -700,6 +744,7 @@ class EpisodeLoggerNode(Node):
             "sample_count": self._sample_count,
             "localized_goal_distance_m": localized_goal_distance,
             "physical_goal_distance_m": physical_goal_distance,
+            "scenario_events": self._scenario_events,
         }
         self._outcome_path.write_text(
             json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"

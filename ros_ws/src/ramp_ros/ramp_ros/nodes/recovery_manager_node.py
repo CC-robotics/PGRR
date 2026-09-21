@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 from collections import deque
 from typing import Any
@@ -50,6 +51,12 @@ from ramp_core.planning.online import (
     scan_segment_is_free,
 )
 from ramp_core.recovery.heuristic import HeuristicRecoveryConfig, HeuristicRecoveryPolicy
+from ramp_core.recovery.mask_trace import MaskTraceRecorder
+from ramp_core.recovery.observation_builder import RecoveryObservationBuilder
+from ramp_core.recovery.observation_shadow import (
+    ObservationShadowAccumulator,
+    ObservationShadowComparator,
+)
 from ramp_core.recovery.options import (
     BoundedBackupOption,
     BoundedSubgoalOption,
@@ -141,6 +148,15 @@ class RecoveryManagerNode(Node):
         super().__init__("recovery_manager")
         self._declare_parameters()
         self._policy_type = str(self.get_parameter("policy_type").value)
+        self._upstream_mask_trace_enabled = bool(
+            self.get_parameter("enable_upstream_mask_trace").value
+        )
+        self._last_upstream_mask_trace = ""
+        self._observation_shadow = ObservationShadowComparator(
+            enabled=bool(self.get_parameter("enable_observation_shadow").value)
+        )
+        self._observation_shadow_summary = ObservationShadowAccumulator()
+        self._observation_shadow_summary_logged = False
         if self._policy_type not in {"heuristic", "expert", "bc"}:
             raise ValueError("policy_type must be heuristic, expert, or bc")
         if (
@@ -388,6 +404,8 @@ class RecoveryManagerNode(Node):
         }
         for name, value in string_defaults.items():
             self.declare_parameter(name, value)
+        self.declare_parameter("enable_upstream_mask_trace", False)
+        self.declare_parameter("enable_observation_shadow", False)
         numeric_defaults: dict[str, float | int] = {
             "goal_x": 0.0,
             "goal_y": 0.0,
@@ -777,6 +795,7 @@ class RecoveryManagerNode(Node):
 
     def _observation(self, failure: FailurePrediction | None = None) -> RecoveryObservation:
         pose = self._world_pose()
+        failure_prediction = self._failure if failure is None else failure
         distance = math.dist((pose.x, pose.y), (self._goal.x, self._goal.y))
         bearing = math.atan2(self._goal.y - pose.y, self._goal.x - pose.x) - pose.yaw
         bearing = math.atan2(math.sin(bearing), math.cos(bearing))
@@ -789,17 +808,50 @@ class RecoveryManagerNode(Node):
         angular = list(self._angular_history)
         angular = [0.0] * (10 - len(angular)) + angular
         twist = self._odom.twist.twist
-        return RecoveryObservation(
+        velocity = Velocity2D(float(twist.linear.x), float(twist.angular.z))
+        base_action = self._base_action.copy()
+        reference = RecoveryObservation(
             lidar=np.asarray(lidar[-5:], dtype=np.float32),
             goal_polar=np.asarray([distance, bearing], dtype=np.float32),
             path_waypoints=waypoints,
-            robot_velocity=np.asarray([twist.linear.x, twist.angular.z], dtype=np.float32),
-            base_action=self._base_action.copy(),
+            robot_velocity=np.asarray([velocity.linear, velocity.angular], dtype=np.float32),
+            base_action=base_action,
             progress_history=np.asarray(progress[-10:], dtype=np.float32),
             angular_velocity_history=np.asarray(angular[-10:], dtype=np.float32),
             planner_status=self._planner_status,
-            failure_prediction=self._failure if failure is None else failure,
+            failure_prediction=failure_prediction,
         )
+        comparison = self._observation_shadow.compare(
+            reference,
+            lambda: RecoveryObservationBuilder.build(
+                pose=pose,
+                velocity=velocity,
+                goal=self._goal,
+                task_path=tuple(self._path),
+                lidar_history=lidar,
+                distance_history=list(self._distance_history),
+                angular_velocity_history=list(self._angular_history),
+                base_action=base_action,
+                planner_status=self._planner_status,
+                failure_prediction=failure_prediction,
+            ),
+        )
+        self._observation_shadow_summary.record(comparison)
+        return reference
+
+    def destroy_node(self) -> bool:
+        """Emit one bounded diagnostic summary before normal ROS teardown."""
+        if (
+            self._observation_shadow.enabled
+            and not self._observation_shadow_summary_logged
+        ):
+            self._observation_shadow_summary_logged = True
+            payload = self._observation_shadow_summary.as_dict()
+            self.get_logger().info(
+                "observation_shadow_summary="
+                + json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            )
+        return super().destroy_node()
 
     def _laser_clearance(self, angle: float) -> float:
         assert self._scan is not None
@@ -996,11 +1048,13 @@ class RecoveryManagerNode(Node):
         human_positions: tuple[tuple[float, float], ...] = (),
         collision_risk: float = 0.0,
     ) -> np.ndarray[Any, np.dtype[np.bool_]]:
+        recorder = MaskTraceRecorder(enabled=self._upstream_mask_trace_enabled)
+        initial_mask = np.ones(ACTION_COUNT, dtype=np.bool_)
         planning_grid = self._map if grid is None else grid
         if planning_grid is None:
-            mask = np.ones(ACTION_COUNT, dtype=np.bool_)
+            computed_map_mask = initial_mask.copy()
         else:
-            mask = compute_action_mask(
+            computed_map_mask = compute_action_mask(
                 pose,
                 planning_grid,
                 human_positions,
@@ -1010,6 +1064,7 @@ class RecoveryManagerNode(Node):
                     backup_distance=self._float("backup_mask_validated_distance_m"),
                 ),
             )
+        mask = recorder.record("map_connectivity", initial_mask, computed_map_mask)
         action_clearance = self._float("robot_clearance_m")
         swept_clearance = self._float("footprint_stop_clearance_m")
         if collision_risk >= self._float("bc_rejoin_block_threshold"):
@@ -1022,7 +1077,10 @@ class RecoveryManagerNode(Node):
                 release_hysteresis_m=self._float("emergency_release_hysteresis_m"),
             )
             swept_clearance = max(swept_clearance, action_clearance)
-        mask = apply_observable_scan_mask(
+        scan_diagnostics: dict[str, Any] | None = (
+            {} if self._upstream_mask_trace_enabled else None
+        )
+        computed_scan_mask = apply_observable_scan_mask(
             mask,
             self._scan.ranges,
             angle_min=float(self._scan.angle_min),
@@ -1041,15 +1099,48 @@ class RecoveryManagerNode(Node):
             allow_initial_overlap_when_separating=(
                 collision_risk >= self._float("bc_rejoin_block_threshold")
             ),
+            diagnostics=scan_diagnostics,
         )
+        mask = recorder.record("observable_scan", mask, computed_scan_mask)
         corridor_path = self._task_corridor_path or self._path
         if corridor_path:
-            mask = apply_path_corridor_mask(
+            computed_corridor_mask = apply_path_corridor_mask(
                 mask,
                 pose,
                 corridor_path,
                 maximum_deviation_m=self._effective_recovery_path_deviation(),
                 backup_distance_m=self._float("backup_mask_validated_distance_m"),
+            )
+        else:
+            computed_corridor_mask = mask.copy()
+        mask = recorder.record("path_corridor", mask, computed_corridor_mask)
+        self._last_upstream_mask_trace = recorder.as_reason()
+        if scan_diagnostics is not None:
+            directional_ids = scan_diagnostics["directional_pass"]
+            capsule_ids = scan_diagnostics["capsule_pass"]
+            directional_text = ",".join(map(str, directional_ids)) or "none"
+            capsule_text = ",".join(map(str, capsule_ids)) or "none"
+            failure_categories = scan_diagnostics["capsule_failure_categories"]
+            failure_text = "|".join(
+                f"{category}:{','.join(map(str, action_ids))}"
+                for category, action_ids in failure_categories.items()
+            ) or "none"
+            minimum_text = ",".join(
+                f"{action_id}:{value:.3f}"
+                for action_id, value in enumerate(
+                    scan_diagnostics["capsule_minimum_clearance_m"]
+                )
+            )
+            fraction_text = ",".join(
+                f"{action_id}:{value:.3f}"
+                for action_id, value in enumerate(scan_diagnostics["capsule_closest_fraction"])
+            )
+            self._last_upstream_mask_trace += (
+                f"; mask_scan_predicates directional_pass={directional_text} "
+                f"capsule_pass={capsule_text} target_clearance_m={action_clearance:.3f} "
+                f"swept_clearance_m={swept_clearance:.3f} "
+                f"capsule_failures={failure_text} capsule_min_m={minimum_text} "
+                f"capsule_fraction={fraction_text}"
             )
         mask[REPLAN_ACTION_ID] &= self._adapter.ready
         mask[WAIT_ACTION_ID] = True
@@ -1336,16 +1427,18 @@ class RecoveryManagerNode(Node):
         *,
         stalled_rejoin: bool = False,
     ) -> CoreRecoveryDecision:
+        self._last_upstream_mask_trace = ""
         recurrent_escape_telemetry = ""
         directional_yield_telemetry = ""
         closing_side_telemetry = ""
         side_commitment_telemetry = ""
         if self._policy_type == "expert":
             try:
-                return self._expert_decision(pose, failure)
+                decision = self._expert_decision(pose, failure)
             except (RuntimeError, ValueError) as error:
                 self.get_logger().error(f"privileged expert failed safely: {error}")
-                return CoreRecoveryDecision(WAIT_ACTION_ID, 0.0, "oracle_error_wait")
+                decision = CoreRecoveryDecision(WAIT_ACTION_ID, 0.0, "oracle_error_wait")
+            return self._with_upstream_mask_trace(decision)
         mask = self._action_mask(pose, collision_risk=failure.collision_risk)
         if self._policy_type == "bc":
             path_heading_rad = self._task_path_heading(pose)
@@ -1558,7 +1651,21 @@ class RecoveryManagerNode(Node):
                     decision.confidence,
                     f"{constraint_telemetry}; {decision.reason}",
                 )
-        return decision
+        return self._with_upstream_mask_trace(decision)
+
+    def _with_upstream_mask_trace(
+        self,
+        decision: CoreRecoveryDecision,
+    ) -> CoreRecoveryDecision:
+        """Attach opt-in upstream-mask telemetry without changing action selection."""
+
+        if not self._last_upstream_mask_trace:
+            return decision
+        return CoreRecoveryDecision(
+            decision.action_id,
+            decision.confidence,
+            f"{self._last_upstream_mask_trace}; {decision.reason}",
+        )
 
     def _update_bc_progress_budget(self, distance_to_goal_m: float) -> None:
         """Reset learned-option budgets only after cumulative task progress."""

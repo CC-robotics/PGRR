@@ -1,0 +1,32 @@
+{
+  "source": "data/raw/pgrr_masktrace_diagonal_train_r00_20260912.jsonl",
+  "sample_count": 893,
+  "state_transitions": [
+    {
+      "sample_index": 0,
+      "timestamp_s": 0.0,
+      "recovery_state": 0,
+      "state_name": "NORMAL"
+    }
+  ],
+  "decision_event_count": 1,
+  "decision_action_counts": {
+    "CONTINUE": 1
+  },
+  "decision_reason_counts": {
+    "not_triggered": 1
+  },
+  "temporary_subgoal_decision_count": 0,
+  "original_goal_restored_event_count": 0,
+  "distinct_logged_task_goals": 1,
+  "decision_timeline": [
+    {
+      "sample_index": 0,
+      "timestamp_s": 0.0,
+      "action_id": 24,
+      "action_name": "CONTINUE",
+      "reason_category": "not_triggered"
+    }
+  ],
+  "diagnostic_only": true
+}

@@ -1,0 +1,10 @@
+{
+  "detail": "privileged robot-human overlap",
+  "episode_id": "pgrr_advscreen_crossing_v2_train_r02_s95012_base",
+  "localized_goal_distance_m": 8.811038970947266,
+  "outcome": "COLLISION",
+  "outcome_id": 1,
+  "physical_goal_distance_m": 8.822420613798634,
+  "sample_count": 264,
+  "scenario_events": []
+}

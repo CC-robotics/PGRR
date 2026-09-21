@@ -1,0 +1,244 @@
+{
+  "schema_version": 1,
+  "scope": "independent_validation_gate",
+  "scenario_family": "crossing_flow_medium_anchor_v2",
+  "route_distance_m": 15.0,
+  "episode_timeout_s": 90,
+  "promotion_rule": {
+    "minimum_positive_pairs": 2,
+    "total_pairs": 3
+  },
+  "selected_pairs": [
+    {
+      "replicate": 0,
+      "seed": 96000,
+      "base": {
+        "episode_id": "pgrr_advscreen_crossing_v2_validation_r00_s96000_base",
+        "outcome": "COLLISION",
+        "detail": "privileged robot-human overlap",
+        "sample_count": 268,
+        "physical_goal_distance_m": 8.70769917358101,
+        "outcome_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r00_s96000_base.outcome.json",
+        "jsonl_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r00_s96000_base.jsonl"
+      },
+      "pgrr": {
+        "episode_id": "pgrr_advscreen_crossing_v2_validation_r00_s96000_pgrr",
+        "outcome": "GOAL_REACHED",
+        "detail": "recovery manager succeeded with goal-distance verification",
+        "sample_count": 757,
+        "physical_goal_distance_m": 0.2623592883115388,
+        "outcome_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r00_s96000_pgrr.outcome.json",
+        "jsonl_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r00_s96000_pgrr.jsonl"
+      },
+      "positive_pair": true,
+      "pgrr_recovery": {
+        "state_transitions": [
+          {
+            "sample_index": 0,
+            "timestamp_s": 0.0,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 253,
+            "timestamp_s": 25.308,
+            "recovery_state": 2,
+            "state_name": "RECOVERY"
+          },
+          {
+            "sample_index": 337,
+            "timestamp_s": 33.7329,
+            "recovery_state": 3,
+            "state_name": "REJOIN"
+          },
+          {
+            "sample_index": 342,
+            "timestamp_s": 34.2324,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          }
+        ],
+        "decision_event_count": 7,
+        "decision_action_counts": {
+          "BACKUP": 3,
+          "CONTINUE": 3,
+          "WAIT": 1
+        },
+        "temporary_subgoal_decision_count": 0,
+        "original_goal_restored_event_count": 1
+      }
+    },
+    {
+      "replicate": 1,
+      "seed": 96001,
+      "base": {
+        "episode_id": "pgrr_advscreen_crossing_v2_validation_r01_s96001_base",
+        "outcome": "COLLISION",
+        "detail": "privileged robot-human overlap",
+        "sample_count": 266,
+        "physical_goal_distance_m": 8.735841345589794,
+        "outcome_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r01_s96001_base.outcome.json",
+        "jsonl_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r01_s96001_base.jsonl"
+      },
+      "pgrr": {
+        "episode_id": "pgrr_advscreen_crossing_v2_validation_r01_s96001_pgrr",
+        "outcome": "GOAL_REACHED",
+        "detail": "recovery manager succeeded with goal-distance verification",
+        "sample_count": 820,
+        "physical_goal_distance_m": 0.19470061034365177,
+        "outcome_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r01_s96001_pgrr.outcome.json",
+        "jsonl_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r01_s96001_pgrr.jsonl"
+      },
+      "positive_pair": true,
+      "pgrr_recovery": {
+        "state_transitions": [
+          {
+            "sample_index": 0,
+            "timestamp_s": 0.0,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 251,
+            "timestamp_s": 25.1415,
+            "recovery_state": 2,
+            "state_name": "RECOVERY"
+          },
+          {
+            "sample_index": 325,
+            "timestamp_s": 32.5341,
+            "recovery_state": 3,
+            "state_name": "REJOIN"
+          },
+          {
+            "sample_index": 330,
+            "timestamp_s": 33.0336,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 401,
+            "timestamp_s": 40.1598,
+            "recovery_state": 2,
+            "state_name": "RECOVERY"
+          },
+          {
+            "sample_index": 445,
+            "timestamp_s": 44.5554,
+            "recovery_state": 3,
+            "state_name": "REJOIN"
+          },
+          {
+            "sample_index": 450,
+            "timestamp_s": 45.0549,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          }
+        ],
+        "decision_event_count": 10,
+        "decision_action_counts": {
+          "BACKUP": 5,
+          "CONTINUE": 5
+        },
+        "temporary_subgoal_decision_count": 0,
+        "original_goal_restored_event_count": 2
+      }
+    },
+    {
+      "replicate": 2,
+      "seed": 96002,
+      "base": {
+        "episode_id": "pgrr_advscreen_crossing_v2_validation_r02_s96002_base",
+        "outcome": "COLLISION",
+        "detail": "privileged robot-human overlap",
+        "sample_count": 280,
+        "physical_goal_distance_m": 8.409707220195962,
+        "outcome_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r02_s96002_base.outcome.json",
+        "jsonl_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r02_s96002_base.jsonl"
+      },
+      "pgrr": {
+        "episode_id": "pgrr_advscreen_crossing_v2_validation_r02_s96002_pgrr",
+        "outcome": "GOAL_REACHED",
+        "detail": "recovery manager succeeded with goal-distance verification",
+        "sample_count": 807,
+        "physical_goal_distance_m": 0.21773417503335937,
+        "outcome_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r02_s96002_pgrr.outcome.json",
+        "jsonl_path": "outputs\\student\\advantage_scenario_screen_v2_validation\\runtime\\pgrr_advscreen_crossing_v2_validation_r02_s96002_pgrr.jsonl"
+      },
+      "positive_pair": true,
+      "pgrr_recovery": {
+        "state_transitions": [
+          {
+            "sample_index": 0,
+            "timestamp_s": 0.0,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 243,
+            "timestamp_s": 24.309,
+            "recovery_state": 2,
+            "state_name": "RECOVERY"
+          },
+          {
+            "sample_index": 303,
+            "timestamp_s": 30.3363,
+            "recovery_state": 3,
+            "state_name": "REJOIN"
+          },
+          {
+            "sample_index": 308,
+            "timestamp_s": 30.8358,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 343,
+            "timestamp_s": 34.3323,
+            "recovery_state": 4,
+            "state_name": "EMERGENCY_STOP"
+          },
+          {
+            "sample_index": 353,
+            "timestamp_s": 35.3313,
+            "recovery_state": 1,
+            "state_name": "PENDING_RECOVERY"
+          },
+          {
+            "sample_index": 359,
+            "timestamp_s": 35.9307,
+            "recovery_state": 2,
+            "state_name": "RECOVERY"
+          },
+          {
+            "sample_index": 398,
+            "timestamp_s": 39.8268,
+            "recovery_state": 3,
+            "state_name": "REJOIN"
+          },
+          {
+            "sample_index": 413,
+            "timestamp_s": 41.3253,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          }
+        ],
+        "decision_event_count": 12,
+        "decision_action_counts": {
+          "BACKUP": 4,
+          "CONTINUE": 6,
+          "WAIT": 2
+        },
+        "temporary_subgoal_decision_count": 0,
+        "original_goal_restored_event_count": 2
+      }
+    }
+  ],
+  "retry_artifacts": [],
+  "positive_pair_count": 3,
+  "total_pair_count": 3,
+  "validation_gate_passed": true,
+  "validated_new_scenario_count": 1,
+  "general_superiority_claim_authorized": false,
+  "frozen_test_used": false
+}

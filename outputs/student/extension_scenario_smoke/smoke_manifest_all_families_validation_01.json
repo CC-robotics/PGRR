@@ -1,0 +1,17 @@
+{
+  "benchmark_id": "pgrr_extension_v1",
+  "compiled_count": 1,
+  "held_out_test_materialized": false,
+  "records": [
+    {
+      "condition_id": "diagonal_cut_in_corridor_low_validation_r00",
+      "path": "generated/arena/map_empty/diagonal_cut_in_corridor_low_validation_r00_s93000.json",
+      "preview": "previews/diagonal_cut_in_corridor_low_validation_r00_s93000.png",
+      "scenario_id": "diagonal_cut_in_corridor_low_validation_r00_s93000",
+      "seed": 93000,
+      "sha256": "4cb4bf0ce336f4f5a9dd328002f4d215d13e6b49677600412ba4865a0a4c35f0",
+      "split": "validation"
+    }
+  ],
+  "status": "smoke_only"
+}

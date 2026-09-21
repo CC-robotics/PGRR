@@ -1,0 +1,102 @@
+{
+  "benchmark_id": "pgrr_extension_v1_eight_family_pilot",
+  "claim_boundary": "development_pair_only",
+  "family": "diagonal_cut_in_corridor",
+  "family_index": 0,
+  "paired_interpretation": {
+    "base_collision_avoided": false,
+    "both_goal_reached": false,
+    "both_same_failure": true,
+    "pgrr_completion_gain": false,
+    "pgrr_recovery_triggered": false,
+    "superiority_claim_supported": false
+  },
+  "runs": {
+    "base": {
+      "artifact_sha256": {
+        "metadata": "dffc707263ec7a6eb491b58dff98dbf7be5714a51c4fa04a2b0c929689640fa4",
+        "outcome": "5161cc509cdee9299cfe1128b2236842e90f08a891d670839976d44cf2699e08",
+        "raw_jsonl": "d63fec081ba6d8429b20b26bfb01b980211e0d0823f0b6d2e6b69f16ced7c714"
+      },
+      "attempt_history": [
+        {
+          "artifact_sha256": {
+            "metadata": "dffc707263ec7a6eb491b58dff98dbf7be5714a51c4fa04a2b0c929689640fa4",
+            "outcome": "5161cc509cdee9299cfe1128b2236842e90f08a891d670839976d44cf2699e08",
+            "raw_jsonl": "d63fec081ba6d8429b20b26bfb01b980211e0d0823f0b6d2e6b69f16ced7c714"
+          },
+          "episode_id": "pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_base",
+          "infrastructure_attempt": false,
+          "localized_goal_distance_m": 0.6028938293457031,
+          "outcome": "TIMEOUT",
+          "outcome_detail": "configured episode timeout",
+          "physical_goal_distance_m": 0.6917513940632002,
+          "sample_count": 900
+        }
+      ],
+      "episode_id": "pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_base",
+      "infrastructure_attempt": false,
+      "localized_goal_distance_m": 0.6028938293457031,
+      "outcome": "TIMEOUT",
+      "outcome_detail": "configured episode timeout",
+      "physical_goal_distance_m": 0.6917513940632002,
+      "planned_episode_id": "pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_base",
+      "sample_count": 900,
+      "selected_attempt_id": "pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_base"
+    },
+    "pgrr": {
+      "artifact_sha256": {
+        "metadata": "a8c27ec6f92d57bdf00db1d80170e2497218eade1ea4d75eacb261b7c72d91d9",
+        "outcome": "6b4366aa5e52b79b510be1f355a587cd6c57341d3acdf13444c988ccaafd8538",
+        "raw_jsonl": "e0eda91aaba2fce73a23a489ee0932d36cc2bd927a53d2e9c70be91f2b06826e"
+      },
+      "attempt_history": [
+        {
+          "artifact_sha256": {
+            "metadata": "a8c27ec6f92d57bdf00db1d80170e2497218eade1ea4d75eacb261b7c72d91d9",
+            "outcome": "6b4366aa5e52b79b510be1f355a587cd6c57341d3acdf13444c988ccaafd8538",
+            "raw_jsonl": "e0eda91aaba2fce73a23a489ee0932d36cc2bd927a53d2e9c70be91f2b06826e"
+          },
+          "episode_id": "pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_pgrr",
+          "infrastructure_attempt": false,
+          "localized_goal_distance_m": 0.84759521484375,
+          "outcome": "TIMEOUT",
+          "outcome_detail": "configured episode timeout",
+          "physical_goal_distance_m": 0.8649113944872194,
+          "sample_count": 901
+        }
+      ],
+      "episode_id": "pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_pgrr",
+      "infrastructure_attempt": false,
+      "localized_goal_distance_m": 0.84759521484375,
+      "outcome": "TIMEOUT",
+      "outcome_detail": "configured episode timeout",
+      "physical_goal_distance_m": 0.8649113944872194,
+      "planned_episode_id": "pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_pgrr",
+      "recovery_trace": {
+        "decision_action_counts": {
+          "CONTINUE": 1
+        },
+        "decision_event_count": 1,
+        "decision_reason_counts": {
+          "not_triggered": 1
+        },
+        "original_goal_restored_event_count": 0,
+        "state_transitions": [
+          {
+            "recovery_state": 0,
+            "sample_index": 0,
+            "state_name": "NORMAL",
+            "timestamp_s": 0.0
+          }
+        ],
+        "temporary_subgoal_decision_count": 0
+      },
+      "sample_count": 901,
+      "selected_attempt_id": "pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_pgrr"
+    }
+  },
+  "scenario_id": "diagonal_cut_in_corridor_low_train_r00_s91000",
+  "scenario_sha256": "f267a116b5f76f70557b19aa5a39319252e533abb6a303cfd279b9edcd5c99a0",
+  "seed": 91000
+}

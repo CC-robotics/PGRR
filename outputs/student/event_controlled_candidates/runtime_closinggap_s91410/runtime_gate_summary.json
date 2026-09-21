@@ -1,0 +1,29 @@
+{
+  "candidate_id": "closing_gap_open_release_v1_train_r00_s91410",
+  "decision": "reject_from_core_case_promotion",
+  "decision_reason": "Both methods produced valid TIMEOUT outcomes near the goal; PGRR did not reach the goal and the paired result does not demonstrate a method advantage.",
+  "frozen_test_used": false,
+  "policy_or_threshold_changed": false,
+  "scenario_seed": 91410,
+  "scenario_sha256": "92345df6ecbf1dd2062d3c4e996fbc6a776081e292b13921c09f37d6402bf8ea",
+  "split": "train",
+  "results": {
+    "base": {
+      "episode_id": "pgrr_event_closinggap_s91410_base",
+      "outcome": "TIMEOUT",
+      "sample_count": 895,
+      "physical_goal_distance_m": 2.1510530059043913,
+      "event_transition_count": 4
+    },
+    "pgrr": {
+      "episode_id": "pgrr_event_closinggap_s91410_pgrr",
+      "outcome": "TIMEOUT",
+      "sample_count": 897,
+      "physical_goal_distance_m": 2.0669231365770986,
+      "event_transition_count": 4
+    }
+  },
+  "event_semantics_valid": true,
+  "promotion_contract_met": false,
+  "next_action": "Preserve this negative result and screen a distinct train-only mechanism; do not retune this candidate or search seeds."
+}

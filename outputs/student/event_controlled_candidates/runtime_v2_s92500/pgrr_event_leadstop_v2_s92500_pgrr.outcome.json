@@ -1,0 +1,33 @@
+{
+  "detail": "recovery_sequence_timeout",
+  "episode_id": "pgrr_event_leadstop_v2_s92500_pgrr",
+  "localized_goal_distance_m": 15.509139060974121,
+  "outcome": "PLANNER_FAILURE",
+  "outcome_id": 3,
+  "physical_goal_distance_m": 15.5091390551424,
+  "sample_count": 873,
+  "scenario_events": [
+    {
+      "actor_name": "ped_00",
+      "command": "hold_actor_route_clock",
+      "event_elapsed_s": 5.4278999999999975,
+      "event_id": "lead_stop_bounded_release_v2_train",
+      "phase": "active_event",
+      "sim_time_s": 32.0013,
+      "transition": "pre_event_to_active_event",
+      "trigger_metric": "robot_actor_distance_below",
+      "trigger_value_m": 2.975582890496364
+    },
+    {
+      "actor_name": "ped_00",
+      "command": "resume_noncyclic_route",
+      "event_elapsed_s": 8.458200000000001,
+      "event_id": "lead_stop_bounded_release_v2_train",
+      "phase": "released",
+      "sim_time_s": 35.031600000000005,
+      "transition": "active_event_to_released",
+      "trigger_metric": "robot_actor_distance_below",
+      "trigger_value_m": 2.267905307787186
+    }
+  ]
+}

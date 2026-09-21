@@ -1,0 +1,14 @@
+{
+  "allowed_splits": [
+    "train",
+    "validation"
+  ],
+  "contract_id": "pgrr_event_controlled_anchor_contract_v1",
+  "errors": [],
+  "executable_scenarios_generated": false,
+  "held_out_test_materialized": false,
+  "next_gate": "implement_and_unit_test_event_state_machine_without_policy_leakage",
+  "runtime_implementation_present": false,
+  "valid": true,
+  "variant_count": 2
+}

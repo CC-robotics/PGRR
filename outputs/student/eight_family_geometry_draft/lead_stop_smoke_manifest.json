@@ -1,0 +1,10 @@
+{
+  "family": "lead_pedestrian_sudden_stop",
+  "held_out_test_materialized": false,
+  "json": "outputs/student/eight_family_geometry_draft/generated/arena/map_empty/lead_pedestrian_sudden_stop_low_train_r00_s91500.json",
+  "preview": "outputs/student/eight_family_geometry_draft/previews/lead_pedestrian_sudden_stop_low_train_r00_s91500.png",
+  "scenario_id": "lead_pedestrian_sudden_stop_low_train_r00_s91500",
+  "sha256": "f78abe2a9bcb6428cd8528234dfefd07dd05cd4a51d635b69c9dc8d4b43e837a",
+  "split": "train",
+  "status": "geometry_smoke_only"
+}

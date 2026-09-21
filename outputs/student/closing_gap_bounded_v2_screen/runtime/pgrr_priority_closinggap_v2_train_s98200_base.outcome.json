@@ -1,0 +1,33 @@
+{
+  "detail": "privileged robot-human overlap",
+  "episode_id": "pgrr_priority_closinggap_v2_train_s98200_base",
+  "localized_goal_distance_m": 5.177135944366455,
+  "outcome": "COLLISION",
+  "outcome_id": 1,
+  "physical_goal_distance_m": 5.2007756413658655,
+  "sample_count": 414,
+  "scenario_events": [
+    {
+      "actor_name": "ped_00",
+      "command": "release_actor_on_noncyclic_crossing",
+      "event_elapsed_s": 38.361599999999996,
+      "event_id": "closing_gap_bounded_ped_00_v2_train",
+      "phase": "active_event",
+      "sim_time_s": 69.0309,
+      "transition": "pre_event_to_active_event",
+      "trigger_metric": "robot_goal_distance_below",
+      "trigger_value_m": 5.913657427275158
+    },
+    {
+      "actor_name": "ped_01",
+      "command": "release_actor_on_noncyclic_crossing",
+      "event_elapsed_s": 38.361599999999996,
+      "event_id": "closing_gap_bounded_ped_01_v2_train",
+      "phase": "active_event",
+      "sim_time_s": 69.0309,
+      "transition": "pre_event_to_active_event",
+      "trigger_metric": "robot_goal_distance_below",
+      "trigger_value_m": 5.913657427275158
+    }
+  ]
+}

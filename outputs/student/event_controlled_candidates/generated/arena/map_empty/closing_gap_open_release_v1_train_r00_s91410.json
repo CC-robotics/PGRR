@@ -1,0 +1,161 @@
+{
+  "obstacles": {
+    "dynamic": [
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 1,
+        "max_vel": 0.45,
+        "model": "gazebo_actor",
+        "name": "ped_00",
+        "pos": [
+          14.25,
+          8.5,
+          1.5707963267948966
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.8,
+        "type": "adult",
+        "waypoints": [
+          [
+            14.25,
+            8.5,
+            1.5707963267948966
+          ],
+          [
+            14.25,
+            15.5,
+            1.5707963267948966
+          ]
+        ]
+      },
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 2,
+        "max_vel": 0.45,
+        "model": "gazebo_actor",
+        "name": "ped_01",
+        "pos": [
+          15.75,
+          15.5,
+          -1.5707963267948966
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.8,
+        "type": "adult",
+        "waypoints": [
+          [
+            15.75,
+            15.5,
+            -1.5707963267948966
+          ],
+          [
+            15.75,
+            8.5,
+            -1.5707963267948966
+          ]
+        ]
+      }
+    ],
+    "interactive": [],
+    "static": []
+  },
+  "ramp_event_control": {
+    "events": [
+      {
+        "active_duration_s": 20.0,
+        "actor_name": "ped_00",
+        "commands": {
+          "active_event": "release_actor_on_noncyclic_crossing",
+          "pre_event": "hold_at_start",
+          "released": "resume_noncyclic_route"
+        },
+        "event_id": "closing_gap_release_ped_00_v1_train",
+        "trigger_hysteresis_m": 0.25,
+        "trigger_metric": "robot_actor_distance_below",
+        "trigger_threshold_m": 5.0
+      },
+      {
+        "active_duration_s": 20.0,
+        "actor_name": "ped_01",
+        "commands": {
+          "active_event": "release_actor_on_noncyclic_crossing",
+          "pre_event": "hold_at_start",
+          "released": "resume_noncyclic_route"
+        },
+        "event_id": "closing_gap_release_ped_01_v1_train",
+        "trigger_hysteresis_m": 0.25,
+        "trigger_metric": "robot_actor_distance_below",
+        "trigger_threshold_m": 5.0
+      }
+    ],
+    "schema_version": 1
+  },
+  "ramp_metadata": {
+    "assigned_variables": {
+      "actor_speed_mps": 0.45,
+      "crossing_x_m": [
+        14.25,
+        15.75
+      ],
+      "static_obstacle_count": 0,
+      "terminal_route_clearance_m": 3.5,
+      "trigger_distance_m": 5.0
+    },
+    "benchmark_id": "pgrr_extension_event_candidates_v1",
+    "candidate_status": "train_only_pre_runtime_validation",
+    "density": "medium",
+    "event_control_required": true,
+    "family": "closing_gap_multi_pedestrian",
+    "map_id": "map_empty",
+    "paired_methods": [
+      "base",
+      "pgrr"
+    ],
+    "replicate": 0,
+    "scenario_id": "closing_gap_open_release_v1_train_r00_s91410",
+    "schema_version": 1,
+    "seed": 91410,
+    "split": "train",
+    "variant_id": "closing_gap_open_release_v1"
+  },
+  "robots": [
+    {
+      "goal": [
+        27.0,
+        12.0,
+        0.0
+      ],
+      "start": [
+        5.0,
+        12.0,
+        0.0
+      ]
+    }
+  ]
+}

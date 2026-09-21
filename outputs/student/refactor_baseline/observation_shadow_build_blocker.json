@@ -1,0 +1,15 @@
+{
+  "arena_run_started": false,
+  "blocked": true,
+  "build_command": "make -C /home/preface/PGRR-online build",
+  "build_started": false,
+  "diagnostic_only": true,
+  "docker_cli_visible_in_ubuntu_22_04": false,
+  "error": "Arena image is missing. Run make arena first.",
+  "root_cause_evidence": "Docker Desktop WSL integration is not active for Ubuntu-22.04; the docker command is not found in that distro.",
+  "runtime_source_check": "outputs/student/refactor_baseline/observation_shadow_wsl_source_check.json",
+  "runtime_sources_matching": 5,
+  "runtime_sources_total": 5,
+  "user_action_required": "Start Docker Desktop and enable WSL integration for Ubuntu-22.04, then rerun docker version inside WSL.",
+  "frozen_evidence_changed": false
+}

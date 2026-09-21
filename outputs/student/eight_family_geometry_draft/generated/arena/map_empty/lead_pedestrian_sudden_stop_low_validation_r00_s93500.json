@@ -1,0 +1,619 @@
+{
+  "obstacles": {
+    "dynamic": [
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 1,
+        "max_vel": 0.55,
+        "model": "gazebo_actor",
+        "name": "ped_00",
+        "pos": [
+          10.0,
+          12.0,
+          0.0
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.8,
+        "type": "adult",
+        "waypoints": [
+          [
+            10.0,
+            12.0,
+            0.0
+          ],
+          [
+            16.0,
+            12.0,
+            0.0
+          ]
+        ]
+      }
+    ],
+    "interactive": [],
+    "static": [
+      {
+        "model": "shelf",
+        "name": "south_00",
+        "pos": [
+          4.0,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_01",
+        "pos": [
+          4.827586206896552,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_02",
+        "pos": [
+          5.655172413793103,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_03",
+        "pos": [
+          6.482758620689655,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_04",
+        "pos": [
+          7.310344827586206,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_05",
+        "pos": [
+          8.137931034482758,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_06",
+        "pos": [
+          8.96551724137931,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_07",
+        "pos": [
+          9.793103448275861,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_08",
+        "pos": [
+          10.620689655172413,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_09",
+        "pos": [
+          11.448275862068966,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_10",
+        "pos": [
+          12.275862068965518,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_11",
+        "pos": [
+          13.103448275862068,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_12",
+        "pos": [
+          13.931034482758621,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_13",
+        "pos": [
+          14.758620689655173,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_14",
+        "pos": [
+          15.586206896551724,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_15",
+        "pos": [
+          16.413793103448278,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_16",
+        "pos": [
+          17.241379310344826,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_17",
+        "pos": [
+          18.068965517241377,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_18",
+        "pos": [
+          18.896551724137932,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_19",
+        "pos": [
+          19.724137931034484,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_20",
+        "pos": [
+          20.551724137931036,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_21",
+        "pos": [
+          21.379310344827587,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_22",
+        "pos": [
+          22.206896551724135,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_23",
+        "pos": [
+          23.03448275862069,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_24",
+        "pos": [
+          23.862068965517242,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_25",
+        "pos": [
+          24.689655172413794,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_26",
+        "pos": [
+          25.517241379310345,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_27",
+        "pos": [
+          26.344827586206897,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_28",
+        "pos": [
+          27.17241379310345,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "south_29",
+        "pos": [
+          28.0,
+          10.55,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_00",
+        "pos": [
+          4.0,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_01",
+        "pos": [
+          4.827586206896552,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_02",
+        "pos": [
+          5.655172413793103,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_03",
+        "pos": [
+          6.482758620689655,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_04",
+        "pos": [
+          7.310344827586206,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_05",
+        "pos": [
+          8.137931034482758,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_06",
+        "pos": [
+          8.96551724137931,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_07",
+        "pos": [
+          9.793103448275861,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_08",
+        "pos": [
+          10.620689655172413,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_09",
+        "pos": [
+          11.448275862068966,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_10",
+        "pos": [
+          12.275862068965518,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_11",
+        "pos": [
+          13.103448275862068,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_12",
+        "pos": [
+          13.931034482758621,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_13",
+        "pos": [
+          14.758620689655173,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_14",
+        "pos": [
+          15.586206896551724,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_15",
+        "pos": [
+          16.413793103448278,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_16",
+        "pos": [
+          17.241379310344826,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_17",
+        "pos": [
+          18.068965517241377,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_18",
+        "pos": [
+          18.896551724137932,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_19",
+        "pos": [
+          19.724137931034484,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_20",
+        "pos": [
+          20.551724137931036,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_21",
+        "pos": [
+          21.379310344827587,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_22",
+        "pos": [
+          22.206896551724135,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_23",
+        "pos": [
+          23.03448275862069,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_24",
+        "pos": [
+          23.862068965517242,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_25",
+        "pos": [
+          24.689655172413794,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_26",
+        "pos": [
+          25.517241379310345,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_27",
+        "pos": [
+          26.344827586206897,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_28",
+        "pos": [
+          27.17241379310345,
+          13.45,
+          0.0
+        ]
+      },
+      {
+        "model": "shelf",
+        "name": "north_29",
+        "pos": [
+          28.0,
+          13.45,
+          0.0
+        ]
+      }
+    ]
+  },
+  "ramp_metadata": {
+    "assigned_variables": {
+      "actor_routes": "one_shot_lead_then_terminal_stop",
+      "lead_speed_mps": 0.55
+    },
+    "benchmark_id": "pgrr_extension_v1_eight_family_draft",
+    "density": "low",
+    "family": "lead_pedestrian_sudden_stop",
+    "map_id": "map_empty",
+    "prototype_status": "draft_geometry_not_frozen",
+    "replicate": 0,
+    "scenario_id": "lead_pedestrian_sudden_stop_low_validation_r00_s93500",
+    "schema_version": 1,
+    "seed": 93500,
+    "split": "validation"
+  },
+  "robots": [
+    {
+      "goal": [
+        27.0,
+        12.0,
+        0.0
+      ],
+      "start": [
+        5.0,
+        12.0,
+        0.0
+      ]
+    }
+  ]
+}

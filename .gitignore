@@ -1,4 +1,5 @@
 __pycache__/
+node_modules/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
@@ -7,6 +8,7 @@ __pycache__/
 htmlcov/
 .venv/
 .venv-inference/
+.conda/
 .env
 .env.*
 !.env.example
@@ -27,6 +29,14 @@ install/
 log/
 *.egg-info/
 outputs/logs/**
+logs/
+outputs/student/**/*.jsonl
+outputs/student/**/*_runtime.log
+outputs/student/**/*_status.log
+outputs/student/**/*.inspect.ndjson
+outputs/student/**/*.pt
+outputs/student/**/*.onnx
+outputs/student/**/*.ts
 data/raw/*.h5
 data/raw/*.jsonl
 data/raw/*.metadata.json

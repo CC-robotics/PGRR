@@ -79,6 +79,36 @@ def test_collision_mask_allows_only_nonapproaching_lateral_departure() -> None:
     assert bool(constrained[6])  # +90-degree subgoal is tangential then separating
 
 
+def test_observable_scan_diagnostics_report_predicates_without_changing_mask() -> None:
+    mask = np.ones(25, dtype=np.bool_)
+    ranges = np.full(180, 8.0, dtype=np.float64)
+    angle_min = -3.0 * np.pi / 4.0
+    angle_increment = 3.0 * np.pi / 2.0 / 179.0
+    diagnostics: dict[str, tuple[int, ...]] = {"stale": (99,)}
+
+    baseline = apply_observable_scan_mask(
+        mask,
+        ranges,
+        angle_min=angle_min,
+        angle_increment=angle_increment,
+    )
+    diagnosed = apply_observable_scan_mask(
+        mask,
+        ranges,
+        angle_min=angle_min,
+        angle_increment=angle_increment,
+        diagnostics=diagnostics,
+    )
+
+    assert np.array_equal(diagnosed, baseline)
+    assert {"directional_pass", "capsule_pass"} <= set(diagnostics)
+    assert diagnostics["directional_pass"] == tuple(range(21))
+    assert diagnostics["capsule_pass"] == tuple(range(21))
+    assert diagnostics["capsule_failure_categories"] == {}
+    assert len(diagnostics["capsule_minimum_clearance_m"]) == 21
+    assert len(diagnostics["capsule_closest_fraction"]) == 21
+
+
 def test_path_corridor_blocks_outward_actions_and_allows_return() -> None:
     mask = np.ones(25, dtype=np.bool_)
     path = ((0.0, 0.0), (10.0, 0.0))

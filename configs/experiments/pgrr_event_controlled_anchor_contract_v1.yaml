@@ -1,0 +1,74 @@
+schema_version: 1
+contract_id: pgrr_event_controlled_anchor_contract_v1
+status: draft_train_validation_only_non_executable
+purpose: replace two spatial stress prototypes with bounded, observable event-controlled variants
+claim_boundary:
+  allowed_splits: [train, validation]
+  held_out_test_materialized: false
+  algorithm_threshold_change_authorized: false
+  policy_retraining_authorized: false
+  privileged_event_state_enters_policy_observation: false
+fairness:
+  same_event_contract_for_all_methods: true
+  same_scenario_seed_for_paired_methods: true
+  event_trigger_uses_simulator_state_only: true
+  event_trigger_is_logged: true
+  phase_transitions_are_logged: true
+  all_episode_outcomes_are_preserved: true
+required_event_phases: [pre_event, active_event, released]
+required_acceptance_checks:
+  - event_triggered_exactly_once
+  - active_phase_duration_within_tolerance
+  - release_observed_before_episode_end
+  - actor_clears_robot_path_after_release
+  - base_and_pgrr_receive_identical_event_contract
+  - task_has_a_collision_free_post_release_route
+  - policy_observation_contains_no_event_controller_state
+variants:
+  - family: lead_pedestrian_sudden_stop
+    variant_id: lead_stop_bounded_release_v1
+    semantic_target: moving lead actor brakes once, holds for a bounded interval, then resumes
+    trigger:
+      type: robot_actor_distance_below
+      threshold_m: 3.0
+      hysteresis_m: 0.25
+    active_event:
+      command: hold_actor_route_clock
+      duration_s: 3.0
+      duration_tolerance_s: 0.25
+    release:
+      command: resume_noncyclic_route
+      terminal_waypoint_off_robot_centerline: true
+    train:
+      seed: 92500
+      stop_duration_s: 3.0
+      trigger_distance_m: 3.0
+    validation:
+      seed: 94500
+      stop_duration_s: 3.5
+      trigger_distance_m: 3.2
+    forbidden_shortcut: permanent terminal blockage on the robot centerline
+  - family: goal_approach_lateral_interruption
+    variant_id: goal_approach_one_shot_crossing_v1
+    semantic_target: one lateral actor crosses once only after the robot enters the goal-approach zone
+    trigger:
+      type: robot_goal_distance_below
+      threshold_m: 5.0
+      hysteresis_m: 0.25
+    active_event:
+      command: release_actor_on_noncyclic_crossing
+      duration_s: 5.0
+      duration_tolerance_s: 0.5
+    release:
+      command: hold_at_off_path_terminal_waypoint
+      terminal_waypoint_off_robot_centerline: true
+    train:
+      seed: 92700
+      crossing_speed_mps: 0.45
+      trigger_goal_distance_m: 5.0
+    validation:
+      seed: 94700
+      crossing_speed_mps: 0.55
+      trigger_goal_distance_m: 5.5
+    occlusion_claim_enabled: false
+    forbidden_shortcut: cyclic crossing that is already active before goal approach

@@ -1,0 +1,33 @@
+{
+  "detail": "configured episode timeout",
+  "episode_id": "pgrr_event_leadstop_s92500_base",
+  "localized_goal_distance_m": 0.8327227234840393,
+  "outcome": "TIMEOUT",
+  "outcome_id": 2,
+  "physical_goal_distance_m": 0.931147619340207,
+  "sample_count": 868,
+  "scenario_events": [
+    {
+      "actor_name": "ped_00",
+      "command": "hold_actor_route_clock",
+      "event_elapsed_s": 52.74720000000001,
+      "event_id": "lead_stop_bounded_release_v1_train",
+      "phase": "active_event",
+      "sim_time_s": 80.0199,
+      "transition": "pre_event_to_active_event",
+      "trigger_metric": "robot_actor_distance_below",
+      "trigger_value_m": 2.9911343579573995
+    },
+    {
+      "actor_name": "ped_00",
+      "command": "resume_noncyclic_route",
+      "event_elapsed_s": 56.243700000000004,
+      "event_id": "lead_stop_bounded_release_v1_train",
+      "phase": "released",
+      "sim_time_s": 83.5164,
+      "transition": "active_event_to_released",
+      "trigger_metric": "robot_actor_distance_below",
+      "trigger_value_m": 2.164043153719518
+    }
+  ]
+}

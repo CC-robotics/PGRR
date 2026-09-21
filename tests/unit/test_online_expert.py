@@ -247,6 +247,48 @@ def test_emergency_translation_cannot_escape_through_initial_front_overlap() -> 
     )
 
 
+def test_segment_diagnostics_localize_initial_approach_without_changing_result() -> None:
+    ranges = np.full(271, np.inf, dtype=np.float32)
+    ranges[135] = 0.31
+    diagnostics: dict[str, float | int | str | bool] = {}
+
+    result = scan_segment_is_free(
+        ranges,
+        angle_min=-3.0 * math.pi / 4.0,
+        angle_increment=math.radians(1.0),
+        target=(0.20, 0.0),
+        clearance_m=0.36,
+        allow_initial_overlap_when_separating=True,
+        diagnostics=diagnostics,
+    )
+
+    assert not result
+    assert diagnostics["result"] is False
+    assert diagnostics["category"] == "initial_overlap_approaching"
+    assert diagnostics["minimum_segment_clearance_m"] == pytest.approx(0.31)
+    assert diagnostics["closest_fraction"] == 0.0
+
+
+def test_segment_diagnostics_localize_interior_collision() -> None:
+    ranges = np.full(271, np.inf, dtype=np.float32)
+    ranges[135] = 0.50
+    diagnostics: dict[str, float | int | str | bool] = {}
+
+    result = scan_segment_is_free(
+        ranges,
+        angle_min=-3.0 * math.pi / 4.0,
+        angle_increment=math.radians(1.0),
+        target=(1.0, 0.0),
+        clearance_m=0.20,
+        diagnostics=diagnostics,
+    )
+
+    assert not result
+    assert diagnostics["category"] == "segment_interior"
+    assert diagnostics["minimum_segment_clearance_m"] == pytest.approx(0.0)
+    assert diagnostics["closest_fraction"] == pytest.approx(0.5)
+
+
 def test_emergency_translation_can_depart_tangentially_from_front_overlap() -> None:
     ranges = np.full(271, np.inf, dtype=np.float32)
     ranges[135] = 0.31

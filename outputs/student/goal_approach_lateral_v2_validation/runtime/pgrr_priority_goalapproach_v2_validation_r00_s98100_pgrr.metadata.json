@@ -1,0 +1,13 @@
+{
+  "arena_commit": "c2ff4a87e8686013b53f1e9cd8b01b3ab04fbce4",
+  "episode_id": "pgrr_priority_goalapproach_v2_validation_r00_s98100_pgrr",
+  "map_id": "map_empty",
+  "planner_id": "dwb",
+  "project_commit": "0c1796986921a760bca1924b395347cb37bb8042",
+  "scenario_id": "goal_approach_lateral_one_shot_v2_validation_r00_s98100",
+  "schema_version": 1,
+  "seed": 98100,
+  "source_policy": "pgrr",
+  "split": "validation",
+  "timestamp": "2026-09-17T13:08:11.296077+00:00"
+}

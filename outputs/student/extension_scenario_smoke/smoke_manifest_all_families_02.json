@@ -1,0 +1,26 @@
+{
+  "benchmark_id": "pgrr_extension_v1",
+  "compiled_count": 2,
+  "held_out_test_materialized": false,
+  "records": [
+    {
+      "condition_id": "diagonal_cut_in_corridor_low_train_r00",
+      "path": "generated/arena/map_empty/diagonal_cut_in_corridor_low_train_r00_s91000.json",
+      "preview": "previews/diagonal_cut_in_corridor_low_train_r00_s91000.png",
+      "scenario_id": "diagonal_cut_in_corridor_low_train_r00_s91000",
+      "seed": 91000,
+      "sha256": "f85c2bc58e2961b4ef6d08cb5c5994b5c4156a4399bf263a7a1c7644e68f74d4",
+      "split": "train"
+    },
+    {
+      "condition_id": "diagonal_cut_in_corridor_low_train_r01",
+      "path": "generated/arena/map_empty/diagonal_cut_in_corridor_low_train_r01_s91001.json",
+      "preview": "previews/diagonal_cut_in_corridor_low_train_r01_s91001.png",
+      "scenario_id": "diagonal_cut_in_corridor_low_train_r01_s91001",
+      "seed": 91001,
+      "sha256": "aa2380563bc7dd2dafa5f60f591ec334248139e5a15bc9f30e2a32a72e402a28",
+      "split": "train"
+    }
+  ],
+  "status": "smoke_only"
+}

@@ -1,0 +1,262 @@
+{
+  "dataset": "data\\interim\\temporary_blockage_finite2_expert_smoke.h5",
+  "validation_dataset": null,
+  "device": "cpu",
+  "train_samples": 135,
+  "validation_samples": 34,
+  "history": [
+    {
+      "epoch": 0,
+      "train": {
+        "loss": 2.0070315696575025,
+        "top1": 0.7333333333333333,
+        "top3": 0.8518518518518519,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.4983234952997278,
+        "near_optimal_rate": 0.762962962962963,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.2049708366394043,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.1479825132033404,
+        "near_optimal_rate": 0.9117647058823529,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 1,
+      "train": {
+        "loss": 1.7541291448805068,
+        "top1": 0.762962962962963,
+        "top3": 0.9481481481481482,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.47267326249016656,
+        "near_optimal_rate": 0.7925925925925926,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.2083901166915894,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.024252088630900663,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 2,
+      "train": {
+        "loss": 1.6126433460800735,
+        "top1": 0.8592592592592593,
+        "top3": 0.9555555555555556,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.034165710873074004,
+        "near_optimal_rate": 0.9407407407407408,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.1881327629089355,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.024252088630900663,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 3,
+      "train": {
+        "loss": 1.446838140487671,
+        "top1": 0.8592592592592593,
+        "top3": 0.9481481481481482,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.03416571263913755,
+        "near_optimal_rate": 0.9407407407407408,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.1690208911895752,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.024252088630900663,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 4,
+      "train": {
+        "loss": 1.3950297620561387,
+        "top1": 0.8592592592592593,
+        "top3": 0.9555555555555556,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.034165710873074004,
+        "near_optimal_rate": 0.9407407407407408,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.1437937021255493,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.024252088630900663,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 5,
+      "train": {
+        "loss": 1.3136566917101542,
+        "top1": 0.8592592592592593,
+        "top3": 0.9629629629629629,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.03416571263913755,
+        "near_optimal_rate": 0.9407407407407408,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.1300700902938843,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.024252088630900663,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 6,
+      "train": {
+        "loss": 1.243441406002751,
+        "top1": 0.8592592592592593,
+        "top3": 0.9629629629629629,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.034165710873074004,
+        "near_optimal_rate": 0.9407407407407408,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.116957426071167,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.024252088630900663,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 7,
+      "train": {
+        "loss": 1.1763473281153927,
+        "top1": 0.8592592592592593,
+        "top3": 0.9629629629629629,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.03416571263913755,
+        "near_optimal_rate": 0.9407407407407408,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.091784119606018,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.024252088630900663,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 8,
+      "train": {
+        "loss": 1.1108076179469073,
+        "top1": 0.8592592592592593,
+        "top3": 0.9629629629629629,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.034165710873074004,
+        "near_optimal_rate": 0.9407407407407408,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.0587905645370483,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.024252088630900663,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 9,
+      "train": {
+        "loss": 1.050815443418644,
+        "top1": 0.8814814814814815,
+        "top3": 0.9629629629629629,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.027402660581800672,
+        "near_optimal_rate": 0.9629629629629629,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.0290104150772095,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.024252088630900663,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 10,
+      "train": {
+        "loss": 0.9938433664816397,
+        "top1": 0.8814814814814815,
+        "top3": 0.9629629629629629,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.027402660581800672,
+        "near_optimal_rate": 0.9629629629629629,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.0172017812728882,
+        "top1": 0.8823529411764706,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.024252088630900663,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    },
+    {
+      "epoch": 11,
+      "train": {
+        "loss": 0.942873055184329,
+        "top1": 0.9037037037037037,
+        "top3": 0.9629629629629629,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.02577624762499774,
+        "near_optimal_rate": 0.9629629629629629,
+        "catastrophic_action_rate": 0.0
+      },
+      "validation": {
+        "loss": 1.0087531805038452,
+        "top1": 0.9117647058823529,
+        "top3": 0.9705882352941176,
+        "invalid_rate": 0.0,
+        "expert_cost_regret": 0.022695664097281062,
+        "near_optimal_rate": 0.9411764705882353,
+        "catastrophic_action_rate": 0.0
+      }
+    }
+  ],
+  "warning": "single-dataset random split is pipeline smoke only, not paper evidence"
+}

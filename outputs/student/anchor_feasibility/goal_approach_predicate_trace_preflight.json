@@ -1,0 +1,35 @@
+{
+  "algorithm_change_authorized": false,
+  "allow_validation": false,
+  "command": "RAMP_SOURCE_POLICY=pgrr RAMP_ENABLE_UPSTREAM_MASK_TRACE=1 RAMP_EPISODE_ID=pgrr_anchor_predicates_goalapproach_train_r00_20260915 RAMP_EPISODE_TIMEOUT_S=90 SCENARIO=outputs/student/families_7_8_smoke/generated/arena/map_empty/goal_approach_lateral_interruption_low_train_r00_s91700.json scripts/arena/run_baseline_episode.sh",
+  "contract_checks": {
+    "original_scan_predicates_traced": true,
+    "ros_parameter_defaults_false": true,
+    "runtime_converts_switch_to_bool": true,
+    "runtime_forwards_switch": true,
+    "wrapper_defaults_zero": true
+  },
+  "diagnostic_only": true,
+  "episode_id": "pgrr_anchor_predicates_goalapproach_train_r00_20260915",
+  "frozen_markers_rejected": [
+    "moderate_v6",
+    "outputs/moderate/final",
+    "checkpoints/final"
+  ],
+  "map_id": "map_empty",
+  "ready": true,
+  "runtime_source_normalized_sha256": {
+    "packages/ramp_core/ramp_core/action_mask.py": "2ff6b933e9fb9010f72520b671f069db0e744817ec0163b23a0fe0359a355e69",
+    "packages/ramp_core/ramp_core/recovery/mask_trace.py": "5fced9be2fa54ca968fee351c4382405e496d8deaab0dc07744ea1fa6bcf8a24",
+    "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py": "64973393b778359310bd87ed5f1be4f478d1c124bdd66fcd1ddccea63872c79c",
+    "scripts/arena/run_baseline_episode.sh": "2a505d21ecb39b803fa2ed563f447a907409fe454f5e3b7743d72644dead42d1",
+    "scripts/arena/run_baseline_episode_inner.sh": "2dea2af5303f2dcc3afebb35baeed9701ba8a2437c1a67f3b6db08ed6b679112"
+  },
+  "scenario": "outputs/student/families_7_8_smoke/generated/arena/map_empty/goal_approach_lateral_interruption_low_train_r00_s91700.json",
+  "scenario_id": "goal_approach_lateral_interruption_low_train_r00_s91700",
+  "seed": 91700,
+  "source_policy": "pgrr",
+  "split": "train",
+  "timeout_s": 90,
+  "trace_enabled": true
+}

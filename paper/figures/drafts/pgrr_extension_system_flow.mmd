@@ -1,0 +1,28 @@
+%% Draft only: extension-paper system figure source.
+%% This file does not alter the final anonymous paper or final evidence.
+flowchart LR
+    subgraph online[Online deployment: observable information only]
+        sensor[LiDAR / odometry / planner status]
+        trigger[Failure trigger\npersistent risk, freeze, oscillation,\ndeadlock, planner failure]
+        manager[Recovery state machine]
+        mask[Planning-guided\naction mask]
+        policy[Selected DAgger policy]
+        option[Temporary subgoal or\nWAIT / BACKUP / REPLAN / CONTINUE]
+        dwb[Nav2 DWB\nnormal controller and execution]
+        rejoin[Restore original goal\nand rejoin]
+        supervisor[Engineering safety supervisor]
+    end
+
+    sensor --> trigger
+    trigger -->|normal navigation| dwb
+    trigger -->|failure persists| manager
+    manager --> mask --> policy --> option --> dwb --> rejoin
+    supervisor -.protective intervention.-> dwb
+
+    subgraph training[Offline training only: privileged branch]
+        truth[Simulator truth / planning expert]
+        labels[Expert recovery labels]
+        dataset[BC + DAgger dataset]
+    end
+
+    truth -.not a deployed observation.-> labels --> dataset -.trains.-> policy

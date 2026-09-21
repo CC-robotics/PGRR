@@ -1,0 +1,25 @@
+{
+  "allow_validation": false,
+  "command": "RAMP_SOURCE_POLICY=pgrr RAMP_ENABLE_UPSTREAM_MASK_TRACE=1 RAMP_EPISODE_ID=pgrr_masktrace_diagonal_train_r00_20260912 RAMP_EPISODE_TIMEOUT_S=90 SCENARIO=outputs/student/extension_scenario_smoke/generated/arena/map_empty/diagonal_cut_in_corridor_low_train_r00_s91000.json scripts/arena/run_baseline_episode.sh",
+  "contract_checks": {
+    "ros_parameter_defaults_false": true,
+    "runtime_converts_switch_to_bool": true,
+    "runtime_forwards_switch": true,
+    "wrapper_defaults_zero": true
+  },
+  "episode_id": "pgrr_masktrace_diagonal_train_r00_20260912",
+  "frozen_markers_rejected": [
+    "moderate_v6",
+    "outputs/moderate/final",
+    "checkpoints/final"
+  ],
+  "map_id": "map_empty",
+  "ready": true,
+  "scenario": "outputs/student/extension_scenario_smoke/generated/arena/map_empty/diagonal_cut_in_corridor_low_train_r00_s91000.json",
+  "scenario_id": "diagonal_cut_in_corridor_low_train_r00_s91000",
+  "seed": 91000,
+  "source_policy": "pgrr",
+  "split": "train",
+  "timeout_s": 90,
+  "trace_enabled": true
+}

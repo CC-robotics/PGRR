@@ -1,0 +1,172 @@
+# Executable development pilot for the eight extension families.
+# This is deliberately train-only and must never be merged into frozen release evidence.
+schema_version: 1
+benchmark_id: pgrr_extension_v1_eight_family_pilot
+status: executable_development_pilot
+scope: train_only_development_not_final_evaluation
+map_id: map_empty
+
+checkpoint:
+  role: validation_selected_triggered_dagger
+  path: checkpoints/dagger/coverage_safety_aligned/best.onnx
+  sha256: 78807ce56f575943ca3f965be9b71c0d83c0ca3f2a23f267fe04fd6a00c119d2
+  policy_inputs: [lidar, state, mask]
+  privileged_simulator_fields_at_inference: false
+
+seed_formula: "seed = 91000 + 100 * family_index + 10 * density_index + repeat_index"
+density_index: {low: 0, medium: 1, high: 2}
+paired_by: [scenario_file_sha256, seed]
+outcomes_to_preserve:
+  [GOAL_REACHED, COLLISION, TIMEOUT, PLANNER_FAILURE, SIMULATOR_FAILURE, INVALID_RESET]
+
+execution_phases:
+  - id: geometry_and_runtime_audit
+    methods: [base]
+    conditions: 8
+    status: completed_single_smoke_per_family
+    note: "Only establishes that each prototype runs and exposes a difficult interaction."
+  - id: minimal_paired_pilot
+    methods: [base, pgrr]
+    conditions: 8
+    expected_episode_attempts: 16
+    status: ready
+    note: "Run the same eight pinned scenario files once per method; this is development evidence only."
+  - id: comparator_pilot
+    methods: [heuristic, uniform_bc]
+    conditions: 8
+    expected_episode_attempts: 16
+    status: blocked_until_minimal_pair_is_healthy
+    note: "Run only after logs, outcome capture, and pairing from the minimal pilot pass audit."
+
+retry_policy:
+  keep_every_attempt: true
+  retry_only: [SIMULATOR_FAILURE, INVALID_RESET]
+  retry_id_suffix: "_retryNN"
+  never_replace_failed_episode: true
+
+claim_boundary:
+  held_out_test_materialized: false
+  forbidden_sources: [moderate_v6_test, outputs/moderate/final]
+  no_training: true
+  no_threshold_tuning: true
+  allowed_claim: "runtime and mechanism development evidence"
+  forbidden_claims: [generalization, superiority, statistical_significance]
+
+families:
+  - family_index: 0
+    id: diagonal_cut_in_corridor
+    density: low
+    density_index: 0
+    split: train
+    repeat_index: 0
+    seed: 91000
+    scenario_id: diagonal_cut_in_corridor_low_train_r00_s91000
+    scenario_path: outputs/student/extension_scenario_smoke/generated/arena/map_empty/diagonal_cut_in_corridor_low_train_r00_s91000.json
+    sha256: f267a116b5f76f70557b19aa5a39319252e533abb6a303cfd279b9edcd5c99a0
+    implemented_mechanism: "one non-cyclic pedestrian makes a one-shot diagonal cut"
+    actual_motion_verified: true
+    base_smoke: {outcome: TIMEOUT, samples: 900}
+
+  - family_index: 1
+    id: occluded_side_emergence
+    density: low
+    density_index: 0
+    split: train
+    repeat_index: 0
+    seed: 91100
+    scenario_id: occluded_side_emergence_low_train_r00_s91100
+    scenario_path: outputs/student/extension_scenario_smoke/generated/arena/map_empty/occluded_side_emergence_low_train_r00_s91100.json
+    sha256: b91632d1f9bfffade0a5b8fbca83467dacebd337858f55e2ad38297b2004b040
+    implemented_mechanism: "one non-cyclic pedestrian emerges along a path screened by a shelf"
+    actual_motion_verified: true
+    base_smoke: {outcome: COLLISION, samples: 485}
+    limitation: "recorded minimum actor distance and terminal collision label require later telemetry audit"
+
+  - family_index: 2
+    id: recurrent_bidirectional_crossing
+    density: medium
+    density_index: 1
+    split: train
+    repeat_index: 0
+    seed: 91210
+    scenario_id: recurrent_bidirectional_crossing_medium_train_r00_s91210
+    scenario_path: outputs/student/eight_family_geometry_draft/generated/arena/map_empty/recurrent_bidirectional_crossing_medium_train_r00_s91210.json
+    sha256: d5b48e7339c98e95d2c81e2c20520457d7b81623cf0636b4ace325a12cf51986
+    implemented_mechanism: "two cyclic pedestrians repeatedly cross in opposite diagonal directions"
+    actual_motion_verified: true
+    base_smoke: {outcome: TIMEOUT, samples: 818}
+    limitation: "crossing interval is emergent from route length and speed, not independently scheduled"
+
+  - family_index: 3
+    id: narrow_corridor_head_on_deadlock
+    density: low
+    density_index: 0
+    split: train
+    repeat_index: 0
+    seed: 91300
+    scenario_id: narrow_corridor_head_on_deadlock_low_train_r00_s91300
+    scenario_path: outputs/student/eight_family_geometry_draft/generated/arena/map_empty/narrow_corridor_head_on_deadlock_low_train_r00_s91300.json
+    sha256: dd766d98c609006a5e2ad1f428cd3aff77e15f3f637158ea3509327a442ceb92
+    implemented_mechanism: "one oncoming pedestrian traverses the narrow corridor and holds at its terminal waypoint"
+    actual_motion_verified: true
+    base_smoke: {outcome: COLLISION, samples: 199}
+
+  - family_index: 4
+    id: closing_gap_multi_pedestrian
+    density: medium
+    density_index: 1
+    split: train
+    repeat_index: 0
+    seed: 91410
+    scenario_id: closing_gap_multi_pedestrian_medium_train_r00_s91410
+    scenario_path: outputs/student/eight_family_geometry_draft/generated/arena/map_empty/closing_gap_multi_pedestrian_medium_train_r00_s91410.json
+    sha256: 074718d078d8d8e3805340d5564fd34c213b8ab3b921e7ed6594e3ac53ae7146
+    implemented_mechanism: "two longitudinally offset pedestrians move toward the centerline and hold"
+    actual_motion_verified: true
+    base_smoke: {outcome: COLLISION, samples: 348}
+    limitation: "this is a centerline-closure prototype, not a literal scalar gap-width closure"
+
+  - family_index: 5
+    id: lead_pedestrian_sudden_stop
+    density: low
+    density_index: 0
+    split: train
+    repeat_index: 0
+    seed: 91500
+    scenario_id: lead_pedestrian_sudden_stop_low_train_r00_s91500
+    scenario_path: outputs/student/eight_family_geometry_draft/generated/arena/map_empty/lead_pedestrian_sudden_stop_low_train_r00_s91500.json
+    sha256: c3187ea01405a3e7a11befc014cd9adb25d7c91aff2fe13cd806bad9d495666d
+    implemented_mechanism: "one lead pedestrian moves forward six metres and holds at its terminal waypoint"
+    actual_motion_verified: true
+    base_smoke: {outcome: COLLISION, samples: 419}
+    limitation: "the stop is terminal-waypoint holding, not an independently triggered braking event"
+
+  - family_index: 6
+    id: bottleneck_cross_flow_merge
+    density: medium
+    density_index: 1
+    split: train
+    repeat_index: 0
+    seed: 91610
+    scenario_id: bottleneck_cross_flow_merge_medium_train_r00_s91610
+    scenario_path: outputs/student/families_7_8_smoke/generated/arena/map_empty/bottleneck_cross_flow_merge_medium_train_r00_s91610.json
+    sha256: 29db6ce4dc2535a747b49b85b41622f6b01f51b2c29e343c5d4a7919bee2d691
+    implemented_mechanism: "two cyclic lateral pedestrians cross inside a shelf-defined throat"
+    actual_motion_verified: true
+    base_smoke: {outcome: COLLISION, samples: 431, source_attempt: retry01}
+    limitation: "cross-flow rate and merge phase are not independently controlled"
+
+  - family_index: 7
+    id: goal_approach_lateral_interruption
+    density: low
+    density_index: 0
+    split: train
+    repeat_index: 0
+    seed: 91700
+    scenario_id: goal_approach_lateral_interruption_low_train_r00_s91700
+    scenario_path: outputs/student/families_7_8_smoke/generated/arena/map_empty/goal_approach_lateral_interruption_low_train_r00_s91700.json
+    sha256: 5e9a649d58866f14dda80d75e8d25abd4ef1b2255a472623c311b9c8c3d88c0a
+    implemented_mechanism: "one cyclic lateral pedestrian repeatedly crosses near the goal"
+    actual_motion_verified: true
+    base_smoke: {outcome: COLLISION, samples: 758}
+    limitation: "persistent spatial crossing; no event trigger or physical occlusion is implemented"

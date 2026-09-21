@@ -1,0 +1,48 @@
+{
+  "claim_boundary": "read_only_local_and_git_history_search; no remote lookup",
+  "requirements": [
+    {
+      "declared_path": "data/processed/dagger_coverage_safety_aligned_train.h5",
+      "expected_sha256": "d529efb4261f080b6ef06cb6bb7a3b90b3fb1d76e3008ea95398bf3b0c2f1948",
+      "git_history_matches": [],
+      "local_matches": [],
+      "manifest": "C:/Users/28646/Documents/ChatGPT/New project/PGRR/data/manifests/dagger_coverage_safety_aligned_manifest.json",
+      "role": "dataset",
+      "status": "not_found_local_or_git_history"
+    },
+    {
+      "declared_path": "data/interim/multiscenario_safety_aligned_validation.h5",
+      "expected_sha256": "5d446cd01f7219b4adaf58e0661a4a5589077c7b4f8b6b3b21ef33d187331c92",
+      "git_history_matches": [],
+      "local_matches": [],
+      "manifest": "C:/Users/28646/Documents/ChatGPT/New project/PGRR/data/manifests/dagger_coverage_safety_aligned_manifest.json",
+      "role": "validation_dataset",
+      "status": "not_found_local_or_git_history"
+    },
+    {
+      "declared_path": "data/processed/dagger_sequence_wait_aligned_train.h5",
+      "expected_sha256": "2a46403f914ec7403464778b13f99faa27fee475c31190b20cfc232f7f603522",
+      "git_history_matches": [],
+      "local_matches": [
+        "C:/Users/28646/Documents/ChatGPT/New project/PGRR/data/processed/dagger_sequence_wait_aligned_train.h5"
+      ],
+      "manifest": "C:/Users/28646/Documents/ChatGPT/New project/PGRR/data/manifests/dagger_sequence_wait_aligned_manifest.json",
+      "role": "dataset",
+      "status": "local_match"
+    },
+    {
+      "declared_path": "data/interim/multiscenario_safety_aligned_validation.h5",
+      "expected_sha256": "5d446cd01f7219b4adaf58e0661a4a5589077c7b4f8b6b3b21ef33d187331c92",
+      "git_history_matches": [],
+      "local_matches": [],
+      "manifest": "C:/Users/28646/Documents/ChatGPT/New project/PGRR/data/manifests/dagger_sequence_wait_aligned_manifest.json",
+      "role": "validation_dataset",
+      "status": "not_found_local_or_git_history"
+    }
+  ],
+  "schema_version": 1,
+  "status_counts": {
+    "local_match": 1,
+    "not_found_local_or_git_history": 3
+  }
+}

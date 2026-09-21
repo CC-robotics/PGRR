@@ -1,0 +1,41 @@
+{
+  "base": {
+    "event_release_sim_time_s": 83.5164,
+    "event_trigger_sim_time_s": 80.0199,
+    "outcome": "TIMEOUT",
+    "physical_goal_distance_m": 0.931147619340207,
+    "sample_count": 868,
+    "scenario_event_count": 2,
+    "scenario_event_transitions": [
+      "pre_event_to_active_event",
+      "active_event_to_released"
+    ]
+  },
+  "candidate_id": "lead_stop_bounded_release_v1_train_r00_s92500",
+  "core_case_promotion_authorized": false,
+  "event_runtime_semantics_observed_on_base": true,
+  "gate_result": "inconclusive_pgrr_runtime_invalid",
+  "paired_method_claim_authorized": false,
+  "pgrr_attempt_1": {
+    "detail": "logger stopped without terminal event",
+    "outcome": "SIMULATOR_FAILURE",
+    "physical_goal_distance_m": 18.136254252791744,
+    "sample_count": 163,
+    "scenario_event_count": 0,
+    "valid_comparative_episode": false
+  },
+  "pgrr_retry_1": {
+    "outcome_artifact_created": false,
+    "startup_topic_timeout": false,
+    "valid_comparative_episode": false
+  },
+  "raw_sha256": {
+    "pgrr_event_leadstop_s92500_base.outcome.json": "900e2185486e79c78a197b6de71b71ef96f37dfbcb4f072d317b885debc030f5",
+    "pgrr_event_leadstop_s92500_base_runtime.log": "fc2683b79e3e4eda40ec83aee53eef6033a5e0bb838b71e0314fdbc30e8aefb5",
+    "pgrr_event_leadstop_s92500_pgrr.outcome.json": "133ece53bd8d87182bcda41bf3085b7270a315c1847e1b7fc69efe5957183d29",
+    "pgrr_event_leadstop_s92500_pgrr_retry01_runtime.log": "3b84de1479ff58b2f185a177af63f7e2ae6bb81c4afee312becc22b217b1ea5e",
+    "pgrr_event_leadstop_s92500_pgrr_runtime.log": "f6634a317958dd11d34eeacfd978484da2acbf30c9b487d83e55d6ae0cba9228"
+  },
+  "seed": 92500,
+  "split": "train"
+}

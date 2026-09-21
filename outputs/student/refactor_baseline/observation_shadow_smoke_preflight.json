@@ -1,0 +1,34 @@
+{
+  "authoritative_path_changed": false,
+  "command": "RAMP_SOURCE_POLICY=pgrr RAMP_ENABLE_OBSERVATION_SHADOW=1 RAMP_EPISODE_ID=pgrr_observation_shadow_leadstop_train_r00_20260913 RAMP_EPISODE_TIMEOUT_S=90 SCENARIO=outputs/student/eight_family_geometry_draft/generated/arena/map_empty/lead_pedestrian_sudden_stop_low_train_r00_s91500.json scripts/arena/run_baseline_episode.sh",
+  "contract_checks": {
+    "legacy_observation_remains_authoritative": true,
+    "ros_parameter_defaults_false": true,
+    "runtime_converts_and_forwards_bool": true,
+    "wrapper_defaults_zero": true,
+    "wrapper_validates_and_forwards": true
+  },
+  "diagnostic_only": true,
+  "episode_id": "pgrr_observation_shadow_leadstop_train_r00_20260913",
+  "frozen_markers_rejected": [
+    "moderate_v6",
+    "outputs/moderate/final",
+    "checkpoints/final"
+  ],
+  "map_id": "map_empty",
+  "observation_shadow_enabled": true,
+  "ready": true,
+  "runtime_source_normalized_sha256": {
+    "packages/ramp_core/ramp_core/recovery/observation_builder.py": "dd97ba4051ed739bc06060d6126803427471345dc227e7f97a719f44c29fa42e",
+    "packages/ramp_core/ramp_core/recovery/observation_shadow.py": "e7ae33e4cec826a8e303d3cf9ce8a7aba83df03d69aa8e6f9428630c98167d20",
+    "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py": "6d3b5991456ccf4efc005f0969937af7117b3bf9ab047a07627f0c93ad581b66",
+    "scripts/arena/run_baseline_episode.sh": "2a505d21ecb39b803fa2ed563f447a907409fe454f5e3b7743d72644dead42d1",
+    "scripts/arena/run_baseline_episode_inner.sh": "2dea2af5303f2dcc3afebb35baeed9701ba8a2437c1a67f3b6db08ed6b679112"
+  },
+  "scenario": "outputs/student/eight_family_geometry_draft/generated/arena/map_empty/lead_pedestrian_sudden_stop_low_train_r00_s91500.json",
+  "scenario_id": "lead_pedestrian_sudden_stop_low_train_r00_s91500",
+  "seed": 91500,
+  "source_policy": "pgrr",
+  "split": "train",
+  "timeout_s": 90
+}

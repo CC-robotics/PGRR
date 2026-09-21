@@ -1,0 +1,52 @@
+{
+  "copy_performed": false,
+  "diagnostic_only": true,
+  "episode_id": "pgrr_observation_shadow_leadstop_train_r00_20260913",
+  "file_count": 5,
+  "files": [
+    {
+      "actual_sha256": "dd97ba4051ed739bc06060d6126803427471345dc227e7f97a719f44c29fa42e",
+      "exists": true,
+      "expected_sha256": "dd97ba4051ed739bc06060d6126803427471345dc227e7f97a719f44c29fa42e",
+      "line_endings_normalized": true,
+      "matches": true,
+      "path": "packages/ramp_core/ramp_core/recovery/observation_builder.py"
+    },
+    {
+      "actual_sha256": "e7ae33e4cec826a8e303d3cf9ce8a7aba83df03d69aa8e6f9428630c98167d20",
+      "exists": true,
+      "expected_sha256": "e7ae33e4cec826a8e303d3cf9ce8a7aba83df03d69aa8e6f9428630c98167d20",
+      "line_endings_normalized": true,
+      "matches": true,
+      "path": "packages/ramp_core/ramp_core/recovery/observation_shadow.py"
+    },
+    {
+      "actual_sha256": "6d3b5991456ccf4efc005f0969937af7117b3bf9ab047a07627f0c93ad581b66",
+      "exists": true,
+      "expected_sha256": "6d3b5991456ccf4efc005f0969937af7117b3bf9ab047a07627f0c93ad581b66",
+      "line_endings_normalized": true,
+      "matches": true,
+      "path": "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py"
+    },
+    {
+      "actual_sha256": "2a505d21ecb39b803fa2ed563f447a907409fe454f5e3b7743d72644dead42d1",
+      "exists": true,
+      "expected_sha256": "2a505d21ecb39b803fa2ed563f447a907409fe454f5e3b7743d72644dead42d1",
+      "line_endings_normalized": true,
+      "matches": true,
+      "path": "scripts/arena/run_baseline_episode.sh"
+    },
+    {
+      "actual_sha256": "2dea2af5303f2dcc3afebb35baeed9701ba8a2437c1a67f3b6db08ed6b679112",
+      "exists": true,
+      "expected_sha256": "2dea2af5303f2dcc3afebb35baeed9701ba8a2437c1a67f3b6db08ed6b679112",
+      "line_endings_normalized": true,
+      "matches": true,
+      "path": "scripts/arena/run_baseline_episode_inner.sh"
+    }
+  ],
+  "matching_file_count": 5,
+  "preflight_manifest": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\outputs\\student\\refactor_baseline\\observation_shadow_smoke_preflight.json",
+  "ready": true,
+  "runtime_root": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR"
+}

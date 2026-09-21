@@ -1,0 +1,70 @@
+{
+  "complete_trace_row_count": 0,
+  "diagnostic_only": true,
+  "episode_id": "pgrr_masktrace_headon_validation_r00_20260912",
+  "expected_shutdown_exception_count": 2,
+  "expected_stage_order": [
+    "map_connectivity",
+    "observable_scan",
+    "path_corridor"
+  ],
+  "fatal_runtime_pattern_counts": {
+    "import_error": 0,
+    "parameter_type_error": 0,
+    "recovery_manager_process_died": 0
+  },
+  "first_temporary_empty_stage_counts": {
+    "map_connectivity": 0,
+    "none": 0,
+    "observable_scan": 0,
+    "path_corridor": 0
+  },
+  "malformed_trace_row_count": 0,
+  "malformed_trace_rows": [],
+  "outcome": "TIMEOUT",
+  "outcome_detail": "configured episode timeout",
+  "outcome_sample_count": 896,
+  "performance_claim": false,
+  "runtime_note": "Tracebacks are shutdown cleanup only",
+  "runtime_traceback_count": 2,
+  "runtime_valid": true,
+  "sample_count_matches": true,
+  "sources": {
+    "jsonl": "data/raw/pgrr_masktrace_headon_validation_r00_20260912.jsonl",
+    "outcome": "data/raw/pgrr_masktrace_headon_validation_r00_20260912.outcome.json",
+    "runtime_log": "outputs/logs/baseline/pgrr_masktrace_headon_validation_r00_20260912_runtime.log"
+  },
+  "stage_counts": {
+    "map_connectivity": 0,
+    "observable_scan": 0,
+    "path_corridor": 0
+  },
+  "telemetry_row_count": 896,
+  "temporary_subgoal_layer_totals": {
+    "map_connectivity": {
+      "rows_removing_temporary": 0,
+      "rows_with_no_temporary_output": 0,
+      "temporary_input_total": 0,
+      "temporary_output_total": 0,
+      "temporary_removed_total": 0
+    },
+    "observable_scan": {
+      "rows_removing_temporary": 0,
+      "rows_with_no_temporary_output": 0,
+      "temporary_input_total": 0,
+      "temporary_output_total": 0,
+      "temporary_removed_total": 0
+    },
+    "path_corridor": {
+      "rows_removing_temporary": 0,
+      "rows_with_no_temporary_output": 0,
+      "temporary_input_total": 0,
+      "temporary_output_total": 0,
+      "temporary_removed_total": 0
+    }
+  },
+  "trace_decision_row_count": 0,
+  "trace_status": "not_triggered",
+  "traced_action_counts": {},
+  "valid": false
+}

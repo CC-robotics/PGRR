@@ -1,0 +1,32 @@
+schema_version: 1
+benchmark_id: pgrr_priority_four_optimization_v1
+status: train_only_single_seed_screen
+family: closing_gap_multi_pedestrian
+variant_id: closing_gap_bounded_release_v3
+map: {id: map_empty, bounds_m: [0.0, 30.0, 0.0, 24.0], preview_resolution_m: 0.05}
+robot: {start: [5.0, 12.0, 0.0], goal: [20.0, 12.0, 0.0], nominal_screen_speed_mps: 0.26}
+actors:
+  speed_mps: 0.45
+  radius_m: 0.35
+  robot_avoidance_distance_m: 0.80
+  definitions:
+    - {name: ped_00, id: 1, crossing_x_m: 14.6, start_y_m: 10.6, terminal_y_m: 15.5}
+    - {name: ped_01, id: 2, crossing_x_m: 15.4, start_y_m: 13.4, terminal_y_m: 8.5}
+event:
+  id_version: v3
+  trigger_metric: robot_goal_distance_below
+  trigger_threshold_m: 6.0
+  trigger_hysteresis_m: 0.25
+  active_duration_s: 3.0
+  commands: {pre_event: hold_at_start, active_event: release_actor_on_noncyclic_crossing, released: resume_noncyclic_route}
+split: {name: train, seed: 98200, replicate: 0, held_out_test_enabled: false}
+screening:
+  maximum_start_goal_distance_m: 15.0
+  minimum_post_conflict_distance_m: 5.0
+  active_duration_range_s: [2.0, 4.0]
+  desired_interaction_time_s: [38.0, 50.0]
+  interaction_time_tolerance_s: 3.0
+  maximum_actor_center_time_difference_s: 0.25
+  minimum_terminal_route_clearance_m: 3.0
+  minimum_static_subgoal_count: 21
+output: {scenario_id: closing_gap_bounded_release_v3_train_r00_s98200}

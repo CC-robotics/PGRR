@@ -1,0 +1,2318 @@
+{
+  "aggregate": {
+    "completed_rejoin_count": 23,
+    "cycle_trigger_failure_counts": {
+      "COLLISION_RISK": 20,
+      "NO_POSITIVE_FAILURE_SCORE": 10
+    },
+    "cycles_with_learned_decision": 25,
+    "cycles_without_learned_decision": 5,
+    "episode_count": 8,
+    "learned_action_event_count": 60,
+    "learned_presence_progress_counts": {
+      "with_learned|nonpositive": 22,
+      "with_learned|positive": 3,
+      "without_learned|nonpositive": 3,
+      "without_learned|positive": 2
+    },
+    "learned_wait_backup_event_count": 54,
+    "learned_wait_backup_event_fraction": 0.9,
+    "mean_low_linear_speed_sample_fraction": 0.223578,
+    "nonpositive_cycle_action_event_counts": {
+      "BACKUP": 53,
+      "CONTINUE": 45,
+      "REPLAN": 1,
+      "SUBGOAL_0": 2,
+      "SUBGOAL_2": 1,
+      "WAIT": 55
+    },
+    "nonpositive_cycle_emergency_action_counts": {
+      "BACKUP": 31,
+      "CONTINUE": 21,
+      "WAIT": 57
+    },
+    "nonpositive_cycle_learned_action_counts": {
+      "BACKUP": 32,
+      "REPLAN": 1,
+      "SUBGOAL_0": 2,
+      "SUBGOAL_2": 1,
+      "WAIT": 19
+    },
+    "nonpositive_cycle_signature_counts": {
+      "BACKUP>CONTINUE": 2,
+      "BACKUP>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP": 1,
+      "CONTINUE>BACKUP>CONTINUE": 1,
+      "WAIT>BACKUP": 1,
+      "WAIT>BACKUP>CONTINUE>BACKUP": 1,
+      "WAIT>BACKUP>CONTINUE>BACKUP>CONTINUE": 4,
+      "WAIT>BACKUP>CONTINUE>BACKUP>SUBGOAL_0>CONTINUE": 1,
+      "WAIT>BACKUP>CONTINUE>BACKUP>WAIT>CONTINUE>WAIT>CONTINUE>WAIT>CONTINUE>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP>WAIT": 1,
+      "WAIT>BACKUP>CONTINUE>REPLAN>WAIT>CONTINUE>WAIT>BACKUP>WAIT>CONTINUE>WAIT>BACKUP>WAIT>BACKUP>WAIT>CONTINUE": 1,
+      "WAIT>BACKUP>CONTINUE>WAIT>BACKUP>CONTINUE": 2,
+      "WAIT>BACKUP>CONTINUE>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP>CONTINUE": 1,
+      "WAIT>BACKUP>WAIT>BACKUP>WAIT>CONTINUE": 1,
+      "WAIT>BACKUP>WAIT>BACKUP>WAIT>CONTINUE>SUBGOAL_0>SUBGOAL_2>CONTINUE": 1,
+      "WAIT>BACKUP>WAIT>CONTINUE": 1,
+      "WAIT>BACKUP>WAIT>CONTINUE>BACKUP>CONTINUE": 1,
+      "WAIT>BACKUP>WAIT>CONTINUE>WAIT>CONTINUE": 1,
+      "WAIT>CONTINUE>BACKUP": 1,
+      "WAIT>CONTINUE>BACKUP>CONTINUE": 1,
+      "WAIT>CONTINUE>BACKUP>WAIT>BACKUP>CONTINUE": 1,
+      "WAIT>CONTINUE>WAIT>CONTINUE>BACKUP>CONTINUE": 1
+    },
+    "nonpositive_net_progress_episode_count": 1,
+    "nonpositive_progress_cycle_count": 25,
+    "outcome_counts": {
+      "PLANNER_FAILURE": 1,
+      "TIMEOUT": 7
+    },
+    "positive_cycle_action_event_counts": {
+      "BACKUP": 1,
+      "CONTINUE": 9,
+      "SUBGOAL_0": 1,
+      "WAIT": 8
+    },
+    "positive_cycle_emergency_action_counts": {
+      "BACKUP": 1,
+      "CONTINUE": 3,
+      "WAIT": 7
+    },
+    "positive_cycle_learned_action_counts": {
+      "CONTINUE": 1,
+      "SUBGOAL_0": 1,
+      "WAIT": 3
+    },
+    "positive_net_progress_episode_count": 7,
+    "positive_progress_cycle_count": 5,
+    "raw_hashes_verified": true,
+    "time_weighted_recovery_fraction": 0.392369,
+    "total_recovery_cycle_count": 30,
+    "trigger_progress_counts": {
+      "COLLISION_RISK|nonpositive": 18,
+      "COLLISION_RISK|positive": 2,
+      "NO_POSITIVE_FAILURE_SCORE|nonpositive": 7,
+      "NO_POSITIVE_FAILURE_SCORE|positive": 3
+    }
+  },
+  "benchmark_id": "pgrr_extension_v1_eight_family_pilot",
+  "claim_boundary": "development_diagnostic_only_no_superiority_claim",
+  "episodes": [
+    {
+      "completed_rejoin_count": 0,
+      "elapsed_s": 89.977,
+      "episode_id": "pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_pgrr",
+      "family": "diagonal_cut_in_corridor",
+      "family_index": 0,
+      "final_original_goal_distance_m": 0.873569,
+      "initial_original_goal_distance_m": 22.0,
+      "low_linear_speed_sample_fraction": 0.001111,
+      "minimum_original_goal_distance_m": 0.873569,
+      "net_original_goal_progress_m": 21.126431,
+      "nonpositive_progress_cycle_count": 0,
+      "outcome": "TIMEOUT",
+      "path_length_m": 21.126431,
+      "positive_progress_cycle_count": 0,
+      "raw_jsonl": "/home/preface/PGRR-online/data/raw/pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_pgrr.jsonl",
+      "raw_sha256_verified": true,
+      "recovery_cycle_count": 0,
+      "recovery_cycles": [],
+      "recovery_time_fraction": 0.0,
+      "recovery_time_s": 0,
+      "sample_count": 901,
+      "state_duration_s": {
+        "NORMAL": 89.977
+      }
+    },
+    {
+      "completed_rejoin_count": 3,
+      "elapsed_s": 89.91,
+      "episode_id": "pgrr_extpilot_f01_occluded_side_emergence_low_train_r00_s91100_pgrr",
+      "family": "occluded_side_emergence",
+      "family_index": 1,
+      "final_original_goal_distance_m": 10.523463,
+      "initial_original_goal_distance_m": 22.0,
+      "low_linear_speed_sample_fraction": 0.088988,
+      "minimum_original_goal_distance_m": 10.110338,
+      "net_original_goal_progress_m": 11.476537,
+      "nonpositive_progress_cycle_count": 4,
+      "outcome": "TIMEOUT",
+      "path_length_m": 17.583245,
+      "positive_progress_cycle_count": 0,
+      "raw_jsonl": "/home/preface/PGRR-online/data/raw/pgrr_extpilot_f01_occluded_side_emergence_low_train_r00_s91100_pgrr.jsonl",
+      "raw_sha256_verified": true,
+      "recovery_cycle_count": 4,
+      "recovery_cycles": [
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "WAIT",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>WAIT>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "OTHER"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 11.489,
+          "end_sample": 623,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 5,
+          "original_goal_progress_m": -0.726016,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.691 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.806 latency_ms=0.527",
+            "bc_directional_yield=active forward_clearance_m=0.695 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.808 latency_ms=0.152",
+            "bc_directional_yield=active forward_clearance_m=0.699 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.808 latency_ms=0.138",
+            "bc_directional_yield=active forward_clearance_m=0.701 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.137",
+            "bc_directional_yield=active forward_clearance_m=0.993 clear_frames=2; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=-0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.134",
+            "recovery_timeout",
+            "original_goal_restored"
+          ],
+          "start_sample": 508
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "NO_POSITIVE_FAILURE_SCORE",
+          "duration_s": 8.525,
+          "end_sample": 743,
+          "failure_prediction_at_trigger": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 2,
+          "original_goal_progress_m": -0.745729,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.701 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.271",
+            "bc_directional_yield=active forward_clearance_m=0.993 clear_frames=2; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.137",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 658
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "CONTINUE",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>CONTINUE>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "NO_POSITIVE_FAILURE_SCORE",
+          "duration_s": 7.492,
+          "end_sample": 853,
+          "failure_prediction_at_trigger": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 2,
+          "original_goal_progress_m": -0.599798,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.604 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.562",
+            "bc_directional_yield=active forward_clearance_m=0.937 clear_frames=1; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=-0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.248",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 778
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "CONTINUE",
+            "BACKUP"
+          ],
+          "action_signature": "WAIT>CONTINUE>BACKUP",
+          "completed_rejoin": false,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 2.597,
+          "end_sample": 899,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 1,
+          "original_goal_progress_m": -0.17866,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.814 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.133"
+          ],
+          "start_sample": 873
+        }
+      ],
+      "recovery_time_fraction": 0.334824,
+      "recovery_time_s": 30.104,
+      "sample_count": 900,
+      "state_duration_s": {
+        "EMERGENCY_STOP": 4.995,
+        "NORMAL": 59.807,
+        "PENDING_RECOVERY": 2.398,
+        "RECOVERY": 21.212,
+        "REJOIN": 1.499
+      }
+    },
+    {
+      "completed_rejoin_count": 7,
+      "elapsed_s": 89.943,
+      "episode_id": "pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_pgrr",
+      "family": "recurrent_bidirectional_crossing",
+      "family_index": 2,
+      "final_original_goal_distance_m": 13.917655,
+      "initial_original_goal_distance_m": 21.991798,
+      "low_linear_speed_sample_fraction": 0.2759,
+      "minimum_original_goal_distance_m": 13.769379,
+      "net_original_goal_progress_m": 8.074143,
+      "nonpositive_progress_cycle_count": 3,
+      "outcome": "TIMEOUT",
+      "path_length_m": 13.818823,
+      "positive_progress_cycle_count": 5,
+      "raw_jsonl": "/home/preface/PGRR-online/data/raw/pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_pgrr.jsonl",
+      "raw_sha256_verified": true,
+      "recovery_cycle_count": 8,
+      "recovery_cycles": [
+        {
+          "action_sequence": [
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "OTHER"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 9.923,
+          "end_sample": 436,
+          "failure_prediction_at_trigger": [
+            0.75,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 5,
+          "original_goal_progress_m": -0.905795,
+          "reason_sequence": [
+            "bc_directional_yield=active forward_clearance_m=1.293 clear_frames=0; bc_yield_mask=active pre=2,21,22 post=21,22; bc_closing_side=left_occupied right_beams=0 left_beams=13 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.048 angular_gate_radps=0.200 raw_right=0 raw_left=1 latched_right=0 latched_left=1 pre=21,22 post=21,22; bc_recurrent_escape=unavailable cause=unilateral_flow count=1 minimum_lateral_m=0.250 lateral_ids=0,1,2,5,6,7,8,9,11,12,13,14,15,16,18,19,20 pre=21,22 final=21,22; bc_unilateral_backup=short_redecision maximum_s=1.000; bc_onnx confidence=0.831 latency_ms=0.354",
+            "bc_directional_yield=active forward_clearance_m=0.974 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=2 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=1 pre=21,22 post=21,22; bc_recurrent_escape=unavailable cause=unilateral_flow count=1 minimum_lateral_m=0.250 lateral_ids=0,1,2,5,6,7,8,9,11,12,13,14,15,16,18,19,20 pre=21,22 final=21,22; bc_unilateral_backup=short_redecision maximum_s=1.000; bc_onnx confidence=0.729 latency_ms=0.135",
+            "bc_directional_yield=active forward_clearance_m=1.138 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=-0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=1 pre=21,22 post=21,22; bc_recurrent_escape=unavailable cause=unilateral_flow count=1 minimum_lateral_m=0.250 lateral_ids=0,1,2,5,6,7,8,9,11,12,13,14,15,16,18,19,20 pre=21,22 final=21,22; bc_unilateral_backup=short_redecision maximum_s=1.000; bc_onnx confidence=0.750 latency_ms=0.145",
+            "bc_directional_yield=active forward_clearance_m=0.968 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.667 latency_ms=0.159",
+            "bc_directional_yield=active forward_clearance_m=3.611 clear_frames=2; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=5 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.834 latency_ms=0.134",
+            "recovery_timeout",
+            "original_goal_restored"
+          ],
+          "start_sample": 335
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "CONTINUE",
+            "WAIT",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>CONTINUE>WAIT>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 5.961,
+          "end_sample": 518,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 3,
+          "original_goal_progress_m": 0.058452,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=1.158 clear_frames=0; bc_yield_mask=active pre=0,1,21,22 post=0,21,22; bc_closing_side=clear right_beams=0 left_beams=3 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=0,21,22 post=0,21,22; bc_onnx confidence=0.878 latency_ms=0.138",
+            "bc_directional_yield=active forward_clearance_m=1.504 clear_frames=0; bc_yield_mask=active pre=0,1,2,3,9,21,22 post=0,21,22; bc_closing_side=clear right_beams=0 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=0,21,22 post=0,21,22; bc_onnx confidence=0.841 latency_ms=0.138",
+            "bc_directional_yield=active forward_clearance_m=1.928 clear_frames=2; bc_yield_mask=active pre=0,1,2,3,9,10,21,22 post=0,21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=0,21,22 post=0,21,22; bc_onnx confidence=0.794 latency_ms=0.130",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 457
+        },
+        {
+          "action_sequence": [
+            "CONTINUE",
+            "SUBGOAL_0",
+            "CONTINUE"
+          ],
+          "action_signature": "CONTINUE>SUBGOAL_0>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "CONTINUE",
+              "origin": "OTHER"
+            },
+            {
+              "action": "SUBGOAL_0",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 12.021,
+          "end_sample": 646,
+          "failure_prediction_at_trigger": [
+            0.75,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 1,
+          "original_goal_progress_m": 0.027204,
+          "reason_sequence": [
+            "failure_pending",
+            "bc_directional_yield=active forward_clearance_m=0.970 clear_frames=0; bc_yield_mask=active pre=0,21,22 post=0,21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=0,21,22 post=0,21,22; bc_side_commitment=set_right progress_window_m=8.000; bc_recurrent_escape=already_escape_only cause=retry count=2 minimum_lateral_m=0.250 lateral_ids=0,1,2,4,5,6,7,8,9,11,12,13,14,15,16,18,19,20 pre=0 final=0; bc_onnx confidence=1.000 latency_ms=0.135",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 523
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            }
+          ],
+          "dominant_failure_at_trigger": "NO_POSITIVE_FAILURE_SCORE",
+          "duration_s": 0.5,
+          "end_sample": 676,
+          "failure_prediction_at_trigger": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 0,
+          "original_goal_progress_m": 0.006262,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_clear_continue_goal"
+          ],
+          "start_sample": 671
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "REPLAN",
+            "WAIT",
+            "CONTINUE",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "CONTINUE",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>REPLAN>WAIT>CONTINUE>WAIT>BACKUP>WAIT>CONTINUE>WAIT>BACKUP>WAIT>BACKUP>WAIT>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "REPLAN",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "SAFETY_CLEAR"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "SAFETY_CLEAR"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "SAFETY_CLEAR"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "NO_POSITIVE_FAILURE_SCORE",
+          "duration_s": 12.021,
+          "end_sample": 803,
+          "failure_prediction_at_trigger": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 1,
+          "original_goal_progress_m": -0.173601,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_onnx confidence=0.827 latency_ms=0.136",
+            "emergency_stop",
+            "safety_clear_resume_rejoin",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "safety_clear_resume_rejoin",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_turn_right",
+            "safety_clear_resume_rejoin",
+            "original_goal_restored"
+          ],
+          "start_sample": 681
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            }
+          ],
+          "dominant_failure_at_trigger": "NO_POSITIVE_FAILURE_SCORE",
+          "duration_s": 0.566,
+          "end_sample": 814,
+          "failure_prediction_at_trigger": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 0,
+          "original_goal_progress_m": 0.015058,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_clear_continue_goal"
+          ],
+          "start_sample": 808
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>WAIT>BACKUP>WAIT>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            }
+          ],
+          "dominant_failure_at_trigger": "NO_POSITIVE_FAILURE_SCORE",
+          "duration_s": 4.462,
+          "end_sample": 863,
+          "failure_prediction_at_trigger": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 0,
+          "original_goal_progress_m": -0.281429,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_turn_right",
+            "emergency_clear_continue_goal"
+          ],
+          "start_sample": 819
+        },
+        {
+          "action_sequence": [
+            "CONTINUE",
+            "WAIT",
+            "CONTINUE",
+            "WAIT",
+            "CONTINUE",
+            "WAIT",
+            "BACKUP",
+            "WAIT"
+          ],
+          "action_signature": "CONTINUE>WAIT>CONTINUE>WAIT>CONTINUE>WAIT>BACKUP>WAIT",
+          "completed_rejoin": false,
+          "decision_events": [
+            {
+              "action": "CONTINUE",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "SAFETY_CLEAR"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "SAFETY_CLEAR"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            }
+          ],
+          "dominant_failure_at_trigger": "NO_POSITIVE_FAILURE_SCORE",
+          "duration_s": 4.629,
+          "end_sample": 917,
+          "failure_prediction_at_trigger": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 1,
+          "original_goal_progress_m": 0.169412,
+          "reason_sequence": [
+            "bc_onnx confidence=0.511 latency_ms=0.332",
+            "emergency_stop",
+            "safety_clear_resume_rejoin",
+            "emergency_stop",
+            "safety_clear_resume_rejoin",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop"
+          ],
+          "start_sample": 869
+        }
+      ],
+      "recovery_time_fraction": 0.55684,
+      "recovery_time_s": 50.084,
+      "sample_count": 918,
+      "state_duration_s": {
+        "EMERGENCY_STOP": 19.381,
+        "NORMAL": 39.86,
+        "PENDING_RECOVERY": 3.13,
+        "RECOVERY": 20.613,
+        "REJOIN": 6.96
+      }
+    },
+    {
+      "completed_rejoin_count": 1,
+      "elapsed_s": 50.117,
+      "episode_id": "pgrr_extpilot_f03_narrow_corridor_head_on_deadlock_low_train_r00_s91300_pgrr",
+      "family": "narrow_corridor_head_on_deadlock",
+      "family_index": 3,
+      "final_original_goal_distance_m": 22.251647,
+      "initial_original_goal_distance_m": 22.0,
+      "low_linear_speed_sample_fraction": 0.768463,
+      "minimum_original_goal_distance_m": 21.942004,
+      "net_original_goal_progress_m": -0.251647,
+      "nonpositive_progress_cycle_count": 2,
+      "outcome": "PLANNER_FAILURE",
+      "path_length_m": 1.626445,
+      "positive_progress_cycle_count": 0,
+      "raw_jsonl": "/home/preface/PGRR-online/data/raw/pgrr_extpilot_f03_narrow_corridor_head_on_deadlock_low_train_r00_s91300_pgrr.jsonl",
+      "raw_sha256_verified": true,
+      "recovery_cycle_count": 2,
+      "recovery_cycles": [
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>WAIT>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            }
+          ],
+          "dominant_failure_at_trigger": "NO_POSITIVE_FAILURE_SCORE",
+          "duration_s": 2.198,
+          "end_sample": 22,
+          "failure_prediction_at_trigger": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 0,
+          "original_goal_progress_m": -0.149849,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_clear_continue_goal"
+          ],
+          "start_sample": 0
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "BACKUP",
+            "WAIT",
+            "CONTINUE",
+            "WAIT",
+            "CONTINUE",
+            "WAIT",
+            "CONTINUE",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>BACKUP>WAIT>CONTINUE>WAIT>CONTINUE>WAIT>CONTINUE>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP>WAIT",
+          "completed_rejoin": false,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "SAFETY_CLEAR"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "SAFETY_CLEAR"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            }
+          ],
+          "dominant_failure_at_trigger": "NO_POSITIVE_FAILURE_SCORE",
+          "duration_s": 47.419,
+          "end_sample": 501,
+          "failure_prediction_at_trigger": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 4,
+          "original_goal_progress_m": -0.213122,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=2.058 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.606 latency_ms=0.406",
+            "emergency_stop",
+            "bc_directional_yield=active forward_clearance_m=2.146 clear_frames=0; bc_yield_mask=active pre=21 post=21; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21 post=21; bc_onnx confidence=1.000 latency_ms=0.139",
+            "bc_directional_yield=active forward_clearance_m=2.155 clear_frames=0; bc_yield_mask=active pre=21 post=21; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21 post=21; bc_onnx confidence=1.000 latency_ms=0.155",
+            "bc_directional_yield=active forward_clearance_m=2.160 clear_frames=2; bc_yield_mask=active pre=21 post=21; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21 post=21; bc_onnx confidence=1.000 latency_ms=0.136",
+            "recovery_action_complete",
+            "emergency_stop",
+            "safety_clear_resume_rejoin",
+            "emergency_stop",
+            "safety_clear_resume_rejoin",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_forward",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_forward",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop"
+          ],
+          "start_sample": 27
+        }
+      ],
+      "recovery_time_fraction": 0.990013,
+      "recovery_time_s": 49.616,
+      "sample_count": 502,
+      "state_duration_s": {
+        "EMERGENCY_STOP": 42.724,
+        "NORMAL": 0.5,
+        "PENDING_RECOVERY": 0.599,
+        "RECOVERY": 4.795,
+        "REJOIN": 1.498
+      }
+    },
+    {
+      "completed_rejoin_count": 5,
+      "elapsed_s": 89.977,
+      "episode_id": "pgrr_extpilot_f04_closing_gap_multi_pedestrian_medium_train_r00_s91410_pgrr",
+      "family": "closing_gap_multi_pedestrian",
+      "family_index": 4,
+      "final_original_goal_distance_m": 14.196009,
+      "initial_original_goal_distance_m": 22.0,
+      "low_linear_speed_sample_fraction": 0.213808,
+      "minimum_original_goal_distance_m": 13.308792,
+      "net_original_goal_progress_m": 7.803991,
+      "nonpositive_progress_cycle_count": 6,
+      "outcome": "TIMEOUT",
+      "path_length_m": 14.574583,
+      "positive_progress_cycle_count": 0,
+      "raw_jsonl": "/home/preface/PGRR-online/data/raw/pgrr_extpilot_f04_closing_gap_multi_pedestrian_medium_train_r00_s91410_pgrr.jsonl",
+      "raw_sha256_verified": true,
+      "recovery_cycle_count": 6,
+      "recovery_cycles": [
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 7.592,
+          "end_sample": 424,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 1,
+          "original_goal_progress_m": -0.46065,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.974 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.742 latency_ms=0.354",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 348
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 7.526,
+          "end_sample": 518,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 1,
+          "original_goal_progress_m": -0.465713,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.966 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.561 latency_ms=0.159",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 443
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "CONTINUE",
+            "WAIT",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>WAIT>CONTINUE>WAIT>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 8.025,
+          "end_sample": 618,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 2,
+          "original_goal_progress_m": -0.031345,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_turn_left",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.937 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=left_occupied right_beams=2 left_beams=7 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=1 latched_right=0 latched_left=1 pre=21,22 post=21,22; bc_recurrent_escape=unavailable cause=unilateral_flow count=1 minimum_lateral_m=0.250 lateral_ids=0,3,4,5,6,7,8,10,11,12,13,14,15,16,17,18,19,20 pre=21,22 final=21,22; bc_onnx confidence=0.947 latency_ms=0.160",
+            "bc_directional_yield=active forward_clearance_m=0.931 clear_frames=1; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=1 pre=21,22 post=21,22; bc_recurrent_escape=unavailable cause=unilateral_flow count=1 minimum_lateral_m=0.250 lateral_ids=0,3,4,5,6,7,8,10,11,12,13,14,15,16,17,18,19,20 pre=21,22 final=21,22; bc_onnx confidence=0.952 latency_ms=0.170",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 538
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "CONTINUE",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>CONTINUE>BACKUP>WAIT>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "OTHER"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 9.49,
+          "end_sample": 733,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 5,
+          "original_goal_progress_m": -0.66265,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.533 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.504 latency_ms=0.152",
+            "bc_directional_yield=active forward_clearance_m=0.805 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=2 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=-0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.526 latency_ms=0.147",
+            "bc_directional_yield=active forward_clearance_m=0.832 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.543 latency_ms=0.134",
+            "bc_directional_yield=active forward_clearance_m=0.811 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.542 latency_ms=0.137",
+            "bc_directional_yield=active forward_clearance_m=0.823 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.132",
+            "recovery_timeout",
+            "original_goal_restored"
+          ],
+          "start_sample": 638
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 7.026,
+          "end_sample": 813,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 1,
+          "original_goal_progress_m": -0.468928,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=1.019 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.142",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 743
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "BACKUP"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>BACKUP",
+          "completed_rejoin": false,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 6.061,
+          "end_sample": 898,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 1,
+          "original_goal_progress_m": -0.609335,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.905 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.140"
+          ],
+          "start_sample": 838
+        }
+      ],
+      "recovery_time_fraction": 0.508154,
+      "recovery_time_s": 45.722,
+      "sample_count": 899,
+      "state_duration_s": {
+        "EMERGENCY_STOP": 11.955,
+        "NORMAL": 44.256,
+        "PENDING_RECOVERY": 3.397,
+        "RECOVERY": 27.806,
+        "REJOIN": 2.564
+      }
+    },
+    {
+      "completed_rejoin_count": 4,
+      "elapsed_s": 89.943,
+      "episode_id": "pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_pgrr",
+      "family": "lead_pedestrian_sudden_stop",
+      "family_index": 5,
+      "final_original_goal_distance_m": 11.78616,
+      "initial_original_goal_distance_m": 22.0,
+      "low_linear_speed_sample_fraction": 0.136009,
+      "minimum_original_goal_distance_m": 11.728934,
+      "net_original_goal_progress_m": 10.21384,
+      "nonpositive_progress_cycle_count": 5,
+      "outcome": "TIMEOUT",
+      "path_length_m": 16.382718,
+      "positive_progress_cycle_count": 0,
+      "raw_jsonl": "/home/preface/PGRR-online/data/raw/pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_pgrr.jsonl",
+      "raw_sha256_verified": true,
+      "recovery_cycle_count": 5,
+      "recovery_cycles": [
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "WAIT",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>WAIT>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 8.492,
+          "end_sample": 504,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 4,
+          "original_goal_progress_m": -0.383804,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.940 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.703 latency_ms=0.658",
+            "bc_directional_yield=active forward_clearance_m=0.947 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.711 latency_ms=0.142",
+            "bc_directional_yield=active forward_clearance_m=0.931 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=0.711 latency_ms=0.137",
+            "bc_directional_yield=active forward_clearance_m=0.931 clear_frames=2; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.135",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 419
+        },
+        {
+          "action_sequence": [
+            "CONTINUE",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "CONTINUE>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "CONTINUE",
+              "origin": "OTHER"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 8.525,
+          "end_sample": 604,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 2,
+          "original_goal_progress_m": -0.764118,
+          "reason_sequence": [
+            "failure_pending",
+            "bc_directional_yield=active forward_clearance_m=0.845 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.145",
+            "bc_directional_yield=active forward_clearance_m=1.278 clear_frames=2; bc_yield_mask=active pre=0,1,2,21,22 post=0,21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=0,21,22 post=0,21,22; bc_onnx confidence=0.933 latency_ms=42.335",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 519
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "BACKUP",
+            "SUBGOAL_0",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>BACKUP>SUBGOAL_0>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "SUBGOAL_0",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "OTHER"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 9.024,
+          "end_sample": 728,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 2,
+          "original_goal_progress_m": -0.444382,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.924 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.164",
+            "bc_directional_yield=active forward_clearance_m=1.380 clear_frames=2; bc_yield_mask=active pre=0,1,21,22 post=0,21,22; bc_closing_side=clear right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=0,21,22 post=0,21,22; bc_side_commitment=set_right progress_window_m=8.000; bc_onnx confidence=1.000 latency_ms=0.143",
+            "failure_cleared",
+            "original_goal_restored"
+          ],
+          "start_sample": 638
+        },
+        {
+          "action_sequence": [
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 6.926,
+          "end_sample": 838,
+          "failure_prediction_at_trigger": [
+            0.75,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 2,
+          "original_goal_progress_m": -0.668758,
+          "reason_sequence": [
+            "bc_directional_yield=active forward_clearance_m=0.719 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=rotation_gated right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.318 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_side_commitment=right progress_window_m=8.000 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.323",
+            "bc_directional_yield=active forward_clearance_m=1.020 clear_frames=1; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=-0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_side_commitment=right progress_window_m=8.000 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.135",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 769
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP"
+          ],
+          "action_signature": "WAIT>BACKUP",
+          "completed_rejoin": false,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            }
+          ],
+          "dominant_failure_at_trigger": "NO_POSITIVE_FAILURE_SCORE",
+          "duration_s": 1.432,
+          "end_sample": 897,
+          "failure_prediction_at_trigger": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 0,
+          "original_goal_progress_m": -0.049331,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup"
+          ],
+          "start_sample": 883
+        }
+      ],
+      "recovery_time_fraction": 0.382452,
+      "recovery_time_s": 34.399,
+      "sample_count": 898,
+      "state_duration_s": {
+        "EMERGENCY_STOP": 5.395,
+        "NORMAL": 55.544,
+        "PENDING_RECOVERY": 2.298,
+        "RECOVERY": 24.675,
+        "REJOIN": 2.031
+      }
+    },
+    {
+      "completed_rejoin_count": 3,
+      "elapsed_s": 89.943,
+      "episode_id": "pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_pgrr",
+      "family": "bottleneck_cross_flow_merge",
+      "family_index": 6,
+      "final_original_goal_distance_m": 13.69065,
+      "initial_original_goal_distance_m": 22.0,
+      "low_linear_speed_sample_fraction": 0.241918,
+      "minimum_original_goal_distance_m": 12.828193,
+      "net_original_goal_progress_m": 8.30935,
+      "nonpositive_progress_cycle_count": 4,
+      "outcome": "TIMEOUT",
+      "path_length_m": 14.748373,
+      "positive_progress_cycle_count": 0,
+      "raw_jsonl": "/home/preface/PGRR-online/data/raw/pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_pgrr.jsonl",
+      "raw_sha256_verified": true,
+      "recovery_cycle_count": 4,
+      "recovery_cycles": [
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "CONTINUE",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>CONTINUE>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 13.02,
+          "end_sample": 522,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 5,
+          "original_goal_progress_m": -0.731249,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.611 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=left_occupied right_beams=0 left_beams=7 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=1 latched_right=0 latched_left=1 pre=21,22 post=21,22; bc_recurrent_escape=unavailable cause=unilateral_flow count=1 minimum_lateral_m=0.250 lateral_ids=0,1,2,5,6,7,8,9,10,12,13,14,15,16,17,19,20 pre=21,22 final=21,22; bc_onnx confidence=0.618 latency_ms=49.560",
+            "bc_directional_yield=active forward_clearance_m=0.784 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=0 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=1 pre=21,22 post=21,22; bc_recurrent_escape=unavailable cause=unilateral_flow count=1 minimum_lateral_m=0.250 lateral_ids=0,1,2,5,6,7,8,9,10,12,13,14,15,16,17,19,20 pre=21,22 final=21,22; bc_unilateral_backup=short_redecision maximum_s=1.000; bc_onnx confidence=0.587 latency_ms=0.140",
+            "bc_directional_yield=active forward_clearance_m=0.718 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=right_occupied right_beams=8 left_beams=3 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=-0.000 angular_gate_radps=0.200 raw_right=1 raw_left=0 latched_right=1 latched_left=1 pre=21,22 post=21,22; bc_onnx confidence=0.730 latency_ms=0.140",
+            "emergency_stop",
+            "emergency_backup",
+            "bc_directional_yield=active forward_clearance_m=0.867 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=left_occupied right_beams=0 left_beams=8 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=-0.000 angular_gate_radps=0.200 raw_right=0 raw_left=1 latched_right=1 latched_left=1 pre=21,22 post=21,22; bc_onnx confidence=0.525 latency_ms=0.132",
+            "bc_directional_yield=active forward_clearance_m=0.957 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=1 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=1 latched_left=1 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.153",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 392
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "CONTINUE",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>WAIT>CONTINUE>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 8.025,
+          "end_sample": 622,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 1,
+          "original_goal_progress_m": -0.435396,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_turn_right",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.983 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=2 left_beams=2 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.184",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 542
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "CONTINUE",
+            "WAIT",
+            "CONTINUE",
+            "BACKUP",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>CONTINUE>WAIT>CONTINUE>BACKUP>CONTINUE",
+          "completed_rejoin": true,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "RECOVERY_LIFECYCLE"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 8.458,
+          "end_sample": 721,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 1,
+          "original_goal_progress_m": -0.353281,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_clear_continue_goal",
+            "emergency_stop",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=0.918 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=5 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=21,22 post=21,22; bc_onnx confidence=1.000 latency_ms=0.132",
+            "recovery_action_complete",
+            "original_goal_restored"
+          ],
+          "start_sample": 637
+        },
+        {
+          "action_sequence": [
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "CONTINUE",
+            "SUBGOAL_0",
+            "SUBGOAL_2",
+            "CONTINUE"
+          ],
+          "action_signature": "WAIT>BACKUP>WAIT>BACKUP>WAIT>CONTINUE>SUBGOAL_0>SUBGOAL_2>CONTINUE",
+          "completed_rejoin": false,
+          "decision_events": [
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "SUBGOAL_0",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "SUBGOAL_2",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "CONTINUE",
+              "origin": "OTHER"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 15.085,
+          "end_sample": 897,
+          "failure_prediction_at_trigger": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 2,
+          "original_goal_progress_m": -0.717178,
+          "reason_sequence": [
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_turn_right",
+            "emergency_clear_continue_goal",
+            "bc_directional_yield=active forward_clearance_m=1.022 clear_frames=0; bc_yield_mask=active pre=0,21,22 post=0,21,22; bc_closing_side=clear right_beams=4 left_beams=5 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=0,21,22 post=0,21,22; bc_side_commitment=set_right progress_window_m=8.000; bc_onnx confidence=1.000 latency_ms=0.174",
+            "bc_directional_yield=active forward_clearance_m=1.478 clear_frames=2; bc_yield_mask=active pre=2,3,4,11,18,21 post=2,3,4,11,18,21; bc_closing_side=rotation_gated right_beams=0 left_beams=0 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=-0.904 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=0 pre=2,3,4,11,18,21 post=2,3,4,11,18,21; bc_near_field_radius=applied clearance_m=0.905 maximum_radius_m=0.600 pre=2,3,4,11,18,21 post=2,3,4,21; bc_side_commitment=released_right_infeasible; bc_side_commitment=set_left progress_window_m=8.000; bc_onnx confidence=0.945 latency_ms=0.433",
+            "recovery_timeout"
+          ],
+          "start_sample": 746
+        }
+      ],
+      "recovery_time_fraction": 0.495735,
+      "recovery_time_s": 44.588,
+      "sample_count": 898,
+      "state_duration_s": {
+        "EMERGENCY_STOP": 14.685,
+        "NORMAL": 45.355,
+        "PENDING_RECOVERY": 2.764,
+        "RECOVERY": 24.542,
+        "REJOIN": 2.597
+      }
+    },
+    {
+      "completed_rejoin_count": 0,
+      "elapsed_s": 89.91,
+      "episode_id": "pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_pgrr",
+      "family": "goal_approach_lateral_interruption",
+      "family_index": 7,
+      "final_original_goal_distance_m": 4.609626,
+      "initial_original_goal_distance_m": 22.0,
+      "low_linear_speed_sample_fraction": 0.06243,
+      "minimum_original_goal_distance_m": 3.740179,
+      "net_original_goal_progress_m": 17.390374,
+      "nonpositive_progress_cycle_count": 1,
+      "outcome": "TIMEOUT",
+      "path_length_m": 19.218821,
+      "positive_progress_cycle_count": 0,
+      "raw_jsonl": "/home/preface/PGRR-online/data/raw/pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_pgrr.jsonl",
+      "raw_sha256_verified": true,
+      "recovery_cycle_count": 1,
+      "recovery_cycles": [
+        {
+          "action_sequence": [
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP",
+            "WAIT",
+            "BACKUP"
+          ],
+          "action_signature": "BACKUP>WAIT>BACKUP>WAIT>BACKUP>WAIT>BACKUP",
+          "completed_rejoin": false,
+          "decision_events": [
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "WAIT",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "EMERGENCY_GUARD"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "WAIT",
+              "origin": "LEARNED_POLICY"
+            },
+            {
+              "action": "BACKUP",
+              "origin": "LEARNED_POLICY"
+            }
+          ],
+          "dominant_failure_at_trigger": "COLLISION_RISK",
+          "duration_s": 12.188,
+          "end_sample": 897,
+          "failure_prediction_at_trigger": [
+            0.75,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "learned_decision_count": 5,
+          "original_goal_progress_m": -0.869447,
+          "reason_sequence": [
+            "bc_directional_yield=active forward_clearance_m=0.627 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=left_occupied right_beams=0 left_beams=11 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.048 angular_gate_radps=0.200 raw_right=0 raw_left=1 latched_right=0 latched_left=1 pre=21,22 post=21,22; bc_recurrent_escape=unavailable cause=unilateral_flow count=1 minimum_lateral_m=0.250 lateral_ids=0,1,2,5,6,7,8,9,10,12,13,14,15,16,17,19,20 pre=21,22 final=21,22; bc_unilateral_backup=short_redecision maximum_s=1.000; bc_onnx confidence=0.588 latency_ms=61.135",
+            "emergency_stop",
+            "emergency_backup",
+            "emergency_stop",
+            "emergency_backup",
+            "bc_directional_yield=active forward_clearance_m=3.850 clear_frames=0; bc_yield_mask=active pre=21,22 post=21,22; bc_closing_side=clear right_beams=4 left_beams=3 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=0 latched_left=1 pre=21,22 post=21,22; bc_recurrent_escape=unavailable cause=unilateral_flow count=1 minimum_lateral_m=0.250 lateral_ids=0,1,2,5,6,7,8,9,10,12,13,14,15,16,17,19,20 pre=21,22 final=21,22; bc_unilateral_backup=short_redecision maximum_s=1.000; bc_onnx confidence=0.572 latency_ms=0.149",
+            "bc_directional_yield=active forward_clearance_m=1.009 clear_frames=0; bc_yield_mask=active pre=0,21,22 post=0,21,22; bc_closing_side=right_occupied right_beams=6 left_beams=1 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=1 raw_left=0 latched_right=1 latched_left=1 pre=0,21,22 post=21,22; bc_onnx confidence=0.690 latency_ms=0.137",
+            "bc_directional_yield=active forward_clearance_m=0.818 clear_frames=0; bc_yield_mask=active pre=0,21,22 post=0,21,22; bc_closing_side=clear right_beams=0 left_beams=4 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=0 latched_right=1 latched_left=1 pre=0,21,22 post=21,22; bc_onnx confidence=0.572 latency_ms=0.132",
+            "bc_directional_yield=active forward_clearance_m=0.877 clear_frames=0; bc_yield_mask=active pre=0,1,21,22 post=0,1,21,22; bc_closing_side=left_occupied right_beams=0 left_beams=6 minimum_beams=6 sector_deg=5.0:60.0 delta_m=0.200 maximum_range_m=4.000 angular_speed_radps=0.000 angular_gate_radps=0.200 raw_right=0 raw_left=1 latched_right=1 latched_left=1 pre=0,1,21,22 post=21,22; bc_onnx confidence=0.599 latency_ms=0.136"
+          ],
+          "start_sample": 776
+        }
+      ],
+      "recovery_time_fraction": 0.135558,
+      "recovery_time_s": 12.188,
+      "sample_count": 898,
+      "state_duration_s": {
+        "EMERGENCY_STOP": 3.63,
+        "NORMAL": 77.722,
+        "RECOVERY": 8.558
+      }
+    }
+  ]
+}

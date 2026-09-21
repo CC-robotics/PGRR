@@ -1,0 +1,99 @@
+{
+  "obstacles": {
+    "dynamic": [
+      {
+        "behavior": {
+          "configuration": 0,
+          "dist": 2.0,
+          "duration": 60.0,
+          "goal_force_factor": 2.0,
+          "obstacle_force_factor": 40.0,
+          "once": false,
+          "other_force_factor": 10.0,
+          "social_force_factor": 5.0,
+          "type": 1,
+          "vel": 0.6
+        },
+        "cyclic_goals": false,
+        "goal_radius": 0.3,
+        "id": 1,
+        "max_vel": 0.45,
+        "model": "gazebo_actor",
+        "name": "ped_00",
+        "pos": [
+          15.0,
+          10.65,
+          1.5707963267948966
+        ],
+        "radius": 0.35,
+        "robot_avoidance_distance_m": 0.8,
+        "type": "adult",
+        "waypoints": [
+          [
+            15.0,
+            10.65,
+            1.5707963267948966
+          ],
+          [
+            15.0,
+            13.35,
+            1.5707963267948966
+          ]
+        ]
+      }
+    ],
+    "interactive": [],
+    "static": []
+  },
+  "ramp_event_control": {
+    "events": [
+      {
+        "active_duration_s": 5.0,
+        "actor_name": "ped_00",
+        "commands": {
+          "active_event": "release_actor_on_noncyclic_crossing",
+          "pre_event": "hold_at_start",
+          "released": "hold_at_off_path_terminal_waypoint"
+        },
+        "event_id": "goal_approach_lateral_one_shot_v2_train",
+        "trigger_hysteresis_m": 0.25,
+        "trigger_metric": "robot_goal_distance_below",
+        "trigger_threshold_m": 6.0
+      }
+    ],
+    "schema_version": 1
+  },
+  "ramp_metadata": {
+    "benchmark_id": "pgrr_priority_four_optimization_v1",
+    "candidate_status": "train_only_pre_runtime_screen",
+    "density": "low",
+    "event_control_required": true,
+    "family": "goal_approach_lateral_interruption",
+    "held_out_test_materialized": false,
+    "map_id": "map_empty",
+    "paired_methods": [
+      "base",
+      "pgrr"
+    ],
+    "replicate": 0,
+    "scenario_id": "goal_approach_lateral_one_shot_v2_train_r00_s97100",
+    "schema_version": 1,
+    "seed": 97100,
+    "split": "train",
+    "variant_id": "goal_approach_lateral_one_shot_v2"
+  },
+  "robots": [
+    {
+      "goal": [
+        20.0,
+        12.0,
+        0.0
+      ],
+      "start": [
+        5.0,
+        12.0,
+        0.0
+      ]
+    }
+  ]
+}

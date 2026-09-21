@@ -1,0 +1,9 @@
+family_index,family,episode_id,outcome,initial_original_goal_distance_m,final_original_goal_distance_m,minimum_original_goal_distance_m,net_original_goal_progress_m,path_length_m,recovery_time_s,recovery_time_fraction,low_linear_speed_sample_fraction,recovery_cycle_count,completed_rejoin_count,positive_progress_cycle_count,nonpositive_progress_cycle_count
+0,diagonal_cut_in_corridor,pgrr_extpilot_f00_diagonal_cut_in_corridor_low_train_r00_s91000_pgrr,TIMEOUT,22.0,0.873569,0.873569,21.126431,21.126431,0,0.0,0.001111,0,0,0,0
+1,occluded_side_emergence,pgrr_extpilot_f01_occluded_side_emergence_low_train_r00_s91100_pgrr,TIMEOUT,22.0,10.523463,10.110338,11.476537,17.583245,30.104,0.334824,0.088988,4,3,0,4
+2,recurrent_bidirectional_crossing,pgrr_extpilot_f02_recurrent_bidirectional_crossing_medium_train_r00_s91210_pgrr,TIMEOUT,21.991798,13.917655,13.769379,8.074143,13.818823,50.084,0.55684,0.2759,8,7,5,3
+3,narrow_corridor_head_on_deadlock,pgrr_extpilot_f03_narrow_corridor_head_on_deadlock_low_train_r00_s91300_pgrr,PLANNER_FAILURE,22.0,22.251647,21.942004,-0.251647,1.626445,49.616,0.990013,0.768463,2,1,0,2
+4,closing_gap_multi_pedestrian,pgrr_extpilot_f04_closing_gap_multi_pedestrian_medium_train_r00_s91410_pgrr,TIMEOUT,22.0,14.196009,13.308792,7.803991,14.574583,45.722,0.508154,0.213808,6,5,0,6
+5,lead_pedestrian_sudden_stop,pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_pgrr,TIMEOUT,22.0,11.78616,11.728934,10.21384,16.382718,34.399,0.382452,0.136009,5,4,0,5
+6,bottleneck_cross_flow_merge,pgrr_extpilot_f06_bottleneck_cross_flow_merge_medium_train_r00_s91610_pgrr,TIMEOUT,22.0,13.69065,12.828193,8.30935,14.748373,44.588,0.495735,0.241918,4,3,0,4
+7,goal_approach_lateral_interruption,pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_pgrr,TIMEOUT,22.0,4.609626,3.740179,17.390374,19.218821,12.188,0.135558,0.06243,1,0,0,1

@@ -1,0 +1,21 @@
+{
+  "audit_status": "PASS",
+  "benchmark_id": "pgrr_extension_v1",
+  "config_path": "configs\\experiments\\pgrr_extension_v1_train_validation.yaml",
+  "config_sha256": "b4de5f841b4b465cdb25b495808eda38352d2ab160db3b6529038c287a0b5818",
+  "densities": {
+    "high": 4,
+    "low": 1,
+    "medium": 2
+  },
+  "families": [
+    "diagonal_cut_in_corridor",
+    "occluded_side_emergence"
+  ],
+  "held_out_test_materialized": false,
+  "planned_condition_count": 54,
+  "planned_conditions_by_split": {
+    "train": 36,
+    "validation": 18
+  }
+}

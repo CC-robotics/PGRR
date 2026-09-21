@@ -1,0 +1,33 @@
+{
+  "detail": "physical robot footprint intersects known static scenario geometry",
+  "episode_id": "pgrr_event_leadstop_v2_s92500_base",
+  "localized_goal_distance_m": 16.870485305786133,
+  "outcome": "COLLISION",
+  "outcome_id": 1,
+  "physical_goal_distance_m": 16.891859369515803,
+  "sample_count": 220,
+  "scenario_events": [
+    {
+      "actor_name": "ped_00",
+      "command": "hold_actor_route_clock",
+      "event_elapsed_s": 5.094899999999999,
+      "event_id": "lead_stop_bounded_release_v2_train",
+      "phase": "active_event",
+      "sim_time_s": 34.5321,
+      "transition": "pre_event_to_active_event",
+      "trigger_metric": "robot_actor_distance_below",
+      "trigger_value_m": 2.987395627389599
+    },
+    {
+      "actor_name": "ped_00",
+      "command": "resume_noncyclic_route",
+      "event_elapsed_s": 8.591400000000004,
+      "event_id": "lead_stop_bounded_release_v2_train",
+      "phase": "released",
+      "sim_time_s": 38.028600000000004,
+      "transition": "active_event_to_released",
+      "trigger_metric": "robot_actor_distance_below",
+      "trigger_value_m": 2.17399930753757
+    }
+  ]
+}

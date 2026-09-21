@@ -1,0 +1,10 @@
+{
+  "detail": "configured episode timeout",
+  "episode_id": "pgrr_runtime_health_diagonal_s91000_20260916",
+  "localized_goal_distance_m": 0.7382926940917969,
+  "outcome": "TIMEOUT",
+  "outcome_id": 2,
+  "physical_goal_distance_m": 0.7642665256794426,
+  "sample_count": 893,
+  "scenario_events": []
+}

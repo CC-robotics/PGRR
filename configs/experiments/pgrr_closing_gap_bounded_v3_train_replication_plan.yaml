@@ -1,0 +1,29 @@
+schema_version: 1
+benchmark_id: pgrr_priority_four_optimization_v1
+scope: train_only_replication_gate
+frozen_before_execution: true
+family: closing_gap_multi_pedestrian
+variant_id: closing_gap_bounded_release_v3
+route_distance_m: 15.0
+episode_timeout_s: 90
+methods: [base, pgrr]
+train_replicates:
+  - {replicate: 0, seed: 98200, config: configs/experiments/pgrr_closing_gap_bounded_v3_train_r00.yaml}
+  - {replicate: 1, seed: 98201, config: configs/experiments/pgrr_closing_gap_bounded_v3_train_r01.yaml}
+  - {replicate: 2, seed: 98202, config: configs/experiments/pgrr_closing_gap_bounded_v3_train_r02.yaml}
+promotion_rule:
+  minimum_positive_pairs: 2
+  total_pairs: 3
+  positive_pair: base_not_goal_and_pgrr_goal
+  require_pgrr_event_activation_and_release_for_both_actors: true
+  require_pgrr_original_goal_restore: true
+  infrastructure_retry:
+    allowed_outcomes: [SIMULATOR_FAILURE, INVALID_RESET]
+    maximum_same_seed_retries_per_method: 1
+    preserve_every_attempt: true
+  no_seed_replacement: true
+  no_geometry_change: true
+  no_event_parameter_change: true
+  no_timeout_change: true
+  no_checkpoint_or_threshold_change: true
+held_out_test_materialized: false

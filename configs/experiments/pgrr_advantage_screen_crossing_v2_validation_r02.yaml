@@ -1,0 +1,56 @@
+schema_version: 1
+benchmark_id: pgrr_advantage_screen_v1
+status: validation_only_replication
+source_prior:
+  family: crossing_flow
+  density: medium
+  note: >-
+    Independent validation replicate 2 of the train-replicated frozen 15 m v2
+    design. Only the predeclared validation seed and identity fields differ.
+map:
+  id: map_empty
+  bounds_m: [0.0, 31.28, 0.0, 24.03]
+  preview_resolution_m: 0.10
+robot:
+  radius_m: 0.36
+  static_path_margin_m: 0.04
+  start: [5.0, 12.0, 0.0]
+  goal: [20.0, 12.0, 0.0]
+  nominal_screen_speed_mps: 0.26
+family:
+  id: crossing_flow_medium_anchor_v2
+  family_index: 0
+  layout: crossing
+  density: medium
+  pedestrian_count: 2
+  speed_range_mps: [0.18, 0.28]
+  geometry_offset_m: 0.0
+split:
+  name: validation
+  seed: 96002
+  replicate: 2
+  reserved_validation_seed_base: 96000
+  held_out_test_enabled: false
+screening:
+  temporal_conflict_window_s: 8.0
+  minimum_release_clearance_m: 2.0
+  minimum_static_subgoal_count: 21
+  maximum_start_goal_distance_m: 15.0
+  minimum_post_conflict_distance_m: 5.0
+moderation:
+  corridor_footprint_clear_width_m: 2.60
+  doorway_footprint_clear_width_m: 2.30
+  lane_offset_range_m: [0.65, 0.90]
+  pedestrian_longitudinal_stagger_m: 1.50
+  robot_avoidance_distance_m: 0.90
+  robot_soft_yield_distance_m: 0.90
+  robot_hard_guard_distance_m: 0.73
+  actor_update_frequency_hz: 5.0
+  actor_dynamics_version: deterministic_one_shot_swept_guard_v1
+  group_clear_channel_width_m: 1.30
+  all_routes_one_shot: true
+  validate_actor_static_clearance: true
+output:
+  scenario_id: crossing_flow_medium_anchor_v2_validation_r02_s96002
+  relative_root: outputs/student/advantage_scenario_screen_v2_validation/crossing_flow_medium_anchor_v2
+

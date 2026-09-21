@@ -1,0 +1,397 @@
+{
+  "benchmark_id": "pgrr_extension_v1_eight_family_pilot",
+  "blocking_definition_decisions": [
+    "deadlock_duration_s",
+    "minimum_clearance_m"
+  ],
+  "claim_boundary": {
+    "allowed_claim": "runtime and mechanism development evidence",
+    "forbidden_claims": [
+      "generalization",
+      "superiority",
+      "statistical_significance"
+    ],
+    "forbidden_sources": [
+      "moderate_v6_test",
+      "outputs/moderate/final"
+    ],
+    "held_out_test_materialized": false,
+    "no_threshold_tuning": true,
+    "no_training": true
+  },
+  "metric_count": 20,
+  "metrics": [
+    {
+      "evidence": "episode_logger_node.py outcome JSON",
+      "families": [
+        "bottleneck_cross_flow_merge",
+        "closing_gap_multi_pedestrian",
+        "diagonal_cut_in_corridor",
+        "goal_approach_lateral_interruption",
+        "lead_pedestrian_sudden_stop",
+        "narrow_corridor_head_on_deadlock",
+        "occluded_side_emergence",
+        "recurrent_bidirectional_crossing"
+      ],
+      "groups": [
+        "primary"
+      ],
+      "metric": "COLLISION",
+      "source_fields": [
+        "outcome"
+      ],
+      "status": "direct"
+    },
+    {
+      "evidence": "episode_logger_node.py outcome JSON",
+      "families": [
+        "bottleneck_cross_flow_merge",
+        "closing_gap_multi_pedestrian",
+        "diagonal_cut_in_corridor",
+        "goal_approach_lateral_interruption",
+        "lead_pedestrian_sudden_stop",
+        "narrow_corridor_head_on_deadlock",
+        "occluded_side_emergence",
+        "recurrent_bidirectional_crossing"
+      ],
+      "groups": [
+        "primary"
+      ],
+      "metric": "GOAL_REACHED",
+      "source_fields": [
+        "outcome"
+      ],
+      "status": "direct"
+    },
+    {
+      "evidence": "episode_logger_node.py outcome JSON",
+      "families": [
+        "bottleneck_cross_flow_merge",
+        "closing_gap_multi_pedestrian",
+        "diagonal_cut_in_corridor",
+        "goal_approach_lateral_interruption",
+        "lead_pedestrian_sudden_stop",
+        "narrow_corridor_head_on_deadlock",
+        "occluded_side_emergence",
+        "recurrent_bidirectional_crossing"
+      ],
+      "groups": [
+        "primary"
+      ],
+      "metric": "TIMEOUT",
+      "source_fields": [
+        "outcome"
+      ],
+      "status": "direct"
+    },
+    {
+      "evidence": "count adjacent action-ID changes within recovery cycles",
+      "families": [
+        "goal_approach_lateral_interruption",
+        "recurrent_bidirectional_crossing"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "action_switch_count",
+      "source_fields": [
+        "recovery_action"
+      ],
+      "status": "derivable"
+    },
+    {
+      "canonical_output": "mean_abs_angular_jerk_rad_s3",
+      "evidence": "scripts/evaluate/collect_results.py _angular_jerk",
+      "families": [
+        "bottleneck_cross_flow_merge",
+        "closing_gap_multi_pedestrian",
+        "diagonal_cut_in_corridor",
+        "goal_approach_lateral_interruption",
+        "lead_pedestrian_sudden_stop",
+        "narrow_corridor_head_on_deadlock",
+        "occluded_side_emergence",
+        "recurrent_bidirectional_crossing"
+      ],
+      "groups": [
+        "joint_success_cost"
+      ],
+      "metric": "angular_jerk",
+      "source_fields": [
+        "timestamp",
+        "robot_velocity[1]"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "scripts/evaluate/collect_results.py episode_duration_s",
+      "families": [
+        "bottleneck_cross_flow_merge",
+        "closing_gap_multi_pedestrian",
+        "diagonal_cut_in_corridor",
+        "goal_approach_lateral_interruption",
+        "lead_pedestrian_sudden_stop",
+        "narrow_corridor_head_on_deadlock",
+        "occluded_side_emergence",
+        "recurrent_bidirectional_crossing"
+      ],
+      "groups": [
+        "joint_success_cost"
+      ],
+      "metric": "completion_time_s",
+      "source_fields": [
+        "timestamp"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "scripts/student/diagnose_eight_family_recovery_progress.py original_goal_progress_m",
+      "families": [
+        "bottleneck_cross_flow_merge",
+        "goal_approach_lateral_interruption",
+        "lead_pedestrian_sudden_stop",
+        "narrow_corridor_head_on_deadlock",
+        "recurrent_bidirectional_crossing"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "cycle_progress_m",
+      "source_fields": [
+        "goal",
+        "robot_pose",
+        "recovery_state"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "inputs exist, but no agreed deadlock onset/clearance contract is checked in",
+      "families": [
+        "bottleneck_cross_flow_merge",
+        "narrow_corridor_head_on_deadlock"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "deadlock_duration_s",
+      "required_decision": "define speed, progress-window, hazard, and minimum-duration conditions",
+      "source_fields": [
+        "timestamp",
+        "robot_velocity",
+        "distance_to_goal",
+        "recovery_state"
+      ],
+      "status": "definition_required"
+    },
+    {
+      "evidence": "outcome JSON plus raw-log geometric reconstruction",
+      "families": [
+        "bottleneck_cross_flow_merge"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "final_goal_distance_m",
+      "source_fields": [
+        "localized_goal_distance_m",
+        "physical_goal_distance_m",
+        "goal",
+        "robot_pose"
+      ],
+      "status": "direct_and_derivable"
+    },
+    {
+      "evidence": "count original_goal_restored transitions",
+      "families": [
+        "closing_gap_multi_pedestrian",
+        "goal_approach_lateral_interruption",
+        "lead_pedestrian_sudden_stop",
+        "narrow_corridor_head_on_deadlock"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "goal_restore_count",
+      "source_fields": [
+        "recovery_reason"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "both obstacle and human distances are logged, but the paper metric must choose one definition",
+      "families": [
+        "closing_gap_multi_pedestrian",
+        "diagonal_cut_in_corridor",
+        "occluded_side_emergence"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "minimum_clearance_m",
+      "required_decision": "define clearance as obstacle clearance, human clearance, or report both",
+      "source_fields": [
+        "nearest_obstacle_distance",
+        "privileged.nearest_human_distance"
+      ],
+      "status": "definition_required"
+    },
+    {
+      "evidence": "scripts/evaluate/collect_results.py _path_metrics",
+      "families": [
+        "bottleneck_cross_flow_merge",
+        "closing_gap_multi_pedestrian",
+        "diagonal_cut_in_corridor",
+        "goal_approach_lateral_interruption",
+        "lead_pedestrian_sudden_stop",
+        "narrow_corridor_head_on_deadlock",
+        "occluded_side_emergence",
+        "recurrent_bidirectional_crossing"
+      ],
+      "groups": [
+        "joint_success_cost"
+      ],
+      "metric": "path_length_m",
+      "source_fields": [
+        "robot_pose",
+        "privileged.robot_pose"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "count planner-status failure entries; terminal outcome preserves PLANNER_FAILURE",
+      "families": [
+        "closing_gap_multi_pedestrian",
+        "goal_approach_lateral_interruption"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "planner_failure_count",
+      "source_fields": [
+        "planner_status",
+        "outcome"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "scripts/student/adapt_recovery_cycles_to_progress_contract.py",
+      "families": [
+        "bottleneck_cross_flow_merge"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "rapid_retrigger_count",
+      "required_parameter": "preregistered rapid-retrigger window",
+      "source_fields": [
+        "timestamp",
+        "recovery_state"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "scripts/student/diagnose_eight_family_recovery_progress.py",
+      "families": [
+        "goal_approach_lateral_interruption",
+        "recurrent_bidirectional_crossing"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "recovery_cycle_count",
+      "source_fields": [
+        "recovery_state"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "count decision transitions with REPLAN action ID 23",
+      "families": [
+        "closing_gap_multi_pedestrian",
+        "goal_approach_lateral_interruption"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "replan_count",
+      "source_fields": [
+        "recovery_action"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "integrate intervals below a declared linear-speed threshold",
+      "families": [
+        "lead_pedestrian_sudden_stop",
+        "narrow_corridor_head_on_deadlock"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "stationary_duration_s",
+      "required_parameter": "stationary linear-speed threshold",
+      "source_fields": [
+        "timestamp",
+        "robot_velocity[0]"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "count decision transitions with action IDs 0 through 20",
+      "families": [
+        "bottleneck_cross_flow_merge",
+        "narrow_corridor_head_on_deadlock"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "temporary_subgoal_count",
+      "source_fields": [
+        "recovery_action"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "first non-normal recovery-state timestamp minus episode start",
+      "families": [
+        "closing_gap_multi_pedestrian",
+        "diagonal_cut_in_corridor",
+        "occluded_side_emergence"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "time_to_first_recovery_s",
+      "source_fields": [
+        "timestamp",
+        "recovery_state"
+      ],
+      "status": "derivable"
+    },
+    {
+      "evidence": "scripts/evaluate/collect_results.py recovery_trigger_count",
+      "families": [
+        "closing_gap_multi_pedestrian",
+        "diagonal_cut_in_corridor",
+        "occluded_side_emergence"
+      ],
+      "groups": [
+        "mechanism"
+      ],
+      "metric": "triggered",
+      "source_fields": [
+        "recovery_state",
+        "recovery_action",
+        "recovery_reason"
+      ],
+      "status": "derivable"
+    }
+  ],
+  "schema_version": 1,
+  "scope": "telemetry_design_audit_no_runtime_or_performance_claim",
+  "status_counts": {
+    "definition_required": 2,
+    "derivable": 14,
+    "direct": 3,
+    "direct_and_derivable": 1
+  }
+}

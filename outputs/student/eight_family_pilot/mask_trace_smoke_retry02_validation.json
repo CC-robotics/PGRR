@@ -1,0 +1,72 @@
+{
+  "complete_trace_row_count": 110,
+  "diagnostic_only": true,
+  "episode_id": "pgrr_extension_mask_trace_leadstop_train_r00_pgrr_20260912_retry02",
+  "expected_shutdown_exception_count": 2,
+  "expected_stage_order": [
+    "map_connectivity",
+    "observable_scan",
+    "path_corridor"
+  ],
+  "fatal_runtime_pattern_counts": {
+    "import_error": 0,
+    "parameter_type_error": 0,
+    "recovery_manager_process_died": 0
+  },
+  "first_temporary_empty_stage_counts": {
+    "map_connectivity": 0,
+    "none": 0,
+    "observable_scan": 85,
+    "path_corridor": 25
+  },
+  "malformed_trace_row_count": 0,
+  "malformed_trace_rows": [],
+  "outcome": "TIMEOUT",
+  "outcome_detail": "configured episode timeout",
+  "outcome_sample_count": 896,
+  "performance_claim": false,
+  "runtime_note": "Tracebacks are shutdown cleanup only",
+  "runtime_traceback_count": 2,
+  "sample_count_matches": true,
+  "sources": {
+    "jsonl": "data/raw/pgrr_extension_mask_trace_leadstop_train_r00_pgrr_20260912_retry02.jsonl",
+    "outcome": "data/raw/pgrr_extension_mask_trace_leadstop_train_r00_pgrr_20260912_retry02.outcome.json",
+    "runtime_log": "outputs/logs/baseline/pgrr_extension_mask_trace_leadstop_train_r00_pgrr_20260912_retry02_runtime.log"
+  },
+  "stage_counts": {
+    "map_connectivity": 110,
+    "observable_scan": 110,
+    "path_corridor": 110
+  },
+  "telemetry_row_count": 896,
+  "temporary_subgoal_layer_totals": {
+    "map_connectivity": {
+      "rows_removing_temporary": 0,
+      "rows_with_no_temporary_output": 0,
+      "temporary_input_total": 2310,
+      "temporary_output_total": 2310,
+      "temporary_removed_total": 0
+    },
+    "observable_scan": {
+      "rows_removing_temporary": 110,
+      "rows_with_no_temporary_output": 85,
+      "temporary_input_total": 2310,
+      "temporary_output_total": 30,
+      "temporary_removed_total": 2280
+    },
+    "path_corridor": {
+      "rows_removing_temporary": 25,
+      "rows_with_no_temporary_output": 110,
+      "temporary_input_total": 30,
+      "temporary_output_total": 0,
+      "temporary_removed_total": 30
+    }
+  },
+  "trace_decision_row_count": 110,
+  "traced_action_counts": {
+    "21": 50,
+    "22": 55,
+    "23": 5
+  },
+  "valid": true
+}

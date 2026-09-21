@@ -1,0 +1,31 @@
+{
+  "actor_center_eta_after_trigger_s": 2.999999999999999,
+  "checks": {
+    "allowed_non_test_split": true,
+    "event_is_one_shot": true,
+    "held_out_test_not_materialized": true,
+    "nominal_interaction_in_target_window": true,
+    "post_conflict_segment_sufficient": true,
+    "route_within_15m": true,
+    "static_subgoal_space_sufficient": true,
+    "temporal_conflict_plausible": true,
+    "terminal_clears_robot_route": true
+  },
+  "interpretation": "offline gate only; not a simulator result or paper claim",
+  "nominal_interaction_time_s": 38.46153846153846,
+  "nominal_trigger_time_s": 34.61538461538461,
+  "post_conflict_distance_m": 5.0,
+  "preview_path": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\outputs\\student\\goal_approach_lateral_v2_validation_r02\\previews\\goal_approach_lateral_one_shot_v2_validation_r02_s98102.png",
+  "ready_for_single_seed_runtime_pair": true,
+  "robot_intersection_eta_after_trigger_s": 3.846153846153846,
+  "route_distance_m": 15.0,
+  "scenario_id": "goal_approach_lateral_one_shot_v2_validation_r02_s98102",
+  "scenario_path": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\outputs\\student\\goal_approach_lateral_v2_validation_r02\\generated\\arena\\map_empty\\goal_approach_lateral_one_shot_v2_validation_r02_s98102.json",
+  "scenario_sha256": "eec32e194a874ad01be8001baa075ba8a03d26c96c7b63617e0cd93098e06d34",
+  "schema_version": 1,
+  "seed": 98102,
+  "source_config": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\configs\\experiments\\pgrr_goal_approach_lateral_v2_validation_r02.yaml",
+  "split": "validation",
+  "static_subgoal_count": 21,
+  "terminal_route_clearance_m": 1.3499999999999996
+}

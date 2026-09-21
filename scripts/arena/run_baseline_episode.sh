@@ -67,6 +67,24 @@ optional_runtime_environment=()
 if [[ -n "${RAMP_TAU_ON:-}" ]]; then
     optional_runtime_environment+=("RAMP_TAU_ON=${RAMP_TAU_ON}")
 fi
+mask_trace="${RAMP_ENABLE_UPSTREAM_MASK_TRACE:-0}"
+if [[ "${mask_trace}" != "0" && "${mask_trace}" != "1" ]]; then
+    echo "ERROR: RAMP_ENABLE_UPSTREAM_MASK_TRACE must be 0 or 1" >&2
+    exit 2
+fi
+optional_runtime_environment+=("RAMP_ENABLE_UPSTREAM_MASK_TRACE=${mask_trace}")
+observation_shadow="${RAMP_ENABLE_OBSERVATION_SHADOW:-0}"
+if [[ "${observation_shadow}" != "0" && "${observation_shadow}" != "1" ]]; then
+    echo "ERROR: RAMP_ENABLE_OBSERVATION_SHADOW must be 0 or 1" >&2
+    exit 2
+fi
+optional_runtime_environment+=("RAMP_ENABLE_OBSERVATION_SHADOW=${observation_shadow}")
+event_control="${RAMP_ENABLE_EVENT_CONTROL:-0}"
+if [[ "${event_control}" != "0" && "${event_control}" != "1" ]]; then
+    echo "ERROR: RAMP_ENABLE_EVENT_CONTROL must be 0 or 1" >&2
+    exit 2
+fi
+optional_runtime_environment+=("RAMP_ENABLE_EVENT_CONTROL=${event_control}")
 exec "${PROJECT_ROOT}/scripts/bootstrap/arena_container.sh" \
     env \
     RAMP_SCENARIO="/workspace/${relative}" \

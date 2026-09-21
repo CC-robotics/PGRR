@@ -1,0 +1,17 @@
+{
+  "actor_count": 2,
+  "actor_routes_noncyclic": true,
+  "candidate_id": "closing_gap_open_release_v1_train_r00_s91410",
+  "event_mapping_valid": true,
+  "family": "closing_gap_multi_pedestrian",
+  "held_out_test_materialized": false,
+  "paired_methods_share_one_scenario": true,
+  "preview_path": "outputs/student/event_controlled_candidates/previews/closing_gap_open_release_v1_train_r00_s91410.png",
+  "runtime_executed": false,
+  "scenario_path": "outputs/student/event_controlled_candidates/generated/arena/map_empty/closing_gap_open_release_v1_train_r00_s91410.json",
+  "scenario_sha256": "92345df6ecbf1dd2062d3c4e996fbc6a776081e292b13921c09f37d6402bf8ea",
+  "seed": 91410,
+  "split": "train",
+  "static_obstacle_count": 0,
+  "terminal_route_clearance_m": 3.5
+}

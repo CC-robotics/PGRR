@@ -1,0 +1,33 @@
+{
+  "detail": "recovery manager succeeded with goal-distance verification",
+  "episode_id": "pgrr_priority_goalapproach_v2_train_s97100_pgrr",
+  "localized_goal_distance_m": 0.2316608428955078,
+  "outcome": "GOAL_REACHED",
+  "outcome_id": 0,
+  "physical_goal_distance_m": 0.23940767369104793,
+  "sample_count": 663,
+  "scenario_events": [
+    {
+      "actor_name": "ped_00",
+      "command": "release_actor_on_noncyclic_crossing",
+      "event_elapsed_s": 38.3616,
+      "event_id": "goal_approach_lateral_one_shot_v2_train",
+      "phase": "active_event",
+      "sim_time_s": 68.5314,
+      "transition": "pre_event_to_active_event",
+      "trigger_metric": "robot_goal_distance_below",
+      "trigger_value_m": 5.980187499553326
+    },
+    {
+      "actor_name": "ped_00",
+      "command": "hold_at_off_path_terminal_waypoint",
+      "event_elapsed_s": 43.856100000000005,
+      "event_id": "goal_approach_lateral_one_shot_v2_train",
+      "phase": "released",
+      "sim_time_s": 74.02590000000001,
+      "transition": "active_event_to_released",
+      "trigger_metric": "robot_goal_distance_below",
+      "trigger_value_m": 5.525343648509798
+    }
+  ]
+}

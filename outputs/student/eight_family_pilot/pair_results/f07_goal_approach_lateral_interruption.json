@@ -1,0 +1,125 @@
+{
+  "benchmark_id": "pgrr_extension_v1_eight_family_pilot",
+  "claim_boundary": "development_pair_only",
+  "family": "goal_approach_lateral_interruption",
+  "family_index": 7,
+  "paired_interpretation": {
+    "base_collision_avoided": true,
+    "both_goal_reached": false,
+    "both_same_failure": false,
+    "pgrr_completion_gain": false,
+    "pgrr_recovery_triggered": true,
+    "superiority_claim_supported": false
+  },
+  "runs": {
+    "base": {
+      "artifact_sha256": {
+        "metadata": "8dd7394b1a7248cd1a3c3dad130a5a1d39a5483baca465cf1a30754d47afe5bf",
+        "outcome": "901616b904d0a0af6db3ebf7f70b30510c719ac509563b830afed388fac3532e",
+        "raw_jsonl": "676335e4280e2a2b4fff5295bed1ab091162b176c6e6258d4000a9fbf6a214e3"
+      },
+      "attempt_history": [
+        {
+          "artifact_sha256": {
+            "metadata": "8dd7394b1a7248cd1a3c3dad130a5a1d39a5483baca465cf1a30754d47afe5bf",
+            "outcome": "901616b904d0a0af6db3ebf7f70b30510c719ac509563b830afed388fac3532e",
+            "raw_jsonl": "676335e4280e2a2b4fff5295bed1ab091162b176c6e6258d4000a9fbf6a214e3"
+          },
+          "episode_id": "pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_base",
+          "infrastructure_attempt": false,
+          "localized_goal_distance_m": 3.6224076747894287,
+          "outcome": "COLLISION",
+          "outcome_detail": "privileged robot-human overlap",
+          "physical_goal_distance_m": 3.6301963728394737,
+          "sample_count": 777
+        }
+      ],
+      "episode_id": "pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_base",
+      "infrastructure_attempt": false,
+      "localized_goal_distance_m": 3.6224076747894287,
+      "outcome": "COLLISION",
+      "outcome_detail": "privileged robot-human overlap",
+      "physical_goal_distance_m": 3.6301963728394737,
+      "planned_episode_id": "pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_base",
+      "sample_count": 777,
+      "selected_attempt_id": "pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_base"
+    },
+    "pgrr": {
+      "artifact_sha256": {
+        "metadata": "571a37e28eb318d5520731af1372df853981ce96d4e3b11a5b81cce76f0042a1",
+        "outcome": "58c5d29b4aa96c36632e954ee072096c24c39e562446c56210a85ed75150fbcd",
+        "raw_jsonl": "e1768904f08bf347a55926e12ca6b88a5d99b9ac6ad78326e642faced94f7b49"
+      },
+      "attempt_history": [
+        {
+          "artifact_sha256": {
+            "metadata": "571a37e28eb318d5520731af1372df853981ce96d4e3b11a5b81cce76f0042a1",
+            "outcome": "58c5d29b4aa96c36632e954ee072096c24c39e562446c56210a85ed75150fbcd",
+            "raw_jsonl": "e1768904f08bf347a55926e12ca6b88a5d99b9ac6ad78326e642faced94f7b49"
+          },
+          "episode_id": "pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_pgrr",
+          "infrastructure_attempt": false,
+          "localized_goal_distance_m": 4.609625339508057,
+          "outcome": "TIMEOUT",
+          "outcome_detail": "configured episode timeout",
+          "physical_goal_distance_m": 4.609626525383198,
+          "sample_count": 898
+        }
+      ],
+      "episode_id": "pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_pgrr",
+      "infrastructure_attempt": false,
+      "localized_goal_distance_m": 4.609625339508057,
+      "outcome": "TIMEOUT",
+      "outcome_detail": "configured episode timeout",
+      "physical_goal_distance_m": 4.609626525383198,
+      "planned_episode_id": "pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_pgrr",
+      "recovery_trace": {
+        "decision_action_counts": {
+          "BACKUP": 5,
+          "CONTINUE": 1,
+          "WAIT": 4
+        },
+        "decision_event_count": 10,
+        "decision_reason_counts": {
+          "bc_onnx_decision": 5,
+          "emergency_backup": 2,
+          "emergency_stop": 2,
+          "not_triggered": 1
+        },
+        "original_goal_restored_event_count": 0,
+        "state_transitions": [
+          {
+            "recovery_state": 0,
+            "sample_index": 0,
+            "state_name": "NORMAL",
+            "timestamp_s": 0.0
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 776,
+            "state_name": "RECOVERY",
+            "timestamp_s": 77.7222
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 779,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 78.0219
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 815,
+            "state_name": "RECOVERY",
+            "timestamp_s": 81.6516
+          }
+        ],
+        "temporary_subgoal_decision_count": 0
+      },
+      "sample_count": 898,
+      "selected_attempt_id": "pgrr_extpilot_f07_goal_approach_lateral_interruption_low_train_r00_s91700_pgrr"
+    }
+  },
+  "scenario_id": "goal_approach_lateral_interruption_low_train_r00_s91700",
+  "scenario_sha256": "5e9a649d58866f14dda80d75e8d25abd4ef1b2255a472623c311b9c8c3d88c0a",
+  "seed": 91700
+}

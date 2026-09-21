@@ -1,0 +1,735 @@
+{
+  "candidate_seams": {
+    "mask_and_policy_selection": {
+      "combined_line_span": 426,
+      "method_count": 4,
+      "methods": [
+        "_action_mask",
+        "_expert_decision",
+        "_select_decision",
+        "_with_upstream_mask_trace"
+      ],
+      "missing_expected_methods": []
+    },
+    "observation_and_geometry": {
+      "combined_line_span": 115,
+      "method_count": 9,
+      "methods": [
+        "_laser_clearance",
+        "_motion_clearance",
+        "_nearest_clearance",
+        "_nearest_obstacle_angle",
+        "_observable_nearest_clearance",
+        "_observation",
+        "_observed_laser_clearance",
+        "_task_forward_clearance",
+        "_task_path_heading"
+      ],
+      "missing_expected_methods": []
+    }
+  },
+  "claim_boundary": "static characterization only; no production code moved",
+  "class": "RecoveryManagerNode",
+  "class_end_line": 2042,
+  "class_line_span": 1898,
+  "class_start_line": 145,
+  "largest_methods": [
+    {
+      "end_line": 383,
+      "internal_method_calls": [
+        "_declare_parameters",
+        "_effective_emergency_rotation_clearance",
+        "_float",
+        "_integer",
+        "_subscribe"
+      ],
+      "line_span": 238,
+      "name": "__init__",
+      "self_attribute_count": 73,
+      "start_line": 146
+    },
+    {
+      "end_line": 1607,
+      "internal_method_calls": [
+        "_action_mask",
+        "_bc_recurrent_escape_telemetry",
+        "_bc_temporal_closing_side_telemetry",
+        "_bc_unilateral_flow_latched",
+        "_constrain_bc_recurrent_escape",
+        "_constrain_bc_temporal_closing_side",
+        "_expert_decision",
+        "_float",
+        "_integer",
+        "_nearest_clearance",
+        "_task_path_heading",
+        "_update_bc_progress_budget",
+        "_with_upstream_mask_trace"
+      ],
+      "line_span": 233,
+      "name": "_select_decision",
+      "self_attribute_count": 25,
+      "start_line": 1375
+    },
+    {
+      "end_line": 1961,
+      "internal_method_calls": [
+        "_action_complete",
+        "_effective_failure",
+        "_execute",
+        "_float",
+        "_footprint_backup_permitted",
+        "_footprint_stop_distance",
+        "_forward_escape_clearance",
+        "_motion_clearance",
+        "_motion_stop_distance",
+        "_nearest_clearance",
+        "_nearest_obstacle_angle",
+        "_observation",
+        "_observed_laser_clearance",
+        "_publish_decision",
+        "_publish_terminal_transition",
+        "_select_decision",
+        "_task_forward_clearance",
+        "_valid_progress",
+        "_world_pose"
+      ],
+      "line_span": 210,
+      "name": "_decision_step",
+      "self_attribute_count": 47,
+      "start_line": 1752
+    },
+    {
+      "end_line": 537,
+      "internal_method_calls": [],
+      "line_span": 153,
+      "name": "_declare_parameters",
+      "self_attribute_count": 1,
+      "start_line": 385
+    },
+    {
+      "end_line": 1208,
+      "internal_method_calls": [
+        "_action_mask",
+        "_float",
+        "_integer",
+        "_task_path_heading"
+      ],
+      "line_span": 106,
+      "name": "_expert_decision",
+      "self_attribute_count": 15,
+      "start_line": 1103
+    },
+    {
+      "end_line": 2042,
+      "internal_method_calls": [
+        "_backup_command_active",
+        "_effective_emergency_rotation_clearance",
+        "_float",
+        "_footprint_backup_permitted",
+        "_footprint_stop_distance",
+        "_forward_escape_clearance",
+        "_laser_clearance",
+        "_motion_clearance",
+        "_motion_stop_distance",
+        "_nearest_clearance"
+      ],
+      "line_span": 80,
+      "name": "_control_step",
+      "self_attribute_count": 19,
+      "start_line": 1963
+    },
+    {
+      "end_line": 1101,
+      "internal_method_calls": [
+        "_effective_recovery_path_deviation",
+        "_float"
+      ],
+      "line_span": 74,
+      "name": "_action_mask",
+      "self_attribute_count": 11,
+      "start_line": 1028
+    },
+    {
+      "end_line": 600,
+      "internal_method_calls": [],
+      "line_span": 56,
+      "name": "_subscribe",
+      "self_attribute_count": 11,
+      "start_line": 545
+    },
+    {
+      "end_line": 1298,
+      "internal_method_calls": [
+        "_float"
+      ],
+      "line_span": 52,
+      "name": "_constrain_bc_temporal_closing_side",
+      "self_attribute_count": 5,
+      "start_line": 1247
+    },
+    {
+      "end_line": 838,
+      "internal_method_calls": [
+        "_world_pose"
+      ],
+      "line_span": 45,
+      "name": "_observation",
+      "self_attribute_count": 12,
+      "start_line": 794
+    }
+  ],
+  "method_count": 52,
+  "methods": [
+    {
+      "end_line": 383,
+      "internal_method_calls": [
+        "_declare_parameters",
+        "_effective_emergency_rotation_clearance",
+        "_float",
+        "_integer",
+        "_subscribe"
+      ],
+      "line_span": 238,
+      "name": "__init__",
+      "self_attribute_count": 73,
+      "start_line": 146
+    },
+    {
+      "end_line": 537,
+      "internal_method_calls": [],
+      "line_span": 153,
+      "name": "_declare_parameters",
+      "self_attribute_count": 1,
+      "start_line": 385
+    },
+    {
+      "end_line": 540,
+      "internal_method_calls": [],
+      "line_span": 2,
+      "name": "_float",
+      "self_attribute_count": 1,
+      "start_line": 539
+    },
+    {
+      "end_line": 543,
+      "internal_method_calls": [],
+      "line_span": 2,
+      "name": "_integer",
+      "self_attribute_count": 1,
+      "start_line": 542
+    },
+    {
+      "end_line": 600,
+      "internal_method_calls": [],
+      "line_span": 56,
+      "name": "_subscribe",
+      "self_attribute_count": 11,
+      "start_line": 545
+    },
+    {
+      "end_line": 619,
+      "internal_method_calls": [],
+      "line_span": 18,
+      "name": "_world_pose",
+      "self_attribute_count": 3,
+      "start_line": 602
+    },
+    {
+      "end_line": 632,
+      "internal_method_calls": [
+        "_try_arm",
+        "_world_pose"
+      ],
+      "line_span": 12,
+      "name": "_on_odom",
+      "self_attribute_count": 10,
+      "start_line": 621
+    },
+    {
+      "end_line": 649,
+      "internal_method_calls": [
+        "_float"
+      ],
+      "line_span": 16,
+      "name": "_on_scan",
+      "self_attribute_count": 3,
+      "start_line": 634
+    },
+    {
+      "end_line": 653,
+      "internal_method_calls": [],
+      "line_span": 3,
+      "name": "_on_base_action",
+      "self_attribute_count": 2,
+      "start_line": 651
+    },
+    {
+      "end_line": 680,
+      "internal_method_calls": [],
+      "line_span": 26,
+      "name": "_on_path",
+      "self_attribute_count": 4,
+      "start_line": 655
+    },
+    {
+      "end_line": 693,
+      "internal_method_calls": [],
+      "line_span": 12,
+      "name": "_on_map",
+      "self_attribute_count": 1,
+      "start_line": 682
+    },
+    {
+      "end_line": 700,
+      "internal_method_calls": [
+        "_try_arm"
+      ],
+      "line_span": 6,
+      "name": "_on_status",
+      "self_attribute_count": 2,
+      "start_line": 695
+    },
+    {
+      "end_line": 714,
+      "internal_method_calls": [
+        "_float",
+        "_try_arm"
+      ],
+      "line_span": 13,
+      "name": "_on_failure",
+      "self_attribute_count": 4,
+      "start_line": 702
+    },
+    {
+      "end_line": 735,
+      "internal_method_calls": [
+        "_float"
+      ],
+      "line_span": 20,
+      "name": "_on_humans",
+      "self_attribute_count": 5,
+      "start_line": 716
+    },
+    {
+      "end_line": 757,
+      "internal_method_calls": [
+        "_float"
+      ],
+      "line_span": 21,
+      "name": "_try_arm",
+      "self_attribute_count": 14,
+      "start_line": 737
+    },
+    {
+      "end_line": 792,
+      "internal_method_calls": [
+        "_float"
+      ],
+      "line_span": 34,
+      "name": "_effective_failure",
+      "self_attribute_count": 8,
+      "start_line": 759
+    },
+    {
+      "end_line": 838,
+      "internal_method_calls": [
+        "_world_pose"
+      ],
+      "line_span": 45,
+      "name": "_observation",
+      "self_attribute_count": 12,
+      "start_line": 794
+    },
+    {
+      "end_line": 853,
+      "internal_method_calls": [],
+      "line_span": 14,
+      "name": "_laser_clearance",
+      "self_attribute_count": 1,
+      "start_line": 840
+    },
+    {
+      "end_line": 863,
+      "internal_method_calls": [],
+      "line_span": 9,
+      "name": "_observed_laser_clearance",
+      "self_attribute_count": 1,
+      "start_line": 855
+    },
+    {
+      "end_line": 867,
+      "internal_method_calls": [
+        "_laser_clearance"
+      ],
+      "line_span": 3,
+      "name": "_motion_clearance",
+      "self_attribute_count": 1,
+      "start_line": 865
+    },
+    {
+      "end_line": 874,
+      "internal_method_calls": [],
+      "line_span": 6,
+      "name": "_observable_nearest_clearance",
+      "self_attribute_count": 1,
+      "start_line": 869
+    },
+    {
+      "end_line": 885,
+      "internal_method_calls": [],
+      "line_span": 10,
+      "name": "_task_path_heading",
+      "self_attribute_count": 4,
+      "start_line": 876
+    },
+    {
+      "end_line": 902,
+      "internal_method_calls": [
+        "_float",
+        "_task_path_heading"
+      ],
+      "line_span": 16,
+      "name": "_task_forward_clearance",
+      "self_attribute_count": 3,
+      "start_line": 887
+    },
+    {
+      "end_line": 906,
+      "internal_method_calls": [
+        "_observable_nearest_clearance"
+      ],
+      "line_span": 3,
+      "name": "_nearest_clearance",
+      "self_attribute_count": 1,
+      "start_line": 904
+    },
+    {
+      "end_line": 916,
+      "internal_method_calls": [],
+      "line_span": 9,
+      "name": "_nearest_obstacle_angle",
+      "self_attribute_count": 1,
+      "start_line": 908
+    },
+    {
+      "end_line": 955,
+      "internal_method_calls": [
+        "_effective_emergency_path_deviation",
+        "_float",
+        "_laser_clearance",
+        "_world_pose"
+      ],
+      "line_span": 38,
+      "name": "_forward_escape_clearance",
+      "self_attribute_count": 8,
+      "start_line": 918
+    },
+    {
+      "end_line": 973,
+      "internal_method_calls": [
+        "_float"
+      ],
+      "line_span": 17,
+      "name": "_footprint_stop_distance",
+      "self_attribute_count": 1,
+      "start_line": 957
+    },
+    {
+      "end_line": 978,
+      "internal_method_calls": [
+        "_float"
+      ],
+      "line_span": 4,
+      "name": "_effective_emergency_rotation_clearance",
+      "self_attribute_count": 1,
+      "start_line": 975
+    },
+    {
+      "end_line": 994,
+      "internal_method_calls": [
+        "_effective_recovery_path_deviation",
+        "_float",
+        "_integer"
+      ],
+      "line_span": 15,
+      "name": "_effective_emergency_path_deviation",
+      "self_attribute_count": 4,
+      "start_line": 980
+    },
+    {
+      "end_line": 1006,
+      "internal_method_calls": [
+        "_float"
+      ],
+      "line_span": 11,
+      "name": "_motion_stop_distance",
+      "self_attribute_count": 2,
+      "start_line": 996
+    },
+    {
+      "end_line": 1014,
+      "internal_method_calls": [
+        "_float",
+        "_nearest_obstacle_angle"
+      ],
+      "line_span": 7,
+      "name": "_footprint_backup_permitted",
+      "self_attribute_count": 2,
+      "start_line": 1008
+    },
+    {
+      "end_line": 1026,
+      "internal_method_calls": [
+        "_float",
+        "_integer"
+      ],
+      "line_span": 11,
+      "name": "_effective_recovery_path_deviation",
+      "self_attribute_count": 5,
+      "start_line": 1016
+    },
+    {
+      "end_line": 1101,
+      "internal_method_calls": [
+        "_effective_recovery_path_deviation",
+        "_float"
+      ],
+      "line_span": 74,
+      "name": "_action_mask",
+      "self_attribute_count": 11,
+      "start_line": 1028
+    },
+    {
+      "end_line": 1208,
+      "internal_method_calls": [
+        "_action_mask",
+        "_float",
+        "_integer",
+        "_task_path_heading"
+      ],
+      "line_span": 106,
+      "name": "_expert_decision",
+      "self_attribute_count": 15,
+      "start_line": 1103
+    },
+    {
+      "end_line": 1227,
+      "internal_method_calls": [
+        "_bc_recurrent_escape_required",
+        "_float"
+      ],
+      "line_span": 18,
+      "name": "_constrain_bc_recurrent_escape",
+      "self_attribute_count": 2,
+      "start_line": 1210
+    },
+    {
+      "end_line": 1238,
+      "internal_method_calls": [
+        "_bc_unilateral_flow_latched",
+        "_integer"
+      ],
+      "line_span": 10,
+      "name": "_bc_recurrent_escape_required",
+      "self_attribute_count": 4,
+      "start_line": 1229
+    },
+    {
+      "end_line": 1245,
+      "internal_method_calls": [],
+      "line_span": 6,
+      "name": "_bc_unilateral_flow_latched",
+      "self_attribute_count": 1,
+      "start_line": 1240
+    },
+    {
+      "end_line": 1298,
+      "internal_method_calls": [
+        "_float"
+      ],
+      "line_span": 52,
+      "name": "_constrain_bc_temporal_closing_side",
+      "self_attribute_count": 5,
+      "start_line": 1247
+    },
+    {
+      "end_line": 1334,
+      "internal_method_calls": [],
+      "line_span": 35,
+      "name": "_bc_temporal_closing_side_telemetry",
+      "self_attribute_count": 2,
+      "start_line": 1300
+    },
+    {
+      "end_line": 1373,
+      "internal_method_calls": [
+        "_bc_recurrent_escape_required",
+        "_float",
+        "_integer"
+      ],
+      "line_span": 38,
+      "name": "_bc_recurrent_escape_telemetry",
+      "self_attribute_count": 4,
+      "start_line": 1336
+    },
+    {
+      "end_line": 1607,
+      "internal_method_calls": [
+        "_action_mask",
+        "_bc_recurrent_escape_telemetry",
+        "_bc_temporal_closing_side_telemetry",
+        "_bc_unilateral_flow_latched",
+        "_constrain_bc_recurrent_escape",
+        "_constrain_bc_temporal_closing_side",
+        "_expert_decision",
+        "_float",
+        "_integer",
+        "_nearest_clearance",
+        "_task_path_heading",
+        "_update_bc_progress_budget",
+        "_with_upstream_mask_trace"
+      ],
+      "line_span": 233,
+      "name": "_select_decision",
+      "self_attribute_count": 25,
+      "start_line": 1375
+    },
+    {
+      "end_line": 1621,
+      "internal_method_calls": [],
+      "line_span": 13,
+      "name": "_with_upstream_mask_trace",
+      "self_attribute_count": 1,
+      "start_line": 1609
+    },
+    {
+      "end_line": 1638,
+      "internal_method_calls": [
+        "_float"
+      ],
+      "line_span": 16,
+      "name": "_update_bc_progress_budget",
+      "self_attribute_count": 6,
+      "start_line": 1623
+    },
+    {
+      "end_line": 1643,
+      "internal_method_calls": [],
+      "line_span": 4,
+      "name": "_valid_progress",
+      "self_attribute_count": 1,
+      "start_line": 1640
+    },
+    {
+      "end_line": 1652,
+      "internal_method_calls": [],
+      "line_span": 8,
+      "name": "_active_backup_option",
+      "self_attribute_count": 3,
+      "start_line": 1645
+    },
+    {
+      "end_line": 1657,
+      "internal_method_calls": [
+        "_active_backup_option"
+      ],
+      "line_span": 4,
+      "name": "_backup_command_active",
+      "self_attribute_count": 2,
+      "start_line": 1654
+    },
+    {
+      "end_line": 1678,
+      "internal_method_calls": [
+        "_active_backup_option",
+        "_float",
+        "_observable_nearest_clearance"
+      ],
+      "line_span": 20,
+      "name": "_action_complete",
+      "self_attribute_count": 9,
+      "start_line": 1659
+    },
+    {
+      "end_line": 1706,
+      "internal_method_calls": [
+        "_bc_unilateral_flow_latched",
+        "_observable_nearest_clearance",
+        "_task_path_heading",
+        "_world_pose"
+      ],
+      "line_span": 27,
+      "name": "_execute",
+      "self_attribute_count": 12,
+      "start_line": 1680
+    },
+    {
+      "end_line": 1731,
+      "internal_method_calls": [],
+      "line_span": 24,
+      "name": "_publish_decision",
+      "self_attribute_count": 4,
+      "start_line": 1708
+    },
+    {
+      "end_line": 1750,
+      "internal_method_calls": [
+        "_publish_decision"
+      ],
+      "line_span": 18,
+      "name": "_publish_terminal_transition",
+      "self_attribute_count": 5,
+      "start_line": 1733
+    },
+    {
+      "end_line": 1961,
+      "internal_method_calls": [
+        "_action_complete",
+        "_effective_failure",
+        "_execute",
+        "_float",
+        "_footprint_backup_permitted",
+        "_footprint_stop_distance",
+        "_forward_escape_clearance",
+        "_motion_clearance",
+        "_motion_stop_distance",
+        "_nearest_clearance",
+        "_nearest_obstacle_angle",
+        "_observation",
+        "_observed_laser_clearance",
+        "_publish_decision",
+        "_publish_terminal_transition",
+        "_select_decision",
+        "_task_forward_clearance",
+        "_valid_progress",
+        "_world_pose"
+      ],
+      "line_span": 210,
+      "name": "_decision_step",
+      "self_attribute_count": 47,
+      "start_line": 1752
+    },
+    {
+      "end_line": 2042,
+      "internal_method_calls": [
+        "_backup_command_active",
+        "_effective_emergency_rotation_clearance",
+        "_float",
+        "_footprint_backup_permitted",
+        "_footprint_stop_distance",
+        "_forward_escape_clearance",
+        "_laser_clearance",
+        "_motion_clearance",
+        "_motion_stop_distance",
+        "_nearest_clearance"
+      ],
+      "line_span": 80,
+      "name": "_control_step",
+      "self_attribute_count": 19,
+      "start_line": 1963
+    }
+  ],
+  "schema_version": 1,
+  "source": "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py",
+  "source_sha256": "ad5cce2a4d5a055ad4dc65e0feaaefdd6f5e0a130e08cb977031d21528ca47a4"
+}

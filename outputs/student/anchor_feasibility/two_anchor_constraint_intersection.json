@@ -1,0 +1,78 @@
+{
+  "aggregate": {
+    "event_count": 89,
+    "final_temporary_empty_count": 89,
+    "first_empty_constraint_counts": {
+      "bc_yield_mask": 34,
+      "observable_scan": 55
+    },
+    "removed_action_occurrences_by_downstream_constraint": {
+      "bc_yield_mask": {
+        "2": 34
+      }
+    },
+    "scan_empty_count": 55,
+    "scan_nonempty_count": 34,
+    "scan_survivor_action_occurrences": {
+      "2": 34
+    },
+    "scan_survivor_geometry": {
+      "2": {
+        "action_id": 2,
+        "angle_deg": -30,
+        "radius_m": 0.6
+      }
+    },
+    "temporary_action_selected_count": 0
+  },
+  "algorithm_change_authorized": false,
+  "claim_boundary": "exact logged mask intersections from two train-only anchors",
+  "diagnostic_only": true,
+  "episodes": [
+    {
+      "source": "data\\raw\\pgrr_anchor_capsuleloc_goalapproach_train_r00_20260915.jsonl",
+      "summary": {
+        "event_count": 69,
+        "final_temporary_empty_count": 69,
+        "first_empty_constraint_counts": {
+          "bc_yield_mask": 34,
+          "observable_scan": 35
+        },
+        "removed_action_occurrences_by_downstream_constraint": {
+          "bc_yield_mask": {
+            "2": 34
+          }
+        },
+        "scan_empty_count": 35,
+        "scan_nonempty_count": 34,
+        "scan_survivor_action_occurrences": {
+          "2": 34
+        },
+        "scan_survivor_geometry": {
+          "2": {
+            "action_id": 2,
+            "angle_deg": -30,
+            "radius_m": 0.6
+          }
+        },
+        "temporary_action_selected_count": 0
+      }
+    },
+    {
+      "source": "data\\raw\\pgrr_anchor_capsuleloc_leadstop_train_r00_20260915.jsonl",
+      "summary": {
+        "event_count": 20,
+        "final_temporary_empty_count": 20,
+        "first_empty_constraint_counts": {
+          "observable_scan": 20
+        },
+        "removed_action_occurrences_by_downstream_constraint": {},
+        "scan_empty_count": 20,
+        "scan_nonempty_count": 0,
+        "scan_survivor_action_occurrences": {},
+        "scan_survivor_geometry": {},
+        "temporary_action_selected_count": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "claim_boundary": "At least one validation episode contains a complete trace.",
+  "diagnostic_only": true,
+  "episode_count": 6,
+  "episodes": [
+    {
+      "episode_id": "pgrr_extension_mask_trace_leadstop_train_r00_pgrr_20260912_retry02",
+      "first_empty_stage_counts": {
+        "map_connectivity": 0,
+        "none": 0,
+        "observable_scan": 85,
+        "path_corridor": 25
+      },
+      "outcome": "TIMEOUT",
+      "split": "train",
+      "telemetry_rows": 896,
+      "trace_status": "complete",
+      "traced_decisions": 110
+    },
+    {
+      "episode_id": "pgrr_masktrace_diagonal_train_r00_20260912",
+      "first_empty_stage_counts": {
+        "map_connectivity": 0,
+        "none": 0,
+        "observable_scan": 0,
+        "path_corridor": 0
+      },
+      "outcome": "TIMEOUT",
+      "split": "train",
+      "telemetry_rows": 893,
+      "trace_status": "not_triggered",
+      "traced_decisions": 0
+    },
+    {
+      "episode_id": "pgrr_masktrace_diagonal_validation_r00_20260912",
+      "first_empty_stage_counts": {
+        "map_connectivity": 0,
+        "none": 0,
+        "observable_scan": 0,
+        "path_corridor": 0
+      },
+      "outcome": "TIMEOUT",
+      "split": "validation",
+      "telemetry_rows": 895,
+      "trace_status": "not_triggered",
+      "traced_decisions": 0
+    },
+    {
+      "episode_id": "pgrr_masktrace_headon_train_r00_20260912",
+      "first_empty_stage_counts": {
+        "map_connectivity": 0,
+        "none": 0,
+        "observable_scan": 49,
+        "path_corridor": 0
+      },
+      "outcome": "PLANNER_FAILURE",
+      "split": "train",
+      "telemetry_rows": 498,
+      "trace_status": "complete",
+      "traced_decisions": 49
+    },
+    {
+      "episode_id": "pgrr_masktrace_headon_validation_r00_20260912",
+      "first_empty_stage_counts": {
+        "map_connectivity": 0,
+        "none": 0,
+        "observable_scan": 0,
+        "path_corridor": 0
+      },
+      "outcome": "TIMEOUT",
+      "split": "validation",
+      "telemetry_rows": 896,
+      "trace_status": "not_triggered",
+      "traced_decisions": 0
+    },
+    {
+      "episode_id": "pgrr_masktrace_leadstop_validation_r00_20260912",
+      "first_empty_stage_counts": {
+        "map_connectivity": 0,
+        "none": 15,
+        "observable_scan": 172,
+        "path_corridor": 4
+      },
+      "outcome": "TIMEOUT",
+      "split": "validation",
+      "telemetry_rows": 898,
+      "trace_status": "complete",
+      "traced_decisions": 191
+    }
+  ],
+  "first_temporary_empty_stage_counts": {
+    "map_connectivity": 0,
+    "none": 15,
+    "observable_scan": 306,
+    "path_corridor": 29
+  },
+  "outcome_counts": {
+    "PLANNER_FAILURE": 1,
+    "TIMEOUT": 5
+  },
+  "performance_claim": false,
+  "sources": [
+    "outputs\\student\\eight_family_pilot\\mask_trace_smoke_retry02_validation.json",
+    "outputs\\student\\eight_family_pilot\\mask_trace_diagonal_train_validation.json",
+    "outputs\\student\\eight_family_pilot\\mask_trace_diagonal_validation_validation.json",
+    "outputs\\student\\eight_family_pilot\\mask_trace_headon_train_validation.json",
+    "outputs\\student\\eight_family_pilot\\mask_trace_headon_validation_validation.json",
+    "outputs\\student\\eight_family_pilot\\mask_trace_leadstop_validation_runtime_validation.json"
+  ],
+  "split_trace_status_counts": {
+    "train:complete": 2,
+    "train:not_triggered": 1,
+    "validation:complete": 1,
+    "validation:not_triggered": 2
+  },
+  "temporary_removed_totals": {
+    "map_connectivity": 0,
+    "observable_scan": 7226,
+    "path_corridor": 79
+  },
+  "trace_status_counts": {
+    "complete": 3,
+    "not_triggered": 3
+  },
+  "traced_decision_count": 350,
+  "validation_layer_replication_established": true
+}

@@ -1,0 +1,581 @@
+{
+  "aggregate": {
+    "all_empty_with_forward_clearance_at_least_1_5m_count": 14,
+    "all_temporary_empty_count": 123,
+    "approximate_action_classification_match_rate": 0.8415637860082305,
+    "approximate_exact_decision_match_count": 73,
+    "approximate_exact_decision_match_rate": 0.4506172839506173,
+    "approximate_predicate_counts": {
+      "approx_both_failed": 2115,
+      "approx_both_passed": 639,
+      "approx_capsule_only_failed": 648
+    },
+    "collision_latched_decision_count": 69,
+    "decision_count": 162,
+    "exact_logged_action_counts": {
+      "r0.6_a+0": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r0.6_a+30": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r0.6_a+60": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r0.6_a+90": {
+        "considered": 162,
+        "removed": 142,
+        "retained": 20
+      },
+      "r0.6_a-30": {
+        "considered": 162,
+        "removed": 123,
+        "retained": 39
+      },
+      "r0.6_a-60": {
+        "considered": 162,
+        "removed": 142,
+        "retained": 20
+      },
+      "r0.6_a-90": {
+        "considered": 162,
+        "removed": 142,
+        "retained": 20
+      },
+      "r1.0_a+0": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.0_a+30": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.0_a+60": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.0_a+90": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.0_a-30": {
+        "considered": 162,
+        "removed": 143,
+        "retained": 19
+      },
+      "r1.0_a-60": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.0_a-90": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.4_a+0": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.4_a+30": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.4_a+60": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.4_a+90": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.4_a-30": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.4_a-60": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      },
+      "r1.4_a-90": {
+        "considered": 162,
+        "removed": 162,
+        "retained": 0
+      }
+    },
+    "exact_logged_angle_counts": {
+      "+0deg": {
+        "considered": 486,
+        "removed": 486,
+        "retained": 0
+      },
+      "+30deg": {
+        "considered": 486,
+        "removed": 486,
+        "retained": 0
+      },
+      "+60deg": {
+        "considered": 486,
+        "removed": 486,
+        "retained": 0
+      },
+      "+90deg": {
+        "considered": 486,
+        "removed": 466,
+        "retained": 20
+      },
+      "-30deg": {
+        "considered": 486,
+        "removed": 428,
+        "retained": 58
+      },
+      "-60deg": {
+        "considered": 486,
+        "removed": 466,
+        "retained": 20
+      },
+      "-90deg": {
+        "considered": 486,
+        "removed": 466,
+        "retained": 20
+      }
+    },
+    "exact_logged_latch_empty_counts": {
+      "latched:decisions": 69,
+      "latched:empty": 69,
+      "not_latched:decisions": 93,
+      "not_latched:empty": 54
+    },
+    "exact_logged_radius_counts": {
+      "0.6m": {
+        "considered": 1134,
+        "removed": 1035,
+        "retained": 99
+      },
+      "1.0m": {
+        "considered": 1134,
+        "removed": 1115,
+        "retained": 19
+      },
+      "1.4m": {
+        "considered": 1134,
+        "removed": 1134,
+        "retained": 0
+      }
+    },
+    "exact_logged_retained_mask_counts": {
+      "0,1,2,6": 20,
+      "2,9": 19,
+      "none": 123
+    },
+    "forward_clearance_observed_count": 133
+  },
+  "algorithm_change_authorized": false,
+  "claim_boundary": "Logged pre/post removals are exact. Predicate decomposition is an approximate replay from 180-beam resampled telemetry, not the original runtime LaserScan.",
+  "diagnostic_only": true,
+  "episodes": [
+    {
+      "source": "data\\raw\\pgrr_anchor_masktrace_goalapproach_train_r00_20260915.jsonl",
+      "summary": {
+        "all_empty_with_forward_clearance_at_least_1_5m_count": 14,
+        "all_temporary_empty_count": 54,
+        "approximate_action_classification_match_rate": 0.8356164383561644,
+        "approximate_exact_decision_match_count": 44,
+        "approximate_exact_decision_match_rate": 0.6027397260273972,
+        "approximate_predicate_counts": {
+          "approx_both_failed": 955,
+          "approx_both_passed": 290,
+          "approx_capsule_only_failed": 288
+        },
+        "collision_latched_decision_count": 44,
+        "decision_count": 73,
+        "exact_logged_action_counts": {
+          "r0.6_a+0": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r0.6_a+30": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r0.6_a+60": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r0.6_a+90": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r0.6_a-30": {
+            "considered": 73,
+            "removed": 54,
+            "retained": 19
+          },
+          "r0.6_a-60": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r0.6_a-90": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.0_a+0": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.0_a+30": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.0_a+60": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.0_a+90": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.0_a-30": {
+            "considered": 73,
+            "removed": 54,
+            "retained": 19
+          },
+          "r1.0_a-60": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.0_a-90": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.4_a+0": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.4_a+30": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.4_a+60": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.4_a+90": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.4_a-30": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.4_a-60": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          },
+          "r1.4_a-90": {
+            "considered": 73,
+            "removed": 73,
+            "retained": 0
+          }
+        },
+        "exact_logged_angle_counts": {
+          "+0deg": {
+            "considered": 219,
+            "removed": 219,
+            "retained": 0
+          },
+          "+30deg": {
+            "considered": 219,
+            "removed": 219,
+            "retained": 0
+          },
+          "+60deg": {
+            "considered": 219,
+            "removed": 219,
+            "retained": 0
+          },
+          "+90deg": {
+            "considered": 219,
+            "removed": 219,
+            "retained": 0
+          },
+          "-30deg": {
+            "considered": 219,
+            "removed": 181,
+            "retained": 38
+          },
+          "-60deg": {
+            "considered": 219,
+            "removed": 219,
+            "retained": 0
+          },
+          "-90deg": {
+            "considered": 219,
+            "removed": 219,
+            "retained": 0
+          }
+        },
+        "exact_logged_latch_empty_counts": {
+          "latched:decisions": 44,
+          "latched:empty": 44,
+          "not_latched:decisions": 29,
+          "not_latched:empty": 10
+        },
+        "exact_logged_radius_counts": {
+          "0.6m": {
+            "considered": 511,
+            "removed": 492,
+            "retained": 19
+          },
+          "1.0m": {
+            "considered": 511,
+            "removed": 492,
+            "retained": 19
+          },
+          "1.4m": {
+            "considered": 511,
+            "removed": 511,
+            "retained": 0
+          }
+        },
+        "exact_logged_retained_mask_counts": {
+          "2,9": 19,
+          "none": 54
+        },
+        "forward_clearance_observed_count": 73
+      }
+    },
+    {
+      "source": "data\\raw\\pgrr_anchor_masktrace_leadstop_train_r00_20260915.jsonl",
+      "summary": {
+        "all_empty_with_forward_clearance_at_least_1_5m_count": 0,
+        "all_temporary_empty_count": 69,
+        "approximate_action_classification_match_rate": 0.846441947565543,
+        "approximate_exact_decision_match_count": 29,
+        "approximate_exact_decision_match_rate": 0.3258426966292135,
+        "approximate_predicate_counts": {
+          "approx_both_failed": 1160,
+          "approx_both_passed": 349,
+          "approx_capsule_only_failed": 360
+        },
+        "collision_latched_decision_count": 25,
+        "decision_count": 89,
+        "exact_logged_action_counts": {
+          "r0.6_a+0": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r0.6_a+30": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r0.6_a+60": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r0.6_a+90": {
+            "considered": 89,
+            "removed": 69,
+            "retained": 20
+          },
+          "r0.6_a-30": {
+            "considered": 89,
+            "removed": 69,
+            "retained": 20
+          },
+          "r0.6_a-60": {
+            "considered": 89,
+            "removed": 69,
+            "retained": 20
+          },
+          "r0.6_a-90": {
+            "considered": 89,
+            "removed": 69,
+            "retained": 20
+          },
+          "r1.0_a+0": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.0_a+30": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.0_a+60": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.0_a+90": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.0_a-30": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.0_a-60": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.0_a-90": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.4_a+0": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.4_a+30": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.4_a+60": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.4_a+90": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.4_a-30": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.4_a-60": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          },
+          "r1.4_a-90": {
+            "considered": 89,
+            "removed": 89,
+            "retained": 0
+          }
+        },
+        "exact_logged_angle_counts": {
+          "+0deg": {
+            "considered": 267,
+            "removed": 267,
+            "retained": 0
+          },
+          "+30deg": {
+            "considered": 267,
+            "removed": 267,
+            "retained": 0
+          },
+          "+60deg": {
+            "considered": 267,
+            "removed": 267,
+            "retained": 0
+          },
+          "+90deg": {
+            "considered": 267,
+            "removed": 247,
+            "retained": 20
+          },
+          "-30deg": {
+            "considered": 267,
+            "removed": 247,
+            "retained": 20
+          },
+          "-60deg": {
+            "considered": 267,
+            "removed": 247,
+            "retained": 20
+          },
+          "-90deg": {
+            "considered": 267,
+            "removed": 247,
+            "retained": 20
+          }
+        },
+        "exact_logged_latch_empty_counts": {
+          "latched:decisions": 25,
+          "latched:empty": 25,
+          "not_latched:decisions": 64,
+          "not_latched:empty": 44
+        },
+        "exact_logged_radius_counts": {
+          "0.6m": {
+            "considered": 623,
+            "removed": 543,
+            "retained": 80
+          },
+          "1.0m": {
+            "considered": 623,
+            "removed": 623,
+            "retained": 0
+          },
+          "1.4m": {
+            "considered": 623,
+            "removed": 623,
+            "retained": 0
+          }
+        },
+        "exact_logged_retained_mask_counts": {
+          "0,1,2,6": 20,
+          "none": 69
+        },
+        "forward_clearance_observed_count": 60
+      }
+    }
+  ],
+  "scan_replay_assumptions": {
+    "beam_count": 180,
+    "collision_latch_threshold": 0.65,
+    "collision_latched_clearance_m": 0.9,
+    "field_of_view_degrees": 270.0,
+    "normal_swept_clearance_m": 0.48,
+    "normal_target_clearance_m": 0.25,
+    "sector_half_width_degrees": 12.0
+  }
+}

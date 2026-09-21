@@ -1,0 +1,10 @@
+{
+  "detail": "NavigateToPose did not activate within the startup deadline",
+  "episode_id": "pgrr_advscreen_crossing_v2_train_r02_s95012_pgrr",
+  "localized_goal_distance_m": 15.0,
+  "outcome": "INVALID_RESET",
+  "outcome_id": 5,
+  "physical_goal_distance_m": 14.999999909344616,
+  "sample_count": 0,
+  "scenario_events": []
+}

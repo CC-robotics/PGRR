@@ -1,0 +1,10 @@
+{
+  "detail": "recovery manager succeeded with goal-distance verification",
+  "episode_id": "pgrr_advscreen_crossing_v2_validation_r00_s96000_pgrr",
+  "localized_goal_distance_m": 0.2313625067472458,
+  "outcome": "GOAL_REACHED",
+  "outcome_id": 0,
+  "physical_goal_distance_m": 0.2623592883115388,
+  "sample_count": 757,
+  "scenario_events": []
+}

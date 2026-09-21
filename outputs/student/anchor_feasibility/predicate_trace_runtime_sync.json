@@ -1,0 +1,56 @@
+{
+  "backup_root": "/home/preface/PGRR-online-sync-backups/mask-predicates-20260915",
+  "episode_id": "pgrr_anchor_predicates_goalapproach_train_r00_20260915",
+  "file_count": 5,
+  "files": [
+    {
+      "actual_sha256": "2ff6b933e9fb9010f72520b671f069db0e744817ec0163b23a0fe0359a355e69",
+      "backup": "/home/preface/PGRR-online-sync-backups/mask-predicates-20260915/packages/ramp_core/ramp_core/action_mask.py",
+      "expected_sha256": "2ff6b933e9fb9010f72520b671f069db0e744817ec0163b23a0fe0359a355e69",
+      "matches": true,
+      "mode": "0o644",
+      "path": "packages/ramp_core/ramp_core/action_mask.py",
+      "target_existed": true
+    },
+    {
+      "actual_sha256": "5fced9be2fa54ca968fee351c4382405e496d8deaab0dc07744ea1fa6bcf8a24",
+      "backup": "/home/preface/PGRR-online-sync-backups/mask-predicates-20260915/packages/ramp_core/ramp_core/recovery/mask_trace.py",
+      "expected_sha256": "5fced9be2fa54ca968fee351c4382405e496d8deaab0dc07744ea1fa6bcf8a24",
+      "matches": true,
+      "mode": "0o644",
+      "path": "packages/ramp_core/ramp_core/recovery/mask_trace.py",
+      "target_existed": true
+    },
+    {
+      "actual_sha256": "64973393b778359310bd87ed5f1be4f478d1c124bdd66fcd1ddccea63872c79c",
+      "backup": "/home/preface/PGRR-online-sync-backups/mask-predicates-20260915/ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py",
+      "expected_sha256": "64973393b778359310bd87ed5f1be4f478d1c124bdd66fcd1ddccea63872c79c",
+      "matches": true,
+      "mode": "0o644",
+      "path": "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py",
+      "target_existed": true
+    },
+    {
+      "actual_sha256": "2a505d21ecb39b803fa2ed563f447a907409fe454f5e3b7743d72644dead42d1",
+      "backup": "/home/preface/PGRR-online-sync-backups/mask-predicates-20260915/scripts/arena/run_baseline_episode.sh",
+      "expected_sha256": "2a505d21ecb39b803fa2ed563f447a907409fe454f5e3b7743d72644dead42d1",
+      "matches": true,
+      "mode": "0o755",
+      "path": "scripts/arena/run_baseline_episode.sh",
+      "target_existed": true
+    },
+    {
+      "actual_sha256": "2dea2af5303f2dcc3afebb35baeed9701ba8a2437c1a67f3b6db08ed6b679112",
+      "backup": "/home/preface/PGRR-online-sync-backups/mask-predicates-20260915/scripts/arena/run_baseline_episode_inner.sh",
+      "expected_sha256": "2dea2af5303f2dcc3afebb35baeed9701ba8a2437c1a67f3b6db08ed6b679112",
+      "matches": true,
+      "mode": "0o755",
+      "path": "scripts/arena/run_baseline_episode_inner.sh",
+      "target_existed": true
+    }
+  ],
+  "line_endings": "LF",
+  "runtime_root": "/home/preface/PGRR-online",
+  "source_root": "/mnt/c/Users/28646/Documents/ChatGPT/New project/PGRR",
+  "synchronized": true
+}

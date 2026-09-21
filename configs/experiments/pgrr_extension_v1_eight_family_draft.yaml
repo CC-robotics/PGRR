@@ -1,0 +1,127 @@
+# Eight-family extension protocol draft.  This catalog is deliberately not
+# executable until the six new geometries are implemented and reviewed.
+schema_version: 1
+benchmark_id: pgrr_extension_v1_eight_family_draft
+status: draft_train_validation_only_not_executable
+parent_smoke_catalog: pgrr_extension_v1_train_validation.yaml
+map:
+  id: map_empty
+  bounds_m: [0.0, 31.28, 0.0, 24.03]
+  preview_resolution_m: 0.10
+prototype_geometry:
+  status: draft_geometry_not_frozen
+  robot_start: [5.0, 12.0, 0.0]
+  robot_goal: [27.0, 12.0, 0.0]
+  corridor_south_y_m: 10.55
+  corridor_north_y_m: 13.45
+  corridor_x_range_m: [4.0, 28.0]
+densities:
+  low: 1
+  medium: 2
+  high: 4
+families:
+  - id: diagonal_cut_in_corridor
+    family_index: 0
+    implementation_status: smoke_compiled_and_runtime_checked
+    failure_target: collision_risk
+    variables: [cut_side, cut_angle_deg, longitudinal_phase, speed_ratio_to_robot_nominal, lateral_offset_m]
+  - id: occluded_side_emergence
+    family_index: 1
+    implementation_status: smoke_compiled_and_runtime_checked
+    failure_target: collision_risk
+    variables: [emergence_side, first_visible_distance_m, gap_location, longitudinal_phase, pedestrian_speed_mps]
+  - id: recurrent_bidirectional_crossing
+    family_index: 2
+    implementation_status: geometry_draft_only
+    failure_target: oscillation
+    variables: [crossing_interval_s, direction_balance, crossing_phase, pedestrian_speed_mps, density]
+    prototype:
+      crossing_x_m: [13.5, 16.5]
+      crossing_span_m: 2.00
+      crossing_interval_s: [1.5, 2.5]
+      pedestrian_speed_mps: [0.45, 0.65]
+      actor_routes: cyclic_opposite_directions
+  - id: narrow_corridor_head_on_deadlock
+    family_index: 3
+    implementation_status: geometry_draft_only
+    failure_target: freeze_or_deadlock
+    variables: [corridor_width_m, initial_lateral_offset_m, oncoming_speed_mps, encounter_phase, density]
+    prototype:
+      corridor_center_y_m: 12.0
+      corridor_width_m: 1.60
+      corridor_x_range_m: [4.0, 28.0]
+      oncoming_start_x_m: 20.0
+      oncoming_goal_x_m: 8.0
+      oncoming_speed_mps: 0.45
+      actor_routes: one_shot_head_on
+  - id: closing_gap_multi_pedestrian
+    family_index: 4
+    implementation_status: geometry_draft_only
+    failure_target: collision_risk_or_planner_failure
+    variables: [initial_gap_width_m, closing_speed_mps, closure_phase, side_balance, density]
+    prototype:
+      closure_x_m: [14.5, 16.0]
+      initial_gap_width_m: 1.94
+      closed_gap_width_m: 0.20
+      closing_speed_mps: [0.40, 0.55]
+      actor_routes: one_shot_inward_closure
+  - id: lead_pedestrian_sudden_stop
+    family_index: 5
+    implementation_status: geometry_draft_only
+    failure_target: freeze
+    variables: [lead_distance_m, stop_phase, stop_duration_s, lead_speed_mps, density]
+    prototype:
+      lead_start_x_m: 10.0
+      lead_stop_x_m: 16.0
+      lead_speed_mps: 0.55
+      actor_routes: one_shot_lead_then_terminal_stop
+  - id: bottleneck_cross_flow_merge
+    family_index: 6
+    implementation_status: geometry_draft_only
+    failure_target: deadlock_or_timeout
+    variables: [bottleneck_width_m, cross_flow_rate, merge_phase, cross_flow_speed_mps, density]
+    prototype:
+      bottleneck_x_range_m: [14.0, 17.0]
+      bottleneck_width_m: 1.80
+      cross_flow_x_m: [15.0, 16.5]
+      cross_flow_speed_mps: [0.45, 0.65]
+      actor_routes: cyclic_lateral_cross_flow
+  - id: goal_approach_lateral_interruption
+    family_index: 7
+    implementation_status: geometry_draft_only
+    failure_target: oscillation_or_planner_failure
+    variables: [interruption_distance_to_goal_m, crossing_side, interruption_phase, pedestrian_speed_mps, occlusion_length_m]
+    prototype:
+      goal_approach_x_m: [22.0, 24.0]
+      interruption_distance_to_goal_m: [3.0, 5.0]
+      crossing_side: [left, right]
+      pedestrian_speed_mps: [0.45, 0.70]
+      occlusion_length_m: 1.80
+      actor_routes: one_shot_lateral_interruption
+splits:
+  train:
+    seed_base: 91000
+    repeats_per_family_density: 6
+    purpose: expert labels, DAgger collection, and policy training only
+  validation:
+    seed_base: 93000
+    repeats_per_family_density: 3
+    purpose: checkpoint and ablation selection only
+reserved_held_out_test:
+  enabled: false
+  seed_base: 97000
+  repeats_per_family_density: 5
+  purpose: reserve only; materialize only after scenario, checkpoint, and statistics freeze
+seed_formula: "seed = base + 100 * family_index + 10 * density_index + repeat_index"
+comparison_protocol:
+  methods: [base, heuristic, uniform_bc, pgrr]
+  paired_by: [family, density, repeat_index, seed]
+  primary_outcomes: [GOAL_REACHED, COLLISION, TIMEOUT]
+  secondary_outcomes: [PLANNER_FAILURE, SIMULATOR_FAILURE, INVALID_RESET]
+  report_costs: [completion_time_s, path_length_m, angular_jerk]
+invariants:
+  full_episode_split: true
+  dagger_sources: [train]
+  model_selection_sources: [train, validation]
+  forbidden_sources: [moderate_v6_test]
+  no_posthoc_episode_selection: true

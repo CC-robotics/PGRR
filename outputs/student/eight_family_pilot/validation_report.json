@@ -1,0 +1,9 @@
+{
+  "benchmark_id": "pgrr_extension_v1_eight_family_pilot",
+  "valid": true,
+  "family_count": 8,
+  "verified_scenario_files": 8,
+  "planned_episode_attempts": 32,
+  "held_out_test_materialized": false,
+  "errors": []
+}

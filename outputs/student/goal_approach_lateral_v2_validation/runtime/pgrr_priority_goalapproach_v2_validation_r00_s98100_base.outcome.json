@@ -1,0 +1,22 @@
+{
+  "detail": "privileged robot-human overlap",
+  "episode_id": "pgrr_priority_goalapproach_v2_validation_r00_s98100_base",
+  "localized_goal_distance_m": 5.158588409423828,
+  "outcome": "COLLISION",
+  "outcome_id": 1,
+  "physical_goal_distance_m": 5.165879682001181,
+  "sample_count": 415,
+  "scenario_events": [
+    {
+      "actor_name": "ped_00",
+      "command": "release_actor_on_noncyclic_crossing",
+      "event_elapsed_s": 38.02860000000001,
+      "event_id": "goal_approach_lateral_one_shot_v2_train",
+      "phase": "active_event",
+      "sim_time_s": 67.53240000000001,
+      "transition": "pre_event_to_active_event",
+      "trigger_metric": "robot_goal_distance_below",
+      "trigger_value_m": 5.9769975319422315
+    }
+  ]
+}

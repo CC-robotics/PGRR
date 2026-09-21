@@ -1,0 +1,62 @@
+{
+  "claim_boundary": "Train-only trigger-positive replication exists; no validation report was supplied, so cross-split layer replication is not established.",
+  "diagnostic_only": true,
+  "episode_count": 2,
+  "episodes": [
+    {
+      "episode_id": "pgrr_anchor_masktrace_goalapproach_train_r00_20260915",
+      "first_empty_stage_counts": {
+        "map_connectivity": 0,
+        "none": 19,
+        "observable_scan": 54,
+        "path_corridor": 0
+      },
+      "outcome": "TIMEOUT",
+      "split": "train",
+      "telemetry_rows": 901,
+      "trace_status": "complete",
+      "traced_decisions": 73
+    },
+    {
+      "episode_id": "pgrr_anchor_masktrace_leadstop_train_r00_20260915",
+      "first_empty_stage_counts": {
+        "map_connectivity": 0,
+        "none": 20,
+        "observable_scan": 69,
+        "path_corridor": 0
+      },
+      "outcome": "TIMEOUT",
+      "split": "train",
+      "telemetry_rows": 901,
+      "trace_status": "complete",
+      "traced_decisions": 89
+    }
+  ],
+  "first_temporary_empty_stage_counts": {
+    "map_connectivity": 0,
+    "none": 39,
+    "observable_scan": 123,
+    "path_corridor": 0
+  },
+  "outcome_counts": {
+    "TIMEOUT": 2
+  },
+  "performance_claim": false,
+  "sources": [
+    "outputs\\student\\anchor_feasibility\\goal_approach_full_layer_mask_trace_validation.json",
+    "outputs\\student\\anchor_feasibility\\lead_stop_full_layer_mask_trace_validation.json"
+  ],
+  "split_trace_status_counts": {
+    "train:complete": 2
+  },
+  "temporary_removed_totals": {
+    "map_connectivity": 0,
+    "observable_scan": 3284,
+    "path_corridor": 60
+  },
+  "trace_status_counts": {
+    "complete": 2
+  },
+  "traced_decision_count": 162,
+  "validation_layer_replication_established": false
+}

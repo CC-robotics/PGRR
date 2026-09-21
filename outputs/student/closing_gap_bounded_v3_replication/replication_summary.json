@@ -1,0 +1,358 @@
+{
+  "schema_version": 1,
+  "scope": "train_only_replication_gate",
+  "family": "closing_gap_multi_pedestrian",
+  "variant_id": "closing_gap_bounded_release_v3",
+  "route_distance_m": 15.0,
+  "episode_timeout_s": 90,
+  "promotion_rule": {
+    "minimum_qualifying_pairs": 2,
+    "total_pairs": 3
+  },
+  "selected_pairs": [
+    {
+      "replicate": 0,
+      "seed": 98200,
+      "base": {
+        "episode_id": "pgrr_priority_closinggap_v3_train_s98200_base",
+        "outcome": "COLLISION",
+        "detail": "privileged robot-human overlap",
+        "sample_count": 414,
+        "physical_goal_distance_m": 5.18361289245303,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.261700000000005,
+            "event_id": "closing_gap_bounded_ped_00_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 65.50110000000001,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.909556313537708
+          },
+          {
+            "actor_name": "ped_01",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.261700000000005,
+            "event_id": "closing_gap_bounded_ped_01_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 65.50110000000001,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.909556313537708
+          },
+          {
+            "actor_name": "ped_00",
+            "command": "resume_noncyclic_route",
+            "event_elapsed_s": 41.292,
+            "event_id": "closing_gap_bounded_ped_00_v3_train",
+            "phase": "released",
+            "sim_time_s": 68.5314,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.18361289245303
+          },
+          {
+            "actor_name": "ped_01",
+            "command": "resume_noncyclic_route",
+            "event_elapsed_s": 41.292,
+            "event_id": "closing_gap_bounded_ped_01_v3_train",
+            "phase": "released",
+            "sim_time_s": 68.5314,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.18361289245303
+          }
+        ],
+        "outcome_path": "outputs\\student\\closing_gap_bounded_v3_screen\\runtime\\pgrr_priority_closinggap_v3_train_s98200_base.outcome.json",
+        "jsonl_path": "outputs\\student\\closing_gap_bounded_v3_screen\\runtime\\pgrr_priority_closinggap_v3_train_s98200_base.jsonl"
+      },
+      "pgrr": {
+        "episode_id": "pgrr_priority_closinggap_v3_train_s98200_pgrr",
+        "outcome": "GOAL_REACHED",
+        "detail": "recovery manager succeeded with goal-distance verification",
+        "sample_count": 892,
+        "physical_goal_distance_m": 0.18286602005915745,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.1951,
+            "event_id": "closing_gap_bounded_ped_00_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 62.5041,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.9812213739523745
+          },
+          {
+            "actor_name": "ped_01",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.1951,
+            "event_id": "closing_gap_bounded_ped_01_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 62.5041,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.9812213739523745
+          },
+          {
+            "actor_name": "ped_00",
+            "command": "resume_noncyclic_route",
+            "event_elapsed_s": 41.69160000000001,
+            "event_id": "closing_gap_bounded_ped_00_v3_train",
+            "phase": "released",
+            "sim_time_s": 66.0006,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.732416469581528
+          },
+          {
+            "actor_name": "ped_01",
+            "command": "resume_noncyclic_route",
+            "event_elapsed_s": 41.69160000000001,
+            "event_id": "closing_gap_bounded_ped_01_v3_train",
+            "phase": "released",
+            "sim_time_s": 66.0006,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.732416469581528
+          }
+        ],
+        "outcome_path": "outputs\\student\\closing_gap_bounded_v3_screen\\runtime\\pgrr_priority_closinggap_v3_train_s98200_pgrr.outcome.json",
+        "jsonl_path": "outputs\\student\\closing_gap_bounded_v3_screen\\runtime\\pgrr_priority_closinggap_v3_train_s98200_pgrr.jsonl"
+      },
+      "positive_pair": true,
+      "pgrr_two_actor_event_chain_complete": true,
+      "pgrr_original_goal_restored": true,
+      "qualifying_pair": true,
+      "pgrr_recovery": {
+        "decision_action_counts": {
+          "BACKUP": 8,
+          "CONTINUE": 4,
+          "WAIT": 8
+        },
+        "temporary_subgoal_decision_count": 0,
+        "original_goal_restored_event_count": 1
+      }
+    },
+    {
+      "replicate": 1,
+      "seed": 98201,
+      "base": {
+        "episode_id": "pgrr_priority_closinggap_v3_train_r01_s98201_base",
+        "outcome": "COLLISION",
+        "detail": "privileged robot-human overlap",
+        "sample_count": 417,
+        "physical_goal_distance_m": 5.24500361795044,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.5947,
+            "event_id": "closing_gap_bounded_ped_00_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 63.003600000000006,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.955703058867176
+          },
+          {
+            "actor_name": "ped_01",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.5947,
+            "event_id": "closing_gap_bounded_ped_01_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 63.003600000000006,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.955703058867176
+          }
+        ],
+        "outcome_path": "outputs\\student\\closing_gap_bounded_v3_replication\\runtime\\pgrr_priority_closinggap_v3_train_r01_s98201_base.outcome.json",
+        "jsonl_path": "outputs\\student\\closing_gap_bounded_v3_replication\\runtime\\pgrr_priority_closinggap_v3_train_r01_s98201_base.jsonl"
+      },
+      "pgrr": {
+        "episode_id": "pgrr_priority_closinggap_v3_train_r01_s98201_pgrr",
+        "outcome": "TIMEOUT",
+        "detail": "configured episode timeout",
+        "sample_count": 901,
+        "physical_goal_distance_m": 2.4147506026794336,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.428200000000004,
+            "event_id": "closing_gap_bounded_ped_00_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 65.00160000000001,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.926416673659981
+          },
+          {
+            "actor_name": "ped_01",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.428200000000004,
+            "event_id": "closing_gap_bounded_ped_01_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 65.00160000000001,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.926416673659981
+          },
+          {
+            "actor_name": "ped_00",
+            "command": "resume_noncyclic_route",
+            "event_elapsed_s": 41.4585,
+            "event_id": "closing_gap_bounded_ped_00_v3_train",
+            "phase": "released",
+            "sim_time_s": 68.03190000000001,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.415200331349803
+          },
+          {
+            "actor_name": "ped_01",
+            "command": "resume_noncyclic_route",
+            "event_elapsed_s": 41.4585,
+            "event_id": "closing_gap_bounded_ped_01_v3_train",
+            "phase": "released",
+            "sim_time_s": 68.03190000000001,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.415200331349803
+          }
+        ],
+        "outcome_path": "outputs\\student\\closing_gap_bounded_v3_replication\\runtime\\pgrr_priority_closinggap_v3_train_r01_s98201_pgrr.outcome.json",
+        "jsonl_path": "outputs\\student\\closing_gap_bounded_v3_replication\\runtime\\pgrr_priority_closinggap_v3_train_r01_s98201_pgrr.jsonl"
+      },
+      "positive_pair": false,
+      "pgrr_two_actor_event_chain_complete": true,
+      "pgrr_original_goal_restored": true,
+      "qualifying_pair": false,
+      "pgrr_recovery": {
+        "decision_action_counts": {
+          "BACKUP": 9,
+          "CONTINUE": 6,
+          "SUBGOAL_1": 1,
+          "WAIT": 5
+        },
+        "temporary_subgoal_decision_count": 1,
+        "original_goal_restored_event_count": 2
+      }
+    },
+    {
+      "replicate": 2,
+      "seed": 98202,
+      "base": {
+        "episode_id": "pgrr_priority_closinggap_v3_train_r02_s98202_base",
+        "outcome": "COLLISION",
+        "detail": "privileged robot-human overlap",
+        "sample_count": 418,
+        "physical_goal_distance_m": 5.230714529425685,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.628,
+            "event_id": "closing_gap_bounded_ped_00_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 68.5314,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.953818979685989
+          },
+          {
+            "actor_name": "ped_01",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.628,
+            "event_id": "closing_gap_bounded_ped_01_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 68.5314,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.953818979685989
+          }
+        ],
+        "outcome_path": "outputs\\student\\closing_gap_bounded_v3_replication\\runtime\\pgrr_priority_closinggap_v3_train_r02_s98202_base.outcome.json",
+        "jsonl_path": "outputs\\student\\closing_gap_bounded_v3_replication\\runtime\\pgrr_priority_closinggap_v3_train_r02_s98202_base.jsonl"
+      },
+      "pgrr": {
+        "episode_id": "pgrr_priority_closinggap_v3_train_r02_s98202_pgrr",
+        "outcome": "TIMEOUT",
+        "detail": "configured episode timeout",
+        "sample_count": 901,
+        "physical_goal_distance_m": 2.0096889328574186,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 37.962,
+            "event_id": "closing_gap_bounded_ped_00_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 62.0046,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.999448920215984
+          },
+          {
+            "actor_name": "ped_01",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 37.962,
+            "event_id": "closing_gap_bounded_ped_01_v3_train",
+            "phase": "active_event",
+            "sim_time_s": 62.0046,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.999448920215984
+          },
+          {
+            "actor_name": "ped_00",
+            "command": "resume_noncyclic_route",
+            "event_elapsed_s": 41.45850000000001,
+            "event_id": "closing_gap_bounded_ped_00_v3_train",
+            "phase": "released",
+            "sim_time_s": 65.50110000000001,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.724214309566655
+          },
+          {
+            "actor_name": "ped_01",
+            "command": "resume_noncyclic_route",
+            "event_elapsed_s": 41.45850000000001,
+            "event_id": "closing_gap_bounded_ped_01_v3_train",
+            "phase": "released",
+            "sim_time_s": 65.50110000000001,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.724214309566655
+          }
+        ],
+        "outcome_path": "outputs\\student\\closing_gap_bounded_v3_replication\\runtime\\pgrr_priority_closinggap_v3_train_r02_s98202_pgrr.outcome.json",
+        "jsonl_path": "outputs\\student\\closing_gap_bounded_v3_replication\\runtime\\pgrr_priority_closinggap_v3_train_r02_s98202_pgrr.jsonl"
+      },
+      "positive_pair": false,
+      "pgrr_two_actor_event_chain_complete": true,
+      "pgrr_original_goal_restored": true,
+      "qualifying_pair": false,
+      "pgrr_recovery": {
+        "decision_action_counts": {
+          "BACKUP": 9,
+          "CONTINUE": 6,
+          "SUBGOAL_1": 1,
+          "WAIT": 6
+        },
+        "temporary_subgoal_decision_count": 1,
+        "original_goal_restored_event_count": 2
+      }
+    }
+  ],
+  "qualifying_pair_count": 1,
+  "total_pair_count": 3,
+  "train_replication_gate_passed": false,
+  "independent_validation_complete": false,
+  "paper_claim_authorized": false
+}

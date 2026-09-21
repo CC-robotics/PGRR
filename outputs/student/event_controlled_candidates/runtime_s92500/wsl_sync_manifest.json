@@ -1,0 +1,91 @@
+{
+  "backup_root": "/home/preface/PGRR-online-backups/event-control-leadstop-s92500-20260916",
+  "file_count": 9,
+  "files": [
+    {
+      "actual_sha256": "f2db0efd56c0802ecf24597c808436279150773bede893234377a593d30b5657",
+      "backup": null,
+      "expected_sha256": "f2db0efd56c0802ecf24597c808436279150773bede893234377a593d30b5657",
+      "matches": true,
+      "mode": "0o644",
+      "path": "outputs/student/event_controlled_candidates/generated/arena/map_empty/lead_stop_bounded_release_v1_train_r00_s92500.json",
+      "target_existed": false
+    },
+    {
+      "actual_sha256": "4daf0dbb6301e1b9ffbcef09483ac0a773eb853ba7e027fc9364234dcabebfc1",
+      "backup": null,
+      "expected_sha256": "4daf0dbb6301e1b9ffbcef09483ac0a773eb853ba7e027fc9364234dcabebfc1",
+      "matches": true,
+      "mode": "0o644",
+      "path": "packages/ramp_core/ramp_core/scenario/__init__.py",
+      "target_existed": false
+    },
+    {
+      "actual_sha256": "1085b55bee54db4a6d9af0d05bb127374ae8f7c09412acfb0d49eab83f69c1a0",
+      "backup": null,
+      "expected_sha256": "1085b55bee54db4a6d9af0d05bb127374ae8f7c09412acfb0d49eab83f69c1a0",
+      "matches": true,
+      "mode": "0o644",
+      "path": "packages/ramp_core/ramp_core/scenario/contract.py",
+      "target_existed": false
+    },
+    {
+      "actual_sha256": "1bb3cb2f0a1771ddbdb09a338b2bef3526f7cfc95e28d4ab15af3f92af041921",
+      "backup": null,
+      "expected_sha256": "1bb3cb2f0a1771ddbdb09a338b2bef3526f7cfc95e28d4ab15af3f92af041921",
+      "matches": true,
+      "mode": "0o644",
+      "path": "packages/ramp_core/ramp_core/scenario/events.py",
+      "target_existed": false
+    },
+    {
+      "actual_sha256": "2799793a58f4b7b8c0511c04efcf718a899346f6e1f24c9e80574918f652117a",
+      "backup": null,
+      "expected_sha256": "2799793a58f4b7b8c0511c04efcf718a899346f6e1f24c9e80574918f652117a",
+      "matches": true,
+      "mode": "0o644",
+      "path": "packages/ramp_core/ramp_core/scenario/runtime.py",
+      "target_existed": false
+    },
+    {
+      "actual_sha256": "b8d578ecd9ee5238efa8f8653142b4dc08503fbbe60ebb0ff3d008df1f2bab08",
+      "backup": "/home/preface/PGRR-online-backups/event-control-leadstop-s92500-20260916/ros_ws/src/ramp_ros/ramp_ros/nodes/episode_logger_node.py",
+      "expected_sha256": "b8d578ecd9ee5238efa8f8653142b4dc08503fbbe60ebb0ff3d008df1f2bab08",
+      "matches": true,
+      "mode": "0o644",
+      "path": "ros_ws/src/ramp_ros/ramp_ros/nodes/episode_logger_node.py",
+      "target_existed": true
+    },
+    {
+      "actual_sha256": "a336fd6c183c285e742beacd98b80a114951a7f08b958c03ec5cef2f61180929",
+      "backup": "/home/preface/PGRR-online-backups/event-control-leadstop-s92500-20260916/ros_ws/src/ramp_ros/ramp_ros/nodes/scenario_actor_controller_node.py",
+      "expected_sha256": "a336fd6c183c285e742beacd98b80a114951a7f08b958c03ec5cef2f61180929",
+      "matches": true,
+      "mode": "0o644",
+      "path": "ros_ws/src/ramp_ros/ramp_ros/nodes/scenario_actor_controller_node.py",
+      "target_existed": true
+    },
+    {
+      "actual_sha256": "3f8fe2c491fd14277f8c8b6f62ea77df64715b3446de4b2c6b6c8d57a21075a5",
+      "backup": "/home/preface/PGRR-online-backups/event-control-leadstop-s92500-20260916/scripts/arena/run_baseline_episode.sh",
+      "expected_sha256": "3f8fe2c491fd14277f8c8b6f62ea77df64715b3446de4b2c6b6c8d57a21075a5",
+      "matches": true,
+      "mode": "0o755",
+      "path": "scripts/arena/run_baseline_episode.sh",
+      "target_existed": true
+    },
+    {
+      "actual_sha256": "fa2a860a0a28861f2d8064070660797bd1c700870aa46425ecb31ff6be717edd",
+      "backup": "/home/preface/PGRR-online-backups/event-control-leadstop-s92500-20260916/scripts/arena/run_baseline_episode_inner.sh",
+      "expected_sha256": "fa2a860a0a28861f2d8064070660797bd1c700870aa46425ecb31ff6be717edd",
+      "matches": true,
+      "mode": "0o755",
+      "path": "scripts/arena/run_baseline_episode_inner.sh",
+      "target_existed": true
+    }
+  ],
+  "line_endings": "LF",
+  "runtime_root": "/home/preface/PGRR-online",
+  "source_root": "/mnt/c/Users/28646/Documents/ChatGPT/New project/PGRR",
+  "synchronized": true
+}

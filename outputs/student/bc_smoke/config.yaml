@@ -1,0 +1,9 @@
+batch_size: 64
+device: auto
+early_stopping_patience: 4
+epochs: 12
+learning_rate: 0.0003
+margin_lambda: 1.0
+seed: 0
+validation_fraction: 0.2
+weight_decay: 1.0e-05

@@ -1,0 +1,10 @@
+{
+  "detail": "configured episode timeout",
+  "episode_id": "pgrr_advscreen_crossing_medium_train_s95010_pgrr",
+  "localized_goal_distance_m": 3.882162094116211,
+  "outcome": "TIMEOUT",
+  "outcome_id": 2,
+  "physical_goal_distance_m": 3.916790555777643,
+  "sample_count": 900,
+  "scenario_events": []
+}

@@ -1,0 +1,163 @@
+{
+  "all_expected_hashes_match": false,
+  "canonical_comparison_ready": false,
+  "claim_boundary": "read_only_distribution_diagnostic_not_overfitting_proof",
+  "datasets": [
+    {
+      "action_group_counts": {
+        "backup": 0,
+        "continue": 692,
+        "replan": 156,
+        "temporary_subgoal": 89,
+        "wait": 450
+      },
+      "dominant_failure_counts": {
+        "COLLISION_RISK": 1200,
+        "DEADLOCK": 2,
+        "FREEZE": 6,
+        "NO_POSITIVE_SIGNAL": 179
+      },
+      "episode_count": 12,
+      "expected_sha256": "d529efb4261f080b6ef06cb6bb7a3b90b3fb1d76e3008ea95398bf3b0c2f1948",
+      "expert_action_counts": {
+        "CONTINUE": 692,
+        "REPLAN": 156,
+        "SUBGOAL_0": 4,
+        "SUBGOAL_1": 20,
+        "SUBGOAL_10": 4,
+        "SUBGOAL_11": 1,
+        "SUBGOAL_12": 17,
+        "SUBGOAL_14": 8,
+        "SUBGOAL_2": 9,
+        "SUBGOAL_3": 11,
+        "SUBGOAL_4": 4,
+        "SUBGOAL_5": 6,
+        "SUBGOAL_6": 3,
+        "SUBGOAL_7": 1,
+        "SUBGOAL_9": 1,
+        "WAIT": 450
+      },
+      "expert_action_permitted_count": 1387,
+      "expert_action_permitted_fraction": 1.0,
+      "expert_margin": {
+        "median": 0.669775128364563,
+        "q10": 0.07905387878417969,
+        "q90": 1000001.375
+      },
+      "name": "available_iter3_alias",
+      "path": "data/processed/dagger_coverage_train.h5",
+      "predicted_success_fraction": 0.7577505407354002,
+      "sample_count": 1387,
+      "sha256": "401cf117891db7600e591e6b5163cd7d7de27379f38b4e1d6bbc626acd7564dd",
+      "sha256_matches_expected": false,
+      "valid_action_count": {
+        "maximum": 24,
+        "mean": 7.858687815428984,
+        "median": 6.0,
+        "minimum": 3
+      }
+    },
+    {
+      "action_group_counts": {
+        "backup": 0,
+        "continue": 186,
+        "replan": 45,
+        "temporary_subgoal": 258,
+        "wait": 1513
+      },
+      "dominant_failure_counts": {
+        "COLLISION_RISK": 1638,
+        "DEADLOCK": 18,
+        "FREEZE": 94,
+        "NO_POSITIVE_SIGNAL": 252
+      },
+      "episode_count": 14,
+      "expected_sha256": "2a46403f914ec7403464778b13f99faa27fee475c31190b20cfc232f7f603522",
+      "expert_action_counts": {
+        "CONTINUE": 186,
+        "REPLAN": 45,
+        "SUBGOAL_0": 16,
+        "SUBGOAL_1": 32,
+        "SUBGOAL_10": 8,
+        "SUBGOAL_11": 23,
+        "SUBGOAL_12": 13,
+        "SUBGOAL_13": 1,
+        "SUBGOAL_14": 1,
+        "SUBGOAL_16": 1,
+        "SUBGOAL_18": 3,
+        "SUBGOAL_19": 1,
+        "SUBGOAL_2": 28,
+        "SUBGOAL_3": 44,
+        "SUBGOAL_4": 34,
+        "SUBGOAL_5": 37,
+        "SUBGOAL_6": 14,
+        "SUBGOAL_7": 1,
+        "SUBGOAL_8": 1,
+        "WAIT": 1513
+      },
+      "expert_action_permitted_count": 2002,
+      "expert_action_permitted_fraction": 1.0,
+      "expert_margin": {
+        "median": 0.0,
+        "q10": 0.0,
+        "q90": 1.0580775976181034
+      },
+      "name": "later_iter5",
+      "path": "data/processed/dagger_sequence_wait_aligned_train.h5",
+      "predicted_success_fraction": 0.6523476523476524,
+      "sample_count": 2002,
+      "sha256": "2a46403f914ec7403464778b13f99faa27fee475c31190b20cfc232f7f603522",
+      "sha256_matches_expected": true,
+      "valid_action_count": {
+        "maximum": 18,
+        "mean": 3.355144855144855,
+        "median": 1.0,
+        "minimum": 1
+      }
+    },
+    {
+      "action_group_counts": {
+        "backup": 0,
+        "continue": 0,
+        "replan": 17,
+        "temporary_subgoal": 19,
+        "wait": 363
+      },
+      "dominant_failure_counts": {
+        "COLLISION_RISK": 372,
+        "FREEZE": 1,
+        "NO_POSITIVE_SIGNAL": 26
+      },
+      "episode_count": 2,
+      "expected_sha256": "5d446cd01f7219b4adaf58e0661a4a5589077c7b4f8b6b3b21ef33d187331c92",
+      "expert_action_counts": {
+        "REPLAN": 17,
+        "SUBGOAL_0": 1,
+        "SUBGOAL_1": 10,
+        "SUBGOAL_2": 2,
+        "SUBGOAL_3": 6,
+        "WAIT": 363
+      },
+      "expert_action_permitted_count": 399,
+      "expert_action_permitted_fraction": 1.0,
+      "expert_margin": {
+        "median": 0.00916433334350586,
+        "q10": 0.0,
+        "q90": 3.8974080085754395
+      },
+      "name": "available_validation_copy",
+      "path": "data/interim/multiscenario_safety_aligned_validation.h5",
+      "predicted_success_fraction": 0.5714285714285714,
+      "sample_count": 399,
+      "sha256": "ca58ae34b3276e77a9fac19d0a3796fb7919b0fb5cdd44c8b8b66ca0bdabfcae",
+      "sha256_matches_expected": false,
+      "valid_action_count": {
+        "maximum": 12,
+        "mean": 2.969924812030075,
+        "median": 2.0,
+        "minimum": 1
+      }
+    }
+  ],
+  "schema_version": 1
+}

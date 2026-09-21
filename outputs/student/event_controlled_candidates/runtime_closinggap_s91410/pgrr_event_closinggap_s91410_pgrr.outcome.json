@@ -1,0 +1,55 @@
+{
+  "detail": "configured episode timeout",
+  "episode_id": "pgrr_event_closinggap_s91410_pgrr",
+  "localized_goal_distance_m": 2.0497310161590576,
+  "outcome": "TIMEOUT",
+  "outcome_id": 2,
+  "physical_goal_distance_m": 2.0669231365770986,
+  "sample_count": 897,
+  "scenario_events": [
+    {
+      "actor_name": "ped_00",
+      "command": "release_actor_on_noncyclic_crossing",
+      "event_elapsed_s": 24.1092,
+      "event_id": "closing_gap_release_ped_00_v1_train",
+      "phase": "active_event",
+      "sim_time_s": 51.515100000000004,
+      "transition": "pre_event_to_active_event",
+      "trigger_metric": "robot_actor_distance_below",
+      "trigger_value_m": 4.9766894253513305
+    },
+    {
+      "actor_name": "ped_01",
+      "command": "release_actor_on_noncyclic_crossing",
+      "event_elapsed_s": 30.6027,
+      "event_id": "closing_gap_release_ped_01_v1_train",
+      "phase": "active_event",
+      "sim_time_s": 58.0086,
+      "transition": "pre_event_to_active_event",
+      "trigger_metric": "robot_actor_distance_below",
+      "trigger_value_m": 4.966900349812997
+    },
+    {
+      "actor_name": "ped_00",
+      "command": "resume_noncyclic_route",
+      "event_elapsed_s": 44.1225,
+      "event_id": "closing_gap_release_ped_00_v1_train",
+      "phase": "released",
+      "sim_time_s": 71.5284,
+      "transition": "active_event_to_released",
+      "trigger_metric": "robot_actor_distance_below",
+      "trigger_value_m": 2.648941790901064
+    },
+    {
+      "actor_name": "ped_01",
+      "command": "resume_noncyclic_route",
+      "event_elapsed_s": 50.616,
+      "event_id": "closing_gap_release_ped_01_v1_train",
+      "phase": "released",
+      "sim_time_s": 78.0219,
+      "transition": "active_event_to_released",
+      "trigger_metric": "robot_actor_distance_below",
+      "trigger_value_m": 5.343359168714694
+    }
+  ]
+}

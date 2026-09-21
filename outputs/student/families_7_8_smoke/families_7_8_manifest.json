@@ -1,0 +1,22 @@
+[
+  {
+    "status": "geometry_smoke_only",
+    "family": "bottleneck_cross_flow_merge",
+    "scenario_id": "bottleneck_cross_flow_merge_medium_train_r00_s91610",
+    "split": "train",
+    "held_out_test_materialized": false,
+    "json": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\outputs\\student\\families_7_8_smoke\\generated\\arena\\map_empty\\bottleneck_cross_flow_merge_medium_train_r00_s91610.json",
+    "preview": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\outputs\\student\\families_7_8_smoke\\previews\\bottleneck_cross_flow_merge_medium_train_r00_s91610.png",
+    "sha256": "e12a05b7c1b4721c9c082b3e24b74fa03e8d3b837c195039bfb58294d8f2a1de"
+  },
+  {
+    "status": "geometry_smoke_only",
+    "family": "goal_approach_lateral_interruption",
+    "scenario_id": "goal_approach_lateral_interruption_low_train_r00_s91700",
+    "split": "train",
+    "held_out_test_materialized": false,
+    "json": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\outputs\\student\\families_7_8_smoke\\generated\\arena\\map_empty\\goal_approach_lateral_interruption_low_train_r00_s91700.json",
+    "preview": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\outputs\\student\\families_7_8_smoke\\previews\\goal_approach_lateral_interruption_low_train_r00_s91700.png",
+    "sha256": "7ee81f2fde53d416dd9e16ba7c44e8990ec423115cc5a88c285958e32bfe854a"
+  }
+]

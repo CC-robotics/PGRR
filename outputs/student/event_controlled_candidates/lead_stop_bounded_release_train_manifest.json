@@ -1,0 +1,17 @@
+{
+  "actor_route_noncyclic": true,
+  "actor_terminal_route_clearance_m": 3.4409301068170497,
+  "candidate_id": "lead_stop_bounded_release_v1_train_r00_s92500",
+  "event_mapping_valid": true,
+  "family": "lead_pedestrian_sudden_stop",
+  "held_out_test_materialized": false,
+  "initial_trigger_metric_m": 5.0,
+  "paired_methods_share_one_scenario": true,
+  "preview_path": "outputs/student/event_controlled_candidates/previews/lead_stop_bounded_release_v1_train_r00_s92500.png",
+  "runtime_executed": false,
+  "scenario_path": "outputs/student/event_controlled_candidates/generated/arena/map_empty/lead_stop_bounded_release_v1_train_r00_s92500.json",
+  "scenario_sha256": "f2db0efd56c0802ecf24597c808436279150773bede893234377a593d30b5657",
+  "seed": 92500,
+  "split": "train",
+  "trigger_arm_threshold_m": 3.25
+}

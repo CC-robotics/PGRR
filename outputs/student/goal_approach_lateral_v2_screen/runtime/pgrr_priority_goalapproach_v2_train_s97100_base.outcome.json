@@ -1,0 +1,7 @@
+{
+  "detail": "timed out waiting for required baseline topics",
+  "episode_id": "pgrr_priority_goalapproach_v2_train_s97100_base",
+  "outcome": "SIMULATOR_FAILURE",
+  "outcome_id": 4,
+  "sample_count": 0
+}

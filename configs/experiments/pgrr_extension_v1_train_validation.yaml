@@ -1,0 +1,70 @@
+# Independent extension planning catalog.  This file intentionally has no
+# executable held-out test scenarios.  Test seeds are reserved only.
+schema_version: 1
+benchmark_id: pgrr_extension_v1
+status: planning_train_validation_only
+map:
+  id: map_empty
+  bounds_m: [0.0, 31.28, 0.0, 24.03]
+  preview_resolution_m: 0.10
+  note: >-
+    The installed runtime currently exposes map_empty.  A map-disjoint test is
+    deferred until a real world/map parameterization is available.
+prototype_geometry:
+  status: smoke_only_not_a_frozen_experiment_protocol
+  robot_start: [5.0, 12.0, 0.0]
+  robot_goal: [27.0, 12.0, 0.0]
+  corridor_south_y_m: 10.55
+  corridor_north_y_m: 13.45
+  corridor_x_range_m: [4.0, 28.0]
+densities:
+  low: 1
+  medium: 2
+  high: 4
+families:
+  - id: diagonal_cut_in_corridor
+    family_index: 0
+    purpose: diagonal pedestrian cut-in ahead of the robot in a shelf corridor
+    variables:
+      cut_side: [left, right]
+      cut_angle_deg: [35, 55]
+      longitudinal_phase: [early, nominal, late]
+      speed_ratio_to_robot_nominal: [0.7, 1.0]
+      lateral_offset_m: [0.25, 0.45]
+    prototype:
+      cut_x_m: [13.0, 15.5, 18.0]
+      crossing_span_m: 2.10
+  - id: occluded_side_emergence
+    family_index: 1
+    purpose: pedestrian emerges once from a shelf occlusion gap and crosses
+    variables:
+      emergence_side: [left, right]
+      first_visible_distance_m: [1.2, 2.0]
+      gap_location: [near, nominal, far]
+      longitudinal_phase: [early, nominal, late]
+      pedestrian_speed_mps: [0.45, 0.70]
+    prototype:
+      screen_x_m: [13.5, 15.5, 17.5]
+      screen_center_y_m: 11.25
+      screen_length_m: 1.80
+splits:
+  train:
+    seed_base: 91000
+    repeats_per_family_density: 6
+    purpose: expert labels, DAgger collection, and policy training only
+  validation:
+    seed_base: 93000
+    repeats_per_family_density: 3
+    purpose: checkpoint and ablation selection only
+reserved_held_out_test:
+  enabled: false
+  seed_base: 97000
+  repeats_per_family_density: 5
+  purpose: reserve only; materialize after code/checkpoint/statistics freeze
+seed_formula: "seed = base + 100 * family_index + 10 * density_index + repeat_index"
+invariants:
+  full_episode_split: true
+  dagger_sources: [train]
+  model_selection_sources: [train, validation]
+  forbidden_sources: [moderate_v6_test]
+  unique_across_splits: [family, density, repeat_index, seed]

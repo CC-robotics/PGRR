@@ -1,0 +1,108 @@
+{
+  "aggregate": {
+    "alternative_action_available_count": 2,
+    "anchor_count": 2,
+    "completed_rejoin_count": 4,
+    "hazard_cleared_cycle_count": 6,
+    "learned_decision_count": 15,
+    "meaningful_progress_cycle_count": 0,
+    "only_wait_backup_allowed_count": 13,
+    "only_wait_backup_allowed_fraction": 0.866667,
+    "pgrr_goal_reached_count": 0,
+    "recovery_cycle_count": 6
+  },
+  "anchors": [
+    {
+      "alternative_action_available_count": 0,
+      "base_outcome": "COLLISION",
+      "completed_rejoin_count": 0,
+      "family": "goal_approach_lateral_interruption",
+      "final_goal_distance_m": 4.609626,
+      "hazard_cleared_cycle_count": 1,
+      "initial_goal_distance_m": 22.0,
+      "learned_action_counts": {
+        "BACKUP": 3,
+        "WAIT": 2
+      },
+      "learned_decision_count": 5,
+      "mask_parseable_count": 5,
+      "meaningful_progress_cycle_count": 0,
+      "net_goal_progress_m": 17.390374,
+      "nonpositive_progress_cycle_count": 1,
+      "only_wait_backup_allowed_count": 5,
+      "pgrr_outcome": "TIMEOUT",
+      "positive_progress_cycle_count": 0,
+      "rapid_retrigger_count": 0,
+      "recovery_cycle_count": 1
+    },
+    {
+      "alternative_action_available_count": 2,
+      "base_outcome": "COLLISION",
+      "completed_rejoin_count": 4,
+      "family": "lead_pedestrian_sudden_stop",
+      "final_goal_distance_m": 11.78616,
+      "hazard_cleared_cycle_count": 5,
+      "initial_goal_distance_m": 22.0,
+      "learned_action_counts": {
+        "BACKUP": 6,
+        "SUBGOAL_0": 1,
+        "WAIT": 3
+      },
+      "learned_decision_count": 10,
+      "mask_parseable_count": 10,
+      "meaningful_progress_cycle_count": 0,
+      "net_goal_progress_m": 10.21384,
+      "nonpositive_progress_cycle_count": 5,
+      "only_wait_backup_allowed_count": 8,
+      "pgrr_outcome": "TIMEOUT",
+      "positive_progress_cycle_count": 0,
+      "rapid_retrigger_count": 1,
+      "recovery_cycle_count": 5
+    }
+  ],
+  "findings": [
+    {
+      "boundary": "final-mask correlation; exact upstream removal attribution requires a fresh full-layer trace",
+      "evidence": "13/15 learned decisions exposed only WAIT and BACKUP in the logged final mask",
+      "name": "candidate_availability_bottleneck",
+      "rank": 1
+    },
+    {
+      "boundary": "the progress contract is a train-only diagnostic probe",
+      "evidence": "hazard cleared in 6/6 cycles, but meaningful progress occurred in 0/6",
+      "name": "hazard_clear_without_task_progress",
+      "rank": 2
+    },
+    {
+      "boundary": "observational evidence does not prove rejoin logic is causal",
+      "evidence": "4 completed rejoins still produced zero positive-progress recovery cycles",
+      "name": "rejoin_is_not_sufficient",
+      "rank": 3
+    }
+  ],
+  "next_gate": {
+    "action": "capture an exact full-layer mask trace on both anchors before changing candidate filtering or policy logic",
+    "algorithm_change_authorized": false,
+    "reason": "the current evidence localizes the bottleneck to final candidate availability, but cannot yet identify the responsible upstream layer"
+  },
+  "schema_version": 1,
+  "scope": "two_train_only_anchor_runs_descriptive_not_causal",
+  "sources": {
+    "attribution": {
+      "path": "outputs\\student\\eight_family_pilot\\recovery_control_attribution.json",
+      "sha256": "9f5195b3e32222f8a38a81071011a157480d455d5e7512a63b6ae7eecef8fdce"
+    },
+    "contract": {
+      "path": "outputs\\student\\eight_family_pilot\\recovery_contract_probe.json",
+      "sha256": "90c67d207963f5763f4b5b07ef2ada560dc085ae9643ff7dd9c06de529298062"
+    },
+    "pairs": {
+      "path": "outputs\\student\\eight_family_pilot\\minimal_pair_summary.csv",
+      "sha256": "96f0d148acda9f1472818241c9f892bccc1047929eed269c7866f637ca0b43e9"
+    },
+    "progress": {
+      "path": "outputs\\student\\eight_family_pilot\\recovery_progress_diagnostic.json",
+      "sha256": "091b97fd168040791f7aabccb1501597844a193bcb989ee0215679a6f4ef01e3"
+    }
+  }
+}

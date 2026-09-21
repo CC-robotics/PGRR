@@ -1,0 +1,22 @@
+{
+  "audit_status": "PASS",
+  "benchmark_id": "pgrr_extension_v1_eight_family_draft",
+  "conditions_by_split": {
+    "train": 144,
+    "validation": 72
+  },
+  "executable": false,
+  "families": [
+    "diagonal_cut_in_corridor",
+    "occluded_side_emergence",
+    "recurrent_bidirectional_crossing",
+    "narrow_corridor_head_on_deadlock",
+    "closing_gap_multi_pedestrian",
+    "lead_pedestrian_sudden_stop",
+    "bottleneck_cross_flow_merge",
+    "goal_approach_lateral_interruption"
+  ],
+  "family_count": 8,
+  "held_out_test_materialized": false,
+  "planned_condition_count": 216
+}

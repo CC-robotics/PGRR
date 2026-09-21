@@ -55,7 +55,8 @@ def materialize_runtime_scenario(source: Path, output: Path) -> None:
             temporary.write("\n")
             temporary.flush()
             os.fsync(temporary.fileno())
-            os.fchmod(temporary.fileno(), 0o644)
+            if hasattr(os, "fchmod"):
+                os.fchmod(temporary.fileno(), 0o644)
         os.replace(temporary_path, output)
     except BaseException:
         if temporary_path is not None:

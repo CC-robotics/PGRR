@@ -1,0 +1,64 @@
+# 新增场景实验的划分模板（草案；不被任何现有运行命令读取）
+# 使用前必须由教授确认场景族、种子范围与重复次数。
+schema_version: 1
+benchmark_id: student_extension_draft
+status: draft_not_for_execution
+
+invariants:
+  # 与原发布 benchmark 隔离；不得写入或引用 moderate_v6_test。
+  exclude_benchmark_ids:
+    - moderate_social_navigation_v6
+  split_unit: scenario_id_and_seed
+  split_by_frame: false
+  paired_methods: [base, standard, heuristic, bc_uniform, pgrr]
+  preserve_terminal_outcomes:
+    - GOAL_REACHED
+    - COLLISION
+    - TIMEOUT
+    - PLANNER_FAILURE
+    - SIMULATOR_FAILURE
+    - INVALID_RESET
+
+# 在教授确认前，以下字段不填入正式数值。
+scenario_families_to_confirm:
+  - narrow_corridor_opposing_flow
+  - t_junction_crossing_occlusion
+
+splits:
+  train:
+    purpose: expert_labels_and_policy_training
+    seed_range: TO_CONFIRM
+    repetitions: TO_CONFIRM
+    allowed_families: TO_CONFIRM
+  validation:
+    purpose: checkpoint_selection_and_ablation
+    seed_range: TO_CONFIRM
+    repetitions: TO_CONFIRM
+    allowed_families: TO_CONFIRM
+  held_out_test:
+    purpose: one_final_paired_evaluation_after_configuration_lock
+    seed_range: TO_CONFIRM
+    repetitions: TO_CONFIRM
+    allowed_families: TO_CONFIRM
+
+required_per_scenario_record:
+  - scenario_id
+  - family
+  - map_id
+  - density
+  - seed
+  - replicate
+  - static_obstacle_parameters
+  - actor_route_parameters
+  - actor_speed_parameters
+  - robot_start_goal
+  - config_sha256
+  - scenario_sha256
+
+pre_execution_checks:
+  - no_scenario_id_appears_in_more_than_one_split
+  - no_seed_is_reused_across_splits_for_the_same_family_and_setting
+  - all_methods_share_identical_condition_keys
+  - validation_and_test_are_not_used_for_training_or_threshold_selection
+  - new_outputs_are_written_outside_outputs/moderate/final
+

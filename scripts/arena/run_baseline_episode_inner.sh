@@ -12,6 +12,33 @@ SOURCE_POLICY="${RAMP_SOURCE_POLICY:-base}"
 TTC_THRESHOLD_S="${RAMP_TTC_THRESHOLD_S:-1.5}"
 RECOVERY_CONFIG="${RAMP_RECOVERY_CONFIG:-/workspace/configs/failure/recovery_state_machine.yaml}"
 FAILURE_RULES_CONFIG="${RAMP_FAILURE_RULES_CONFIG:-/workspace/configs/failure/rules.yaml}"
+ENABLE_UPSTREAM_MASK_TRACE="${RAMP_ENABLE_UPSTREAM_MASK_TRACE:-0}"
+if [[ "${ENABLE_UPSTREAM_MASK_TRACE}" != "0" && "${ENABLE_UPSTREAM_MASK_TRACE}" != "1" ]]; then
+    echo "ERROR: RAMP_ENABLE_UPSTREAM_MASK_TRACE must be 0 or 1" >&2
+    exit 2
+fi
+upstream_mask_trace_ros_value=false
+if [[ "${ENABLE_UPSTREAM_MASK_TRACE}" == "1" ]]; then
+    upstream_mask_trace_ros_value=true
+fi
+ENABLE_OBSERVATION_SHADOW="${RAMP_ENABLE_OBSERVATION_SHADOW:-0}"
+if [[ "${ENABLE_OBSERVATION_SHADOW}" != "0" && "${ENABLE_OBSERVATION_SHADOW}" != "1" ]]; then
+    echo "ERROR: RAMP_ENABLE_OBSERVATION_SHADOW must be 0 or 1" >&2
+    exit 2
+fi
+observation_shadow_ros_value=false
+if [[ "${ENABLE_OBSERVATION_SHADOW}" == "1" ]]; then
+    observation_shadow_ros_value=true
+fi
+ENABLE_EVENT_CONTROL="${RAMP_ENABLE_EVENT_CONTROL:-0}"
+if [[ "${ENABLE_EVENT_CONTROL}" != "0" && "${ENABLE_EVENT_CONTROL}" != "1" ]]; then
+    echo "ERROR: RAMP_ENABLE_EVENT_CONTROL must be 0 or 1" >&2
+    exit 2
+fi
+event_control_ros_value=false
+if [[ "${ENABLE_EVENT_CONTROL}" == "1" ]]; then
+    event_control_ros_value=true
+fi
 recovery_enabled=false
 recovery_tau_on_overrides=()
 detector_trigger_overrides=()
@@ -371,8 +398,11 @@ mux_pid=$!
     -p odometry_is_world_frame:=true \
     -p nav_status_topic:="${nav_action}/_action/status" \
     -p wait_for_navigation_active:=true \
+    -p enable_event_control:="${event_control_ros_value}" \
+    -p scenario_event_topic:=/ramp/scenario_events \
     -p robot_start_x:="${start_x}" -p robot_start_y:="${start_y}" \
     -p robot_start_yaw:="${start_yaw}" \
+    -p goal_x:="${goal_x}" -p goal_y:="${goal_y}" \
     -p update_frequency_hz:="${RAMP_ACTOR_UPDATE_HZ:-2.0}" \
     >>"${RUNTIME_LOG}" 2>&1 &
 actor_pid=$!
@@ -444,6 +474,8 @@ if [[ "${SOURCE_POLICY}" == "heuristic" || "${SOURCE_POLICY}" == "bc" || \
         -p policy_type:="${recovery_policy_type}" \
         "${recovery_config_overrides[@]}" \
         "${recovery_tau_on_overrides[@]}" \
+        -p enable_upstream_mask_trace:="${upstream_mask_trace_ros_value}" \
+        -p enable_observation_shadow:="${observation_shadow_ros_value}" \
         -p minimum_valid_lidar_range_m:="${minimum_valid_lidar_range_m}" \
         -p model_path:="${model_path}" \
         -p privileged_humans_topic:=/ramp/privileged/humans \
@@ -482,6 +514,7 @@ timeout_value="$(python3 -c 'import sys; print(float(sys.argv[1]))' "${TIMEOUT_S
     -p privileged_robot_pose_topic:=/ramp/privileged/robot_pose \
     -p episode_start_topic:=/ramp/episode_started \
     -p logger_ready_topic:=/ramp/logger_ready \
+    -p scenario_event_topic:=/ramp/scenario_events \
     -p lidar_collision_distance_m:=0.12 \
     -p lidar_collision_confirmation_frames:="${RAMP_LIDAR_COLLISION_CONFIRMATION_FRAMES:-3}" \
     -p lidar_static_collision_enabled:="${lidar_static_collision_enabled}" \

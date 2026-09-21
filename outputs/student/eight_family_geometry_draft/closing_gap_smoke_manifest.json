@@ -1,0 +1,10 @@
+{
+  "family": "closing_gap_multi_pedestrian",
+  "held_out_test_materialized": false,
+  "json": "outputs/student/eight_family_geometry_draft/generated/arena/map_empty/closing_gap_multi_pedestrian_medium_train_r00_s91410.json",
+  "preview": "outputs/student/eight_family_geometry_draft/previews/closing_gap_multi_pedestrian_medium_train_r00_s91410.png",
+  "scenario_id": "closing_gap_multi_pedestrian_medium_train_r00_s91410",
+  "sha256": "5a2414181449947c3c5c25582d92b0bb52bea3688758888ff4b8be7a180cb8a2",
+  "split": "train",
+  "status": "geometry_smoke_only"
+}

@@ -1,0 +1,10 @@
+{
+  "family": "narrow_corridor_head_on_deadlock",
+  "held_out_test_materialized": false,
+  "json": "outputs/student/eight_family_geometry_draft/generated/arena/map_empty/narrow_corridor_head_on_deadlock_low_validation_r00_s93300.json",
+  "preview": "outputs/student/eight_family_geometry_draft/previews/narrow_corridor_head_on_deadlock_low_validation_r00_s93300.png",
+  "scenario_id": "narrow_corridor_head_on_deadlock_low_validation_r00_s93300",
+  "sha256": "2fb714a0e469d6984911c732b1dbf83fb560106b22ef61d4f7a4cc4577e88d7e",
+  "split": "validation",
+  "status": "geometry_smoke_only"
+}

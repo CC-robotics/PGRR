@@ -1,0 +1,24 @@
+{
+  "command": "RAMP_SOURCE_POLICY=pgrr RAMP_ENABLE_UPSTREAM_MASK_TRACE=1 RAMP_EPISODE_ID=pgrr_extension_mask_trace_leadstop_train_r00_pgrr_20260912_retry02 RAMP_EPISODE_TIMEOUT_S=90 SCENARIO=outputs/student/eight_family_geometry_draft/generated/arena/map_empty/lead_pedestrian_sudden_stop_low_train_r00_s91500.json scripts/arena/run_baseline_episode.sh",
+  "contract_checks": {
+    "ros_parameter_defaults_false": true,
+    "runtime_converts_switch_to_bool": true,
+    "runtime_forwards_switch": true,
+    "wrapper_defaults_zero": true
+  },
+  "episode_id": "pgrr_extension_mask_trace_leadstop_train_r00_pgrr_20260912_retry02",
+  "frozen_markers_rejected": [
+    "moderate_v6",
+    "outputs/moderate/final",
+    "checkpoints/final"
+  ],
+  "map_id": "map_empty",
+  "ready": true,
+  "scenario": "outputs/student/eight_family_geometry_draft/generated/arena/map_empty/lead_pedestrian_sudden_stop_low_train_r00_s91500.json",
+  "scenario_id": "lead_pedestrian_sudden_stop_low_train_r00_s91500",
+  "seed": 91500,
+  "source_policy": "pgrr",
+  "split": "train",
+  "timeout_s": 90,
+  "trace_enabled": true
+}

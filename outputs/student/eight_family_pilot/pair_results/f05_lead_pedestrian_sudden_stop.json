@@ -1,0 +1,221 @@
+{
+  "benchmark_id": "pgrr_extension_v1_eight_family_pilot",
+  "claim_boundary": "development_pair_only",
+  "family": "lead_pedestrian_sudden_stop",
+  "family_index": 5,
+  "paired_interpretation": {
+    "base_collision_avoided": true,
+    "both_goal_reached": false,
+    "both_same_failure": false,
+    "pgrr_completion_gain": false,
+    "pgrr_recovery_triggered": true,
+    "superiority_claim_supported": false
+  },
+  "runs": {
+    "base": {
+      "artifact_sha256": {
+        "metadata": "108d5c1fc478a34a385161ef8c5fdb84e934873079ba1796f19aec4e7a5c7d2a",
+        "outcome": "ab8175d8ff5896084bbe3caa78e3f93399698961b684d7d0f6873a4c6d13fe05",
+        "raw_jsonl": "ad882ca29407e2b828b661ce8f9619a98f5803b4625ca6275ed4fc2c8e145c2b"
+      },
+      "attempt_history": [
+        {
+          "artifact_sha256": {
+            "metadata": "108d5c1fc478a34a385161ef8c5fdb84e934873079ba1796f19aec4e7a5c7d2a",
+            "outcome": "ab8175d8ff5896084bbe3caa78e3f93399698961b684d7d0f6873a4c6d13fe05",
+            "raw_jsonl": "ad882ca29407e2b828b661ce8f9619a98f5803b4625ca6275ed4fc2c8e145c2b"
+          },
+          "episode_id": "pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_base",
+          "infrastructure_attempt": false,
+          "localized_goal_distance_m": 11.547844886779785,
+          "outcome": "COLLISION",
+          "outcome_detail": "privileged robot-human overlap",
+          "physical_goal_distance_m": 11.57005248831525,
+          "sample_count": 446
+        }
+      ],
+      "episode_id": "pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_base",
+      "infrastructure_attempt": false,
+      "localized_goal_distance_m": 11.547844886779785,
+      "outcome": "COLLISION",
+      "outcome_detail": "privileged robot-human overlap",
+      "physical_goal_distance_m": 11.57005248831525,
+      "planned_episode_id": "pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_base",
+      "sample_count": 446,
+      "selected_attempt_id": "pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_base"
+    },
+    "pgrr": {
+      "artifact_sha256": {
+        "metadata": "a477acd6701a39f3f9f29ec2fc3bc45052202ed50f5de0ef48d4e1183e2ccd6c",
+        "outcome": "84add8bcec3c552a25cacca14e2c0123ed8fa4cb0b2b30e1e5894e7dff6d55be",
+        "raw_jsonl": "21aa4fbbb73287cf6f711718584b5d15139e6802fec35a4c5ba6e345464ac4bb"
+      },
+      "attempt_history": [
+        {
+          "artifact_sha256": {
+            "metadata": "a477acd6701a39f3f9f29ec2fc3bc45052202ed50f5de0ef48d4e1183e2ccd6c",
+            "outcome": "84add8bcec3c552a25cacca14e2c0123ed8fa4cb0b2b30e1e5894e7dff6d55be",
+            "raw_jsonl": "21aa4fbbb73287cf6f711718584b5d15139e6802fec35a4c5ba6e345464ac4bb"
+          },
+          "episode_id": "pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_pgrr",
+          "infrastructure_attempt": false,
+          "localized_goal_distance_m": 11.800471305847168,
+          "outcome": "TIMEOUT",
+          "outcome_detail": "configured episode timeout",
+          "physical_goal_distance_m": 11.790930517778452,
+          "sample_count": 898
+        }
+      ],
+      "episode_id": "pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_pgrr",
+      "infrastructure_attempt": false,
+      "localized_goal_distance_m": 11.800471305847168,
+      "outcome": "TIMEOUT",
+      "outcome_detail": "configured episode timeout",
+      "physical_goal_distance_m": 11.790930517778452,
+      "planned_episode_id": "pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_pgrr",
+      "recovery_trace": {
+        "decision_action_counts": {
+          "BACKUP": 9,
+          "CONTINUE": 12,
+          "SUBGOAL_0": 1,
+          "WAIT": 6
+        },
+        "decision_event_count": 28,
+        "decision_reason_counts": {
+          "bc_onnx_decision": 10,
+          "emergency_backup": 3,
+          "emergency_clear_continue_goal": 2,
+          "emergency_stop": 3,
+          "failure_cleared": 1,
+          "failure_pending": 1,
+          "not_triggered": 1,
+          "original_goal_restored": 4,
+          "recovery_action_complete": 3
+        },
+        "original_goal_restored_event_count": 4,
+        "state_transitions": [
+          {
+            "recovery_state": 0,
+            "sample_index": 0,
+            "state_name": "NORMAL",
+            "timestamp_s": 0.0
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 419,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 42.0579
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 439,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 44.0226
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 445,
+            "state_name": "RECOVERY",
+            "timestamp_s": 44.622
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 499,
+            "state_name": "REJOIN",
+            "timestamp_s": 50.0166
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 504,
+            "state_name": "NORMAL",
+            "timestamp_s": 50.5494
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 519,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 52.0479
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 530,
+            "state_name": "RECOVERY",
+            "timestamp_s": 53.1468
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 599,
+            "state_name": "REJOIN",
+            "timestamp_s": 60.0732
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 604,
+            "state_name": "NORMAL",
+            "timestamp_s": 60.5727
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 638,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 64.0026
+          },
+          {
+            "recovery_state": 1,
+            "sample_index": 658,
+            "state_name": "PENDING_RECOVERY",
+            "timestamp_s": 66.0006
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 664,
+            "state_name": "RECOVERY",
+            "timestamp_s": 66.6
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 723,
+            "state_name": "REJOIN",
+            "timestamp_s": 72.5274
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 728,
+            "state_name": "NORMAL",
+            "timestamp_s": 73.0269
+          },
+          {
+            "recovery_state": 2,
+            "sample_index": 769,
+            "state_name": "RECOVERY",
+            "timestamp_s": 77.0895
+          },
+          {
+            "recovery_state": 3,
+            "sample_index": 833,
+            "state_name": "REJOIN",
+            "timestamp_s": 83.5164
+          },
+          {
+            "recovery_state": 0,
+            "sample_index": 838,
+            "state_name": "NORMAL",
+            "timestamp_s": 84.0159
+          },
+          {
+            "recovery_state": 4,
+            "sample_index": 883,
+            "state_name": "EMERGENCY_STOP",
+            "timestamp_s": 88.5114
+          }
+        ],
+        "temporary_subgoal_decision_count": 1
+      },
+      "sample_count": 898,
+      "selected_attempt_id": "pgrr_extpilot_f05_lead_pedestrian_sudden_stop_low_train_r00_s91500_pgrr"
+    }
+  },
+  "scenario_id": "lead_pedestrian_sudden_stop_low_train_r00_s91500",
+  "scenario_sha256": "c3187ea01405a3e7a11befc014cd9adb25d7c91aff2fe13cd806bad9d495666d",
+  "seed": 91500
+}

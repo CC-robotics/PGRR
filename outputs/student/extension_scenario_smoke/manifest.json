@@ -1,0 +1,17 @@
+{
+  "benchmark_id": "pgrr_extension_v1",
+  "compiled_count": 1,
+  "held_out_test_materialized": false,
+  "records": [
+    {
+      "condition_id": "occluded_side_emergence_low_train_r00",
+      "path": "generated/arena/map_empty/occluded_side_emergence_low_train_r00_s91100.json",
+      "preview": "previews/occluded_side_emergence_low_train_r00_s91100.png",
+      "scenario_id": "occluded_side_emergence_low_train_r00_s91100",
+      "seed": 91100,
+      "sha256": "3fdc274138a07b06e288c4d986dfa9240eb7f20daa77c1a00da31b5ce059ad98",
+      "split": "train"
+    }
+  ],
+  "status": "smoke_only"
+}

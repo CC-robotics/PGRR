@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "scope": "non-frozen diagnostic only",
+  "tau_on": 0.65,
+  "privileged_close_m": 0.9,
+  "privileged_data_policy": "diagnostic proxy only; never a test observation",
+  "episodes": [
+    {
+      "sample_count": 896,
+      "recovery_state_counts": {
+        "0": 251,
+        "1": 5,
+        "2": 110,
+        "3": 20,
+        "4": 510
+      },
+      "recovery_triggered": true,
+      "selector_recovery_active": true,
+      "emergency_stop_active": true,
+      "threshold_crossing_rows": 392,
+      "max_failure_score": 1.0,
+      "failure_class_max": {
+        "collision_risk": 1.0,
+        "freeze": 1.0,
+        "oscillation": 0.0,
+        "deadlock": 1.0
+      },
+      "failure_class_crossing_rows": {
+        "collision_risk": 59,
+        "freeze": 330,
+        "oscillation": 0,
+        "deadlock": 290
+      },
+      "min_observable_obstacle_distance_m": 0.42176932096481323,
+      "min_privileged_robot_human_distance_m": 0.7856251057232166,
+      "privileged_distance_pair_count": 896,
+      "robot_path_length_m": 8.78860135674997,
+      "goal_distance_start_m": 22.0,
+      "goal_distance_min_m": 17.316781997680664,
+      "collision_rows": 0,
+      "diagnosis": "selector_recovery_triggered",
+      "episode_id": "pgrr_extension_mask_trace_leadstop_train_r00_pgrr_20260912_retry02",
+      "source": "data/raw/pgrr_extension_mask_trace_leadstop_train_r00_pgrr_20260912_retry02.jsonl"
+    },
+    {
+      "sample_count": 893,
+      "recovery_state_counts": {
+        "0": 893
+      },
+      "recovery_triggered": false,
+      "selector_recovery_active": false,
+      "emergency_stop_active": false,
+      "threshold_crossing_rows": 0,
+      "max_failure_score": 0.0,
+      "failure_class_max": {
+        "collision_risk": 0.0,
+        "freeze": 0.0,
+        "oscillation": 0.0,
+        "deadlock": 0.0
+      },
+      "failure_class_crossing_rows": {
+        "collision_risk": 0,
+        "freeze": 0,
+        "oscillation": 0,
+        "deadlock": 0
+      },
+      "min_observable_obstacle_distance_m": 0.639245331287384,
+      "min_privileged_robot_human_distance_m": 1.000058608880416,
+      "privileged_distance_pair_count": 893,
+      "robot_path_length_m": 21.279541015625,
+      "goal_distance_start_m": 21.991798400878906,
+      "goal_distance_min_m": 0.7122573852539062,
+      "collision_rows": 0,
+      "diagnosis": "no_recorded_failure_signal",
+      "episode_id": "pgrr_masktrace_diagonal_train_r00_20260912",
+      "source": "data/raw/pgrr_masktrace_diagonal_train_r00_20260912.jsonl"
+    },
+    {
+      "sample_count": 895,
+      "recovery_state_counts": {
+        "0": 895
+      },
+      "recovery_triggered": false,
+      "selector_recovery_active": false,
+      "emergency_stop_active": false,
+      "threshold_crossing_rows": 0,
+      "max_failure_score": 0.0,
+      "failure_class_max": {
+        "collision_risk": 0.0,
+        "freeze": 0.0,
+        "oscillation": 0.0,
+        "deadlock": 0.0
+      },
+      "failure_class_crossing_rows": {
+        "collision_risk": 0,
+        "freeze": 0,
+        "oscillation": 0,
+        "deadlock": 0
+      },
+      "min_observable_obstacle_distance_m": 0.6400104761123657,
+      "min_privileged_robot_human_distance_m": 1.000038382051598,
+      "privileged_distance_pair_count": 895,
+      "robot_path_length_m": 21.26939344406128,
+      "goal_distance_start_m": 21.983596801757812,
+      "goal_distance_min_m": 0.714202880859375,
+      "collision_rows": 0,
+      "diagnosis": "no_recorded_failure_signal",
+      "episode_id": "pgrr_masktrace_diagonal_validation_r00_20260912",
+      "source": "data/raw/pgrr_masktrace_diagonal_validation_r00_20260912.jsonl"
+    },
+    {
+      "sample_count": 498,
+      "recovery_state_counts": {
+        "0": 5,
+        "1": 5,
+        "2": 49,
+        "3": 10,
+        "4": 429
+      },
+      "recovery_triggered": true,
+      "selector_recovery_active": true,
+      "emergency_stop_active": true,
+      "threshold_crossing_rows": 386,
+      "max_failure_score": 1.0,
+      "failure_class_max": {
+        "collision_risk": 0.75,
+        "freeze": 1.0,
+        "oscillation": 0.0,
+        "deadlock": 1.0
+      },
+      "failure_class_crossing_rows": {
+        "collision_risk": 70,
+        "freeze": 295,
+        "oscillation": 0,
+        "deadlock": 272
+      },
+      "min_observable_obstacle_distance_m": 0.44408413767814636,
+      "min_privileged_robot_human_distance_m": 3.1443075372555933,
+      "privileged_distance_pair_count": 498,
+      "robot_path_length_m": 1.833689420457668,
+      "goal_distance_start_m": 22.0,
+      "goal_distance_min_m": 22.0,
+      "collision_rows": 0,
+      "diagnosis": "selector_recovery_triggered",
+      "episode_id": "pgrr_masktrace_headon_train_r00_20260912",
+      "source": "data/raw/pgrr_masktrace_headon_train_r00_20260912.jsonl"
+    },
+    {
+      "sample_count": 896,
+      "recovery_state_counts": {
+        "0": 10,
+        "4": 886
+      },
+      "recovery_triggered": true,
+      "selector_recovery_active": false,
+      "emergency_stop_active": true,
+      "threshold_crossing_rows": 856,
+      "max_failure_score": 1.0,
+      "failure_class_max": {
+        "collision_risk": 0.75,
+        "freeze": 1.0,
+        "oscillation": 0.0,
+        "deadlock": 1.0
+      },
+      "failure_class_crossing_rows": {
+        "collision_risk": 54,
+        "freeze": 795,
+        "oscillation": 0,
+        "deadlock": 773
+      },
+      "min_observable_obstacle_distance_m": 0.4425047039985657,
+      "min_privileged_robot_human_distance_m": 3.1987202597701274,
+      "privileged_distance_pair_count": 896,
+      "robot_path_length_m": 1.3896877904746119,
+      "goal_distance_start_m": 22.0,
+      "goal_distance_min_m": 22.0,
+      "collision_rows": 0,
+      "diagnosis": "emergency_stop_only",
+      "episode_id": "pgrr_masktrace_headon_validation_r00_20260912",
+      "source": "data/raw/pgrr_masktrace_headon_validation_r00_20260912.jsonl"
+    }
+  ],
+  "diagnosis_counts": {
+    "emergency_stop_only": 1,
+    "no_recorded_failure_signal": 2,
+    "selector_recovery_triggered": 2
+  }
+}

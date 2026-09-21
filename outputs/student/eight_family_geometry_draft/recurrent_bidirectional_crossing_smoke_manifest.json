@@ -1,0 +1,10 @@
+{
+  "family": "recurrent_bidirectional_crossing",
+  "held_out_test_materialized": false,
+  "json": "outputs/student/eight_family_geometry_draft/generated/arena/map_empty/recurrent_bidirectional_crossing_medium_train_r00_s91210.json",
+  "preview": "outputs/student/eight_family_geometry_draft/previews/recurrent_bidirectional_crossing_medium_train_r00_s91210.png",
+  "scenario_id": "recurrent_bidirectional_crossing_medium_train_r00_s91210",
+  "sha256": "71db22252cf8528b2ac908de1c1bbede4bde67bb960f4d24ad00e70b5143608a",
+  "split": "train",
+  "status": "geometry_smoke_only"
+}

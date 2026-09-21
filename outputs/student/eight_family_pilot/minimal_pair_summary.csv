@@ -1,0 +1,9 @@
+family_index,family,base_outcome,base_collision_type,base_goal_distance_m,pgrr_outcome,pgrr_goal_distance_m,pgrr_recovery_triggered,pgrr_decision_events,pgrr_temporary_subgoals,pgrr_original_goal_restores
+0,diagonal_cut_in_corridor,TIMEOUT,none,0.692,TIMEOUT,0.865,False,1,0,0
+1,occluded_side_emergence,COLLISION,static_geometry,9.991,TIMEOUT,10.507,True,27,0,3
+2,recurrent_bidirectional_crossing,TIMEOUT,none,1.319,TIMEOUT,13.908,True,56,1,4
+3,narrow_corridor_head_on_deadlock,COLLISION,dynamic_actor,16.908,PLANNER_FAILURE,22.252,True,34,0,0
+4,closing_gap_multi_pedestrian,COLLISION,dynamic_actor,13.07,TIMEOUT,14.196,True,41,0,5
+5,lead_pedestrian_sudden_stop,COLLISION,dynamic_actor,11.57,TIMEOUT,11.791,True,28,1,4
+6,bottleneck_cross_flow_merge,COLLISION,dynamic_actor,12.438,TIMEOUT,13.684,True,38,2,3
+7,goal_approach_lateral_interruption,COLLISION,dynamic_actor,3.63,TIMEOUT,4.61,True,10,0,0

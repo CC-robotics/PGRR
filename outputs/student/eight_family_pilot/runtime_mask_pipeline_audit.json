@@ -1,0 +1,159 @@
+{
+  "claim_boundary": "static_call_order_not_runtime_causality",
+  "source": "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py",
+  "source_sha256": "55ca2b06f94bca5b22f79709e82420d2307e5b01f0883a33f046a4ff13b65c38",
+  "special_action_mutations": {
+    "continue_authorized": 1056,
+    "replan_ready_intersection": 1054,
+    "wait_authorized": 1055
+  },
+  "stage_count": 18,
+  "stages": [
+    {
+      "call": "compute_action_mask",
+      "order": 1,
+      "scope": "_action_mask",
+      "source_line": 1003,
+      "telemetry": "upstream_unlogged"
+    },
+    {
+      "call": "apply_observable_scan_mask",
+      "order": 2,
+      "scope": "_action_mask",
+      "source_line": 1025,
+      "telemetry": "upstream_unlogged"
+    },
+    {
+      "call": "apply_path_corridor_mask",
+      "order": 3,
+      "scope": "_action_mask",
+      "source_line": 1047,
+      "telemetry": "upstream_unlogged"
+    },
+    {
+      "call": "self._action_mask",
+      "order": 4,
+      "scope": "_select_decision",
+      "source_line": 1349,
+      "telemetry": "upstream_unlogged"
+    },
+    {
+      "call": "constrain_rejoin_actions",
+      "order": 5,
+      "scope": "_select_decision",
+      "source_line": 1362,
+      "telemetry": "upstream_unlogged"
+    },
+    {
+      "call": "constrain_directional_yield_motion",
+      "order": 6,
+      "scope": "_select_decision",
+      "source_line": 1369,
+      "telemetry": "logged_pre_post"
+    },
+    {
+      "call": "self._constrain_bc_temporal_closing_side",
+      "order": 7,
+      "scope": "_select_decision",
+      "source_line": 1382,
+      "telemetry": "logged_pre_post"
+    },
+    {
+      "call": "constrain_near_field_subgoal_radius",
+      "order": 8,
+      "scope": "_select_decision",
+      "source_line": 1403,
+      "telemetry": "logged_when_changed"
+    },
+    {
+      "call": "constrain_committed_lateral_side",
+      "order": 9,
+      "scope": "_select_decision",
+      "source_line": 1420,
+      "telemetry": "logged_when_active"
+    },
+    {
+      "call": "constrain_stalled_rejoin",
+      "order": 10,
+      "scope": "_select_decision",
+      "source_line": 1462,
+      "telemetry": "downstream_unlogged"
+    },
+    {
+      "call": "constrain_stalled_subgoals",
+      "order": 11,
+      "scope": "_select_decision",
+      "source_line": 1463,
+      "telemetry": "downstream_unlogged"
+    },
+    {
+      "call": "constrain_repeated_replan",
+      "order": 12,
+      "scope": "_select_decision",
+      "source_line": 1467,
+      "telemetry": "downstream_unlogged"
+    },
+    {
+      "call": "constrain_repeated_backup",
+      "order": 13,
+      "scope": "_select_decision",
+      "source_line": 1472,
+      "telemetry": "downstream_unlogged"
+    },
+    {
+      "call": "constrain_net_retreat",
+      "order": 14,
+      "scope": "_select_decision",
+      "source_line": 1477,
+      "telemetry": "downstream_unlogged"
+    },
+    {
+      "call": "constrain_stalled_wait",
+      "order": 15,
+      "scope": "_select_decision",
+      "source_line": 1488,
+      "telemetry": "downstream_unlogged"
+    },
+    {
+      "call": "self._constrain_bc_recurrent_escape",
+      "order": 16,
+      "scope": "_select_decision",
+      "source_line": 1498,
+      "telemetry": "logged_pre_final"
+    },
+    {
+      "call": "ensure_safe_wait_fallback",
+      "order": 17,
+      "scope": "_select_decision",
+      "source_line": 1511,
+      "telemetry": "downstream_unlogged"
+    },
+    {
+      "call": "self._policy.select_action",
+      "order": 18,
+      "scope": "_select_decision",
+      "source_line": 1512,
+      "telemetry": "inference"
+    }
+  ],
+  "telemetry_gaps": {
+    "after_recurrent": [
+      "ensure_safe_wait_fallback"
+    ],
+    "between_closing_and_recurrent": [
+      "constrain_stalled_rejoin",
+      "constrain_stalled_subgoals",
+      "constrain_repeated_replan",
+      "constrain_repeated_backup",
+      "constrain_net_retreat",
+      "constrain_stalled_wait"
+    ],
+    "upstream_before_yield": [
+      "compute_action_mask",
+      "apply_observable_scan_mask",
+      "apply_path_corridor_mask",
+      "special_action_mutations",
+      "constrain_rejoin_actions"
+    ]
+  }
+}

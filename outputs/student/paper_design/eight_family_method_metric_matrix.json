@@ -1,0 +1,382 @@
+{
+  "benchmark_id": "pgrr_extension_v1_eight_family_pilot",
+  "claim_boundary": {
+    "allowed_claim": "runtime and mechanism development evidence",
+    "forbidden_claims": [
+      "generalization",
+      "superiority",
+      "statistical_significance"
+    ],
+    "forbidden_sources": [
+      "moderate_v6_test",
+      "outputs/moderate/final"
+    ],
+    "held_out_test_materialized": false,
+    "no_threshold_tuning": true,
+    "no_training": true
+  },
+  "comparison_methods": [
+    "base",
+    "heuristic",
+    "uniform_bc",
+    "pgrr"
+  ],
+  "families": [
+    {
+      "development_observation": {
+        "base_outcome": "TIMEOUT",
+        "pgrr_decision_events": 1,
+        "pgrr_original_goal_restores": 0,
+        "pgrr_outcome": "TIMEOUT",
+        "pgrr_recovery_triggered": false,
+        "pgrr_temporary_subgoals": 0,
+        "scope": "single train-only pair; descriptive only"
+      },
+      "failure_target": "collision_risk",
+      "family": "diagonal_cut_in_corridor",
+      "family_index": 0,
+      "implemented_mechanism": "one non-cyclic pedestrian makes a one-shot diagonal cut",
+      "mechanism_questions": [
+        "Does recovery activate before contact and preserve a safe route back?"
+      ],
+      "pgrr_components_under_probe": [
+        "failure trigger",
+        "safe action mask",
+        "WAIT/BACKUP/subgoal"
+      ],
+      "prototype_limitation": null,
+      "required_cost_metrics_on_joint_success": [
+        "completion_time_s",
+        "path_length_m",
+        "angular_jerk"
+      ],
+      "required_mechanism_diagnostics": [
+        "triggered",
+        "time_to_first_recovery_s",
+        "minimum_clearance_m"
+      ],
+      "required_primary_metrics": [
+        "GOAL_REACHED",
+        "COLLISION",
+        "TIMEOUT"
+      ]
+    },
+    {
+      "development_observation": {
+        "base_outcome": "COLLISION",
+        "pgrr_decision_events": 27,
+        "pgrr_original_goal_restores": 3,
+        "pgrr_outcome": "TIMEOUT",
+        "pgrr_recovery_triggered": true,
+        "pgrr_temporary_subgoals": 0,
+        "scope": "single train-only pair; descriptive only"
+      },
+      "failure_target": "collision_risk",
+      "family": "occluded_side_emergence",
+      "family_index": 1,
+      "implemented_mechanism": "one non-cyclic pedestrian emerges along a path screened by a shelf",
+      "mechanism_questions": [
+        "Does recovery activate before contact and preserve a safe route back?"
+      ],
+      "pgrr_components_under_probe": [
+        "failure trigger",
+        "safe action mask",
+        "WAIT/BACKUP/subgoal"
+      ],
+      "prototype_limitation": "recorded minimum actor distance and terminal collision label require later telemetry audit",
+      "required_cost_metrics_on_joint_success": [
+        "completion_time_s",
+        "path_length_m",
+        "angular_jerk"
+      ],
+      "required_mechanism_diagnostics": [
+        "triggered",
+        "time_to_first_recovery_s",
+        "minimum_clearance_m"
+      ],
+      "required_primary_metrics": [
+        "GOAL_REACHED",
+        "COLLISION",
+        "TIMEOUT"
+      ]
+    },
+    {
+      "development_observation": {
+        "base_outcome": "TIMEOUT",
+        "pgrr_decision_events": 56,
+        "pgrr_original_goal_restores": 4,
+        "pgrr_outcome": "TIMEOUT",
+        "pgrr_recovery_triggered": true,
+        "pgrr_temporary_subgoals": 1,
+        "scope": "single train-only pair; descriptive only"
+      },
+      "failure_target": "oscillation",
+      "family": "recurrent_bidirectional_crossing",
+      "family_index": 2,
+      "implemented_mechanism": "two cyclic pedestrians repeatedly cross in opposite diagonal directions",
+      "mechanism_questions": [
+        "Does the recovery avoid repeated reversals and produce task progress?"
+      ],
+      "pgrr_components_under_probe": [
+        "failure trigger",
+        "direction commitment",
+        "recovery memory"
+      ],
+      "prototype_limitation": "crossing interval is emergent from route length and speed, not independently scheduled",
+      "required_cost_metrics_on_joint_success": [
+        "completion_time_s",
+        "path_length_m",
+        "angular_jerk"
+      ],
+      "required_mechanism_diagnostics": [
+        "recovery_cycle_count",
+        "action_switch_count",
+        "cycle_progress_m"
+      ],
+      "required_primary_metrics": [
+        "GOAL_REACHED",
+        "COLLISION",
+        "TIMEOUT"
+      ]
+    },
+    {
+      "development_observation": {
+        "base_outcome": "COLLISION",
+        "pgrr_decision_events": 34,
+        "pgrr_original_goal_restores": 0,
+        "pgrr_outcome": "PLANNER_FAILURE",
+        "pgrr_recovery_triggered": true,
+        "pgrr_temporary_subgoals": 0,
+        "scope": "single train-only pair; descriptive only"
+      },
+      "failure_target": "freeze_or_deadlock",
+      "family": "narrow_corridor_head_on_deadlock",
+      "family_index": 3,
+      "implemented_mechanism": "one oncoming pedestrian traverses the narrow corridor and holds at its terminal waypoint",
+      "mechanism_questions": [
+        "Does a bounded recovery regain progress and restore the original goal?",
+        "Does the robot break reciprocal blocking without collision?"
+      ],
+      "pgrr_components_under_probe": [
+        "failure trigger",
+        "WAIT/BACKUP/subgoal/REPLAN",
+        "rejoin",
+        "lateral subgoal/WAIT/BACKUP"
+      ],
+      "prototype_limitation": null,
+      "required_cost_metrics_on_joint_success": [
+        "completion_time_s",
+        "path_length_m",
+        "angular_jerk"
+      ],
+      "required_mechanism_diagnostics": [
+        "stationary_duration_s",
+        "cycle_progress_m",
+        "goal_restore_count",
+        "deadlock_duration_s",
+        "temporary_subgoal_count"
+      ],
+      "required_primary_metrics": [
+        "GOAL_REACHED",
+        "COLLISION",
+        "TIMEOUT"
+      ]
+    },
+    {
+      "development_observation": {
+        "base_outcome": "COLLISION",
+        "pgrr_decision_events": 41,
+        "pgrr_original_goal_restores": 5,
+        "pgrr_outcome": "TIMEOUT",
+        "pgrr_recovery_triggered": true,
+        "pgrr_temporary_subgoals": 0,
+        "scope": "single train-only pair; descriptive only"
+      },
+      "failure_target": "collision_risk_or_planner_failure",
+      "family": "closing_gap_multi_pedestrian",
+      "family_index": 4,
+      "implemented_mechanism": "two longitudinally offset pedestrians move toward the centerline and hold",
+      "mechanism_questions": [
+        "Does recovery activate before contact and preserve a safe route back?",
+        "Can planning be recovered while preserving the original task goal?"
+      ],
+      "pgrr_components_under_probe": [
+        "failure trigger",
+        "safe action mask",
+        "WAIT/BACKUP/subgoal",
+        "planner-failure trigger",
+        "REPLAN/temporary subgoal",
+        "goal restore"
+      ],
+      "prototype_limitation": "this is a centerline-closure prototype, not a literal scalar gap-width closure",
+      "required_cost_metrics_on_joint_success": [
+        "completion_time_s",
+        "path_length_m",
+        "angular_jerk"
+      ],
+      "required_mechanism_diagnostics": [
+        "triggered",
+        "time_to_first_recovery_s",
+        "minimum_clearance_m",
+        "planner_failure_count",
+        "replan_count",
+        "goal_restore_count"
+      ],
+      "required_primary_metrics": [
+        "GOAL_REACHED",
+        "COLLISION",
+        "TIMEOUT"
+      ]
+    },
+    {
+      "development_observation": {
+        "base_outcome": "COLLISION",
+        "pgrr_decision_events": 28,
+        "pgrr_original_goal_restores": 4,
+        "pgrr_outcome": "TIMEOUT",
+        "pgrr_recovery_triggered": true,
+        "pgrr_temporary_subgoals": 1,
+        "scope": "single train-only pair; descriptive only"
+      },
+      "failure_target": "freeze",
+      "family": "lead_pedestrian_sudden_stop",
+      "family_index": 5,
+      "implemented_mechanism": "one lead pedestrian moves forward six metres and holds at its terminal waypoint",
+      "mechanism_questions": [
+        "Does a bounded recovery regain progress and restore the original goal?"
+      ],
+      "pgrr_components_under_probe": [
+        "failure trigger",
+        "WAIT/BACKUP/subgoal/REPLAN",
+        "rejoin"
+      ],
+      "prototype_limitation": "the stop is terminal-waypoint holding, not an independently triggered braking event",
+      "required_cost_metrics_on_joint_success": [
+        "completion_time_s",
+        "path_length_m",
+        "angular_jerk"
+      ],
+      "required_mechanism_diagnostics": [
+        "stationary_duration_s",
+        "cycle_progress_m",
+        "goal_restore_count"
+      ],
+      "required_primary_metrics": [
+        "GOAL_REACHED",
+        "COLLISION",
+        "TIMEOUT"
+      ]
+    },
+    {
+      "development_observation": {
+        "base_outcome": "COLLISION",
+        "pgrr_decision_events": 38,
+        "pgrr_original_goal_restores": 3,
+        "pgrr_outcome": "TIMEOUT",
+        "pgrr_recovery_triggered": true,
+        "pgrr_temporary_subgoals": 2,
+        "scope": "single train-only pair; descriptive only"
+      },
+      "failure_target": "deadlock_or_timeout",
+      "family": "bottleneck_cross_flow_merge",
+      "family_index": 6,
+      "implemented_mechanism": "two cyclic lateral pedestrians cross inside a shelf-defined throat",
+      "mechanism_questions": [
+        "Does the robot break reciprocal blocking without collision?",
+        "Where does progress stop despite collision avoidance?"
+      ],
+      "pgrr_components_under_probe": [
+        "failure trigger",
+        "lateral subgoal/WAIT/BACKUP",
+        "rejoin",
+        "bounded recovery"
+      ],
+      "prototype_limitation": "cross-flow rate and merge phase are not independently controlled",
+      "required_cost_metrics_on_joint_success": [
+        "completion_time_s",
+        "path_length_m",
+        "angular_jerk"
+      ],
+      "required_mechanism_diagnostics": [
+        "deadlock_duration_s",
+        "temporary_subgoal_count",
+        "cycle_progress_m",
+        "rapid_retrigger_count",
+        "final_goal_distance_m"
+      ],
+      "required_primary_metrics": [
+        "GOAL_REACHED",
+        "COLLISION",
+        "TIMEOUT"
+      ]
+    },
+    {
+      "development_observation": {
+        "base_outcome": "COLLISION",
+        "pgrr_decision_events": 10,
+        "pgrr_original_goal_restores": 0,
+        "pgrr_outcome": "TIMEOUT",
+        "pgrr_recovery_triggered": true,
+        "pgrr_temporary_subgoals": 0,
+        "scope": "single train-only pair; descriptive only"
+      },
+      "failure_target": "oscillation_or_planner_failure",
+      "family": "goal_approach_lateral_interruption",
+      "family_index": 7,
+      "implemented_mechanism": "one cyclic lateral pedestrian repeatedly crosses near the goal",
+      "mechanism_questions": [
+        "Does the recovery avoid repeated reversals and produce task progress?",
+        "Can planning be recovered while preserving the original task goal?"
+      ],
+      "pgrr_components_under_probe": [
+        "failure trigger",
+        "direction commitment",
+        "recovery memory",
+        "planner-failure trigger",
+        "REPLAN/temporary subgoal",
+        "goal restore"
+      ],
+      "prototype_limitation": "persistent spatial crossing; no event trigger or physical occlusion is implemented",
+      "required_cost_metrics_on_joint_success": [
+        "completion_time_s",
+        "path_length_m",
+        "angular_jerk"
+      ],
+      "required_mechanism_diagnostics": [
+        "recovery_cycle_count",
+        "action_switch_count",
+        "cycle_progress_m",
+        "planner_failure_count",
+        "replan_count",
+        "goal_restore_count"
+      ],
+      "required_primary_metrics": [
+        "GOAL_REACHED",
+        "COLLISION",
+        "TIMEOUT"
+      ]
+    }
+  ],
+  "paired_by": [
+    "family",
+    "density",
+    "repeat_index",
+    "seed"
+  ],
+  "paper_flow": [
+    "scenario manipulation and seeded reset",
+    "classical planner controls normal navigation",
+    "failure signal triggers recovery only when needed",
+    "PGRR selects WAIT/BACKUP/REPLAN/CONTINUE or one of 21 temporary subgoals",
+    "classical planner executes the temporary goal",
+    "original goal is restored and navigation rejoins",
+    "report preserved outcome, joint-success costs, and mechanism diagnostics"
+  ],
+  "schema_version": 1,
+  "scope": "train_only_development_not_final_evaluation",
+  "sources": {
+    "development_pairs": "outputs\\student\\eight_family_pilot\\minimal_pair_summary.csv",
+    "draft": "configs\\experiments\\pgrr_extension_v1_eight_family_draft.yaml",
+    "pilot": "configs\\experiments\\pgrr_extension_v1_eight_family_pilot.yaml"
+  }
+}

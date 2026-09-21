@@ -1,0 +1,63 @@
+{
+  "benchmark_id": "pgrr_advantage_screen_v1",
+  "checks": {
+    "development_split_allowed": true,
+    "held_out_test_not_materialized": true,
+    "one_shot_release_routes": true,
+    "post_conflict_rejoin_segment_sufficient": true,
+    "release_clearance_sufficient": true,
+    "start_goal_distance_within_limit": true,
+    "static_path_exists": true,
+    "static_subgoal_space_sufficient": true,
+    "temporal_conflict_present": true
+  },
+  "held_out_test_materialized": false,
+  "interpretation": "offline geometry/semantics gate only; not a simulator result or paper claim",
+  "minimum_release_clearance_m": 6.199999999999999,
+  "post_conflict_distance_m": 6.0,
+  "preview_path": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\outputs\\student\\advantage_scenario_screen_v2_validation_r00\\previews\\crossing_flow_medium_anchor_v2_validation_r00_s96000.png",
+  "ready_for_single_seed_runtime_pair": true,
+  "representative_recovery_pose": {
+    "x": 10.8,
+    "y": 12.0,
+    "yaw": 0.0
+  },
+  "route_records": [
+    {
+      "absolute_eta_gap_s": 1.5000343100253808,
+      "actor": "ped_00",
+      "actor_eta_s": 27.653880463871538,
+      "actor_speed_mps": 0.2242,
+      "intersection_xy": [
+        11.8,
+        12.0
+      ],
+      "release_clearance_m": 6.2,
+      "robot_nominal_eta_s": 26.153846153846157
+    },
+    {
+      "absolute_eta_gap_s": 10.158862876254176,
+      "actor": "ped_01",
+      "actor_eta_s": 24.456521739130437,
+      "actor_speed_mps": 0.2392,
+      "intersection_xy": [
+        14.0,
+        12.0
+      ],
+      "release_clearance_m": 6.199999999999999,
+      "robot_nominal_eta_s": 34.61538461538461
+    }
+  ],
+  "scenario_id": "crossing_flow_medium_anchor_v2_validation_r00_s96000",
+  "scenario_path": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\outputs\\student\\advantage_scenario_screen_v2_validation_r00\\generated\\arena\\map_empty\\crossing_flow_medium_anchor_v2_validation_r00_s96000.json",
+  "scenario_sha256": "c690889d213a1d7a3d4e7d24b994a0bcd63999b0d8db071688d88fb90aa2897a",
+  "schema_version": 1,
+  "seed": 96000,
+  "source_config": "C:\\Users\\28646\\Documents\\ChatGPT\\New project\\PGRR\\configs\\experiments\\pgrr_advantage_screen_crossing_v2_validation_r00.yaml",
+  "split": "validation",
+  "start_goal_distance_m": 15.0,
+  "static_path_cell_count": 151,
+  "static_subgoal_count": 21,
+  "temporal_conflict_count": 1,
+  "temporal_conflict_window_s": 8.0
+}

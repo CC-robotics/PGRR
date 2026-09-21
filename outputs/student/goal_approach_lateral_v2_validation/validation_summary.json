@@ -1,0 +1,389 @@
+{
+  "schema_version": 1,
+  "scope": "independent_validation_gate",
+  "family": "goal_approach_lateral_interruption",
+  "variant_id": "goal_approach_lateral_one_shot_v2",
+  "route_distance_m": 15.0,
+  "episode_timeout_s": 90,
+  "promotion_rule": {
+    "minimum_qualifying_pairs": 2,
+    "total_pairs": 3
+  },
+  "selected_pairs": [
+    {
+      "replicate": 0,
+      "seed": 98100,
+      "base": {
+        "episode_id": "pgrr_priority_goalapproach_v2_validation_r00_s98100_base",
+        "outcome": "COLLISION",
+        "detail": "privileged robot-human overlap",
+        "sample_count": 415,
+        "physical_goal_distance_m": 5.165879682001181,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.02860000000001,
+            "event_id": "goal_approach_lateral_one_shot_v2_train",
+            "phase": "active_event",
+            "sim_time_s": 67.53240000000001,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.9769975319422315
+          }
+        ],
+        "outcome_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r00_s98100_base.outcome.json",
+        "jsonl_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r00_s98100_base.jsonl"
+      },
+      "pgrr": {
+        "episode_id": "pgrr_priority_goalapproach_v2_validation_r00_s98100_pgrr",
+        "outcome": "GOAL_REACHED",
+        "detail": "recovery manager succeeded with goal-distance verification",
+        "sample_count": 680,
+        "physical_goal_distance_m": 0.24305284845867872,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.428200000000004,
+            "event_id": "goal_approach_lateral_one_shot_v2_train",
+            "phase": "active_event",
+            "sim_time_s": 63.003600000000006,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.921859742932485
+          },
+          {
+            "actor_name": "ped_00",
+            "command": "hold_at_off_path_terminal_waypoint",
+            "event_elapsed_s": 43.456500000000005,
+            "event_id": "goal_approach_lateral_one_shot_v2_train",
+            "phase": "released",
+            "sim_time_s": 68.03190000000001,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.564532049078231
+          }
+        ],
+        "outcome_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r00_s98100_pgrr.outcome.json",
+        "jsonl_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r00_s98100_pgrr.jsonl"
+      },
+      "positive_pair": true,
+      "pgrr_event_chain_complete": true,
+      "pgrr_original_goal_restored": true,
+      "qualifying_pair": true,
+      "pgrr_recovery": {
+        "state_transitions": [
+          {
+            "sample_index": 0,
+            "timestamp_s": 0.0,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 399,
+            "timestamp_s": 39.9267,
+            "recovery_state": 4,
+            "state_name": "EMERGENCY_STOP"
+          },
+          {
+            "sample_index": 404,
+            "timestamp_s": 40.4262,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 409,
+            "timestamp_s": 40.9257,
+            "recovery_state": 4,
+            "state_name": "EMERGENCY_STOP"
+          },
+          {
+            "sample_index": 435,
+            "timestamp_s": 43.5231,
+            "recovery_state": 1,
+            "state_name": "PENDING_RECOVERY"
+          },
+          {
+            "sample_index": 440,
+            "timestamp_s": 44.0226,
+            "recovery_state": 2,
+            "state_name": "RECOVERY"
+          },
+          {
+            "sample_index": 460,
+            "timestamp_s": 46.0206,
+            "recovery_state": 3,
+            "state_name": "REJOIN"
+          },
+          {
+            "sample_index": 465,
+            "timestamp_s": 46.5201,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          }
+        ],
+        "decision_action_counts": {
+          "BACKUP": 1,
+          "CONTINUE": 5,
+          "SUBGOAL_3": 1,
+          "WAIT": 3
+        },
+        "temporary_subgoal_decision_count": 1,
+        "original_goal_restored_event_count": 1
+      }
+    },
+    {
+      "replicate": 1,
+      "seed": 98101,
+      "base": {
+        "episode_id": "pgrr_priority_goalapproach_v2_validation_r01_s98101_base",
+        "outcome": "COLLISION",
+        "detail": "privileged robot-human overlap",
+        "sample_count": 417,
+        "physical_goal_distance_m": 5.108007920416158,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.1618,
+            "event_id": "goal_approach_lateral_one_shot_v2_train",
+            "phase": "active_event",
+            "sim_time_s": 62.5041,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.948745289131255
+          }
+        ],
+        "outcome_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r01_s98101_base.outcome.json",
+        "jsonl_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r01_s98101_base.jsonl"
+      },
+      "pgrr": {
+        "episode_id": "pgrr_priority_goalapproach_v2_validation_r01_s98101_pgrr",
+        "outcome": "GOAL_REACHED",
+        "detail": "recovery manager succeeded with goal-distance verification",
+        "sample_count": 681,
+        "physical_goal_distance_m": 0.25262219393278446,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.628,
+            "event_id": "goal_approach_lateral_one_shot_v2_train",
+            "phase": "active_event",
+            "sim_time_s": 63.003600000000006,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.908189393813407
+          },
+          {
+            "actor_name": "ped_00",
+            "command": "hold_at_off_path_terminal_waypoint",
+            "event_elapsed_s": 43.6563,
+            "event_id": "goal_approach_lateral_one_shot_v2_train",
+            "phase": "released",
+            "sim_time_s": 68.03190000000001,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.558607997677388
+          }
+        ],
+        "outcome_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r01_s98101_pgrr.outcome.json",
+        "jsonl_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r01_s98101_pgrr.jsonl"
+      },
+      "positive_pair": true,
+      "pgrr_event_chain_complete": true,
+      "pgrr_original_goal_restored": true,
+      "qualifying_pair": true,
+      "pgrr_recovery": {
+        "state_transitions": [
+          {
+            "sample_index": 0,
+            "timestamp_s": 0.0,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 401,
+            "timestamp_s": 40.0932,
+            "recovery_state": 4,
+            "state_name": "EMERGENCY_STOP"
+          },
+          {
+            "sample_index": 406,
+            "timestamp_s": 40.5927,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 411,
+            "timestamp_s": 41.0922,
+            "recovery_state": 4,
+            "state_name": "EMERGENCY_STOP"
+          },
+          {
+            "sample_index": 437,
+            "timestamp_s": 43.6896,
+            "recovery_state": 1,
+            "state_name": "PENDING_RECOVERY"
+          },
+          {
+            "sample_index": 442,
+            "timestamp_s": 44.1891,
+            "recovery_state": 2,
+            "state_name": "RECOVERY"
+          },
+          {
+            "sample_index": 462,
+            "timestamp_s": 46.1871,
+            "recovery_state": 3,
+            "state_name": "REJOIN"
+          },
+          {
+            "sample_index": 467,
+            "timestamp_s": 46.6866,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          }
+        ],
+        "decision_action_counts": {
+          "BACKUP": 1,
+          "CONTINUE": 5,
+          "SUBGOAL_3": 1,
+          "WAIT": 3
+        },
+        "temporary_subgoal_decision_count": 1,
+        "original_goal_restored_event_count": 1
+      }
+    },
+    {
+      "replicate": 2,
+      "seed": 98102,
+      "base": {
+        "episode_id": "pgrr_priority_goalapproach_v2_validation_r02_s98102_base",
+        "outcome": "COLLISION",
+        "detail": "privileged robot-human overlap",
+        "sample_count": 418,
+        "physical_goal_distance_m": 5.165424130584903,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.661300000000004,
+            "event_id": "goal_approach_lateral_one_shot_v2_train",
+            "phase": "active_event",
+            "sim_time_s": 66.0006,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.923226839977319
+          }
+        ],
+        "outcome_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r02_s98102_base.outcome.json",
+        "jsonl_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r02_s98102_base.jsonl"
+      },
+      "pgrr": {
+        "episode_id": "pgrr_priority_goalapproach_v2_validation_r02_s98102_pgrr",
+        "outcome": "GOAL_REACHED",
+        "detail": "recovery manager succeeded with goal-distance verification",
+        "sample_count": 665,
+        "physical_goal_distance_m": 0.17196621031736897,
+        "scenario_events": [
+          {
+            "actor_name": "ped_00",
+            "command": "release_actor_on_noncyclic_crossing",
+            "event_elapsed_s": 38.52810000000001,
+            "event_id": "goal_approach_lateral_one_shot_v2_train",
+            "phase": "active_event",
+            "sim_time_s": 63.003600000000006,
+            "transition": "pre_event_to_active_event",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.93507476226949
+          },
+          {
+            "actor_name": "ped_00",
+            "command": "hold_at_off_path_terminal_waypoint",
+            "event_elapsed_s": 43.55640000000001,
+            "event_id": "goal_approach_lateral_one_shot_v2_train",
+            "phase": "released",
+            "sim_time_s": 68.03190000000001,
+            "transition": "active_event_to_released",
+            "trigger_metric": "robot_goal_distance_below",
+            "trigger_value_m": 5.585493366121749
+          }
+        ],
+        "outcome_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r02_s98102_pgrr.outcome.json",
+        "jsonl_path": "outputs\\student\\goal_approach_lateral_v2_validation\\runtime\\pgrr_priority_goalapproach_v2_validation_r02_s98102_pgrr.jsonl"
+      },
+      "positive_pair": true,
+      "pgrr_event_chain_complete": true,
+      "pgrr_original_goal_restored": true,
+      "qualifying_pair": true,
+      "pgrr_recovery": {
+        "state_transitions": [
+          {
+            "sample_index": 0,
+            "timestamp_s": 0.0,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 400,
+            "timestamp_s": 39.9933,
+            "recovery_state": 4,
+            "state_name": "EMERGENCY_STOP"
+          },
+          {
+            "sample_index": 405,
+            "timestamp_s": 40.4928,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          },
+          {
+            "sample_index": 410,
+            "timestamp_s": 40.9923,
+            "recovery_state": 4,
+            "state_name": "EMERGENCY_STOP"
+          },
+          {
+            "sample_index": 430,
+            "timestamp_s": 42.9903,
+            "recovery_state": 1,
+            "state_name": "PENDING_RECOVERY"
+          },
+          {
+            "sample_index": 436,
+            "timestamp_s": 43.5897,
+            "recovery_state": 2,
+            "state_name": "RECOVERY"
+          },
+          {
+            "sample_index": 455,
+            "timestamp_s": 45.4878,
+            "recovery_state": 3,
+            "state_name": "REJOIN"
+          },
+          {
+            "sample_index": 460,
+            "timestamp_s": 45.9873,
+            "recovery_state": 0,
+            "state_name": "NORMAL"
+          }
+        ],
+        "decision_action_counts": {
+          "BACKUP": 1,
+          "CONTINUE": 6,
+          "WAIT": 2
+        },
+        "temporary_subgoal_decision_count": 0,
+        "original_goal_restored_event_count": 1
+      }
+    }
+  ],
+  "retry_artifacts": [],
+  "qualifying_pair_count": 3,
+  "total_pair_count": 3,
+  "validation_gate_passed": true,
+  "validated_new_scenario_count": 1,
+  "general_superiority_claim_authorized": false,
+  "frozen_test_used": false
+}

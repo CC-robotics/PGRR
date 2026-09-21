@@ -1,0 +1,38 @@
+schema_version: 1
+program_id: pgrr_priority_four_optimization_v1
+scope: train_validation_only
+held_out_test_materialized: false
+global_constraints:
+  maximum_start_goal_distance_m: 15.0
+  minimum_post_conflict_distance_m: 5.0
+  episode_timeout_s: 90
+  same_scenario_for_paired_methods: true
+  preserve_every_outcome: true
+  no_seed_search: true
+  no_checkpoint_or_threshold_change: true
+priority_order:
+  - family: crossing_flow_medium
+    mechanism: bounded_bidirectional_crossing
+    status: independent_validation_passed
+    validated_scenario_count: 1
+    evidence: teaching/student_work/124_crossing_flow_v2_independent_validation.md
+  - family: goal_approach_lateral_interruption
+    mechanism: mid_episode_one_shot_lateral_interruption
+    status: independent_validation_passed
+    desired_interaction_time_s: [40, 55]
+    train_positive_pairs: 3
+    train_total_pairs: 3
+    validation_positive_pairs: 3
+    validation_total_pairs: 3
+    validated_scenario_count: 1
+    evidence: teaching/student_work/127_goal_approach_lateral_v2_independent_validation.md
+  - family: closing_gap_multi_pedestrian
+    mechanism: bounded_multi_pedestrian_closing_then_release
+    status: single_seed_positive_advance_to_train_replication
+    desired_active_duration_s: [2, 4]
+    selected_variant: closing_gap_bounded_release_v3
+    evidence: teaching/student_work/128_closing_gap_bounded_v3_positive_screen.md
+  - family: lead_pedestrian_sudden_stop
+    mechanism: bounded_lead_stop_then_lateral_exit
+    status: pending_optimization
+    desired_stop_duration_s: [2, 3]

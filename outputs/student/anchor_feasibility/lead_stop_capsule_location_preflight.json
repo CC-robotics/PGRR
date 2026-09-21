@@ -1,0 +1,36 @@
+{
+  "algorithm_change_authorized": false,
+  "allow_validation": false,
+  "command": "RAMP_SOURCE_POLICY=pgrr RAMP_ENABLE_UPSTREAM_MASK_TRACE=1 RAMP_EPISODE_ID=pgrr_anchor_capsuleloc_leadstop_train_r00_20260915 RAMP_EPISODE_TIMEOUT_S=90 SCENARIO=outputs/student/eight_family_geometry_draft/generated/arena/map_empty/lead_pedestrian_sudden_stop_low_train_r00_s91500.json scripts/arena/run_baseline_episode.sh",
+  "contract_checks": {
+    "original_scan_predicates_traced": true,
+    "ros_parameter_defaults_false": true,
+    "runtime_converts_switch_to_bool": true,
+    "runtime_forwards_switch": true,
+    "wrapper_defaults_zero": true
+  },
+  "diagnostic_only": true,
+  "episode_id": "pgrr_anchor_capsuleloc_leadstop_train_r00_20260915",
+  "frozen_markers_rejected": [
+    "moderate_v6",
+    "outputs/moderate/final",
+    "checkpoints/final"
+  ],
+  "map_id": "map_empty",
+  "ready": true,
+  "runtime_source_normalized_sha256": {
+    "packages/ramp_core/ramp_core/action_mask.py": "da5139b698a804f2a2a99ef325351b19cbd68924ab40c338daf5b2a4d79b9fd4",
+    "packages/ramp_core/ramp_core/planning/online.py": "80be57c0a83e5698d1956ee5ede3aa12c49702443cbc59b9f25357bd49c2633d",
+    "packages/ramp_core/ramp_core/recovery/mask_trace.py": "5fced9be2fa54ca968fee351c4382405e496d8deaab0dc07744ea1fa6bcf8a24",
+    "ros_ws/src/ramp_ros/ramp_ros/nodes/recovery_manager_node.py": "cd581e6396370689c337e4ee9568d6282ccca1eedc2a63ce70b0d159236b9418",
+    "scripts/arena/run_baseline_episode.sh": "2a505d21ecb39b803fa2ed563f447a907409fe454f5e3b7743d72644dead42d1",
+    "scripts/arena/run_baseline_episode_inner.sh": "2dea2af5303f2dcc3afebb35baeed9701ba8a2437c1a67f3b6db08ed6b679112"
+  },
+  "scenario": "outputs/student/eight_family_geometry_draft/generated/arena/map_empty/lead_pedestrian_sudden_stop_low_train_r00_s91500.json",
+  "scenario_id": "lead_pedestrian_sudden_stop_low_train_r00_s91500",
+  "seed": 91500,
+  "source_policy": "pgrr",
+  "split": "train",
+  "timeout_s": 90,
+  "trace_enabled": true
+}

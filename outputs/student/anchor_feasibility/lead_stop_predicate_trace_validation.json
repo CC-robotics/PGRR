@@ -1,0 +1,76 @@
+{
+  "complete_trace_row_count": 103,
+  "diagnostic_only": true,
+  "episode_id": "pgrr_anchor_predicates_leadstop_train_r00_20260915",
+  "expected_shutdown_exception_count": 2,
+  "expected_stage_order": [
+    "map_connectivity",
+    "observable_scan",
+    "path_corridor"
+  ],
+  "fatal_runtime_pattern_counts": {
+    "import_error": 0,
+    "parameter_type_error": 0,
+    "recovery_manager_process_died": 0
+  },
+  "first_temporary_empty_stage_counts": {
+    "map_connectivity": 0,
+    "none": 20,
+    "observable_scan": 68,
+    "path_corridor": 15
+  },
+  "malformed_trace_row_count": 0,
+  "malformed_trace_rows": [],
+  "outcome": "TIMEOUT",
+  "outcome_detail": "configured episode timeout",
+  "outcome_sample_count": 902,
+  "performance_claim": false,
+  "runtime_note": "Tracebacks are shutdown cleanup only",
+  "runtime_traceback_count": 2,
+  "runtime_valid": true,
+  "sample_count_matches": true,
+  "sources": {
+    "jsonl": "data\\raw\\pgrr_anchor_predicates_leadstop_train_r00_20260915.jsonl",
+    "outcome": "data\\raw\\pgrr_anchor_predicates_leadstop_train_r00_20260915.outcome.json",
+    "runtime_log": "outputs\\student\\anchor_feasibility\\runtime_logs\\pgrr_anchor_predicates_leadstop_train_r00_20260915_runtime.log"
+  },
+  "stage_counts": {
+    "map_connectivity": 103,
+    "observable_scan": 103,
+    "path_corridor": 103
+  },
+  "telemetry_row_count": 902,
+  "temporary_subgoal_layer_totals": {
+    "map_connectivity": {
+      "rows_removing_temporary": 0,
+      "rows_with_no_temporary_output": 0,
+      "temporary_input_total": 2163,
+      "temporary_output_total": 2163,
+      "temporary_removed_total": 0
+    },
+    "observable_scan": {
+      "rows_removing_temporary": 103,
+      "rows_with_no_temporary_output": 68,
+      "temporary_input_total": 2163,
+      "temporary_output_total": 175,
+      "temporary_removed_total": 1988
+    },
+    "path_corridor": {
+      "rows_removing_temporary": 35,
+      "rows_with_no_temporary_output": 83,
+      "temporary_input_total": 175,
+      "temporary_output_total": 140,
+      "temporary_removed_total": 35
+    }
+  },
+  "trace_decision_row_count": 103,
+  "trace_status": "complete",
+  "traced_action_counts": {
+    "2": 20,
+    "21": 30,
+    "22": 34,
+    "23": 4,
+    "24": 15
+  },
+  "valid": true
+}

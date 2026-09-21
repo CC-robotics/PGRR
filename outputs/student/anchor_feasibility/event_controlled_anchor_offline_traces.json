@@ -1,0 +1,304 @@
+{
+  "all_traces_valid": true,
+  "claim_boundary": "deterministic offline traces; no ROS actor execution",
+  "contract_id": "pgrr_event_controlled_anchor_contract_v1",
+  "contract_sha256": "2962bb8f61c9f75bf88aac2b8f186c0767043918cfbce6eb8aba79795522fdfb",
+  "executable_scenarios_generated": false,
+  "forbidden_policy_path_imports": [],
+  "policy_observation_isolation_check": true,
+  "trace_count": 4,
+  "traces": [
+    {
+      "family": "lead_pedestrian_sudden_stop",
+      "seed": 92500,
+      "spec": {
+        "active_duration_s": 3.0,
+        "trigger_hysteresis_m": 0.25,
+        "trigger_metric": "robot_actor_distance_below",
+        "trigger_threshold_m": 3.0
+      },
+      "split": "train",
+      "trace": [
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "advance_route",
+          "elapsed_s": 0.0,
+          "phase": "pre_event",
+          "transition": null,
+          "trigger_metric_m": 4.25
+        },
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "advance_route",
+          "elapsed_s": 1.0,
+          "phase": "pre_event",
+          "transition": null,
+          "trigger_metric_m": 4.25
+        },
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "hold_actor_route_clock",
+          "elapsed_s": 2.0,
+          "phase": "active_event",
+          "transition": "pre_event_to_active_event",
+          "trigger_metric_m": 3.0
+        },
+        {
+          "active_elapsed_s": 1.5,
+          "armed": true,
+          "command": "hold_actor_route_clock",
+          "elapsed_s": 3.5,
+          "phase": "active_event",
+          "transition": null,
+          "trigger_metric_m": 3.0
+        },
+        {
+          "active_elapsed_s": 3.0,
+          "armed": true,
+          "command": "resume_noncyclic_route",
+          "elapsed_s": 5.0,
+          "phase": "released",
+          "transition": "active_event_to_released",
+          "trigger_metric_m": 3.0
+        },
+        {
+          "active_elapsed_s": 3.0,
+          "armed": true,
+          "command": "resume_noncyclic_route",
+          "elapsed_s": 6.0,
+          "phase": "released",
+          "transition": null,
+          "trigger_metric_m": 4.25
+        }
+      ],
+      "transitions": [
+        "pre_event_to_active_event",
+        "active_event_to_released"
+      ],
+      "valid": true,
+      "variant_id": "lead_stop_bounded_release_v1"
+    },
+    {
+      "family": "lead_pedestrian_sudden_stop",
+      "seed": 94500,
+      "spec": {
+        "active_duration_s": 3.5,
+        "trigger_hysteresis_m": 0.25,
+        "trigger_metric": "robot_actor_distance_below",
+        "trigger_threshold_m": 3.2
+      },
+      "split": "validation",
+      "trace": [
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "advance_route",
+          "elapsed_s": 0.0,
+          "phase": "pre_event",
+          "transition": null,
+          "trigger_metric_m": 4.45
+        },
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "advance_route",
+          "elapsed_s": 1.0,
+          "phase": "pre_event",
+          "transition": null,
+          "trigger_metric_m": 4.45
+        },
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "hold_actor_route_clock",
+          "elapsed_s": 2.0,
+          "phase": "active_event",
+          "transition": "pre_event_to_active_event",
+          "trigger_metric_m": 3.2
+        },
+        {
+          "active_elapsed_s": 1.75,
+          "armed": true,
+          "command": "hold_actor_route_clock",
+          "elapsed_s": 3.75,
+          "phase": "active_event",
+          "transition": null,
+          "trigger_metric_m": 3.2
+        },
+        {
+          "active_elapsed_s": 3.5,
+          "armed": true,
+          "command": "resume_noncyclic_route",
+          "elapsed_s": 5.5,
+          "phase": "released",
+          "transition": "active_event_to_released",
+          "trigger_metric_m": 3.2
+        },
+        {
+          "active_elapsed_s": 3.5,
+          "armed": true,
+          "command": "resume_noncyclic_route",
+          "elapsed_s": 6.5,
+          "phase": "released",
+          "transition": null,
+          "trigger_metric_m": 4.45
+        }
+      ],
+      "transitions": [
+        "pre_event_to_active_event",
+        "active_event_to_released"
+      ],
+      "valid": true,
+      "variant_id": "lead_stop_bounded_release_v1"
+    },
+    {
+      "family": "goal_approach_lateral_interruption",
+      "seed": 92700,
+      "spec": {
+        "active_duration_s": 5.0,
+        "trigger_hysteresis_m": 0.25,
+        "trigger_metric": "robot_goal_distance_below",
+        "trigger_threshold_m": 5.0
+      },
+      "split": "train",
+      "trace": [
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "hold_at_start",
+          "elapsed_s": 0.0,
+          "phase": "pre_event",
+          "transition": null,
+          "trigger_metric_m": 6.25
+        },
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "hold_at_start",
+          "elapsed_s": 1.0,
+          "phase": "pre_event",
+          "transition": null,
+          "trigger_metric_m": 6.25
+        },
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "release_actor_on_noncyclic_crossing",
+          "elapsed_s": 2.0,
+          "phase": "active_event",
+          "transition": "pre_event_to_active_event",
+          "trigger_metric_m": 5.0
+        },
+        {
+          "active_elapsed_s": 2.5,
+          "armed": true,
+          "command": "release_actor_on_noncyclic_crossing",
+          "elapsed_s": 4.5,
+          "phase": "active_event",
+          "transition": null,
+          "trigger_metric_m": 5.0
+        },
+        {
+          "active_elapsed_s": 5.0,
+          "armed": true,
+          "command": "hold_at_off_path_terminal_waypoint",
+          "elapsed_s": 7.0,
+          "phase": "released",
+          "transition": "active_event_to_released",
+          "trigger_metric_m": 5.0
+        },
+        {
+          "active_elapsed_s": 5.0,
+          "armed": true,
+          "command": "hold_at_off_path_terminal_waypoint",
+          "elapsed_s": 8.0,
+          "phase": "released",
+          "transition": null,
+          "trigger_metric_m": 6.25
+        }
+      ],
+      "transitions": [
+        "pre_event_to_active_event",
+        "active_event_to_released"
+      ],
+      "valid": true,
+      "variant_id": "goal_approach_one_shot_crossing_v1"
+    },
+    {
+      "family": "goal_approach_lateral_interruption",
+      "seed": 94700,
+      "spec": {
+        "active_duration_s": 5.0,
+        "trigger_hysteresis_m": 0.25,
+        "trigger_metric": "robot_goal_distance_below",
+        "trigger_threshold_m": 5.5
+      },
+      "split": "validation",
+      "trace": [
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "hold_at_start",
+          "elapsed_s": 0.0,
+          "phase": "pre_event",
+          "transition": null,
+          "trigger_metric_m": 6.75
+        },
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "hold_at_start",
+          "elapsed_s": 1.0,
+          "phase": "pre_event",
+          "transition": null,
+          "trigger_metric_m": 6.75
+        },
+        {
+          "active_elapsed_s": 0.0,
+          "armed": true,
+          "command": "release_actor_on_noncyclic_crossing",
+          "elapsed_s": 2.0,
+          "phase": "active_event",
+          "transition": "pre_event_to_active_event",
+          "trigger_metric_m": 5.5
+        },
+        {
+          "active_elapsed_s": 2.5,
+          "armed": true,
+          "command": "release_actor_on_noncyclic_crossing",
+          "elapsed_s": 4.5,
+          "phase": "active_event",
+          "transition": null,
+          "trigger_metric_m": 5.5
+        },
+        {
+          "active_elapsed_s": 5.0,
+          "armed": true,
+          "command": "hold_at_off_path_terminal_waypoint",
+          "elapsed_s": 7.0,
+          "phase": "released",
+          "transition": "active_event_to_released",
+          "trigger_metric_m": 5.5
+        },
+        {
+          "active_elapsed_s": 5.0,
+          "armed": true,
+          "command": "hold_at_off_path_terminal_waypoint",
+          "elapsed_s": 8.0,
+          "phase": "released",
+          "transition": null,
+          "trigger_metric_m": 6.75
+        }
+      ],
+      "transitions": [
+        "pre_event_to_active_event",
+        "active_event_to_released"
+      ],
+      "valid": true,
+      "variant_id": "goal_approach_one_shot_crossing_v1"
+    }
+  ]
+}

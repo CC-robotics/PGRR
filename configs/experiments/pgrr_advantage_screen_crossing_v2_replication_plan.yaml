@@ -1,0 +1,20 @@
+schema_version: 1
+benchmark_id: pgrr_advantage_screen_v1
+scope: train_only_replication_gate
+frozen_before_execution: true
+scenario_family: crossing_flow_medium_anchor_v2
+route_distance_m: 15.0
+episode_timeout_s: 90
+methods: [base, pgrr]
+train_replicates:
+  - {replicate: 0, seed: 95010, config: configs/experiments/pgrr_advantage_screen_crossing_v2.yaml}
+  - {replicate: 1, seed: 95011, config: configs/experiments/pgrr_advantage_screen_crossing_v2_train_r01.yaml}
+  - {replicate: 2, seed: 95012, config: configs/experiments/pgrr_advantage_screen_crossing_v2_train_r02.yaml}
+promotion_rule:
+  minimum_positive_pairs: 2
+  total_pairs: 3
+  positive_pair: base_not_goal_and_pgrr_goal
+  no_seed_replacement: true
+  no_threshold_tuning: true
+  no_geometry_change_between_replicates: true
+held_out_test_materialized: false

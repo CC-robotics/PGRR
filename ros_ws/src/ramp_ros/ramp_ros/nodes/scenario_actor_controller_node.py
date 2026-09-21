@@ -20,13 +20,18 @@ from ramp_core.planning.rollout import (
     collision_guarded_human_step,
     yielding_human_step,
 )
+from ramp_core.scenario import (
+    RuntimeEventDecision,
+    ScenarioEventController,
+    apply_route_clock_command,
+)
 from rclpy.clock import Clock, ClockType
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from ros_gz_interfaces.msg import Entity
 from ros_gz_interfaces.srv import SetEntityPose, SpawnEntity
-from std_msgs.msg import Bool, Int16
+from std_msgs.msg import Bool, Int16, String
 from std_srvs.srv import Empty
 from tf2_msgs.msg import TFMessage
 
@@ -125,6 +130,8 @@ class ScenarioActorController(Node):
     def __init__(self) -> None:
         super().__init__("scenario_actor_controller")
         self.declare_parameter("scenario_file", "")
+        self.declare_parameter("enable_event_control", False)
+        self.declare_parameter("scenario_event_topic", "/ramp/scenario_events")
         self.declare_parameter("set_pose_service", "/world/default/set_pose")
         self.declare_parameter("spawn_service", "/world/default/create")
         self.declare_parameter("task_reset_service", "/task_generator_node/reset_task")
@@ -153,6 +160,8 @@ class ScenarioActorController(Node):
         self.declare_parameter("robot_start_x", 0.0)
         self.declare_parameter("robot_start_y", 0.0)
         self.declare_parameter("robot_start_yaw", 0.0)
+        self.declare_parameter("goal_x", 0.0)
+        self.declare_parameter("goal_y", 0.0)
         self.declare_parameter("robot_reset_position_tolerance_m", 0.10)
         self.declare_parameter("robot_reset_yaw_tolerance_rad", 0.15)
         self.declare_parameter("robot_reset_retry_interval_s", 1.0)
@@ -174,6 +183,18 @@ class ScenarioActorController(Node):
         self._routes = self._load_routes(scenario_path)
         if not self._routes:
             raise ValueError("scenario contains no dynamic actors")
+        self._event_controller = self._load_event_controller(
+            scenario_path,
+            routes=self._routes,
+            enabled=bool(self.get_parameter("enable_event_control").value),
+        )
+        self._event_start_s: float | None = None
+        self._goal_position = (
+            float(self.get_parameter("goal_x").value),
+            float(self.get_parameter("goal_y").value),
+        )
+        if not all(math.isfinite(value) for value in self._goal_position):
+            raise ValueError("event-control goal position must be finite")
         service_name = str(self.get_parameter("set_pose_service").value)
         self._client = self.create_client(SetEntityPose, service_name)
         spawn_service = str(self.get_parameter("spawn_service").value)
@@ -197,6 +218,9 @@ class ScenarioActorController(Node):
         )
         self._start_publisher = self.create_publisher(
             Bool, str(self.get_parameter("episode_start_topic").value), 10
+        )
+        self._event_publisher = self.create_publisher(
+            String, str(self.get_parameter("scenario_event_topic").value), 10
         )
         swept_routes = tuple(route for route in self._routes if route.uses_swept_guard)
         if swept_routes and len(swept_routes) != len(self._routes):
@@ -738,6 +762,9 @@ class ScenarioActorController(Node):
         self._latest_odometry_received_s = None
         self._odom_stable_since_wall_s = None
         self._soft_hold_elapsed = {route.name: 0.0 for route in self._routes}
+        self._event_start_s = None
+        if self._event_controller is not None:
+            self._event_controller.reset()
         for future in self._costmap_clear_pending.values():
             if not future.done():
                 future.cancel()
@@ -778,6 +805,9 @@ class ScenarioActorController(Node):
         self._experiment_started = True
         self._route_elapsed = {route.name: 0.0 for route in self._routes}
         self._soft_hold_elapsed = {route.name: 0.0 for route in self._routes}
+        self._event_start_s = now_s
+        if self._event_controller is not None:
+            self._event_controller.reset()
         self._last_update_s = now_s
         self.get_logger().info("episode handshake complete; released actor routes")
 
@@ -909,6 +939,110 @@ class ScenarioActorController(Node):
             )
         return tuple(routes)
 
+    @staticmethod
+    def _load_event_controller(
+        path: Path,
+        *,
+        routes: tuple[ActorRoute, ...],
+        enabled: bool,
+    ) -> ScenarioEventController | None:
+        if not enabled:
+            return None
+        scenario = json.loads(path.read_text(encoding="utf-8"))
+        mapping = scenario.get("ramp_event_control")
+        if not isinstance(mapping, dict):
+            raise ValueError(
+                "enable_event_control requires a ramp_event_control scenario mapping"
+            )
+        controller = ScenarioEventController.from_mapping(
+            mapping,
+            actor_names={route.name for route in routes},
+        )
+        route_by_name = {route.name: route for route in routes}
+        cyclic = sorted(
+            name for name in controller.actor_names if route_by_name[name].cyclic
+        )
+        if cyclic:
+            raise ValueError(f"event-controlled actor routes must be noncyclic: {cyclic}")
+        return controller
+
+    def _publish_event_transition(
+        self,
+        runtime: RuntimeEventDecision,
+        *,
+        now_s: float,
+        event_elapsed_s: float,
+    ) -> None:
+        if not runtime.decision.transitioned:
+            return
+        message = String()
+        message.data = json.dumps(
+            {
+                "actor_name": runtime.actor_name,
+                "command": runtime.decision.command,
+                "event_elapsed_s": event_elapsed_s,
+                "event_id": runtime.event_id,
+                "phase": runtime.decision.phase.value,
+                "sim_time_s": now_s,
+                "transition": runtime.decision.transition,
+                "trigger_metric": runtime.trigger_metric,
+                "trigger_value_m": runtime.trigger_value_m,
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        self._event_publisher.publish(message)
+
+    def _apply_event_control(
+        self,
+        route: ActorRoute,
+        *,
+        now_s: float,
+        current_elapsed_s: float,
+        candidate_elapsed_s: float,
+    ) -> float:
+        controller = self._event_controller
+        if controller is None or route.name not in controller.actor_names:
+            return candidate_elapsed_s
+        if not self._experiment_started or self._event_start_s is None:
+            return current_elapsed_s
+        proxy_name = self._proxy_name(route.name)
+        pose_received_s = self._actual_proxy_pose_received_s.get(proxy_name)
+        timeout_s = float(self.get_parameter("actual_pose_timeout_s").value)
+        if (
+            not self._actual_robot_pose_is_fresh(now_s)
+            or pose_received_s is None
+            or now_s - pose_received_s > timeout_s
+            or proxy_name not in self._actual_proxy_poses
+        ):
+            # Event control fails closed: never advance a controlled actor from
+            # stale simulator truth. Existing health gates report persistent staleness.
+            return current_elapsed_s
+        robot_pose = self._actual_robot_pose
+        actor_pose = self._actual_proxy_poses[proxy_name]
+        assert robot_pose is not None
+        event_elapsed_s = max(0.0, now_s - self._event_start_s)
+        runtime = controller.update(
+            actor_name=route.name,
+            elapsed_s=event_elapsed_s,
+            robot_position=(float(robot_pose.position.x), float(robot_pose.position.y)),
+            actor_position=(float(actor_pose.position.x), float(actor_pose.position.y)),
+            goal_position=self._goal_position,
+        )
+        assert runtime is not None
+        self._publish_event_transition(
+            runtime,
+            now_s=now_s,
+            event_elapsed_s=event_elapsed_s,
+        )
+        terminal_elapsed_s = sum(route.segment_lengths) / route.speed
+        return apply_route_clock_command(
+            runtime.decision.command,
+            current_elapsed_s=current_elapsed_s,
+            candidate_elapsed_s=candidate_elapsed_s,
+            terminal_elapsed_s=terminal_elapsed_s,
+        )
+
     def _update(self) -> None:
         if not self._client.service_is_ready() or not self._spawn_client.service_is_ready():
             self.get_logger().warning(
@@ -1038,6 +1172,12 @@ class ScenarioActorController(Node):
                 )
                 if permitted == current[:2]:
                     target_elapsed = self._route_elapsed[route.name]
+            target_elapsed = self._apply_event_control(
+                route,
+                now_s=now,
+                current_elapsed_s=self._route_elapsed[route.name],
+                candidate_elapsed_s=target_elapsed,
+            )
             x, y, yaw = route.pose_at(target_elapsed)
             target_pose = make_pose((x, y, yaw))
             pose_array.poses.append(current_pose)

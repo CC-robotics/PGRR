@@ -1,0 +1,26 @@
+schema_version: 1
+benchmark_id: pgrr_priority_four_optimization_v1
+scope: independent_validation_gate
+frozen_before_execution: true
+family: goal_approach_lateral_interruption
+variant_id: goal_approach_lateral_one_shot_v2
+route_distance_m: 15.0
+episode_timeout_s: 90
+methods: [base, pgrr]
+validation_replicates:
+  - {replicate: 0, seed: 98100, config: configs/experiments/pgrr_goal_approach_lateral_v2_validation_r00.yaml}
+  - {replicate: 1, seed: 98101, config: configs/experiments/pgrr_goal_approach_lateral_v2_validation_r01.yaml}
+  - {replicate: 2, seed: 98102, config: configs/experiments/pgrr_goal_approach_lateral_v2_validation_r02.yaml}
+promotion_rule:
+  minimum_qualifying_pairs: 2
+  total_pairs: 3
+  qualifying_pair: base_not_goal_and_pgrr_goal_with_complete_event_and_goal_restore
+  infrastructure_retry:
+    allowed_outcomes: [SIMULATOR_FAILURE, INVALID_RESET]
+    maximum_same_seed_retries_per_method: 1
+    preserve_every_attempt: true
+  no_seed_replacement: true
+  no_geometry_or_event_change: true
+  no_timeout_checkpoint_or_threshold_change: true
+  validation_is_terminal_for_this_design: true
+held_out_test_materialized: false

@@ -1,0 +1,10 @@
+{
+  "detail": "logger stopped without terminal event",
+  "episode_id": "pgrr_event_leadstop_s92500_pgrr",
+  "localized_goal_distance_m": 18.11359214782715,
+  "outcome": "SIMULATOR_FAILURE",
+  "outcome_id": 4,
+  "physical_goal_distance_m": 18.136254252791744,
+  "sample_count": 163,
+  "scenario_events": []
+}

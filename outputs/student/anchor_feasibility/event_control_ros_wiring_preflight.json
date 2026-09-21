@@ -1,0 +1,97 @@
+{
+  "acceptance_after_wiring": [
+    "legacy scenario source hashes preserve behavior with event flag unset",
+    "event transitions reset deterministically across two synthetic episodes",
+    "transition logger preserves one activation and one release",
+    "event state is absent from recovery observation fields",
+    "invalid or stale simulator pose prevents event advancement and reports unhealthy status"
+  ],
+  "claim_boundary": "read-only source inventory; no ROS or simulator execution",
+  "default_behavior_changed": false,
+  "existing_prerequisite_count": 8,
+  "existing_prerequisite_total": 8,
+  "existing_prerequisites": {
+    "actor_controller_launched": true,
+    "actual_robot_pose_available": true,
+    "event_contract_adapter_exists": true,
+    "event_core_exists": true,
+    "event_runtime_adapter_exists": true,
+    "route_clock_available": true,
+    "scenario_file_parameter_exists": true,
+    "task_reset_callback_exists": true
+  },
+  "ready_for_event_scenario_execution": true,
+  "required_changes": [
+    {
+      "change": "emit a validated ramp_event_control mapping only for new train/validation variants",
+      "component": "scenario JSON generator",
+      "order": 1
+    },
+    {
+      "change": "add enable_event_control=false and construct state machines only when enabled",
+      "component": "scenario_actor_controller",
+      "order": 2
+    },
+    {
+      "change": "reset event state together with route clocks on every task reset",
+      "component": "scenario_actor_controller reset",
+      "order": 3
+    },
+    {
+      "change": "apply commands after actual-pose freshness gates and fail closed on invalid state",
+      "component": "scenario_actor_controller update",
+      "order": 4
+    },
+    {
+      "change": "publish phase transitions with event id, simulation time, trigger metric, and command",
+      "component": "event telemetry",
+      "order": 5
+    },
+    {
+      "change": "record transition telemetry without exposing it to recovery observations",
+      "component": "episode_logger",
+      "order": 6
+    },
+    {
+      "change": "forward an opt-in environment flag; retain identical default behavior when unset",
+      "component": "runtime launcher",
+      "order": 7
+    }
+  ],
+  "runtime_wiring_checks": {
+    "default_off_parameter": true,
+    "event_contract_mapping_loaded": true,
+    "event_enable_forwarded_by_launcher": true,
+    "event_state_machine_imported": true,
+    "event_transition_logger_subscription": true,
+    "event_transition_topic_declared": true
+  },
+  "runtime_wiring_present_count": 6,
+  "runtime_wiring_total": 6,
+  "source_hashes": {
+    "actor_controller": {
+      "path": "ros_ws/src/ramp_ros/ramp_ros/nodes/scenario_actor_controller_node.py",
+      "sha256": "59dab57373d12320481d0bad2af9021beeef2e80c12ed18f29657ef06f6d0287"
+    },
+    "episode_logger": {
+      "path": "ros_ws/src/ramp_ros/ramp_ros/nodes/episode_logger_node.py",
+      "sha256": "d698f939d783c2d94013a9bc19fd56e312c1181bcc825b697e5f9a9712e55d61"
+    },
+    "event_adapter": {
+      "path": "packages/ramp_core/ramp_core/scenario/contract.py",
+      "sha256": "1085b55bee54db4a6d9af0d05bb127374ae8f7c09412acfb0d49eab83f69c1a0"
+    },
+    "event_core": {
+      "path": "packages/ramp_core/ramp_core/scenario/events.py",
+      "sha256": "1bb3cb2f0a1771ddbdb09a338b2bef3526f7cfc95e28d4ab15af3f92af041921"
+    },
+    "event_runtime": {
+      "path": "packages/ramp_core/ramp_core/scenario/runtime.py",
+      "sha256": "2799793a58f4b7b8c0511c04efcf718a899346f6e1f24c9e80574918f652117a"
+    },
+    "runtime_launcher": {
+      "path": "scripts/arena/run_baseline_episode_inner.sh",
+      "sha256": "654f49cbd0888f2f40c0896052267185fa40db37e51ff8b23553a185e75be3d9"
+    }
+  }
+}

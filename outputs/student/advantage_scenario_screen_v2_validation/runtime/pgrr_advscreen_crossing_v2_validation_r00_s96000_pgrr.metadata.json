@@ -1,0 +1,13 @@
+{
+  "arena_commit": "c2ff4a87e8686013b53f1e9cd8b01b3ab04fbce4",
+  "episode_id": "pgrr_advscreen_crossing_v2_validation_r00_s96000_pgrr",
+  "map_id": "map_empty",
+  "planner_id": "dwb",
+  "project_commit": "0c1796986921a760bca1924b395347cb37bb8042",
+  "scenario_id": "crossing_flow_medium_anchor_v2_validation_r00_s96000",
+  "schema_version": 1,
+  "seed": 96000,
+  "source_policy": "pgrr",
+  "split": "validation",
+  "timestamp": "2026-09-17T11:49:31.465624+00:00"
+}
